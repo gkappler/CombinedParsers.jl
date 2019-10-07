@@ -1,0 +1,13 @@
+name = "ParserAlchemy"
+uuid = "5ae71ed2-6f8a-4ed1-b94f-e14e8158f19e"
+authors = ["Gregor Kappler"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
