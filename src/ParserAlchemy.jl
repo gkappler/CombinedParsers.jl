@@ -24,7 +24,7 @@ ParserTypes = Union{TextParse.AbstractToken, AbstractString, Regex,
 ## import Regex: match
 export match
 Base.match(r::TextParse.AbstractToken, str) =
-    match(Regex(plain_regex(r)), str)
+    match(Regex(regex_string(r)), str)
 
 export tokenize
 tokenize(x, str::RegexMatch) = tokenize(x, str.match)
@@ -56,7 +56,7 @@ end
 
 import Base: Regex
 function Regex(x::ParserTypes) 
-    Regex("^"*plain_regex(x))
+    Regex("^"*regex_string(x))
 end
 
 export opt, seq, rep, rep_splat, rep1, alt
@@ -162,10 +162,11 @@ quantifier(x::TokenizerOp{:opt,T,F}) where {T, F}  = "?"
 
 
 
-export plain_regex
-plain_regex(x::Union{NamedToken, InstanceParser}) = plain_regex(x.parser)
-plain_regex(x::Pair{Symbol,T}) where T = plain_regex(x.second)
-function plain_regex(x::Regex)
+export regex_string
+regex_string(::TextParse.Numeric{<:Integer}) = "[[:digit:]]+"
+regex_string(x::Union{NamedToken, InstanceParser}) = regex_string(x.parser)
+regex_string(x::Pair{Symbol,T}) where T = regex_string(x.second)
+function regex_string(x::Regex)
     p=x.pattern
     if p[1]=='^'
         p=p[2:end]
@@ -176,12 +177,12 @@ function plain_regex(x::Regex)
     p
 end
 
-plain_regex(x::TokenizerOp) = "(?:" * plain_regex(x.els) * ")" * quantifier(x)
-plain_regex(x::TokenizerOp{:not,T,F}) where {T, F}  = plain_regex(x.els[2])
-plain_regex(x::TokenizerOp{:seq,T,F}) where {T, F}  = join([ plain_regex(p) for p in x.els.parts])
-plain_regex(x::TokenizerOp{:opt,T,F}) where {T, F}  = plain_regex(x.els.parser)
-plain_regex(x::TokenizerOp{:tokenize,T,F}) where {T, F}  = plain_regex(x.els.outer)
-plain_regex(x::TokenizerOp{:alt,T,F}) where {T, F}  = "(?:" * join([ plain_regex(p) for p in x.els],"|") * ")"
+regex_string(x::TokenizerOp) = "(?:" * regex_string(x.els) * ")" * quantifier(x)
+regex_string(x::TokenizerOp{:not,T,F}) where {T, F}  = regex_string(x.els[2])
+regex_string(x::TokenizerOp{:seq,T,F}) where {T, F}  = join([ regex_string(p) for p in x.els.parts])
+regex_string(x::TokenizerOp{:opt,T,F}) where {T, F}  = regex_string(x.els.parser)
+regex_string(x::TokenizerOp{:tokenize,T,F}) where {T, F}  = regex_string(x.els.outer)
+regex_string(x::TokenizerOp{:alt,T,F}) where {T, F}  = "(?:" * join([ regex_string(p) for p in x.els],"|") * ")"
 
 
 
@@ -194,8 +195,8 @@ struct Suffix{S} s::S end
 parser(x::AbstractString) = x
 revert(x::AbstractString) = Suffix(x)
 regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
-parser(x::Regex) = Regex("^" * plain_regex(x), regex_flags(x))
-revert(x::Regex) = Regex(plain_regex(x) * '$', regex_flags(x))
+parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
+revert(x::Regex) = Regex(regex_string(x) * '$', regex_flags(x))
 parser(x::Pair{Symbol, P}) where P =
     NamedToken{P,result_type(x.second)}(x.first, parser(x.second))
 
@@ -265,7 +266,7 @@ end
 
 function alt(x::Vararg{Union{String,Regex}})
     T = AbstractString
-    instance(T, (v,i) -> v, Regex("^(?:" * join([plain_regex(p) for p in x], "|") *")"))
+    instance(T, (v,i) -> v, Regex("^(?:" * join([regex_string(p) for p in x], "|") *")"))
 end
 
 function alt(T::Type, x::Vararg; log=false, transform=(v,i) -> v)
@@ -308,9 +309,9 @@ function seq(T::Type, tokens::Vararg;
     ## todo: tuple?    
     if combine
         if outer===nothing
-            outer = Regex("^"*join([ plain_regex(x) for x in parts ]))
+            outer = Regex("^"*join([ "("*regex_string(x)*")" for x in parts ]))
         else
-            @assert outer==join([ plain_regex(x) for x in parts ])
+            @assert outer==join([ "("*regex_string(x)*")" for x in parts ])
         end
     end
     if T==NamedTuple
@@ -329,8 +330,8 @@ function seq(T::Type, tokens::Vararg;
     if outer === nothing
         result
     else
-        if plain_regex(result) == plain_regex(outer)
-            re_inner = ( "^" * join([ "(" * plain_regex(t) * ")" for t in parts ])) ## when??? * '$' )             
+        if true || regex_string(result) == regex_string(outer)
+            re_inner = ( "^" * join([ "(" * regex_string(t) * ")" for t in parts ])) ## when??? * '$' )             
             ## @warn "compiling regex" re Regex(re_inner) maxlog=1
             TokenizerOp{:seq_combine, RT}(  ( outer=outer::Regex,
                                               inner = re_inner==plain_regex(outer) ? nothing : Regex(re_inner),
@@ -368,7 +369,7 @@ rep(T::Type, x;  log=false, transform=(v,i) -> v ) = #[ convert(T,i) for i in v 
     TokenizerOp{:rep,T}(parser(x), log_transform(transform, log))
 
 rep(x::Regex) =
-    Regex(plain_regex(rep(x; log=false)))
+    Regex(regex_string(rep(x; log=false)))
 
 
 rep(T::Type, x,y::Vararg; log=false, transform=(v,i) -> v, kw...) =
@@ -388,7 +389,7 @@ will always return a string
 """
 not(exclude, from;  log=false) =
     TokenizerOp{:not,String}( ## todo: result_type(from)
-        (parser(exclude), Regex("^"*plain_regex(from))),
+        (parser(exclude), Regex("^"*regex_string(from))),
         (v,i) -> v)
 
 # cutright(full,tokens::Vararg) =
@@ -482,7 +483,7 @@ function regex_escape(s)
     res = replace(string(s), r"([()[\]{}?*+\-|^\$\\.&~#\s=!<>|:])" => s"\\\1")
     replace(res, "\0" => "\\0")
 end
-plain_regex(x::AbstractString) = regex_escape(x)
+regex_string(x::AbstractString) = regex_escape(x)
 
 
 
@@ -509,7 +510,7 @@ seq_vcat(r::Vector) = vcat( [ ( seq_vcat( x )) for x in r]... )
 
 export splitter
 splitter(S, parse; transform_split = v -> tokenize(S, v), kw...) =
-    splitter(Regex(plain_regex(S)), parse;
+    splitter(Regex(regex_string(S)), parse;
              transform_split = transform_split, kw...)
 
 function splitter(## R::Type,
@@ -712,7 +713,7 @@ function TextParse.tryparsenext(tokf::TokenizerOp{:seq, T, F}, str, i, till, opt
 end
 
 
-plain_regex(x::TokenizerOp{:seq_combine,T,F}) where {T, F}  = plain_regex(x.els[1])
+regex_string(x::TokenizerOp{:seq_combine,T,F}) where {T, F}  = regex_string(x.els[1])
 function TextParse.tryparsenext(tokf::TokenizerOp{:seq_combine, T, F}, str, i, till, opts=TextParse.default_opts) where {T,F}
     re, toks = tokf.els.outer, tokf.els.parts
     # inner regex compiled in els?
@@ -819,7 +820,7 @@ function TextParse.tryparsenext(t::TokenizerOp{:alt, T, F}, str, i, till, opts=T
         r, i_ = tryparsenext(t.els[j], str, i, till)
         if !isnull(r)            ## @show i_ seq_join(r.value)
             # @show t.f t.els[j] r.value
-            ## @show match(Regex(plain_regex(t.els[j])), str[i:end])
+            ## @show match(Regex(regex_string(t.els[j])), str[i:end])
             try
                 r_ = t.f(r.value, i)
                 return Nullable(r_), i_
@@ -977,7 +978,7 @@ word        = r"[^\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`]+"
 enum_label = r"(?:[0-9]{1,3}|[ivx]{1,6}|[[:alpha:]])[\.\)]"
 
 
-whitenewline = Regex(plain_regex(seq(opt(whitespace), newline)))
+whitenewline = Regex(regex_string(seq(opt(whitespace), newline)))
 export emptyline
 emptyline = r"^[ \t]*\r?\n"
 
