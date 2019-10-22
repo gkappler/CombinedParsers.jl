@@ -1,3 +1,4 @@
+module Tokens
 ############################################################
 ## Tokens
 
@@ -306,4 +307,124 @@ function tokens(n::T) where {T}
                            )
     R
     # Pair[ w => collect(v) for (w,v) in R ]    
+end
+
+
+
+
+
+
+
+import ..ParserAlchemy: result_type, instance, rep, seq, alt, regex_string, parenthesisP
+import ..ParserAlchemy: enum_label, parser, word, delimiter, quotes, extension
+bracket_number = instance(
+    Token, (v,i) -> Token(:number, v),
+    r"^\[(?:[0-9]+[[:alpha:]]*, *)*(?:[0-9]+[[:alpha:]]* *)\]");
+
+## TODO: merge with bracket_number, tokenize parts
+bracket_reference = instance(
+    Token, (v,i) -> Token(:reference, v),
+    r"^\[(?:[0-9]+[[:alpha:]]*, *)*(?:[0-9]+[[:alpha:]]* *)\]");
+
+default_tokens = [
+    instance(Token, alt(parenthesisP("(",")"),
+                        parenthesisP("{","}"),
+                        parenthesisP("<",">"),
+                        parenthesisP("[","]")), :paren),
+    instance(Token, parser(Regex(" "*regex_string(enum_label)*" ")), :number),
+    instance(Token, parser(word), :literal),
+    instance(Token, parser(quotes), :paren),
+    instance(Token, parser(delimiter), :delimiter)
+]
+tokenstring =
+    #tok(inline, 
+    rep(alt(bracket_number, bracket_reference, default_tokens...,
+            instance(Token, r"[][{}()]+", :paren)))
+
+append_element_f(vp, ep; kw...) =
+    let T=result_type(vp)
+        seq(T, vp, ep;
+            transform = (v,i) -> convert(T, [ v[1]..., v[2] ]),
+            ## log=true,
+            kw...)
+    end
+
+filename    = alt(
+    append_element_f(tokenstring, instance(Token, parser(extension), :ext) ; combine=true),
+    append_element_f(tokenstring, instance(Token, parser("/"), :ext); combine=true),
+    append_element_f(tokenstring, instance(Token, parser(""), :ext))  ##combine=true, # transform = seq_vcat,
+    )
+
+import ..ParserAlchemy: tokenize
+tokenize(x) = tokenize(tokenstring, x)
+
+
+import Base: convert
+Base.convert(::Type{TokenString}, x::String) = tokenize(x)
+
+## import ..Tokens: Token, Template, TokenPair, Line, LineContent, Paragraph
+
+import TextParse
+
+export IteratorParser
+struct IteratorParser{T} <: TextParse.AbstractToken{T}
+    label::String
+    match::Function
+    f::Function    
+end
+Base.show(io::IO, x::IteratorParser) = print(io, x.label)
+
+function TextParse.tryparsenext(tok::IteratorParser{T},
+                                str, i, till,
+                                opts=TextParse.default_opts) where {P,T}
+    ##@show typeof(str[i])
+    if i<=lastindex(str) && tok.match(str[i]) 
+        Nullable{T}(tok.f(str[i], i)), nextind(str,i)
+    else
+        Nullable{T}(), i
+    end
+end
+
+export is_type, is_heading, is_template, is_template_line, is_line
+is_template(template::String, transform=(v,i) -> v) =
+    IteratorParser{Line{Token,LineContent}}(
+        template,
+        x->x isa Template
+        && x.name==template,
+        transform
+    )
+is_template_line(template::String, transform=(v,i) -> v, T = Line{Token,LineContent}) =
+    IteratorParser{T}(
+        template,
+        x->(x) isa Line && !isempty(x.tokens)
+        && (x.tokens[1]) isa Template
+        && x.tokens[1].template==template,
+        transform)
+is_template_line(pred::Function, transform=(v,i) -> v, T = Line{Token,LineContent}) =
+    IteratorParser{T}(
+        "template",
+        x->(x) isa Line && !isempty(x.tokens)
+        && (x.tokens[1]) isa Template
+        && pred(x.tokens[1]),
+        transform)
+is_heading(f=x->true, transform=(v,i) -> v, T = Line{Token,LineContent}) =
+    IteratorParser{T}(
+        "heading",
+        x->x isa Line
+        && variable(x.indent[end])==:headline
+        && f(x.indent[end]),
+        transform)
+is_type(t::Type, transform=(v,i) -> v) =
+    IteratorParser{t}(string(t), x->x isa t,
+                      transform)
+is_line(transform=(v,i) -> v) = is_line(Line{Token,LineContent}, transform)
+
+"""
+is not a headline
+"""
+is_line(t::Type, transform=(v,i) -> v) =
+    IteratorParser{t}("Line", x->x isa Line
+                      && variable(x.indent[end])!=:headline,
+                      transform)
+
 end
