@@ -2,9 +2,10 @@ module Tokens
 ############################################################
 ## Tokens
 
-import InternedStrings: intern
-
+## TODO: move intenring into parsing (creating from a db interning in tokens wastes mem)
 export AbstractToken, variable, value
+export Token, TokenValue, TokenTuple, TokenString
+
 abstract type AbstractToken{Tt, Tv} end
 
 variable(x::AbstractToken{Tt, Tv}) where {Tt, Tv} = nothing
@@ -76,7 +77,7 @@ end
 #     name::Symbol
 #     indent::AbstractString
 #     function Indent(enclos::Symbol,name::Symbol, value::T) where {T<:AbstractString}
-#         new(enclos, name, intern(value))
+#         new(enclos, name, value)
 #     end
 # end
 
@@ -104,7 +105,7 @@ struct Token <: AbstractToken{Symbol, String}
     name::Symbol
     value::String
     function Token(name::Symbol, value::T) where {T<:AbstractString}
-        new(name, intern(value))
+        new(name, value)
     end
 end
 Token(name::Symbol, value::Union{Missing, Nothing}) = Token(name, "")
