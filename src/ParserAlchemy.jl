@@ -237,21 +237,17 @@ end
 opt(x; kw...) =
     opt(result_type(x), x; kw...)
 
+defaultvalue(::Type{<:AbstractString}) = ""
+defaultvalue(V::Type{<:Vector}) = eltype(V)[]
+defaultvalue(V::Type{<:VectorDict}) = VectorDict{keytype(V), valtype(V)}(eltype(V)[])
+defaultvalue(V::Type) = missing
+
 function opt(T::Type, x;
-             default::D=nothing,
+             default=defaultvalue(T),
              log=false,
              transform=(v,i) -> v) where { D }
     ##@show default
     x=parser(x)
-    if default === nothing 
-        default = if T <: AbstractString
-            ""
-        elseif T <: Vector
-            convert(T,[])
-        else
-            missing
-        end
-    end
     RT = promote_type(T,typeof(default))
     TokenizerOp{:opt,RT}(
         (parser=x, default=default),
