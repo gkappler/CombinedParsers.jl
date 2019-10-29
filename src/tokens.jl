@@ -255,6 +255,7 @@ end
 Paragraph{I,T} = Vector{Line{I,T}}
 Paragraph(x::Paragraph) = x
 ## Base.show(io::IO, v::Type{Paragraph{T}}) where T = print(io, "Paragraph{$T}")
+Base.show(io::IO, v::AbstractVector{<:Line}) =
     for x in v
         print(io,x)
     end
