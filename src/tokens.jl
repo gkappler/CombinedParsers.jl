@@ -474,4 +474,6 @@ is_line(t::Type, transform=(v,i) -> v) =
                       && variable(x.indent[end])!=:headline,
                       transform)
 
+include("lines.jl")
+
 end
