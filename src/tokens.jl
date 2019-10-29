@@ -324,6 +324,65 @@ emptyLine(x::Vararg{T}) where T = Line{T,T}([ Token(:whitespace,"") ],
                                    T[x...])
 
 
+namedtokens(v) = [ Token(variable(x), value(x)) for x in v ]
+export reline
+function reline(v::AbstractVector{<:Line}, prefix=Token[])
+    vcat(( reline(x, vcat(prefix,namedtokens(x.indent))) for x in v)...)
+end
+function reline(v::Vector{<:AbstractToken}, prefix=Token[])
+    reline([ Line(prefix, v) ])
+end
+function reline(t::Template, prefix=Token[])
+    vcat(
+        ( reline(ta.second, [ prefix...,
+                             Token(:template, t.template),
+                             Token(Symbol("argument$ti"), ta.first) ])
+          for (ti,ta) in enumerate(t.arguments)
+          )...
+    )
+end
+function reline(t::TokenPair, prefix=Token[])
+    prefix_ = [ prefix..., Token(:wrapped, "$(t.key)") ]
+    reline(t.value, prefix_)
+end
+reline(t::AbstractString, prefix=Token[]) = [ Line(prefix, Token[Token(:literal,t)]) ]
+reline(t::Symbol, prefix=Token[]) = [ Line(prefix, Token[Token(:literal,"$t")]) ]
+reline(t::Token, prefix=Token[]) = [ Line(prefix, Token[t]) ]
+function reline(t::T, prefix=Token[]) where T
+    @assert !isempty(propertynames(t))
+    vcat(
+        ( reline(getproperty(t, f), [ prefix..., Token(:type, "$T"), Token(:field, "$f") ])
+          for f in propertynames(t)
+          )...)
+end
+
+function reline(x::Line, prefix::Vector{<:Token}=x.indent;
+               joinvars = Dict(:paren => :literal, :delimiter => :literal, :literal => :literal))
+    result=Line{Token,Token}[ Line{Token,Token}(prefix,Token[]) ]
+    last_var = :nothing
+    for t in x.tokens
+        if t isa Token
+            if result[end].indent != prefix
+                ## @show result[end].indent prefix
+                push!(result, Line{Token,Token}(prefix,Token[]))
+            end
+            var = get(joinvars,variable(t),:never)
+            if last_var==var
+                ## todo: optimize
+                result[end].tokens[end] = Token(last_var, value(result[end].tokens[end]) * value(t))
+            else
+                push!(result[end].tokens,t)
+            end
+            last_var = var
+        else
+            append!(result, reline(t, prefix))
+            last_var = :nothing
+        end
+    end
+    result
+end
+
+
 export tokens
 tokens(x::Vector{<:Union{AbstractToken, AbstractString, Symbol}}) =
     Iterators.repeated(1  => x, 1)
