@@ -5,6 +5,7 @@ using Nullables
 
 using TextParse
 import TextParse: tryparsenext
+import BasePiracy: _convert
 
 export tryparsenext, tokenize, result_type
 
@@ -131,7 +132,7 @@ function instance(t::Type{NamedTuple{n,ts}}, v::Vector, i; kw...) where {n,ts}
                        if (x isa Pair && x.first !=:_match) ])
     ks = Any[ x.first for x in kvs ]
     NamedTuple{n, ts}(tuple([ let fn = fieldname(t,i)
-         convert(fieldtype(t, i),
+         _convert(fieldtype(t, i),
                        get(kw, fn) do
                        get(kvs, fn, :missing)
                        end)
@@ -143,10 +144,10 @@ function instance(::Type{T}, p::P, a...) where {T, P<:ParserTypes}
     InstanceParser{P,T}((v,i) -> T(a..., v), p,[a...])
 end
 function instance(::Type{T}, p::P) where {T, P<:ParserTypes}
-    InstanceParser{P,T}((v,i) -> convert(T,v), p, [])
+    InstanceParser{P,T}((v,i) -> _convert(T,v), p, [])
 end
 function instance(::Type{T}, f::Function, p::P, a...) where {T, P<:ParserTypes}
-    InstanceParser{P,T}((v,i) -> convert(T,f((v), i, a...)), p,[a...])
+    InstanceParser{P,T}((v,i) -> _convert(T,f((v), i, a...)), p,[a...])
 end
 
 
@@ -646,7 +647,7 @@ function TextParse.tryparsenext(tokf::TokenizerOp{:greedy, T, F}, str, i, till, 
                 cr, ci = tryparsenext(tokf.els.alt[ai].second, str, i_, till)
             end
             if isnull(cr)
-                return Nullable{T}(convert(T, tokf.f(R,i))), i_
+                return Nullable{T}(_convert(T, tokf.f(R,i))), i_
             elseif ai == 0
                 push!(hist, get(cr))
                 i__ = ci
@@ -702,9 +703,9 @@ function TextParse.tryparsenext(tokf::TokenizerOp{:seq, T, F}, str, i, till, opt
     ## @show result
     R = tokf.f(result, i)
     !isa_reordered(R, T) && let S = typeof(R)
-        @warn "transformed wrong " result R S T
+        @warn "transformed wrong " result S T
     end
-    return ( Nullable(convert(T, R)), i_)
+    return ( Nullable(_convert(T, R)), i_)
 end
 
 
@@ -757,7 +758,7 @@ function TextParse.tryparsenext(t::TokenizerOp{:rep, T, F}, str, i, till, opts=T
         repval, i__ = tryparsenext(t.els, str, i_, till)
     end
     try
-        ( Nullable(convert(T,t.f(hist,i_))), i_)
+        ( Nullable(_convert(T,t.f(hist,i_))), i_)
     catch e
         @error "cannot convert to $T" e hist t
         error()
@@ -777,7 +778,7 @@ function TextParse.tryparsenext(t::TokenizerOp{:rep1, T, F}, str, i, till, opts=
     if isempty(hist)
         Nullable{T}()
     else
-        ( Nullable(convert(T,t.f(hist,i_))), i_)
+        ( Nullable(_convert(T,t.f(hist,i_))), i_)
     end
 end
 
@@ -793,7 +794,7 @@ function TextParse.tryparsenext(t::TokenizerOp{:opt, T, F}, str, i, till, opts=T
     r, i_ = tryparsenext(t.els.parser, str, i, till)
     if !isnull(r)        # @show typeof(r) r
         try
-            r_ = convert(T,t.f(r.value, i))
+            r_ = _convert(T,t.f(r.value, i))
             return Nullable(r_), i_
         catch e
             @error "error transforming" e t t.f
