@@ -120,8 +120,8 @@ end
 
 
 export Token
-    name::Symbol
 struct Token <: AbstractToken
+    name::Symbol ## todo: CategoricalArrays.CategoricalValue
     value::String
     function Token(name::Symbol, value::T) where {T<:AbstractString}
         new(name, value)
