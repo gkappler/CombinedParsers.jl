@@ -385,7 +385,7 @@ default_tokens = [
 tokenstring =
     #tok(inline, 
     rep(alt(bracket_number, bracket_reference, default_tokens...,
-            instance(Token, r"[][{}()]+", :paren)))
+            instance(Token, r"[][{}()<>]+", :paren)))
 
 append_element_f(vp, ep; kw...) =
     let T=result_type(vp)
