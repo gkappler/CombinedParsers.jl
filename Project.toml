@@ -5,10 +5,12 @@ version = "0.1.0"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+BasePiracy = "487cab20-c1cc-457b-b83b-8a75c3c82131"
 InternedStrings = "7d512f48-7fb1-5a58-b986-67e6dc259f01"
 Nullables = "4d1e1d77-625e-5b40-9113-a560ec7a8ecd"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 TextParse = "e0df1984-e451-5cb5-8b61-797a481e67e3"
+VectorDicts = "a01be448-a150-47eb-8a58-dea694c08700"
 
 [compat]
 julia = "1"
