@@ -330,7 +330,6 @@ function seq(T::Type, tokens::Vararg;
             re_inner = ( "^" * join([ "(" * regex_string(t) * ")" for t in parts ])) ## when??? * '$' )             
             ## @warn "compiling regex" re Regex(re_inner) maxlog=1
             TokenizerOp{:seq_combine, RT}(  ( outer=outer::Regex,
-                                              inner = re_inner==plain_regex(outer) ? nothing : Regex(re_inner),
                                               parts=parts, log=log, partial=partial ) , tr)
         else
             tok(outer, result)
@@ -715,15 +714,6 @@ function TextParse.tryparsenext(tokf::TokenizerOp{:seq_combine, T, F}, str, i, t
     # inner regex compiled in els?
     m = match(re, str[i:end])
     m===nothing && return Nullable{Vector{Any}}(), i
-    if tokf.els.inner !== nothing
-        try
-            m = match(tokf.els.inner, m.match)
-        catch e
-            @error "seq_combine error" tokf.els.inner m.match toks
-            m=nothing
-        end
-        m===nothing && return Nullable{T}(), i
-    end
     result=Vector{Any}(undef, length(toks))
     i_ = i 
     for j in 1:length(toks)
@@ -747,7 +737,13 @@ end
 function TextParse.tryparsenext(t::TokenizerOp{:tokenize, T, F}, str, i, till, opts=TextParse.default_opts) where {T,F}
     r, i_ = tryparsenext(t.els.outer, str, i, till, opts)
     isnull(r) && return Nullable{T}(), i
-    Nullable{T}(tokenize(t.els.parser, get(r))), i_
+    inner = tokenize(t.els.parser, get(r))
+    if inner === nothing
+        @warn "matched outer but not inner parser" get(r) t.els.parser
+        ( Nullable{T}(), i )
+    else
+        ( Nullable{T}(inner), i_ )
+    end
     ## instance(RT, (v,i) -> tokenize(result, v), outer)
 end
 
