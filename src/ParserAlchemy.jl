@@ -526,7 +526,7 @@ function splitter(## R::Type,
             if j <= m.match.offset
                 ## m.match.offset  is indexed at 0!!
                 ## @show lstr nextind(lstr,j) m.match.offset m.match
-                before = lstr[nextind(lstr,j):prevind(lstr, m.match.offset + (transform_split===nothing ? sizeof(m.match) : 1))]
+                before = SubString(lstr,nextind(lstr,j),prevind(lstr, m.match.offset + (transform_split===nothing ? sizeof(m.match) : 1)))
                 log && @info "before" before
                 push!(strs, (tokenize(parse, before))) # , i+nextind(lstr,j))) ## todo pass pos!
             end
@@ -538,7 +538,7 @@ function splitter(## R::Type,
         end
         ## j = prevind(lstr,j)
         if j <= n-i
-            after = str[i+j:min(end,n)]
+            after = SubString(str,i+j,min(lastindex(str),n))
             log && @info "after" after
             push!(strs,
                   (tokenize(parse, after))) ## , i+j)) ## todo pass pos!
