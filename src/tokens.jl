@@ -1,25 +1,31 @@
 module Tokens
 ############################################################
 ## Tokens
-
+using Nullables
 ## TODO: move intenring into parsing (creating from a db interning in tokens wastes mem)
 export AbstractToken, variable, value
 export Token, TokenValue, TokenTuple, TokenString
+import Base: ==, hash
 
-abstract type AbstractToken{Tt, Tv} end
+abstract type AbstractToken end
 
-variable(x::AbstractToken{Tt, Tv}) where {Tt, Tv} = nothing
-
-value(x::AbstractToken{Tt, Tv}) where {Tt, Tv} = missing
+variable(x::AbstractToken) = error("implement variable $(typeof(x))")
+value(x::AbstractToken) = error("implement value $(typeof(x))")
+label(x::AbstractToken) = error("implement label $(typeof(x))")
 
 
 variable_colors=Dict(
     :ext => 36,
     :macro => 36,
     :number => 36,
-    :paren => :darkgray,
-    Symbol("wiktionary.de") => 36,
-    :meaning => :darkgray
+    :type => :red,
+    :field => :light_red,
+    :ellipsis => :grey,
+    :paren => :light_black,
+    :quote => :light_black,
+    Symbol("wikt:de") => :light_blue,
+    :htmlcomment => :light_black,
+    :meaning => :light_black
 )
 
 # ==(x::A, y::B) where {A<:AbstractToken,B<:AbstractToken} = A==B &&
@@ -31,13 +37,6 @@ value_empty(x) = false
 value_empty(::Union{Nothing,Missing}) = true
 value_empty(x::String) = x==""
 value_empty(x::AbstractToken) = value(x) === missing || value(x)==""
-
-export isinformative, isvariable
-isinformative(i) = false
-isinformative(i::AbstractToken)  =
-    !(variable(i) in [ :delimiter, :indent, :list, :enum, :whitespace ])
-isvariable(i::AbstractToken)  =
-    !(variable(i) in [ :literal ]) && isinformative(i)
 
 function Base.show(io::IO, z::AbstractToken)
     color=get(variable_colors,
@@ -80,29 +79,49 @@ end
 #         new(enclos, name, value)
 #     end
 # end
+export regex_tempered_greedy
+# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
+regex_tempered_greedy(s,e) =
+    Regex("^"*regex_string(s)*"((?:(?!"*regex_string(e)*").)*)"*regex_string(e),"s")
 
+             
 export TokenPair
-struct TokenPair{K,V} <: AbstractToken{K, V}
+struct TokenPair{K,V} <: AbstractToken
     key::K
     value::V
 end
-parentheses = Dict(:paren=>("(", ")"),
-                   :bracket=>("[", ")"),
-                   :curly=>("{", "}"),
-                   :angle=>("<", ">"))
-function Base.show(io::IO, z::TokenPair{Symbol,V}) where V
-    open, close = get(parentheses, z.key, ("",""))
-    print(io, open, z.value, close)
-end
-function Base.show(io::IO, z::TokenPair{String,V}) where V
-    print(io, z.key, z.value, z.key)
+parentheses = Dict{Any,Any}(:paren=>("(", ")"),
+                            :bracket=>("[", "]"),
+                            :curly=>("{", "}"),
+                            :angle=>("<", ">"))
+import Base: with_output_color
+function Base.show(io::IO, z::TokenPair)
+    inner_print(io::IO,x::AbstractVector) =
+        for t in x; print(io, t); end
+    inner_print(io::IO,x) =
+        print(io, x)
+    
+    if z.key==:italics
+        with_output_color(inner_print, :underline, io, z.value)
+    elseif z.key==:bold
+        with_output_color(inner_print, :bold, io, z.value)
+    elseif z.key==:bolditalics
+        with_output_color(inner_print, :bold, io, z.value)
+    elseif z.key==:htmlcomment
+        with_output_color(inner_print, :light_black, io, z.value)
+    else
+        open, close = get(parentheses, z.key, (z.key,z.key))
+        print(io, open)
+        inner_print(io,z.value)
+        print(io, close)
+    end
 end
 
 
 
 export Token
-struct Token <: AbstractToken{Symbol, String}
     name::Symbol
+struct Token <: AbstractToken
     value::String
     function Token(name::Symbol, value::T) where {T<:AbstractString}
         new(name, value)
@@ -134,11 +153,35 @@ macro delim_str(x)
 end
 ws(x) = Token(:whitespace, x)
 
+export Node
+struct Node{T} <: AbstractToken
+    name::Symbol
+    attributes::Vector{Token}
+    children::Vector{T}
+    function Node(name, attrs, value)
+        new{eltype(value)}(name, attrs,value)
+    end
+end
+function Base.show(io::IO, x::Node) where {T}
+    print(io,"<$(x.name)")
+    for a in x.attributes
+        print(io," ", variable(a), "=\"", value(a), "\"")
+    end
+    if !isempty(x.children)        
+        print(io,">")
+        for c in x.children
+            print(io,c)
+        end
+        print(io,"</$(x.name)>")
+    else
+        print(io,"/>")
+    end
+end
 
 
 
 export ReferringToken
-struct ReferringToken{Tt, Tv, I} <: AbstractToken{Tt, Tv}
+struct ReferringToken{Tt, Tv, I} <: AbstractToken
     name::Tt
     value::Tv
     reference::I
@@ -148,15 +191,9 @@ variable(x::Union{Token, ReferringToken}) = x.name
 variable(x::TokenPair) = x.key
 
 
-## needed?
-function Base.show(buffer::IO, ts::Array{T,1}) where { T <: AbstractToken }
-    for t in ts
-        show(buffer, t)
-    end
-end
 
 export TokenString
-const TokenString = Vector{AbstractToken{Symbol, String}}
+const TokenString = Vector{<:AbstractToken}
 
 # @deprecate TokenString(x...) tokenize(x...)
 
@@ -174,12 +211,13 @@ struct Line{I,T}
     indent::Vector{I}
     tokens::Vector{T}
 end
+Line(t::Vector{T}) where {T} =
+    Line(Token[],t)
 function Line(indent::Vector{I}, t::Vector{T}, newline::AbstractString) where {I,T}
     Line{I,T}(
         indent,
         vcat(t, Token(:whitespace, newline)))
 end
-import Base: ==, hash
 ==(a::Line, b::Line) = a.indent==b.indent && a.tokens== b.tokens
 hash(x::Line, h::UInt) = hash(x.indent, hash(x.tokens))
 import Base: convert
@@ -207,20 +245,21 @@ function Base.show(io::IO, i::Line{I,T}) where {I,T}
         for x in i.indent
             print(io, x.value === missing ? "" : x)
         end
-        print(io, i.tokens)
+        for x in i.tokens
+            print(io, x)
+        end
     end
 end
+
+
 Paragraph{I,T} = Vector{Line{I,T}}
 Paragraph(x::Paragraph) = x
-Base.show(io::IO, v::Type{<:Paragraph})  = print(io, "Paragraph")
 ## Base.show(io::IO, v::Type{Paragraph{T}}) where T = print(io, "Paragraph{$T}")
-Base.show(io::IO, v::Vector{<:Line}) =
     for x in v
         print(io,x)
     end
 
 Body{I,T} = Vector{Paragraph{I,T}}
-Base.show(io::IO, v::Type{Body})  = print(io, "Body")
 ## Base.show(io::IO, v::Type{Body{T}}) where T = print(io, "Body{$T}")
 Base.show(io::IO, v::Body) =
     for x in v
@@ -238,11 +277,15 @@ Base.show(io::IO, v::Body) =
 
 export Template, LineContent
 TemplateArgument{I,T} = Pair{String,Vector{Line{I,T}}}
-struct Template{I,T} <: AbstractToken{Symbol, Vector{TemplateArgument{I,T}}}
+struct Template{I,T} <: AbstractToken
     template::String
     arguments::Vector{TemplateArgument{I,T}}
     Template(t,a::Vector{TemplateArgument{I,T}}) where {I,T} =
-        new{I,T}(intern(t),[ intern(k) => v for (k,v) in a])
+        new{I,T}(t,[ k => v for (k,v) in a])
+    Template{I,T}(t,a::Vector) where {I,T} =
+        new{I,T}(t,[ k => convert(Vector{Line{I,T}},v) for (k,v) in a])
+    Template(t,a::Vector) =
+        new{Any,Any}(t,[ k => v for (k,v) in a])
 end
 Template(a::String) = Template(a,TemplateArgument{Token,LineContent}[])
 ==(a::Template, b::Template) = a.template==b.template && a.arguments==b.arguments
@@ -266,13 +309,15 @@ function Base.show(io::IO, x::Template) where T
     print(io, "}}")
 end
 
-LineContent = Union{Token, Template, TokenPair}
-function Base.show(buffer::IO, ts::Vector{<:LineContent};
-                   vals=Dict())  #::Array{Array{
-    for t in ts
-        show(buffer, t)
-    end
-end
+LineContent = AbstractToken
+
+export isinformative, isvariable
+isinformative(i) = true
+isinformative(i::Token)  =
+    !(variable(i) in [ :delimiter, :indent, :list, :enum, :whitespace ])
+isinformative(i::Template)  = true
+isvariable(i::AbstractToken)  =
+    !(variable(i) in [ :literal ]) && isinformative(i)
 
 emptyLine(x::Vararg{T}) where T = Line{T,T}([ Token(:whitespace,"") ],
                                    T[x...])
@@ -353,8 +398,8 @@ append_element_f(vp, ep; kw...) =
 filename    = alt(
     append_element_f(tokenstring, instance(Token, parser(extension), :ext) ; combine=true),
     append_element_f(tokenstring, instance(Token, parser("/"), :ext); combine=true),
-    append_element_f(tokenstring, instance(Token, parser(""), :ext))  ##combine=true, # transform = seq_vcat,
-    )
+    append_element_f(tokenstring, instance(Token, parser(""), :ext))
+)
 
 import ..ParserAlchemy: tokenize
 tokenize(x) = tokenize(tokenstring, x)
