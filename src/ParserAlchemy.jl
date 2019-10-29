@@ -9,8 +9,8 @@ import TextParse: tryparsenext
 export tryparsenext, tokenize, result_type
 
 export trimstring
-trimstring(x) =
-    replace(string(x), r"^[ \r\n\t]*|[ \r\n\t]*$" => s"")
+trimstring(x::AbstractString) =
+    replace(x, r"^[ \r\n\t]*|[ \r\n\t]*$" => s"")
 
 
 ############################################################
