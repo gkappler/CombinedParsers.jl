@@ -895,7 +895,7 @@ function alternate(x::ParserTypes, delim::ParserTypes;
                  transform = (v,i) -> af(v...,i));
              transform = (v,i) -> vcat(v...),
              log=log),
-        opt(x; default=T[], log=log, transform = (v,i) -> T[v] )
+        opt(Vector{T}, x; default=T[], log=log, transform = (v,i) -> T[v] )
         ; log=log,
         ## todo: factor out this transform condition!!
         transform = ( v, i ) -> vcat(v[1], v[2]) 
