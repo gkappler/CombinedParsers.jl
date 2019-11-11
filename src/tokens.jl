@@ -87,6 +87,8 @@ struct TokenPair{K,V} <: AbstractToken
     key::K
     value::V
 end
+TokenPair{K,V}(; key, value) where {K,V} =
+    TokenPair{K,V}(_convert(K,key), _convert(V,value))
 parentheses = Dict{Any,Any}(:paren=>("(", ")"),
                             :bracket=>("[", "]"),
                             :curly=>("{", "}"),
