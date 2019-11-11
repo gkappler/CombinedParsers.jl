@@ -547,8 +547,9 @@ is_heading(f=x->true, transform=(v,i) -> v, T = Line{Token,LineContent}) =
     IteratorParser{T}(
         "heading",
         x->x isa Line
-        && variable(x.indent[end])==:headline
-        && f(x.indent[end]),
+        && !isempty(x.prefix)
+        && variable(x.prefix[end])==:headline
+        && f(x.prefix[end]),
         transform)
 is_type(t::Type, transform=(v,i) -> v) =
     IteratorParser{t}(string(t), x->x isa t,
@@ -560,7 +561,7 @@ is not a headline
 """
 is_line(t::Type, transform=(v,i) -> v) =
     IteratorParser{t}("Line", x->x isa Line
-                      && variable(x.indent[end])!=:headline,
+                      && ( isempty(x.prefix) || variable(x.prefix[end])!=:headline),
                       transform)
 
 include("lines.jl")
