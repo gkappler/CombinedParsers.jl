@@ -34,8 +34,6 @@ variable_colors=Dict(
     :meaning => :light_black
 )
 
-# ==(x::A, y::B) where {A<:AbstractToken,B<:AbstractToken} = A==B &&
-#     (value(x) === missing ? value(y) === missing : value(x)==value(y))
 export value_empty
 value_empty(x::Pair) = value_empty(x.second) ## needed in tryparsenext
 value_empty(x::Vector) = isempty(x)
@@ -206,6 +204,7 @@ variable(x::NamedString{name}) where name = name
 value(x::NamedString) = getfield(x,1)
 ==(x::NamedString,y::NamedString) =
     variable(x)==variable(y) && value(x)==value(y)
+hash(x::NamedString, h::UInt) = hash(variable(x), hash(value(x),h))
 
 export Node
 struct Node{T} <: AbstractToken
@@ -220,6 +219,8 @@ struct Node{T} <: AbstractToken
                _convert(Vector{Token},attributes),
                _convert(Vector{T},children))
 end
+==(a::Node, b::Node) = a.name==b.name && a.attributes==b.attributes && a.children==b.children
+hash(x::Node, h::UInt) = hash(x.name, hash(x.attributes, hash(x.children,h)))
 function Base.show(io::IO, x::Node) where {T}
     print(io,"<$(x.name)")
     for a in x.attributes
@@ -269,6 +270,10 @@ export LinePrefix
 struct LinePrefix{I}
     prefix::Vector{I}
 end
+==(x::LinePrefix,y::LinePrefix) =
+    x.prefix == y.prefix
+Base.hash(x::LinePrefix,h::UInt) =
+    hash(x.prefix,h)
 Base.lastindex(x::LinePrefix) =
     lastindex(x.prefix)
 Base.length(x::LinePrefix) =
@@ -379,7 +384,7 @@ struct Template{I,T} <: AbstractToken
 end
 Template(a::String) = Template(a,TemplateArgument{Token,LineContent}[])
 ==(a::Template, b::Template) = a.template==b.template && a.arguments==b.arguments
-hash(x::Template, h::Template) = hash(x.template, hash(x.arguments))
+hash(x::Template, h::UInt) = hash(x.template, hash(x.arguments,h))
 
 function Base.show(io::IO, x::Template) where T 
     print(io, "{{")
