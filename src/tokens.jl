@@ -468,10 +468,6 @@ bracket_reference = instance(
     r"^\[(?:(?:[0-9]+[[:alpha:]]*(?:,|–|-) *)*(?:[0-9]+[[:alpha:]]* *))\]");
 
 default_tokens = [
-    instance(Token, alt(parenthesisP("(",")"),
-                        parenthesisP("{","}"),
-                        parenthesisP("<",">"),
-                        parenthesisP("[","]")), :paren),
     instance(Token, parser(Regex(" "*regex_string(enum_label)*" ")), :number),
     instance(Token, parser(word), :literal),
     instance(Token, parser(quotes), :quote),
