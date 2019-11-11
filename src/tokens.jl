@@ -453,12 +453,12 @@ import ..ParserAlchemy: result_type, instance, rep, seq, alt, regex_string, pare
 import ..ParserAlchemy: enum_label, parser, word, delimiter, quotes, extension
 bracket_number = instance(
     Token, (v,i) -> Token(:number, v),
-    r"^\[(?:[0-9]+[[:alpha:]]*, *)*(?:[0-9]+[[:alpha:]]* *)\]");
+    r"^\[(?:(?:[0-9]+[[:alpha:]]*(?:,|–|-) *)*(?:[0-9]+[[:alpha:]]* *)|\*)\]");
 
 ## TODO: merge with bracket_number, tokenize parts
 bracket_reference = instance(
     Token, (v,i) -> Token(:reference, v),
-    r"^\[(?:[0-9]+[[:alpha:]]*, *)*(?:[0-9]+[[:alpha:]]* *)\]");
+    r"^\[(?:(?:[0-9]+[[:alpha:]]*(?:,|–|-) *)*(?:[0-9]+[[:alpha:]]* *))\]");
 
 default_tokens = [
     instance(Token, alt(parenthesisP("(",")"),
