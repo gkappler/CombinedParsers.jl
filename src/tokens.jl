@@ -259,31 +259,60 @@ const TokenString = Vector{<:AbstractToken}
 
 export Line, Paragraph, Body
 
+export LinePrefix
+struct LinePrefix{I}
+    prefix::Vector{I}
+end
+Base.lastindex(x::LinePrefix) =
+    lastindex(x.prefix)
+Base.length(x::LinePrefix) =
+    length(x.prefix)
+Base.isempty(x::LinePrefix) =
+    isempty(x.prefix)
+Base.iterate(x::LinePrefix, a...) =
+    iterate(x.prefix, a...)
+Base.getindex(x::LinePrefix, a...) =
+    getindex(x.prefix, a...)
+Base.convert(::Type{Vector{I}}, x::LinePrefix{J}) where {I,J} =
+    convert(Vector{I}, x.prefix)
+Base.convert(::Type{LinePrefix{J}}, x::Vector{I}) where {I,J} =
+    LinePrefix{J}(convert(Vector{J}, x))
+
+
 struct Line{I,T}
-    indent::Vector{I}
+    prefix::LinePrefix{I}
     tokens::Vector{T}
 end
 Line(t::Vector{T}) where {T} =
     Line(Token[],t)
-function Line(indent::Vector{I}, t::Vector{T}, newline::AbstractString) where {I,T}
-    Line{I,T}(
-        indent,
-        vcat(t, Token(:whitespace, newline)))
+function Line(prefix::Vector{I}, t::Vector{T}) where {I,T}
+    Line{I,T}(LinePrefix{I}(prefix), t)
 end
-==(a::Line, b::Line) = a.indent==b.indent && a.tokens== b.tokens
-hash(x::Line, h::UInt) = hash(x.indent, hash(x.tokens))
+function Line(prefix::Vector{I}, t::Vector{T}, newline::AbstractString) where {I,T}
+    Line( prefix,
+          vcat(t, Token(:whitespace, newline)))
+end
+function Line(prefix::NTuple{N,NamedString}, t::Vector{T}) where {N,T}
+    Line{NamedString,T}(
+        LinePrefix{NamedString}(NamedString[prefix...]),
+        t)
+end
+==(a::Line, b::Line) = a.prefix==b.prefix && a.tokens== b.tokens
+hash(x::Line, h::UInt) = hash(x.prefix, hash(x.tokens))
 import Base: convert
 Base.convert(::Type{Line{I,T}}, x::Line{J,S}) where {I,J,S,T} =
-    Line(convert(Vector{I}, x.indent), convert(Vector{T}, x.tokens))
+    Line(convert(Vector{I}, x.prefix), convert(Vector{T}, x.tokens))
+Base.convert(::Type{Line{I,T}}, x::Vector) where {I,T} =
+    Line(I[], convert(Vector{T}, x))
 
 function Base.show(io::IO, i::Line{I,T}) where {I,T}
-    if !isempty(i.indent) && variable(i.indent[1]) == :headline
-        level = parse(Int, value(i.indent[1]))
+    if !isempty(i.prefix) && variable(i.prefix[1]) == :headline
+        level = parse(Int, value(i.prefix[1]))
         wikihead = repeat("=", level)
         print(io, wikihead, " ")
         tail = Token[]
         for x in i.tokens
-            if !isequal(value(x), "\n")
+            if !isequal(x, Token(:whitespace,"\n"))
                 print(io, x)
             else
                 push!(tail,x)
@@ -294,7 +323,7 @@ function Base.show(io::IO, i::Line{I,T}) where {I,T}
             print(io, x)
         end 
     else
-        for x in i.indent
+        for x in i.prefix
             print(io, x.value === missing ? "" : x)
         end
         for x in i.tokens
