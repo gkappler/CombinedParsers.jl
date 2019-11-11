@@ -153,6 +153,61 @@ macro delim_str(x)
 end
 ws(x) = Token(:whitespace, x)
 
+
+
+export NamedString
+"parametrized Token struct -- dangerously slow!"
+struct NamedString{name} <: AbstractToken
+    value::String
+    function NamedString(name, value)
+        new{Symbol(name)}(value)
+    end
+    function NamedString(x::Token)
+        new{variable(x)}(value(x))
+    end
+end
+function NamedString(x::NamedString)
+    x
+end
+Base.convert(::Type{NamedString}, x::Token) =
+    NamedString(variable(x),value(x))
+
+Base.show(io::IO,x::NamedString{:type}) =
+    print(io,Token(:type,x.value),".")
+
+Base.show(io::IO,x::NamedString{:field}) =
+    print(io,Token(:field,x.value),"=")
+
+Base.show(io::IO,x::NamedString{:whitespace}) =
+    printstyled(io,x.value; color=:underline)
+
+
+Base.propertynames(x::NamedString) = _fieldnames(typeof(x))
+Base.getproperty(x::NamedString, p::Symbol) =
+    if p == :name
+        variable(x)
+    elseif p == :value
+        value(x)
+    else
+        error("no field $p in NamedString")
+    end
+
+BasePiracy._fieldnames(x::Type{<:NamedString}) = (:name,:value)
+BasePiracy._fieldtypes(x::Type{<:NamedString}) = (Symbol,String)
+BasePiracy._fieldtype(x::Type{<:NamedString}, p::Symbol) =
+    if p == :name
+        Symbol
+    elseif p == :value
+        String
+    else
+        error("no field $p in NamedString")
+    end
+
+variable(x::NamedString{name}) where name = name
+value(x::NamedString) = getfield(x,1)
+==(x::NamedString,y::NamedString) =
+    variable(x)==variable(y) && value(x)==value(y)
+
 export Node
 struct Node{T} <: AbstractToken
     name::Symbol
