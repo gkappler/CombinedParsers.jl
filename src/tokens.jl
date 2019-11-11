@@ -213,6 +213,10 @@ struct Node{T} <: AbstractToken
     function Node(name, attrs, value)
         new{eltype(value)}(name, attrs,value)
     end
+    Node{T}(;name, attributes=Token[], children=T[]) where T = 
+        new{T}(name,
+               _convert(Vector{Token},attributes),
+               _convert(Vector{T},children))
 end
 function Base.show(io::IO, x::Node) where {T}
     print(io,"<$(x.name)")
@@ -366,6 +370,8 @@ struct Template{I,T} <: AbstractToken
         new{I,T}(t,[ k => v for (k,v) in a])
     Template{I,T}(t,a::Vector) where {I,T} =
         new{I,T}(t,[ k => convert(Vector{Line{I,T}},v) for (k,v) in a])
+    Template{I,T}(;template,arguments=TemplateArgument{I,T}[]) where {I,T} =
+        new{I,T}(template,arguments)
     Template(t,a::Vector) =
         new{Any,Any}(t,[ k => v for (k,v) in a])
 end
