@@ -5,7 +5,7 @@ using Nullables
 
 using TextParse
 import TextParse: tryparsenext
-import BasePiracy: _convert
+using BasePiracy
 
 export tryparsenext, tokenize, result_type
 
