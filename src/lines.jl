@@ -1,4 +1,3 @@
-
 """
 Transform a Vector{Line} with path prefix into its nested representation.
 
@@ -10,8 +9,12 @@ agg is, when 2-ary, an aggregation function(::Vector[Any],x)::Vector[Any];
 
 
 """
-function pushtail_nested!(tree::Vector{Any}, path, x; isappendable=(l1,l2)->l1==l2, agg)
-    if !isempty(tree) && tree[end] isa Pair && isappendable(tree[end].first,path[1])
+function pushtail_nested!(
+    tree::Vector{Any}, path::Vector, x;
+    isappendable=(l1,l2)->l1==l2, agg)
+    ## TODO: factor out aggregation into transformation of a nest
+    ## (useful in reassembling token_lines)
+    if !isempty(tree) && tree[end] isa Pair && isappendable(tree[end].first,path)
         if length(path)==1
             agg(tree[end].second, x)
         else
@@ -32,6 +35,9 @@ function pushtail_nested!(tree::Vector{Any}, path, x; isappendable=(l1,l2)->l1==
     end
     tree
 end
+pushtail_nested!(tree::Vector{Any}, path::LinePrefix, a...; kw...) =
+    pushtail_nested!(tree, path.prefix, a...; kw...)
+    
 
 # function append_tokens(x,y::Line)
 #     @show x,y 
@@ -39,8 +45,9 @@ end
 # end
 @enum IndentStrategy  NewParagraph NewIndent Append
 function isappendable_line(l1,l2)
-    l1==l2 || 
-        variable(l2) == :whitespace &&
+    isempty(l2) && return false
+    l1==l2[1] || 
+        variable(l2[1]) == :whitespace &&
         variable(l1) in [ :whitespace, :list ] &&
         lastindex(value(l1)) == lastindex(value(l1))
 end
@@ -133,10 +140,94 @@ export nested_tokens, token_lines, nested_wrap_types
 nested_tokens(x; isappendable=isappendable_line, typenames) =
     nested(x; isappendable=isappendable, agg=append_tokens(typenames))
 
+
+wrap_convert(T::Type, x::Vector{Any}) =
+    if length(x)==1
+        wrap_convert(T, x[1])
+    else
+        dump(x)
+        error("cannot convert $x to $T")
+    end
+
+wrap_convert(::Type{Vector{T}}, v::Vector{Any}) where T =
+    T[ wrap_convert(T,x) for x in v ]
+
+function wrap_convert(::Type{Vector{AbstractToken}}, v::Vector{Any})
+    r = AbstractToken[]
+    for x in v
+        if x isa AbstractToken
+            push!(r,x)
+        elseif x isa Vector && eltype(x) <: AbstractToken
+            append!(r, x)
+        else
+            error("cannot insert $(typeof(x)) to Vector{AbstractToken}")
+        end
+    end
+    r
+end
+
+BasePiracy._convert(::Type{Token}, x::NamedString) =
+    Token(variable(x), value(x))
+
+function wrap_convert(::Type{Vector{Line{I,T}}}, v::Vector{Any}) where {I,T}
+    r = Line{I,T}[]
+    for x in v
+        if x isa Vector
+            if eltype(x) <: T
+                push!(r, Line(I[],x))
+            else
+                inner=wrap_convert(Vector{Line{I,T}}, x)
+                append!(r, inner)
+            end
+        elseif x isa Pair
+            inner=wrap_convert(Vector{Line{I,T}}, x.second)
+            for y in inner
+                pushfirst!(y.prefix, _convert(I,x.first))
+            end
+            append!(r, inner)
+        elseif x isa T
+            if isempty(r)
+                push!(r, Line(I[],T[x]))
+            else
+                push!(r[end].tokens, x)
+            end
+        else
+            error("cannot insert $x::$(typeof(x)) to Vector{Line}")
+        end
+    end
+    r
+end
+
+
+wrap_convert(::Type{T}, x::T) where T = x
+
+wrap_convert(T::Type, x::Vector{Token}) =
+    if length(x)==1
+        wrap_convert(T, x[1])
+    else
+        error("cannot convert $x to $T")
+    end
+
+wrap_convert(::Type{String}, x::Token) =
+    if variable(x)==:String
+        value(x)
+    else
+        error("cannot convert $x to $T")
+    end
+
+wrap_convert(::Type{Symbol}, x::Token) =
+    if variable(x)==:Symbol
+        Symbol(value(x))
+    else
+        error("cannot convert $x to $T")
+    end
+
 ## nested_wrap_types(x; typenames) = nested_wrap_types(x; typenames=typenames)
 nested_wrap_types(x::Union{Integer,String};kw...) = x
 nested_wrap_types(v::Vector{AbstractToken}; kw...) =
-    @show v
+    v
+nested_wrap_types(v::Vector{Token}; kw...) =
+    v
 nested_wrap_types(v::Vector{Any}; kw...) =
     Any[ nested_wrap_types(x; kw...) for x in v ]
 
@@ -154,20 +245,37 @@ end
 nested_wrap_types(l::NamedString{:whitespace}, inner; typenames, kw...) =
     l => nested_wrap_types(inner; typenames=typenames, kw...)
 
+nested_wrap_types(l::NamedString{:list}, inner; typenames, kw...) =
+    l => nested_wrap_types(inner; typenames=typenames, kw...)
+
+
 function nested_wrap_types(l::NamedString{:type}, inner; typenames, kw...)
     T=typenames[Symbol(value(l))]
-    dump(inner)
-    f=nested_wrap_types(inner; typenames=typenames, kw...)
-    T(;f...)
+    f=nested_wrap_types(inner; typenames=typenames, type=T, kw...)
+    try
+        construct(T; f...)
+    catch e
+        @error "cannot create $T" inner e
+        rethrow(e)
+    end
 end
-function nested_wrap_types(l::NamedString{:field}, inner; typenames, kw...)
-    Symbol(value(l)) => nested_wrap_types(inner; kw...)
+function nested_wrap_types(l::NamedString{:field}, inner; typenames, type, kw...)
+    f = Symbol(value(l))
+    FT = _fieldtype(type,f)
+    f => wrap_convert(FT, nested_wrap_types(inner; typenames=typenames, kw...))
+end
+
+## remove, use termination token
+function nested_wrap_types(l::NamedString{:index}, inner; typenames, kw...)
+    nested_wrap_types(inner; typenames=typenames, kw...)
 end
 
 token_lines(x::Paragraph; kw...) =
     unnest_lines(Token, nested_tokens(x; kw...))
 
+
 export unnest_lines
+unnest_lines(x) = unnest_lines(Line{NamedString,AbstractToken}[],x, tuple())
 unnest_lines(T::Type{<:AbstractToken},x) = unnest_lines(Line{NamedString,T}[],x, tuple())
 # function unnest_lines(io::Vector{Line{NamedString,Token}},x)
 #     push!(io.tokens,x)
