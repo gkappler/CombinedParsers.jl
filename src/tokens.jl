@@ -3,6 +3,7 @@ module Tokens
 ## Tokens
 using Nullables
 using BasePiracy
+import BasePiracy: construct
 ## TODO: move intenring into parsing (creating from a db interning in tokens wastes mem)
 export AbstractToken, variable, value
 export Token, TokenValue, TokenTuple, TokenString
@@ -80,8 +81,10 @@ struct TokenPair{K,V} <: AbstractToken
     key::K
     value::V
 end
-TokenPair{K,V}(; key, value) where {K,V} =
+BasePiracy.construct(::Type{TokenPair{K,V}}; key, value) where {K,V} =
     TokenPair{K,V}(_convert(K,key), _convert(V,value))
+BasePiracy.construct(::Type{TokenPair{K,Vector{V}}}; key, value=V[]) where {K,V} =
+    TokenPair{K,Vector{V}}(_convert(K,key), _convert(Vector{V},value))
 parentheses = Dict{Any,Any}(:paren=>("(", ")"),
                             :bracket=>("[", "]"),
                             :curly=>("{", "}"),
@@ -206,14 +209,17 @@ struct Node{T} <: AbstractToken
     name::Symbol
     attributes::Vector{Token}
     children::Vector{T}
-    function Node(name, attrs, value)
+    function Node(name::Symbol, attrs, value)
         new{eltype(value)}(name, attrs,value)
     end
-    Node{T}(;name, attributes=Token[], children=T[]) where T = 
-        new{T}(name,
-               _convert(Vector{Token},attributes),
-               _convert(Vector{T},children))
+    function Node(name::AbstractString, attrs, value)
+        new{eltype(value)}(Symbol(name), attrs,value)
+    end
 end
+BasePiracy.construct(::Type{Node{T}}; name, attributes=Token[], children=T[]) where T = 
+    Node(name,
+         _convert(Vector{Token},attributes),
+         children)
 ==(a::Node, b::Node) = a.name==b.name && a.attributes==b.attributes && a.children==b.children
 hash(x::Node, h::UInt) = hash(x.name, hash(x.attributes, hash(x.children,h)))
 function Base.show(io::IO, x::Node) where {T}
@@ -372,11 +378,11 @@ struct Template{I,T} <: AbstractToken
         new{I,T}(t,[ k => v for (k,v) in a])
     Template{I,T}(t,a::Vector) where {I,T} =
         new{I,T}(t,[ k => convert(Vector{Line{I,T}},v) for (k,v) in a])
-    Template{I,T}(;template,arguments=TemplateArgument{I,T}[]) where {I,T} =
-        new{I,T}(template,arguments)
     Template(t,a::Vector) =
         new{Any,Any}(t,[ k => v for (k,v) in a])
 end
+BasePiracy.construct(::Type{Template{I,T}};template,arguments=TemplateArgument{I,T}[]) where {I,T} =
+    Template{I,T}(template,arguments)
 Template(a::String) = Template(a,TemplateArgument{Token,LineContent}[])
 ==(a::Template, b::Template) = a.template==b.template && a.arguments==b.arguments
 hash(x::Template, h::UInt) = hash(x.template, hash(x.arguments,h))
@@ -519,27 +525,29 @@ end
 
 export is_type, is_heading, is_template, is_template_line, is_line
 is_template(template::String, transform=(v,i) -> v) =
-    IteratorParser{Line{Token,LineContent}}(
+    IteratorParser{Line{NamedString,LineContent}}(
         template,
         x->x isa Template
         && x.name==template,
         transform
     )
-is_template_line(template::String, transform=(v,i) -> v, T = Line{Token,LineContent}) =
+is_template_line(template::String, transform=(v,i) -> v, T = Line{NamedString,LineContent}) =
     IteratorParser{T}(
         template,
         x->(x) isa Line && !isempty(x.tokens)
         && (x.tokens[1]) isa Template
         && x.tokens[1].template==template,
         transform)
-is_template_line(pred::Function, transform=(v,i) -> v, T = Line{Token,LineContent}) =
+is_template_line(pred::Function, transform=(v,i) -> v, T = Line{NamedString,LineContent}) =
+    is_template_line(T, pred, transform)
+is_template_line(T::Type, pred::Function, transform=(v,i) -> v) =
     IteratorParser{T}(
         "template",
         x->(x) isa Line && !isempty(x.tokens)
         && (x.tokens[1]) isa Template
         && pred(x.tokens[1]),
         transform)
-is_heading(f=x->true, transform=(v,i) -> v, T = Line{Token,LineContent}) =
+is_heading(f=x->true, transform=(v,i) -> v, T = Line{NamedString,LineContent}) =
     IteratorParser{T}(
         "heading",
         x->x isa Line
@@ -550,7 +558,7 @@ is_heading(f=x->true, transform=(v,i) -> v, T = Line{Token,LineContent}) =
 is_type(t::Type, transform=(v,i) -> v) =
     IteratorParser{t}(string(t), x->x isa t,
                       transform)
-is_line(transform=(v,i) -> v) = is_line(Line{Token,LineContent}, transform)
+is_line(transform=(v,i) -> v) = is_line(Line{NamedString,LineContent}, transform)
 
 """
 is not a headline
