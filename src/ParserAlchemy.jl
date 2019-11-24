@@ -622,14 +622,14 @@ function TextParse.tryparsenext(tokf::TokenizerOp{:greedy, T, F}, str, i, till, 
                 i__ = ci
                 false
             else
+                aggregator != :head && append!(R[aggregator],hist)
                 hist = [get(cr)]
                 (aggregator, last_content) = tokf.els.alt[ai]
                 last_section = ai
             end
         else
             if last_section !== nothing
-                c=R[aggregator]
-                R[aggregator] = vcat(c,hist)
+                append!(R[aggregator],hist)
             end
             hist = get(r) !== missing ? [get(r)] : Vector{RT(key,content)}()
             aggregator, last_content = content
