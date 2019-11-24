@@ -62,27 +62,22 @@ end
 
 export opt, seq, rep, rep_splat, rep1, alt
 
-export NamedToken, InstanceParser, instance
+export NamedToken
 struct NamedToken{P,T} <: TextParse.AbstractToken{Pair{Symbol,T}}
     name::Symbol
     parser::P
 end
-struct InstanceParser{P,T} <: TextParse.AbstractToken{T}
-    transform::Function
-    parser::P
-    a::Vector
-end
-InstanceParser{T}(transform::Function, p::P) where {T, P} = InstanceParser{P,T}(transform, p)
 
-
-function Base.show(io::IO, x::InstanceParser{P,T}) where {P,T}
-    compact = get(io, :compact, false)
-    if false && !compact
-        print_tree(io, x.value) ##!!
+function TextParse.tryparsenext(tok::NamedToken{P,T}, str, i, till, opts=TextParse.default_opts) where {P,T}
+    result, i_ = tryparsenext(tok.parser, str, i, till, opts)
+    if isnull(result)
+        Nullable{Pair{Symbol,T}}(), i
     else
-        print_tree(io,x)
+        ## cz@show tok (result)
+        Nullable(tok.name => get(result)), i_
     end
 end
+
 
 ############################################################
 ## Transformations
@@ -107,59 +102,50 @@ log_transform(transform, log, catch_error=false) =
         transform
     end
 
+export InstanceParser, instance
+struct InstanceParser{P,T, F<:Function} <: TextParse.AbstractToken{T}
+    transform::F
+    parser::P
+end
+InstanceParser{T}(transform::F, p::P) where {T, F<:Function,P} = InstanceParser{P,T,F}(transform, p)
+
+
+function TextParse.tryparsenext(tok::InstanceParser{P,T}, str, i, till, opts=TextParse.default_opts) where {P,T}
+    result, i_ = tryparsenext(tok.parser, str, i, till, opts)
+    if isnull(result)
+        Nullable{T}(), i
+    else
+        ## cz@show tok (result)
+        Nullable(
+            tok.transform(get(result), i)), i_
+    end
+end
+
+
 
 export instance 
 
-import Nullables: Nullable, isnull
-remove_null(x::Nullable{Vector{T}}) where T =
-    isnull(x) ? T[] : x.value
-
-remove_null(x::Nullable, default=missing) =
-    isnull(x) ? default : remove_null(x.value)
-
-remove_null(x::Pair, default=missing) =
-    x.first => remove_null(x.second)
-
-remove_null(x) =
-    x
-
-import VectorDicts: VectorDict
-
-function instance(t::Type{NamedTuple{n,ts}}, v::Vector, i; kw...) where {n,ts}
-    vs = Any[ remove_null(x) for x in v ]
-    kvs = VectorDict(Pair{Symbol}[ x
-                       for x in vs
-                       if (x isa Pair && x.first !=:_match) ])
-    ks = Any[ x.first for x in kvs ]
-    NamedTuple{n, ts}(tuple([ let fn = fieldname(t,i)
-         _convert(fieldtype(t, i),
-                       get(kw, fn) do
-                       get(kvs, fn, :missing)
-                       end)
-         end
-         for i =1:length(n) ]...) )
-end
-
 function instance(::Type{T}, p::P, a...) where {T, P<:ParserTypes}
-    InstanceParser{P,T}((v,i) -> T(a..., v), p,[a...])
+    InstanceParser{T}((v,i) -> T(a..., v), p)
 end
 function instance(::Type{T}, p::P) where {T, P<:ParserTypes}
-    InstanceParser{P,T}((v,i) -> _convert(T,v), p, [])
+    InstanceParser{T}((v,i) -> _convert(T,v), p)
 end
 function instance(::Type{T}, f::Function, p::P, a...) where {T, P<:ParserTypes}
-    InstanceParser{P,T}((v,i) -> _convert(T,f((v), i, a...)), p,[a...])
+    InstanceParser{T}((v,i) -> _convert(T,f((v), i, a...)), p)
 end
 
+include("namedtuples.jl")
 
-struct TokenizerOp{op, T, F} <: TextParse.AbstractToken{T}
-    els::F
-    f::Function
+struct TokenizerOp{op, T, E,F<:Function} <: TextParse.AbstractToken{T}
+    els::E
+    f::F
 end
 
-quantifier(x::TokenizerOp{:rep,T,F}) where {T, F}  =  "*"
-# quantifier(x::TokenizerOp{:rep_splat,T,F}) where {T, F}  = "*"
-quantifier(x::TokenizerOp{:rep1,T,F}) where {T, F}  =  "+"
-quantifier(x::TokenizerOp{:opt,T,F}) where {T, F}  = "?"
+quantifier(x::TokenizerOp{:rep}) =  "*"
+# quantifier(x::TokenizerOp{:rep_splat,T,E}) where {T, E}  = "*"
+quantifier(x::TokenizerOp{:rep1}) =  "+"
+quantifier(x::TokenizerOp{:opt}) = "?"
 
 
 
@@ -179,11 +165,11 @@ function regex_string(x::Regex)
 end
 
 regex_string(x::TokenizerOp) = "(?:" * regex_string(x.els) * ")" * quantifier(x)
-regex_string(x::TokenizerOp{:not,T,F}) where {T, F}  = regex_string(x.els[2])
-regex_string(x::TokenizerOp{:seq,T,F}) where {T, F}  = join([ regex_string(p) for p in x.els.parts])
-regex_string(x::TokenizerOp{:opt,T,F}) where {T, F}  = regex_string(x.els.parser)
-regex_string(x::TokenizerOp{:tokenize,T,F}) where {T, F}  = regex_string(x.els.outer)
-regex_string(x::TokenizerOp{:alt,T,F}) where {T, F}  = "(?:" * join([ regex_string(p) for p in x.els],"|") * ")"
+regex_string(x::TokenizerOp{:not,T,E}) where {T, E}  = regex_string(x.els[2])
+regex_string(x::TokenizerOp{:seq,T,E}) where {T, E}  = join([ regex_string(p) for p in x.els.parts])
+regex_string(x::TokenizerOp{:opt,T,E}) where {T, E}  = regex_string(x.els.parser)
+regex_string(x::TokenizerOp{:tokenize,T,E}) where {T, E}  = regex_string(x.els.outer)
+regex_string(x::TokenizerOp{:alt,T,E}) where {T, E}  = "(?:" * join([ regex_string(p) for p in x.els],"|") * ")"
 
 
 
@@ -206,13 +192,9 @@ parser(x::Pair{Symbol, Tuple{P, Type}}) where P =
     NamedToken{P,x.second[2]}(x.first, x.second[1])
 
 
-function TokenizerOp{op,T}(x::F, f) where {op, T, F}    
-    TokenizerOp{op,T,F}(x, f)
+function TokenizerOp{op,T}(x::E, f::F) where {op, T, E, F<:Function}
+    TokenizerOp{op,T,E,F}(x, f)
 end
-# function TokenizerOp{op,T}(x::F, f) where {op, T, F}    
-#     r = TokenizerOp{op,T,F}(x, f)
-#     TokenizerOp{op,T,F}(x, f)
-# end
 
 result_type(x::TextParse.AbstractToken{T}) where T = T
 result_type(x::Pair{Symbol, <:T}) where T =
@@ -424,32 +406,7 @@ import Base: (*), (|), cat
 (|)(x::TextParse.AbstractToken, y::Any) = alt(x,parser(y))
 (|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = alt(x,y)
 
-#Base.show(io::IO, x::NamedToken{P,T}) where{P,T} = print(io,x.name," => $T ",x.parser)
 
-
-
-
-function TextParse.tryparsenext(tok::NamedToken{P,T}, str, i, till, opts=TextParse.default_opts) where {P,T}
-    result, i_ = tryparsenext(tok.parser, str, i, till, opts)
-    if isnull(result)
-        Nullable{Pair{Symbol,T}}(), i
-    else
-        ## cz@show tok (result)
-        Nullable(tok.name => get(result)), i_
-    end
-end
-
-
-function TextParse.tryparsenext(tok::InstanceParser{P,T}, str, i, till, opts=TextParse.default_opts) where {P,T}
-    result, i_ = tryparsenext(tok.parser, str, i, till, opts)
-    if isnull(result)
-        Nullable{T}(), i
-    else
-        ## cz@show tok (result)
-        Nullable(
-            tok.transform(get(result), i)), i_
-    end
-end
 
 
 # function Base.show(io::IO, v::Vector{<:ParserTypes})
@@ -841,37 +798,6 @@ function TextParse.tryparsenext(t::TokenizerOp{:not, T, F}, str, i, till, opts=T
 end
 
 
-# function TextParse.tryparsenext(tokf::TokenizerOp{:cutright, T, F}, a...) where {T,F}
-#     @show r, i = tryparsenext(tokf.els,a...)
-#     isnull(r) && return r,i
-#     toks=tokf.els
-#     result=Vector{Tuple{Any, Int}}(undef, length(toks))
-#     @show str = r.value[1]
-#     str isa Pair && (str =str.second)
-#     till=lastindex(str)
-#     i_::Int = 1
-#     for j in length(toks):-1:1
-#         @show parser(toks[j],reverse=true) str i_, till
-#         @show r, i__ = tryparsenext(toks[j], str, i_, till)
-#         if !isnull(r)
-#             if r.value isa Vector{Tuple{T,Int}} where T
-#                 result[j] = (r.value, r.value[1][2])
-#             else
-#                 # typeof(r.value), ( r.value isa Vector{Tuple{T,Int64}}  where T )
-#                 result[j] = r.value
-#             end
-#             i_ = i__
-#         else
-#             ## dump(toks[j])
-#             ##j>1 && @info "abort match" toks[j] str[i_:end]  i_, till            
-#             return Nullable{Vector{Tuple{String,Int}}}(), i
-#         end
-#     end
-#     return Nullable(vcat(result...)), i_
-# end
-
-
-
 
 
 
@@ -1003,99 +929,7 @@ end
 
 
 
-import AbstractTrees: print_tree, children, printnode
-import AbstractTrees: print_tree, children, printnode
-# Base.show(io::IO, x::TokenizerOp) =
-#     print_tree(io, x)
-function Base.show(io::IO, x::TextParse.AbstractToken{T}) where {T}
-    compact = get(io, :compact, false)
-    if false && !compact
-        print(io, x) ##!!
-    else
-        print_tree(io, MemoTreeChildren(Dict(),x, true))
-    end
-end
-printnode(io::IO, x::TextParse.AbstractToken{T}) where {T} =
-    print(io, "$T = ", x)
-printnode(io::IO, x::TokenizerOp{op, T, F}) where {op, T, F} =
-    print(io, "$T = $op")
-function printnode(io::IO, x::TokenizerOp{:opt, T, F}) where {T, F}
-    print(io, "$T = opt ")
-    printnode(io, x.els.parser)
-end
-function printnode(io::IO, x::TokenizerOp{:tokenize, T, F}) where {T, F}
-    print(io, "$T = tokenize ")
-    printnode(io, x.els.outer)
-end
-function printnode(io::IO, x::NamedToken{P, T}) where {P, T} 
-    print(io, x.name, "::")
-    printnode(io, x.parser)
-end
-    
-function printnode(io::IO, x::MemoTreeChildren{P}) where {P}
-    printnode(io, x.child)
-    x.descend || print(io, "(see above)")
-end
-function printnode(io::IO, x::InstanceParser{P,T}) where {P,T} 
-    print(io,"",T,"(",join(string.(x.a)), ") = ")
-    printnode(io, x.parser)
-end
-
-function MemoTreeChildren(children::Union{Vector, Tuple}, visited::Dict=Dict())
-    children_ = [ MemoTreeChildren(visited, x, !haskey(visited, x)) for x in children ]
-    for c in children
-        visited[c] = true
-    end
-    children_
-end
-
-children(x::MemoTreeChildren) =
-    x.descend ?  MemoTreeChildren(children(x.child), x.visited ) : []
-
-children(x::Union{Regex,AbstractString}) =
-    ()
-children(x::InstanceParser) =
-    children(x.parser)
-children(x::NamedToken) =
-    children(x.parser)
-children(x::TokenizerOp{:rep, T, F}) where {T, F} =
-    [ x.els ]
-children(x::TokenizerOp{:rep1, T, F}) where {T, F} =
-    [ x.els ]
-children(x::TokenizerOp{:alt, T, F}) where {T, F} =
-    x.els
-# children(x::TokenizerOp{:greedy, T, F}) where {T, F} =
-#     x.els
-children(x::TokenizerOp{:opt, T, F}) where {T, F} =
-    children(x.els.parser)
-children(x::TokenizerOp{:seq_combine, T, F}) where {T, F} =
-    x.els.parts
-children(x::TokenizerOp{:seq, T, F}) where {T, F} =
-    x.els.parts
-children(x::TokenizerOp{:tokenize, T, F}) where {T, F} =
-     [ x.els.parser ]
-
-## TODO: Tree printing
-# AbstractTrees.print_node(io::IO, x::NamedTuple) =
-#     for (n,v) in pairs(x)
-#         print(io, "$n = $v")
-#     end
-# import AbstractTrees: printnode
-# export printnode
-# AbstractTrees.printnode(io::IO, x::Pair{K,T}) where {K,T} = print(io, x.first, ": ", x.second)
-# AbstractTrees.printnode(io::IO, x::NamedTuple) = print(io, x)
-# AbstractTrees.children(x::Pair{K,T}) where {K,T} = []
-
-# AbstractTrees.children(x::NamedTuple) =
-#     collect(pairs(x))
-
-
-# AbstractTrees.children(x::TokenString) = []
-
-
-Base.show(io::IO, x::Tuple{Nullable,Int}) =
-    !isnull(x[1]) &&  show(io, x[1].value)
-
+include("show.jl")
 include("tokens.jl")
 
 end # module
