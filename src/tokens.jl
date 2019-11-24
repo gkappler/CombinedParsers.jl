@@ -289,6 +289,10 @@ Base.convert(::Type{Vector{I}}, x::LinePrefix{J}) where {I,J} =
     convert(Vector{I}, x.prefix)
 Base.convert(::Type{LinePrefix{J}}, x::Vector{I}) where {I,J} =
     LinePrefix{J}(convert(Vector{J}, x))
+Base.pushfirst!(v::LinePrefix, x) where {J} =
+    pushfirst!(v.prefix,x)
+Base.push!(v::LinePrefix, x) where {J} =
+    push!(v.prefix,x)
 
 
 struct Line{I,T}
