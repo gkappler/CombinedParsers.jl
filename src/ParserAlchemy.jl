@@ -416,6 +416,18 @@ import Base: (*), (|), cat
 
 
 
+export regex_tempered_greedy, regex_neg_lookahead
+# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
+regex_tempered_greedy(s,e; withend=true) =
+    Regex("^"*regex_string(s)*"((?:(?!"*regex_string(e)*").)*)"*
+          ( withend ? regex_string(e) : ""),"s")
+
+# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
+regex_neg_lookahead(e, match=r".") =
+    instance(String,
+             (v,i) -> v[1],
+             Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s"))
+
 export regex_escape
 ## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
 ## escaping ##

@@ -74,11 +74,6 @@ function Base.show(io::IO, z::AbstractToken)
     end
 end
 
-export regex_tempered_greedy
-# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
-regex_tempered_greedy(s,e) =
-    Regex("^"*regex_string(s)*"((?:(?!"*regex_string(e)*").)*)"*regex_string(e),"s")
-
              
 export TokenPair
 struct TokenPair{K,V} <: AbstractToken
