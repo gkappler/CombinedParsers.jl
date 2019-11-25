@@ -152,7 +152,110 @@ quantifier(x::TokenizerOp{:rep}) =  "*"
 quantifier(x::TokenizerOp{:rep1}) =  "+"
 quantifier(x::TokenizerOp{:opt}) = "?"
 
+export Filter
+"""
+wraps a `parser::P`, succeeds if `parser` does succeed and a predicate function returns true on the match, otherwise fails.
+Useful for checks like "must not be followed by `parser`, don't consume its match".
+"""
+struct Filter{T,P,F<:Function} <: TextParse.AbstractToken{T}
+    parser::P
+    filter::F
+end
+Filter(f::Function,p::P) where P =
+    Filter{result_type(p),P,typeof(f)}(p,f)
+result_type(p::Filter{T}) where T = T
 
+function TextParse.tryparsenext(tok::Filter, str, i, till, opts=TextParse.default_opts)
+    result, i_ = tryparsenext(tok.parser, str, i, till, opts)
+    if isnull(result)
+        result, i
+    elseif tok.filter(get(result))
+        result, i_
+    else
+        Nullable{result_type(tok)}(), i
+    end
+end
+
+export FullText
+struct FullText <: TextParse.AbstractToken{AbstractString}
+end
+TextParse.tryparsenext(tok::FullText, str, i, till, opts=TextParse.default_opts) = 
+    Nullable(str[i:till]), till
+
+
+
+export PositiveLookahead
+"""
+wraps a `parser::P`, succeeds if and only if `parser` succeeds, but consumes no input.
+The match is returned.
+Useful for checks like "must be followed by `parser`, but don't consume its match".
+"""
+struct PositiveLookahead{T,P} <: TextParse.AbstractToken{T}
+    parser::P
+end
+PositiveLookahead(p::P) where P = PositiveLookahead{result_type(p),P}(p)
+result_type(p::PositiveLookahead{T}) where T = T
+
+function TextParse.tryparsenext(tok::PositiveLookahead, str, i, till, opts=TextParse.default_opts)
+    result, i_ = tryparsenext(tok.parser, str, i, till, opts)
+    result, i
+end
+
+export Never
+"""
+wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but consumes no input.
+`nothing` is returned as match.
+Useful for checks like "must not be followed by `parser`, don't consume its match".
+"""
+struct Never <: TextParse.AbstractToken{Nothing}
+end
+
+TextParse.tryparsenext(tok::Never, str, i, till, opts=TextParse.default_opts) =
+    Nullable{Nothing}(), i
+
+export Always
+"""
+wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but consumes no input.
+`nothing` is returned as match.
+Useful for checks like "must not be followed by `parser`, don't consume its match".
+"""
+struct Always <: TextParse.AbstractToken{Nothing}
+end
+
+TextParse.tryparsenext(tok::Always, str, i, till, opts=TextParse.default_opts) =
+    Nullable(nothing), i
+
+
+
+export NegativeLookahead
+"""
+wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but consumes no input.
+`nothing` is returned as match.
+Useful for checks like "must not be followed by `parser`, don't consume its match".
+"""
+struct NegativeLookahead{P} <: TextParse.AbstractToken{Nothing}
+    parser::P
+end
+NegativeLookahead(x) = NegativeLookahead{typeof(x)}(x)
+
+function TextParse.tryparsenext(tok::NegativeLookahead, str, i, till, opts=TextParse.default_opts)
+    result, i_ = tryparsenext(tok.parser, str, i, till, opts)
+    if isnull(result)
+        ## @info "match at" str[i:till]
+        Nullable(nothing), i
+    else
+        Nullable{Nothing}(), i
+    end
+end
+
+
+
+export rep_stop, rep_until
+rep_stop(p,stop) =
+    rep(seq(NegativeLookahead(stop),p; transform=2))
+rep_until(p,until, with_until=false) =
+    seq(rep_stop(p,until), until;
+        transform = with_until ? nothing : 1)
 
 export regex_string
 regex_string(::TextParse.Numeric{<:Integer}) = "[[:digit:]]+"
