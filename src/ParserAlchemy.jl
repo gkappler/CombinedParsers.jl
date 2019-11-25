@@ -236,7 +236,6 @@ Useful for checks like "must not be followed by `parser`, don't consume its matc
 struct NegativeLookahead{P} <: TextParse.AbstractToken{Nothing}
     parser::P
 end
-NegativeLookahead(x) = NegativeLookahead{typeof(x)}(x)
 
 function TextParse.tryparsenext(tok::NegativeLookahead, str, i, till, opts=TextParse.default_opts)
     result, i_ = tryparsenext(tok.parser, str, i, till, opts)
