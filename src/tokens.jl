@@ -26,6 +26,7 @@ variable_colors=Dict(
     :field => :light_red,
     :ellipsis => :grey,
     :whitespace => :grey,
+    :list => :light_black,
     :Symbol => :yellow,
     :String => :yellow,
     :paren => :light_black,
@@ -51,7 +52,7 @@ function Base.show(io::IO, z::AbstractToken)
     elseif !isinformative(z)
         printstyled(io, value(z); bold=true,
                     color=:darkgray)
-    elseif value(z)===missing || value(z)==""
+    elseif value(z)===missing ## || value(z)==""
         printstyled(io, variable(z); bold=true,
                     color=color)
     else

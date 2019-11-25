@@ -1,42 +1,20 @@
 
-function Base.show(io::IO, x::InstanceParser{P,T}) where {P,T}
-    compact = get(io, :compact, false)
-    if false && !compact
-        print_tree(io, x.value) ##!!
-    else
-        print_tree(io,x)
-    end
-end
-
-
-
-
 
 import AbstractTrees: print_tree, children, printnode
-# Base.show(io::IO, x::TokenizerOp) =
-#     print_tree(io, x)
-# function Base.show(io::IO, x::TextParse.AbstractToken{T}) where {T}
-#     compact = get(io, :compact, false)
-#     if false && !compact
-#         print(io, x) ##!!
-#     else
-#         print_tree(io, MemoTreeChildren(Dict(),x, true))
-#     end
-# end
+function Base.show(io::IO, x::TextParse.AbstractToken)
+    compact = get(io, :compact, false)
+    if false && !compact
+        print(io, x) ##!!
+    else
+        print_tree(io, MemoTreeChildren(Dict(),x, true))
+    end
+end
 printnode(io::IO, x::TextParse.AbstractToken{T}) where {T} =
-    print(io, "$T = ", x)
-printnode(io::IO, x::TokenizerOp{op, T, F}) where {op, T, F} =
-    print(io, "$T = $op")
-function printnode(io::IO, x::TokenizerOp{:opt, T, F}) where {T, F}
-    print(io, "$T = opt ")
-    printnode(io, x.els.parser)
-end
-function printnode(io::IO, x::TokenizerOp{:tokenize, T, F}) where {T, F}
-    print(io, "$T = tokenize ")
-    printnode(io, x.els.outer)
-end
+    print(io, "Parser::$T")
+printnode(io::IO, x::TokenizerOp{op, T}) where {op, T} =
+    print(io, "$op::$T")
 function printnode(io::IO, x::NamedToken{P, T}) where {P, T} 
-    print(io, x.name, "::")
+    print(io, x.name, " ")
     printnode(io, x.parser)
 end
     
@@ -100,6 +78,3 @@ children(x::TokenizerOp{:tokenize, T, F}) where {T, F} =
 
 # AbstractTrees.children(x::TokenString) = []
 
-
-Base.show(io::IO, x::Tuple{Nullable,Int}) =
-    !isnull(x[1]) &&  show(io, x[1].value)
