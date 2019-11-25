@@ -39,13 +39,18 @@ function tokenize(x, str; delta=200, errorfile=nothing)
     i=firstindex(str)
     till=lastindex(str)
     r, i_ = tryparsenext(x, str, i, till, TextParse.default_opts)
-    if i_<=till && errorfile!==nothing
-        open(errorfile, "a") do io
-            println(io, "* incomplete parsing stopped at $i_ ")
-            println(io, "error at")
-            println(io, str[min(i_,end):min(end, nextind(str,i_,delta))])
-            println(io, "** data")
-            println(io, str)
+    if i_<=till
+        if errorfile isa AbstractString
+            make_org(s) = replace(s, r"^\*"m => " *")
+            open(errorfile, "a") do io
+                println(io, "* incomplete parsing stopped at $i_ ")
+                println(io, "error at")
+                println(io, make_org(str[min(i_,end):min(end, nextind(str,i_,delta))]))
+                println(io, "** data")
+                println(io, make_org(str))
+            end
+        elseif errorfile == :warn
+            @warn "incomplete parsing stopped at $i_ " str[min(i_,end):min(end, nextind(str,i_,delta))]
         end
     end
     if isnull(r)
