@@ -81,6 +81,9 @@ struct TokenPair{K,V} <: AbstractToken
     key::K
     value::V
 end
+==(x::TokenPair,y::TokenPair) =
+    x.key==y.key && x.value==y.value
+hash(x::TokenPair, h::UInt) = hash(x.key, hash(x.value,h))
 BasePiracy.construct(::Type{TokenPair{K,V}}; key, value) where {K,V} =
     TokenPair{K,V}(_convert(K,key), _convert(V,value))
 BasePiracy.construct(::Type{TokenPair{K,Vector{V}}}; key, value=V[]) where {K,V} =
