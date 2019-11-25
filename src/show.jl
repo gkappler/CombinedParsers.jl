@@ -11,6 +11,8 @@ function Base.show(io::IO, x::TextParse.AbstractToken)
 end
 printnode(io::IO, x::TextParse.AbstractToken{T}) where {T} =
     print(io, "Parser::$T")
+printnode(io::IO, x::Sequence{T}) where {T} =
+    print(io, "seq::$T")
 printnode(io::IO, x::TokenizerOp{op, T}) where {op, T} =
     print(io, "$op::$T")
 function printnode(io::IO, x::NamedToken{P, T}) where {P, T} 
@@ -56,10 +58,10 @@ children(x::TokenizerOp{:opt, T, F}) where {T, F} =
     children(x.els.parser)
 children(x::TokenizerOp{:seq_combine, T, F}) where {T, F} =
     x.els.parts
-children(x::TokenizerOp{:seq, T, F}) where {T, F} =
-    x.els.parts
 children(x::TokenizerOp{:tokenize, T, F}) where {T, F} =
      [ x.els.parser ]
+children(x::Sequence) =
+    x.parts
 
 ## TODO: Tree printing
 # AbstractTrees.print_node(io::IO, x::NamedTuple) =

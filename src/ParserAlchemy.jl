@@ -20,6 +20,8 @@ trimstring(x::AbstractString) =
 ParserTypes = Union{TextParse.AbstractToken, AbstractString, Regex,
                     Pair{Symbol,
                          <:Union{TextParse.AbstractToken, AbstractString, Regex}}}
+result_type(x::T) where {T<:ParserTypes} =
+    result_type(T)
 # Parser = Union{TextParse.AbstractToken}
 
 ## import Regex: match
@@ -162,8 +164,8 @@ struct Filter{T,P,F<:Function} <: TextParse.AbstractToken{T}
     filter::F
 end
 Filter(f::Function,p::P) where P =
-    Filter{result_type(p),P,typeof(f)}(p,f)
-result_type(p::Filter{T}) where T = T
+    Filter{result_type(P),P,typeof(f)}(p,f)
+result_type(p::Type{Filter{T}}) where T = T
 
 function TextParse.tryparsenext(tok::Filter, str, i, till, opts=TextParse.default_opts)
     result, i_ = tryparsenext(tok.parser, str, i, till, opts)
@@ -172,7 +174,7 @@ function TextParse.tryparsenext(tok::Filter, str, i, till, opts=TextParse.defaul
     elseif tok.filter(get(result))
         result, i_
     else
-        Nullable{result_type(tok)}(), i
+        Nullable{result_type(typeof(tok))}(), i
     end
 end
 
@@ -193,8 +195,8 @@ Useful for checks like "must be followed by `parser`, but don't consume its matc
 struct PositiveLookahead{T,P} <: TextParse.AbstractToken{T}
     parser::P
 end
-PositiveLookahead(p::P) where P = PositiveLookahead{result_type(p),P}(p)
-result_type(p::PositiveLookahead{T}) where T = T
+PositiveLookahead(p::P) where P = PositiveLookahead{result_type(P),P}(p)
+result_type(p::Type{PositiveLookahead{T}}) where T = T
 
 function TextParse.tryparsenext(tok::PositiveLookahead, str, i, till, opts=TextParse.default_opts)
     result, i_ = tryparsenext(tok.parser, str, i, till, opts)
@@ -249,6 +251,66 @@ end
 
 
 
+struct Sequence{T,P<:Tuple,F<:Function} <: TextParse.AbstractToken{T}
+    parts::P
+    transform::F
+    function Sequence{T}(p::P, f::F) where {T, P<:Tuple,F<:Function}
+        new{T,P,F}(p, f)
+    end
+end
+
+
+regex_string(x::Sequence)  = join([ regex_string(p) for p in x.parts])
+@generated function TextParse.tryparsenext(tokf::Sequence{T, P, F}, str, i, till, opts=TextParse.default_opts) where {T,P,F}
+    pts = P
+    ## Core.println(pts)
+    subresult = Symbol[ gensym(:r) for i in fieldtypes(pts) ]
+    parseparts = [
+        quote
+        $(subresult[i]), i_ = tryparsenext(parts[$i], str, i_, till)
+        if isnull($(subresult[i]))
+        return Nullable{T}(), i
+        end
+        end
+        for (i,t) in enumerate(fieldtypes(pts))
+    ]
+    ## Core.println( parseparts )
+    quote
+        i_ = i
+        parts=tokf.parts
+        $(parseparts...)
+        R = tokf.transform(tuple( $([ :(($(s)).value) for s in subresult ]...) ), i)
+        ( Nullable(_convert(T, R)), i_)
+    end
+end
+
+# function TextParse.tryparsenext(tokf::TokenizerOp{:seq, T, E}, str, i, till, opts=TextParse.default_opts) where {T,E}
+#     toks = tokf.els.parts
+#     result=Vector{Any}(undef, length(toks))
+#     i_::Int = i
+#     for (j,t) in enumerate(toks)
+#         r, i__ = tryparsenext(t, str, i_, till)
+#         if !isnull(r)
+#             ## @info "seq" str[i_:min(i__,end)] r.value typeof(toks[j]) str[min(i__,end):end]
+#             @inbounds result[j] = r.value
+#             i_ = i__
+#         else
+#             # @info "seq" str[i_:min(i__,end)] (toks[j]) str[min(i__,end):end]
+#             ## j>1 && @info "abort match $j=$(toks[j])" (toks) str[i_:end]  i_, till result[j-1]
+#             j>1 && tokf.els.partial && return ( Nullable(result[1:j-1]), i_)
+#             return Nullable{T}(), i
+#         end
+#     end
+#     ## @show result
+#     R = tokf.f(result, i)
+#     ## remove completely, fix in f
+#     false && !isa_reordered(R, T) && let S = typeof(R)
+#         @warn "transformed wrong " result R S T tokf
+#     end
+#     return ( Nullable(_convert(T, R)), i_)
+# end
+
+
 export rep_stop, rep_until
 rep_stop(p,stop) =
     rep(seq(NegativeLookahead(stop),p; transform=2))
@@ -273,7 +335,6 @@ end
 
 regex_string(x::TokenizerOp) = "(?:" * regex_string(x.els) * ")" * quantifier(x)
 regex_string(x::TokenizerOp{:not,T,E}) where {T, E}  = regex_string(x.els[2])
-regex_string(x::TokenizerOp{:seq,T,E}) where {T, E}  = join([ regex_string(p) for p in x.els.parts])
 regex_string(x::TokenizerOp{:opt,T,E}) where {T, E}  = regex_string(x.els.parser)
 regex_string(x::TokenizerOp{:tokenize,T,E}) where {T, E}  = regex_string(x.els.outer)
 regex_string(x::TokenizerOp{:alt,T,E}) where {T, E}  = "(?:" * join([ regex_string(p) for p in x.els],"|") * ")"
@@ -292,7 +353,7 @@ regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
 parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
 revert(x::Regex) = Regex(regex_string(x) * '$', regex_flags(x))
 parser(x::Pair{Symbol, P}) where P =
-    NamedToken{P,result_type(x.second)}(x.first, parser(x.second))
+    NamedToken{P,result_type(P)}(x.first, parser(x.second))
 
 parser(t::Tuple) = tuple([ parser(x) for x in t ]...)
 parser(x::Pair{Symbol, Tuple{P, Type}}) where P =
@@ -303,11 +364,11 @@ function TokenizerOp{op,T}(x::E, f::F) where {op, T, E, F<:Function}
     TokenizerOp{op,T,E,F}(x, f)
 end
 
-result_type(x::TextParse.AbstractToken{T}) where T = T
-result_type(x::Pair{Symbol, <:T}) where T =
-    Pair{Symbol, result_type(x.second)}
-result_type(x::AbstractString) = AbstractString
-result_type(x::Regex) = SubString{String}
+result_type(x::Type{<:TextParse.AbstractToken{T}}) where T = T
+result_type(x::Type{Pair{Symbol, <:T}}) where T =
+    Pair{Symbol, result_type(T)}
+result_type(x::Type{<:AbstractString}) = AbstractString
+result_type(x::Type{Regex}) = AbstractString
 
 
 function opt(x...; 
@@ -325,7 +386,7 @@ function opt(x...;
 end
 
 opt(x; kw...) =
-    opt(result_type(x), x; kw...)
+    opt(result_type(typeof(x)), x; kw...)
 
 defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
@@ -346,7 +407,7 @@ end
 
 function alt(x::Vararg{ParserTypes})
     parts = [ parser(y) for y in x ]
-    T = promote_type([ result_type(x) for x in parts]...)
+    T = promote_type([ result_type(typeof(x)) for x in parts]...)
     TokenizerOp{:alt,T}(parts, (v,i) -> v)
 end
 
@@ -366,8 +427,8 @@ end
 
 function seq(tokens::Vararg{ParserTypes};
              transform=nothing, kw...)
-    parts = [ parser(x) for x = tokens ]
-    T = [ result_type(x) for x in parts]
+    parts = tuple( ( parser(x) for x = tokens )... )
+    T = [ result_type(typeof(x)) for x in parts]
     ## error()
     if transform isa Integer
         seq(T[transform], parts...; 
@@ -391,7 +452,7 @@ function seq(T::Type, tokens::Vararg;
              partial = false,
              log=false,
              transform=:instance, kw...)
-    parts = [ parser(x) for x = tokens ]
+    parts = tuple( ( parser(x) for x = tokens )... )
     ## todo: tuple?    
     if combine
         if outer===nothing
@@ -402,7 +463,7 @@ function seq(T::Type, tokens::Vararg;
     end
     if T==NamedTuple
         fnames = tuple( [ x.name for x in parts if x isa NamedToken ]... )
-        ftypes = [ result_type(x.parser) for x in parts if x isa NamedToken ]
+        ftypes = [ result_type(typeof(x.parser)) for x in parts if x isa NamedToken ]
         RT = isempty(fnames) ? T : NamedTuple{fnames, Tuple{ftypes...}}
     else
         RT = T
@@ -411,8 +472,7 @@ function seq(T::Type, tokens::Vararg;
         transform = (v,i) -> instance(RT,v,i)
     end
     tr = log_transform(transform, log)
-    result = TokenizerOp{:seq, RT}((parts=parts, log=log, partial=partial),
-                                   tr)
+    result = Sequence{RT}(parts, tr)
     if outer === nothing
         result
     else
@@ -436,7 +496,7 @@ tok(outer::Regex, result::TextParse.AbstractToken{T}) where T =
 # rep(x)
 
 rep1(x::ParserTypes;  kw...) where T =
-    rep1(Vector{result_type(x)},x; kw...)
+    rep1(Vector{result_type(typeof(x))},x; kw...)
 rep1(T::Type, x;  log=false, transform=(v,i) -> v) =
     TokenizerOp{:rep1,T}(parser(x), log_transform(transform, log))
 
@@ -445,7 +505,7 @@ rep1(T::Type, x,y::Vararg; log=false, transform=(v,i) -> v, kw...) =
     rep1(T, seq(x,y...; transform=log_transform(transform, log), kw...), transform=(v,i) -> v)
 
 rep(x::T; kw...) where T =
-    rep(Vector{result_type(x)},x; kw...)
+    rep(Vector{result_type(T)},x; kw...)
     
 rep(x::TextParse.AbstractToken{T};  kw...) where T =
     rep(Vector{T},x; kw...)
@@ -684,16 +744,16 @@ end
 function TextParse.tryparsenext(tokf::TokenizerOp{:greedy, T, F}, str, i, till, opts=TextParse.default_opts) where {T,F}
     sections=tokf.els.pairs
     RT(key, value) = if value[2] isa ParserTypes
-        if Missing <: result_type(key)
-            result_type(value[2])
+        if Missing <: result_type(typeof(key))
+            result_type(typeof(value[2]))
         else
-            promote_type(result_type(key), result_type(value[2]))
+            promote_type(result_type(typeof(key)), result_type(typeof(value[2])))
         end
     else
-        result_type(key)
+        result_type(typeof(key))
     end
     R = Dict([ value[1] => Vector{RT(key,value)}() for (key,value) in sections]...,
-             [ key => Vector{result_type(value)}() for (key,value) in tokf.els.alt]...
+             [ key => Vector{result_type(typeof(value))}() for (key,value) in tokf.els.alt]...
              )
     hist = Any[]
     last_section = nothing
@@ -755,35 +815,6 @@ isa_reordered(x::T,S::Type{NamedTuple{n2,t2}}) where {T, n2,t2} =
 
 isa_reordered(x::T,S::Type) where {T} =
     x isa S
-
-function TextParse.tryparsenext(tokf::TokenizerOp{:seq, T, F}, str, i, till, opts=TextParse.default_opts) where {T,F}
-    toks::Vector = tokf.els.parts
-    result=Vector{Any}(undef, length(toks))
-    i_::Int = i
-    for j in 1:length(toks)
-        ##@show toks[j]
-        ##@info "seq" typeof(toks[j])
-        r, i__ = tryparsenext(toks[j], str, i_, till)
-        if !isnull(r)
-            # @info "seq" str[i_:min(i__,end)] r.value typeof(toks[j]) str[min(i__,end):end]
-            ## @show toks[j] typeof(r) r.value
-            result[j] = r.value
-            i_ = i__
-        else
-            # @info "seq" str[i_:min(i__,end)] (toks[j]) str[min(i__,end):end]
-            ## j>1 && @info "abort match $j=$(toks[j])" (toks) str[i_:end]  i_, till result[j-1]
-            j>1 && tokf.els.partial && return ( Nullable(result[1:j-1]), i_)
-            return Nullable{T}(), i
-        end
-    end
-    ## @show result
-    R = tokf.f(result, i)
-    !isa_reordered(R, T) && let S = typeof(R)
-        @warn "transformed wrong " result S T
-    end
-    return ( Nullable(_convert(T, R)), i_)
-end
-
 
 regex_string(x::TokenizerOp{:seq_combine,T,F}) where {T, F}  = regex_string(x.els[1])
 function TextParse.tryparsenext(tokf::TokenizerOp{:seq_combine, T, F}, str, i, till, opts=TextParse.default_opts) where {T,F}
@@ -862,7 +893,6 @@ end
 default(x) = nothing
 default(x::Regex) = ""
 default(x::NamedToken) = x.name => missing
-default(x::TokenizerOp{:seq,T,V}) where {T,V} = tuple()
 
 
 
@@ -928,7 +958,7 @@ function alternate(x::ParserTypes, delim::ParserTypes;
                    repf=rep,
                    appendf = nothing,
                    kw...)
-    T, S = result_type(x), result_type(delim)
+    T, S = result_type(typeof(x)), result_type(typeof(delim))
     af = if appendf === nothing
         ( ( v, nl, i ) -> T[ v ] )
     else
@@ -974,13 +1004,13 @@ function rep_delim(
         , kw...)
 end
 
-    
+
 export rep_delim_par
 function rep_delim_par(x, delim; repf=rep, transform=(v,i) -> v, transform_each=v -> v, kw...)
     x = parser(x)
     delim = parser(delim)
-    T = result_type(x)
-    D = result_type(delim)
+    T = result_type(typeof(x))
+    D = result_type(typeof(delim))
     seq(Vector{T},
         opt(Vector{D}, delim; transform = (v,i) -> D[v]),
         repf(seq(T, x, delim; 
