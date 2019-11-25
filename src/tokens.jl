@@ -307,7 +307,7 @@ struct Line{I,T}
     tokens::Vector{T}
 end
 Line(t::Vector{T}) where {T} =
-    Line(Token[],t)
+    Line(NamedString[],t)
 function Line(prefix::Vector{I}, t::Vector{T}) where {I,T}
     Line{I,T}(LinePrefix{I}(prefix), t)
 end
@@ -488,7 +488,7 @@ default_tokens = [
 tokenstring =
     #tok(inline, 
     rep(alt(bracket_number, bracket_reference, default_tokens...,
-            instance(Token, r"[][{}()<>]+", :paren)))
+            instance(Token, r"[][{}()<>]", :paren)))
 
 append_element_f(vp, ep; kw...) =
     let T=result_type(vp)
