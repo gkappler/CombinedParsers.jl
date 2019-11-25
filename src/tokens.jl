@@ -91,7 +91,11 @@ BasePiracy.construct(::Type{TokenPair{K,Vector{V}}}; key, value=V[]) where {K,V}
 parentheses = Dict{Any,Any}(:paren=>("(", ")"),
                             :bracket=>("[", "]"),
                             :curly=>("{", "}"),
-                            :angle=>("<", ">"))
+                            :angle=>("<", ">"),
+                            :quote=>("\"","\""),
+                            :squote=> ("'","'"),
+                            :german_quote => ("„","“")
+                            )
 import Base: with_output_color
 function Base.show(io::IO, z::TokenPair)
     inner_print(io::IO,x::AbstractVector) =
