@@ -750,7 +750,7 @@ function TextParse.tryparsenext(t::TokenizerOp{:rep1, T, F}, str, i, till, opts=
         repval, i__ = tryparsenext(t.els, str, i_, till)
     end
     if isempty(hist)
-        Nullable{T}()
+        Nullable{T}(), i
     else
         ( Nullable(_convert(T,t.f(hist,i_))), i_)
     end
