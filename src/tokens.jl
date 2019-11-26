@@ -20,6 +20,7 @@ variable_colors=Dict(
     :ext => 36,
     :macro => 36,
     :number => 36,
+    :operator => :yellow,
     :name => :yellow,
     :footnote => :yellow,
     :type => :red,
@@ -307,6 +308,9 @@ struct Line{I,T}
     prefix::LinePrefix{I}
     tokens::Vector{T}
 end
+BasePiracy.construct(::Type{Line{I,T}};prefix=I[],tokens=T[]) where {I,T} =
+    Line{I,T}(prefix,tokens)
+
 Line(t::Vector{T}) where {T} =
     Line(NamedString[],t)
 function Line(prefix::Vector{I}, t::Vector{T}) where {I,T}
