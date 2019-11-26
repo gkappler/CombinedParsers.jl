@@ -447,6 +447,21 @@ end
 #     outer::P
 # end
 
+function BasePiracy.construct(t::Type{NamedTuple{n,ts}}, v; kw...) where {n,ts}
+    vs = Any[ remove_null(x) for x in v ]
+    kvs = VectorDict(Pair{Symbol}[ x
+                                   for x in vs
+                                   if (x isa Pair && x.first !=:_match) ])
+    ks = Any[ x.first for x in kvs ]
+    NamedTuple{n, ts}(tuple([ let fn = fieldname(t,i)
+                              _convert(fieldtype(t, i),
+                                       get(kw, fn) do
+                                       get(kvs, fn, :missing)
+                                       end)
+                              end
+                              for i =1:length(n) ]...) )
+end
+    
 function seq(T::Type, tokens::Vararg;
              combine=false, outer=nothing,
              partial = false,
@@ -469,7 +484,7 @@ function seq(T::Type, tokens::Vararg;
         RT = T
     end
     if transform == :instance
-        transform = (v,i) -> instance(RT,v,i)
+        transform = (v,i) -> construct(RT,v)
     end
     tr = log_transform(transform, log)
     result = Sequence{RT}(parts, tr)
