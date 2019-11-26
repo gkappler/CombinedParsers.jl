@@ -224,6 +224,9 @@ struct Node{T} <: AbstractToken
     function Node(name::AbstractString, attrs, value)
         new{eltype(value)}(Symbol(name), attrs,value)
     end
+    function Node{T}(name::AbstractString, attrs, value) where T
+        new{T}(Symbol(name), attrs, _convert(Vector{T},value))
+    end
 end
 BasePiracy.construct(::Type{Node{T}}; name, attributes=Token[], children=T[]) where T = 
     Node(name,
@@ -312,7 +315,9 @@ BasePiracy.construct(::Type{Line{I,T}};prefix=I[],tokens=T[]) where {I,T} =
     Line{I,T}(prefix,tokens)
 
 Line(t::Vector{T}) where {T} =
-    Line(NamedString[],t)
+    Line{NamedString}(t)
+Line{I}(t::Vector{T}) where {I,T} =
+    Line(I[],t)
 function Line(prefix::Vector{I}, t::Vector{T}) where {I,T}
     Line{I,T}(LinePrefix{I}(prefix), t)
 end
