@@ -108,7 +108,7 @@ function append_tokens(v::Vector{AbstractToken}, typenames::TypeNames)
     out
 end
 
-append_tokens(v::Line{Token,AbstractToken}, typenames::TypeNames) =
+append_tokens(v::Line{NamedString,AbstractToken}, typenames::TypeNames) =
     isempty(v.prefix) ? append_tokens(v.tokens, typenames) : NamedString(v.prefix[1]) => append_tokens(Line(v.prefix[2:end],v.tokens), typenames)
 
 append_tokens(t::Token, typenames::TypeNames) = t
@@ -191,8 +191,10 @@ function wrap_convert(::Type{Vector{Line{I,T}}}, v::Vector{Any}) where {I,T}
             else
                 push!(r[end].tokens, x)
             end
+        elseif x isa Line{I,T}
+            push!(r, x)
         else
-            error("cannot insert $x::$(typeof(x)) to Vector{Line}")
+            error("cannot insert $x::$(typeof(x)) to Vector{Line{$I,$T}}")
         end
     end
     r
