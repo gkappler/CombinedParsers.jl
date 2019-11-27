@@ -98,6 +98,8 @@ parentheses = Dict{Any,Any}(:paren=>("(", ")"),
                             :squote=> ("'","'"),
                             :german_quote => ("„","“"),
                             :htmlcomment=> ("<!--","-->"),
+                            :pre=> ("<pre>","</pre>"),
+                            :nowiki=> ("<nowiki>","</nowiki>"),
                             )
 import Base: with_output_color
 function Base.show(io::IO, z::TokenPair)
