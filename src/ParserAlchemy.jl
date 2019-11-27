@@ -979,7 +979,7 @@ function alternate(x::ParserTypes, delim::ParserTypes;
         appendf
     end
     seq(Vector{T},
-        opt(x),
+        opt(Vector{T},x; transform=(v,i)->T[v]),
         rep(Vector{T},
             seq(Vector{T}, delim, x; log=log,
                 transform = (v,i) -> af(v[2],v[1],i));
@@ -987,7 +987,7 @@ function alternate(x::ParserTypes, delim::ParserTypes;
              log=log),
         ; log=log,
         ## todo: factor out this transform condition!!
-        transform = ( v, i ) -> vcat(T[v[1]], v[2])
+        transform = ( v, i ) -> vcat(v[1], v[2])
         , kw...)
 end
 
