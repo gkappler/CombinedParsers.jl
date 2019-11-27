@@ -970,7 +970,6 @@ export alternate
 alternate(x::Vector, delim; kw...) = alternate(alt(x...), delim; kw...)
 function alternate(x::ParserTypes, delim::ParserTypes;
                    log=false,
-                   repf=rep,
                    appendf = nothing,
                    kw...)
     T, S = result_type(typeof(x)), result_type(typeof(delim))
@@ -980,15 +979,15 @@ function alternate(x::ParserTypes, delim::ParserTypes;
         appendf
     end
     seq(Vector{T},
-        repf(Vector{T},
-             seq(Vector{T}, x, delim; log=log,
-                 transform = (v,i) -> af(v...,i));
+        opt(x),
+        rep(Vector{T},
+            seq(Vector{T}, delim, x; log=log,
+                transform = (v,i) -> af(v[2],v[1],i));
              transform = (v,i) -> vcat(v...),
              log=log),
-        opt(Vector{T}, x; default=T[], log=log, transform = (v,i) -> T[v] )
         ; log=log,
         ## todo: factor out this transform condition!!
-        transform = ( v, i ) -> vcat(v[1], v[2]) 
+        transform = ( v, i ) -> vcat(T[v[1]], v[2])
         , kw...)
 end
 
