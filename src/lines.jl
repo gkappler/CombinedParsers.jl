@@ -299,7 +299,9 @@ function unnest_lines(io::Vector{Line{NamedString,T}},tree::Vector, path) where 
     l::Any = nothing
     for (i,b) in enumerate(tree)
         if b isa Pair ## todo: this could be dne better
-            unnest_lines(io, b, l == b.first ? ( tuple(path..., NamedString(:index,"$i"))) : path)
+            l == b.first && push!(io,Line(path,T[]))
+            ## ? ( tuple(path..., NamedString(:index,"$i")))
+            unnest_lines(io, b,  path)
             l = b.first
         else
             unnest_lines(io, b, path)
