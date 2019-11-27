@@ -96,7 +96,8 @@ parentheses = Dict{Any,Any}(:paren=>("(", ")"),
                             :angle=>("<", ">"),
                             :quote=>("\"","\""),
                             :squote=> ("'","'"),
-                            :german_quote => ("„","“")
+                            :german_quote => ("„","“"),
+                            :htmlcomment=> ("<!--","-->"),
                             )
 import Base: with_output_color
 function Base.show(io::IO, z::TokenPair)
@@ -111,8 +112,6 @@ function Base.show(io::IO, z::TokenPair)
         with_output_color(inner_print, :bold, io, z.value)
     elseif z.key==:bolditalics
         with_output_color(inner_print, :bold, io, z.value)
-    elseif z.key==:htmlcomment
-        with_output_color(inner_print, :light_black, io, z.value)
     else
         open, close = get(parentheses, z.key, (z.key,z.key))
         print(io, open)

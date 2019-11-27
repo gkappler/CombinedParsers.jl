@@ -1045,7 +1045,7 @@ end
 ##    re = (
 lf          = r"\n"
 newline     = r"\r?\n"
-quotes      = r"[\"'`]+"
+quotes      = r"[\"'`]"
 inline      = r"[^\n\r]*"
 whitespace  = r"[ \t]+"
 indentation = r"[ \t]*"
