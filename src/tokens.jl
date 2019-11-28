@@ -252,7 +252,7 @@ function Base.show(io::IO, x::Node) where {T}
 end
 
 import InternedStrings: intern
-import ..ParserAlchemy: instance, rep, seq, alt, opt, parenthesisP, alternate, FlatMap, rep_until
+import ..ParserAlchemy: ParserTypes, instance, rep, seq, alt, opt, parenthesisP, alternate, FlatMap, rep_until
 import ..ParserAlchemy: result_type, regex_string
 import ..ParserAlchemy: regex_neg_lookahead
 import ..ParserAlchemy: enum_label, parser, word, delimiter, quotes, extension, whitespace, wdelim
@@ -265,7 +265,7 @@ attributes = alternate(
         ## log=true,
         ), wdelim)
 
-html(tags,inner::TextParse.AbstractToken) =
+html(tags::ParserTypes,inner::ParserTypes) =
     let T=result_type(inner)
         FlatMap{Node{T}}(
             seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
@@ -275,7 +275,7 @@ html(tags,inner::TextParse.AbstractToken) =
                 rep_until(inner, seq("</",tag,">"))))
     end
 
-html(T::Type, tags, inner::Function) =
+html(T::Type, tags::ParserTypes, inner::Function) =
     FlatMap{Node{T}}(
         seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
         ((tag,attrs),) -> instance(
