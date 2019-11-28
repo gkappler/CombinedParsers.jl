@@ -1096,9 +1096,10 @@ end
 ##    re = (
 lf          = r"\n"
 newline     = r"\r?\n"
+whitespace  = r"[ \t]+"
+whitenewline = r"[ \t]*\r?\n"
 quotes      = r"[\"'`]"
 inline      = r"[^\n\r]*"
-whitespace  = r"[ \t]+"
 indentation = r"[ \t]*"
 content_characters = r"[^\t\r\n]+"
 number      = r"[0-9]+"  ## TODO alt(...) csv
@@ -1115,7 +1116,6 @@ wdelim = r"^[ \t\r\n]+"
 
 
 
-whitenewline = Regex(regex_string(seq(opt(whitespace), newline)))
 export emptyline
 emptyline = r"^[ \t]*\r?\n"
 
