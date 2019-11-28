@@ -624,9 +624,9 @@ import Base: (*), (|), cat
 
 export regex_tempered_greedy, regex_neg_lookahead
 # https://www.rexegg.com/regex-quantifiers.html#tempered_greed
-regex_tempered_greedy(s,e; withend=true) =
+regex_tempered_greedy(s,e, flags="s"; withend=true) =
     Regex("^"*regex_string(s)*"((?:(?!"*regex_string(e)*").)*)"*
-          ( withend ? regex_string(e) : ""),"s")
+          ( withend ? regex_string(e) : ""),flags)
 
 # https://www.rexegg.com/regex-quantifiers.html#tempered_greed
 regex_neg_lookahead(e, match=r".") =
