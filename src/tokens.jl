@@ -265,14 +265,23 @@ attributes = alternate(
         ## log=true,
         ), wdelim)
 
-html(inner) =
-    FlatMap{AbstractToken}(
-        seq("<",seq(r"^[[:alpha:]]",opt(seq(whitespace, attributes; transform=2))),">";transform=2),
-        ((tag,attrs),) -> instance(
-            Union{Node,result_type(inner)},
-            (v,i) -> Node(tag, attrs, v),
-            rep_until(inner, seq("</",tag,">"))))
+html(tags,inner::TextParse.AbstractToken) =
+    let T=result_type(inner)
+        FlatMap{Node{T}}(
+            seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
+            ((tag,attrs),) -> instance(
+                Node{T},
+                (v,i) -> Node(tag, attrs, v),
+                rep_until(inner, seq("</",tag,">"))))
+    end
 
+html(T::Type, tags, inner::Function) =
+    FlatMap{Node{T}}(
+        seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
+        ((tag,attrs),) -> instance(
+            Node{T},
+            (v,i) -> Node(tag, attrs, v),
+            inner(seq("</",tag,">"))))
 
 export ReferringToken
 struct ReferringToken{Tt, Tv, I} <: AbstractToken
