@@ -251,6 +251,27 @@ function Base.show(io::IO, x::Node) where {T}
     end
 end
 
+import InternedStrings: intern
+import ..ParserAlchemy: instance, rep, seq, alt, opt, parenthesisP, alternate, FlatMap, rep_until
+import ..ParserAlchemy: result_type, regex_string
+import ..ParserAlchemy: regex_neg_lookahead
+import ..ParserAlchemy: enum_label, parser, word, delimiter, quotes, extension, whitespace, wdelim
+attributes = alternate(
+    seq(Token,
+        word, opt(wdelim),"=", opt(wdelim),
+        alt(seq("\"",regex_neg_lookahead("\"",r"(?:.|\\\")"),"\""; transform=2),
+            r"[-+]?[0-9]+", r"#[0-9A-Fa-f]{6}");
+        transform = (v,i) -> Token(v[1], intern(v[5])),
+        ## log=true,
+        ), wdelim)
+
+html(inner) =
+    FlatMap{AbstractToken}(
+        seq("<",seq(r"^[[:alpha:]]",opt(seq(whitespace, attributes; transform=2))),">";transform=2),
+        ((tag,attrs),) -> instance(
+            Union{Node,result_type(inner)},
+            (v,i) -> Node(tag, attrs, v),
+            rep_until(inner, seq("</",tag,">"))))
 
 
 export ReferringToken
@@ -478,9 +499,6 @@ end
 
 
 
-
-import ..ParserAlchemy: result_type, instance, rep, seq, alt, regex_string, parenthesisP
-import ..ParserAlchemy: enum_label, parser, word, delimiter, quotes, extension
 bracket_number = instance(
     Token, (v,i) -> Token(:number, v),
     r"^\[(?:(?:[0-9]+[[:alpha:]]*(?:,|–|-) *)*(?:[0-9]+[[:alpha:]]* *)|\*)\]");

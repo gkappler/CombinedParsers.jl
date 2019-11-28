@@ -250,6 +250,30 @@ function TextParse.tryparsenext(tok::NegativeLookahead, str, i, till, opts=TextP
 end
 
 
+export FlatMap
+struct FlatMap{T,P,Q<:Function} <: TextParse.AbstractToken{T}
+    left::P
+    right::Q
+    function FlatMap{T}(left::P, right::Q) where {T, P, Q<:Function}
+        new{T,P,Q}(left, right)
+    end
+end
+
+regex_string(x::FlatMap)  = error("regex determined at runtime!")
+function TextParse.tryparsenext(tokf::FlatMap, str, i, till, opts=TextParse.default_opts)
+    T = result_type(tokf)
+    lr, i_ = tryparsenext(tokf.left, str, i, till, opts)
+    if !isnull(lr)
+        rightp = tokf.right(get(lr))
+        !( result_type(rightp) <: T ) && error("$(result_type(rightp)) <: $T")
+        rr, i__ = tryparsenext(rightp, str, i_, till, opts)
+        if !isnull(rr)
+            return rr, i__
+        end
+    end
+    return Nullable{T}(), i
+end
+
 
 struct Sequence{T,P<:Tuple,F<:Function} <: TextParse.AbstractToken{T}
     parts::P
@@ -406,7 +430,7 @@ function opt(T::Type, x;
 end
 
 function alt(x::Vararg{ParserTypes})
-    parts = [ parser(y) for y in x ]
+    parts = Any[ parser(y) for y in x ]
     T = promote_type([ result_type(typeof(x)) for x in parts]...)
     TokenizerOp{:alt,T}(parts, (v,i) -> v)
 end
@@ -1059,6 +1083,8 @@ delimiter   = r"[-, _/\.;:*]"
 word        = r"[^\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵⁶⁷⁸⁹]+"
 footnote    = r"^[⁰¹²³⁴⁵⁶⁷⁸⁹]+"
 enum_label = r"(?:[0-9]{1,3}|[ivx]{1,6}|[[:alpha:]])[\.\)]"
+wdelim = r"^[ \t\r\n]+"
+
 
 
 whitenewline = Regex(regex_string(seq(opt(whitespace), newline)))

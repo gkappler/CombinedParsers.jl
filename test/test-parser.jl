@@ -68,3 +68,12 @@
     tokenize(person,representation)
 
 end
+
+
+inner = alt(AbstractToken, WikitextParser.simple_tokens...)
+
+pushfirst!(inner.els,ParserAlchemy.Tokens.html(inner))
+
+using BenchmarkTools
+tokenize(inner,"<a font=+1>b <b>x y z</b>c d</a>")
+                  
