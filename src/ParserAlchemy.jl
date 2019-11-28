@@ -992,27 +992,55 @@ end
 export alternate
     
 alternate(x::Vector, delim; kw...) = alternate(alt(x...), delim; kw...)
+"""
+optimized repeated alternations of `x``delim`, optionally starting/ending with `delim`. `delim` `is agg`ed as right borders. 
+`delim` can be discarded in agg(result,missing,delim).
+
+if `agg` is nothing, default is to aggregate delim after match is `result_type(delim) <: result_type(x)`, if not missing.
+"""
 function alternate(x::ParserTypes, delim::ParserTypes;
                    log=false,
-                   appendf = nothing,
+                   agg = nothing,
                    kw...)
     T, S = result_type(typeof(x)), result_type(typeof(delim))
-    af = if appendf === nothing
-        ( ( v, nl, i ) -> T[ v ] )
+    af = if agg === nothing
+        if S <: T
+            ( r, xmatch, delimmatch ) -> begin
+                xmatch !== missing && push!(r,xmatch)
+                delimmatch !== missing && push!(r,delimmatch)
+            end
+        else
+            ( r, xmatch, delimmatch ) -> begin
+                xmatch !== missing && push!(r,xmatch)
+            end 
+        end
     else
-        appendf
+        agg
     end
+    
+    function tf(v,i)
+        ## @show v,i
+        r = T[]
+        if isempty(v[2])
+            af(r,v[1],v[3])
+        else
+            ms = v[2]
+            af(r,v[1],ms[1][1])
+            for i in 2:lastindex(ms)
+                af(r, ms[i-1][2],ms[i][1])
+            end
+            af(r, ms[end][2],v[3])
+        end
+        r
+    end
+    
     seq(Vector{T},
-        opt(Vector{T},x; transform=(v,i)->T[v]),
-        rep(Vector{T},
-            seq(Vector{T}, delim, x; log=log,
-                transform = (v,i) -> af(v[2],v[1],i));
-             transform = (v,i) -> vcat(v...),
-             log=log),
+        opt(T, x; default=missing),
+        rep(seq(delim, x)),
+        opt(delim;default=missing)
         ; log=log,
         ## todo: factor out this transform condition!!
-        transform = ( v, i ) -> vcat(v[1], v[2])
-        , kw...)
+        transform = tf, kw...)
 end
 
 
