@@ -38,11 +38,13 @@ struct PartialMatchException <: Exception
     str::String
 end
 export context
-context(x::PartialMatchException,delta = 200) =
+context(x::PartialMatchException, delta = 200) =
     x.str[min(x.index,end):min(end, nextind(x.str,x.index,delta))]
-function Base.show(io::IO, x::PartialMatchException)
-    println(io, "at $(x.index):")
-    println(io, "$(context(x))")
+import Base: showerror
+function Base.showerror(io::IO, x::PartialMatchException)
+    println(io, "incomplete parsing at $(x.index):")
+    println(io, "\"$(context(x))\"")
+    println(io, "in \"$(x.str)\"")
 end
 
 """
