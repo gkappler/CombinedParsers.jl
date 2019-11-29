@@ -205,7 +205,7 @@ export FullText
 struct FullText <: TextParse.AbstractToken{AbstractString}
 end
 TextParse.tryparsenext(tok::FullText, str, i, till, opts=TextParse.default_opts) = 
-    Nullable(str[i:till]), till
+    Nullable(str[i:till]), till+1
 
 
 
