@@ -303,16 +303,17 @@ struct Sequence{T,P<:Tuple,F<:Function} <: TextParse.AbstractToken{T}
         new{T,P,F}(p, f)
     end
 end
-
+parser_types(::Type{Sequence{T, P, F}}) where {T, P, F} =
+    P
 
 regex_string(x::Sequence)  = join([ regex_string(p) for p in x.parts])
-@generated function TextParse.tryparsenext(tokf::Sequence{T, P, F}, str, i, till, opts=TextParse.default_opts) where {T,P,F}
-    pts = P
+@generated function TextParse.tryparsenext(tokf::Sequence, str, i, till, opts=TextParse.default_opts)
+    pts = parser_types(tokf)
     ## Core.println(pts)
     subresult = Symbol[ gensym(:r) for i in fieldtypes(pts) ]
     parseparts = [
         quote
-        $(subresult[i]), i_ = tryparsenext(parts[$i], str, i_, till)
+        $(subresult[i]), i_ = tryparsenext(parts[$i], str, i_, till, opts)
         if isnull($(subresult[i]))
         return Nullable{T}(), i
         end
@@ -321,6 +322,7 @@ regex_string(x::Sequence)  = join([ regex_string(p) for p in x.parts])
     ]
     ## Core.println( parseparts )
     quote
+        T = result_type(tokf)
         i_ = i
         parts=tokf.parts
         $(parseparts...)
