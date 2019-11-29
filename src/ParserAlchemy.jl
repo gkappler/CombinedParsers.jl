@@ -32,31 +32,52 @@ Base.match(r::TextParse.AbstractToken, str) =
 export tokenize
 tokenize(x, str::RegexMatch) = tokenize(x, str.match)
 
+
+struct PartialMatchException <: Exception
+    index::Int
+    str::String
+end
+export context
+context(x::PartialMatchException,delta = 200) =
+    x.str[min(x.index,end):min(end, nextind(x.str,x.index,delta))]
+function Base.show(io::IO, x::PartialMatchException)
+    println(io, "at $(x.index):")
+    println(io, "$(context(x))")
+end
+
 """
 tokenize(x, str; delta=200, errorfile=nothing)
 
 Tokenize string or iterator `str` with parser `x`.
 """
-function tokenize(x, str; delta=200, errorfile=nothing)
+function tokenize(x, str; partial=:error)
     i=firstindex(str)
     till=lastindex(str)
     r, i_ = tryparsenext(x, str, i, till, TextParse.default_opts)
     if i_<=till
-        if errorfile isa AbstractString
+        if partial isa AbstractString ## remove?
             make_org(s) = replace(s, r"^\*"m => " *")
-            open(errorfile, "a") do io
+            open(partial, "a") do io
                 println(io, "* incomplete parsing stopped at $i_ ")
                 println(io, "error at")
-                println(io, make_org(str[min(i_,end):min(end, nextind(str,i_,delta))]))
+                println(io, make_org(str[min(i_,end):min(end, nextind(str,i_,200))]))
                 println(io, "** data")
                 println(io, make_org(str))
             end
-        elseif errorfile == :warn
-            @warn "incomplete parsing stopped at $i_ " str[min(i_,end):min(end, nextind(str,i_,delta))]
+        elseif partial == :warn
+            @warn "incomplete parsing stopped at $i_ " str[min(i_,end):min(end, nextind(str,i_,200))]
+        elseif partial == :error
+            throw(PartialMatchException(i_, str))
         end
     end
     if isnull(r)
-        nothing
+        if partial == :error
+            error("no match")
+        elseif partial == :warn
+            @warn "no match"
+        else
+            nothing
+        end
     else
         get(r)
     end
