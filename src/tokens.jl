@@ -261,10 +261,10 @@ attributes = alternate(
         word, opt(wdelim),"=", opt(wdelim),
         alt(seq("\"",
                 regex_neg_lookahead("\"",r"(?:.|\\\")"),"\""; transform=2),
-            r"[-+]?[0-9]+",
-            r"[0-9]+%",
-            word,
-            r"#[0-9A-Fa-f]{6}");
+            r"^[0-9]+%",
+            r"^[-+]?[0-9]+",
+            ##word,
+            r"^#[0-9A-Fa-f]{6}");
         transform = (v,i) -> Token(v[1], intern(v[5])),
         ## log=true,
         ), wdelim)
