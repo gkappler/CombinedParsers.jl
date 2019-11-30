@@ -6,6 +6,7 @@ using Nullables
 using TextParse
 import TextParse: tryparsenext
 using BasePiracy
+import Base: ==, hash
 
 export tryparsenext, tokenize, result_type
 
