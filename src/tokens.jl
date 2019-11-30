@@ -269,15 +269,23 @@ attributes = alternate(
         ## log=true,
         ), wdelim)
 
-html(tags::ParserTypes,inner::ParserTypes) =
-    let T=result_type(inner)
-        FlatMap{Node{T}}(
-            seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
-            ((tag,attrs),) -> instance(
+function html(tags::ParserTypes,inner::ParserTypes)
+    T=result_type(inner)
+    function r(x,)
+        if x === missing
+            rep_until(inner, "</__tag__>")
+        else
+            (tag,attrs) = x
+            instance(
                 Node{T},
                 (v,i) -> Node(tag, attrs, v),
-                rep_until(inner, seq("</",tag,">"))))
+                rep_until(inner, seq("</",tag,">")))
+        end
     end
+    FlatMap{Node{T}}(seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
+                     r
+                     )
+end
 
 html(T::Type, tags::ParserTypes, inner::Function) =
     FlatMap{Node{T}}(
@@ -509,6 +517,18 @@ end
 
 
 
+import ...ParserAlchemy: footnote
+simple_tokens = [
+    ## instance(Token, parser(Regex(" "*regex_string(enum_label)*" ")), :number),
+    instance(Token, parser(word), :literal),
+    instance(Token, parser(footnote), :footnote),
+    instance(Token, parser(quotes), :quote),
+    instance(Token, parser(delimiter), :delimiter)
+    , instance(Token, r"^[\|\n]", :delimiter)
+    , instance(Token, r"^[][{}()<>]", :paren)
+    , instance(Token, parser(r"[-+*/%&!=]"), :operator)
+    , instance(Token, parser(r"[^][(){}\n \t\|]"), :unknown)
+]
 
 
 

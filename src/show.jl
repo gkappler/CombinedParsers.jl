@@ -9,23 +9,33 @@ function Base.show(io::IO, x::TextParse.AbstractToken)
         print_tree(io, MemoTreeChildren(Dict(),x, true))
     end
 end
-printnode(io::IO, x::TextParse.AbstractToken{T}) where {T} =
-    print(io, "Parser::$T")
-printnode(io::IO, x::Sequence{T}) where {T} =
-    print(io, "seq::$T")
-printnode(io::IO, x::TokenizerOp{op, T}) where {op, T} =
-    print(io, "$op::$T")
-function printnode(io::IO, x::NamedToken{P, T}) where {P, T} 
+printnode(io::IO, x::TextParse.AbstractToken) =
+    print(io, "Parser::",result_type(x))
+printnode(io::IO, x::FlatMap) =
+    print(io, "FlatMap::",result_type(x))
+function printnode(io::IO, x::NegativeLookahead)
+    print(io, "not at ")
+    printnode(io, x.parser)
+end
+printnode(io::IO, x::Sequence) =
+    print(io, "seq::",result_type(x))
+printnode(io::IO, x::Repeat) =
+    print(io, "rep ", regex_operator(x),"::",result_type(x))
+printnode(io::IO, x::Either) =
+    print(io, "alt::",result_type(x))
+printnode(io::IO, x::Optional) =
+    print(io, "opt::",result_type(x))
+function printnode(io::IO, x::NamedToken) 
     print(io, x.name, " ")
     printnode(io, x.parser)
 end
     
-function printnode(io::IO, x::MemoTreeChildren{P}) where {P}
+function printnode(io::IO, x::MemoTreeChildren)
     printnode(io, x.child)
     x.descend || print(io, "(see above)")
 end
-function printnode(io::IO, x::InstanceParser{P,T}) where {P,T} 
-    print(io,"",T,"(", ") = ")
+function printnode(io::IO, x::InstanceParser) 
+    print(io,"",result_type(x),"(", ") = ")
     printnode(io, x.parser)
 end
 
@@ -42,24 +52,22 @@ children(x::MemoTreeChildren) =
 
 children(x::Union{Regex,AbstractString}) =
     ()
+children(x::Missing) =
+    ()
+children(x::FlatMap) =
+    [ x.left, x.right(missing) ]
 children(x::InstanceParser) =
     children(x.parser)
 children(x::NamedToken) =
     children(x.parser)
-children(x::TokenizerOp{:rep, T, F}) where {T, F} =
-    [ x.els ]
-children(x::TokenizerOp{:rep1, T, F}) where {T, F} =
-    [ x.els ]
-children(x::TokenizerOp{:alt, T, F}) where {T, F} =
-    x.els
+children(x::Repeat) where {T, F} =
+    [ x.parser ]
+children(x::Either) where {T, F} =
+    x.options
 # children(x::TokenizerOp{:greedy, T, F}) where {T, F} =
 #     x.els
-children(x::TokenizerOp{:opt, T, F}) where {T, F} =
-    children(x.els.parser)
-children(x::TokenizerOp{:seq_combine, T, F}) where {T, F} =
-    x.els.parts
-children(x::TokenizerOp{:tokenize, T, F}) where {T, F} =
-     [ x.els.parser ]
+children(x::Optional) where {T, F} =
+    children(x.parser)
 children(x::Sequence) =
     x.parts
 

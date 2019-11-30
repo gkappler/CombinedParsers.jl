@@ -41,6 +41,10 @@
     Adresse:
     Am Hang 19
     86653 Glauberg
+
+    Adresse:
+    Am Hang 19
+    86653 Glauberg
     """
 
     data = ( name = "Gottfried Mutbürger",
@@ -53,27 +57,52 @@
                  :no =>Numeric(Int)),
              "Am Hang 19")
 
-    import ParserAlchemy: inline, newline, rep1
+    import ParserAlchemy: inline, newline, rep1, whitenewline, whitespace
     person = seq(NamedTuple,
                  "Name: ", :name => inline, rep(newline),
-                 :adresses => rep(NamedTuple,
-                                  seq("Adresse:",newline,
-                                      :street => r"[[:alpha:] ]+", 
-                                      :no =>Numeric(Int), newline,
-                                      :zip =>Numeric(Int), 
-                                      :city => r"[[:alpha:] ]+";
-                                      partial=true
-                                      )
-                                  ))
-    tokenize(person,representation)
+                 :adresses => alternate(
+                     seq(NamedTuple,"Adresse:",newline,
+                         :street => r"[[:alpha:] ]+", 
+                         :no =>Numeric(Int), newline,
+                         :zip =>Numeric(Int), whitespace,
+                         :city => r"[[:alpha:] ]+",
+                         opt(whitenewline),
+                         ),
+                     newline
+                 ));
+    tokenize(person,representation)|>dump
 
 end
 
+import ParserAlchemy.Tokens: simple_tokens
+inner = alt(AbstractToken, simple_tokens...)
+pushfirst!(inner,ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner))
 
-inner = alt(AbstractToken, WikitextParser.simple_tokens...)
-
-pushfirst!(inner.els,ParserAlchemy.Tokens.html(inner))
+ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner)
 
 using BenchmarkTools
-tokenize(inner,"<a font=+1>b <b>x y z</b>c d</a>")
+tokenize(inner,"<a font=+1>b <b>x y z</b>c d</a>")|>dump
                   
+
+
+@testset "continue options of last Either" begin
+    import ParserAlchemy: wdelim
+    ok = alternate(
+        seq(Token,
+            word, opt(wdelim),"=", opt(wdelim),
+            alt(r"^[0-9]+%",
+                r"^[-+]?[0-9]+");
+            transform = (v,i) -> Token(v[1], v[5]),
+            ## log=true,
+            ), wdelim)
+    tokenize(ok, " size=10% class=1")
+
+    notok = alternate(
+        seq(Token,
+            word, opt(wdelim),"=", opt(wdelim),
+            alt(r"^[-+]?[0-9]+",r"^[0-9]+%");
+            transform = (v,i) -> Token(v[1], v[5]),
+            ## log=true,
+            ), wdelim)
+    tokenize(ok, " size=10% class=2")
+end
