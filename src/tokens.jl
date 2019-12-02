@@ -215,18 +215,21 @@ value(x::NamedString) = getfield(x,1)
 hash(x::NamedString, h::UInt) = hash(variable(x), hash(value(x),h))
 
 export Node
-struct Node{T} <: AbstractToken
+struct Node{A,T} <: AbstractToken
     name::Symbol
-    attributes::Vector{Token}
+    attributes::Vector{A}
     children::Vector{T}
     function Node(name::Symbol, attrs, value)
-        new{eltype(value)}(name, attrs,value)
+        new{Token,eltype(value)}(name, attrs,value)
     end
     function Node(name::AbstractString, attrs, value)
-        new{eltype(value)}(Symbol(name), attrs,value)
+        new{Token,eltype(value)}(Symbol(name), attrs,value)
     end
     function Node{T}(name::AbstractString, attrs, value) where T
-        new{T}(Symbol(name), attrs, _convert(Vector{T},value))
+        new{Token,T}(Symbol(name), attrs, _convert(Vector{T},value))
+    end
+    function Node{A,T}(name, attrs, value) where {A,T}
+        new{A,T}(Symbol(name), _convert(Vector{A},attrs), _convert(Vector{T},value))
     end
 end
 BasePiracy.construct(::Type{Node{T}}; name, attributes=Token[], children=T[]) where T = 
@@ -238,7 +241,11 @@ hash(x::Node, h::UInt) = hash(x.name, hash(x.attributes, hash(x.children,h)))
 function Base.show(io::IO, x::Node) where {T}
     print(io,"<$(x.name)")
     for a in x.attributes
-        print(io," ", variable(a), "=\"", value(a), "\"")
+        if x isa Token
+            print(io," ", variable(a), "=\"", value(a), "\"")
+        else ## this is for templates and such in wikitext
+            print(io,a)
+        end
     end
     if !isempty(x.children)        
         print(io,">")
