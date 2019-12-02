@@ -263,45 +263,51 @@ import ..ParserAlchemy: ParserTypes, instance, rep, seq, alt, opt, parenthesisP,
 import ..ParserAlchemy: result_type, regex_string
 import ..ParserAlchemy: regex_neg_lookahead
 import ..ParserAlchemy: enum_label, parser, word, delimiter, quotes, extension, whitespace, wdelim
-attributes = alternate(
-    seq(Token,
-        word, opt(wdelim),"=", opt(wdelim),
-        alt(seq("\"",
-                regex_neg_lookahead("\"",r"(?:.|\\\")"),"\""; transform=2),
-            r"^[0-9]+%",
-            r"^[-+]?[0-9]+",
-            word,
-            r"^#[0-9A-Fa-f]{6}");
-        transform = (v,i) -> Token(v[1], intern(v[5])),
-        ## log=true,
-        ), wdelim)
 
-function html(tags::ParserTypes,inner::ParserTypes)
-    T=result_type(inner)
-    function r(x,)
-        if x === missing
-            rep_until(inner, "</__tag__>")
-        else
-            (tag,attrs) = x
-            instance(
-                Node{T},
-                (v,i) -> Node(tag, attrs, v),
-                rep_until(inner, seq("</",tag,">")))
-        end
+
+export attribute_parser
+attribute_parser = seq(Token,
+                word, opt(wdelim),"=", opt(wdelim),
+                alt(seq("\"",
+                        regex_neg_lookahead("\"",r"(?:.|\\\")"),"\""; transform=2),
+                    r"^[0-9]+%",
+                    r"^[-+]?[0-9]+",
+                    word,
+                    r"^#[0-9A-Fa-f]{6}");
+                transform = (v,i) -> Token(v[1], intern(v[5])),
+                ## log=true,
+                )
+
+attributes = alternate(attribute_parser, wdelim)
+
+function html(tags::ParserTypes, inner::ParserTypes, attrs=attributes)
+    html(result_type(inner), tags, attrs) do until
+        rep_until(inner, until)
     end
-    FlatMap{Node{T}}(seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
-                     r
-                     )
 end
 
-html(T::Type, tags::ParserTypes, inner::Function) =
-    FlatMap{Node{T}}(
-        seq("<",seq(tags,opt(seq(opt(wdelim), attributes,opt(wdelim); transform=2))),">";transform=2),
-        ((tag,attrs),) -> instance(
-            Node{T},
-            (v,i) -> Node(tag, attrs, v),
-            inner(seq("</",tag,">"))))
-
+function html(inner::Function, T::Type, tags::ParserTypes, attrs_parser=attributes)
+    A = eltype(result_type(attrs_parser))
+    function r(x,)
+        if x === missing
+            inner("</__tag__>")
+        else
+            (tag,attrs) = x
+            alt(instance(Node{A,T},
+                         (v,i) -> Node(tag, attrs, T[]),
+                         "/>"),
+                seq(Node{A,T}, ">",
+                    inner(seq("</",tag,">")),
+                    transform = (v,i) -> Node(tag, attrs, v[2])))
+        end
+    end
+    FlatMap{Node{A,T}}(
+        seq("<",seq(tags,
+                    opt(seq(opt(wdelim), attrs_parser, opt(wdelim); transform=2)));
+            transform=2),
+        r)
+end
+    
 export ReferringToken
 struct ReferringToken{Tt, Tv, I} <: AbstractToken
     name::Tt
