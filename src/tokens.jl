@@ -537,7 +537,7 @@ simple_tokens = [
     instance(Token, parser(footnote), :footnote),
     instance(Token, parser(quotes), :quote),
     instance(Token, parser(delimiter), :delimiter)
-    , instance(Token, r"^[\|\n]", :delimiter)
+    ##  , instance(Token, r"^[\|\n]", :delimiter)
     , instance(Token, r"^[][{}()<>]", :paren)
     , instance(Token, parser(r"[-+*/%&!=]"), :operator)
     , instance(Token, parser(r"[^][(){}\n \t\|]"), :unknown)
