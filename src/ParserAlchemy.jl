@@ -894,8 +894,12 @@ end
 
 
 
-export alternate
-    
+export alternate, alternate_stop
+alternate_stop(x,delim,stop;kw...) =
+    alternate(seq(NegativeLookahead(stop), x; transform=2),
+              seq(NegativeLookahead(stop), delim; transform=2);
+              kw...)
+
 alternate(x::Vector, delim; kw...) = alternate(alt(x...), delim; kw...)
 """
 optimized repeated alternations of `x``delim`, optionally starting/ending with `delim`. `delim` `is agg`ed as right borders. 
