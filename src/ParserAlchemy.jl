@@ -105,18 +105,26 @@ export tokenize
 tokenize(x, str::RegexMatch) = tokenize(x, str.match)
 
 
-struct PartialMatchException <: Exception
+struct PartialMatchException{S,P} <: Exception
     index::Int
-    str::String
+    str::S
+    delta::Int
+    pattern::P
+    PartialMatchException(i,str::S,p::P) where {S<:AbstractString,P} =
+        new{S,P}(i,str,200,p)
+    PartialMatchException(i,str::S,p::P) where {S,P} =
+        new{S,P}(i,str,6,p)
 end
+
 export context
-context(x::PartialMatchException, delta = 200) =
-    x.str[min(x.index,end):min(end, nextind(x.str,x.index,delta))]
+context(x::PartialMatchException) =
+    x.str[min(x.index,end):min(end, nextind(x.str,x.index,x.delta))]
 import Base: showerror
 function Base.showerror(io::IO, x::PartialMatchException)
     println(io, "incomplete parsing at $(x.index):")
     println(io, "\"$(context(x))\"")
-    println(io, "in \"$(x.str)\"")
+    println(io, "in \"$(x.str)\"\n")
+    println(io, x.pattern)
 end
 
 """
@@ -141,7 +149,9 @@ function tokenize(x, str; partial=:error)
         elseif partial == :warn
             @warn "incomplete parsing stopped at $i_ " str[min(i_,end):min(end, nextind(str,i_,200))]
         elseif partial == :error
-            throw(PartialMatchException(i_, str))
+            throw(PartialMatchException(i_, str, x))
+        elseif partial == :nothing
+            return nothing
         end
     end
     if isnull(r)
