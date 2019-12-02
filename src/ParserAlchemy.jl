@@ -211,6 +211,30 @@ function TextParse.tryparsenext(tok::Regex, str, i, till, opts=TextParse.default
     end
 end
 
+export ParserPeek
+struct ParserPeek{T,P} <: TextParse.AbstractToken{T}
+    message::String
+    length::Int
+    parser::P
+    ParserPeek(message,length, p::P) where P =
+        new{result_type(P),P}(message, length, p)
+end
+
+function TextParse.tryparsenext(tok::ParserPeek, str, i, till, opts=TextParse.default_opts) where {P,T}
+    r, i_ = tryparsenext(tok.parser, str,i,till,opts)
+    if i<=till
+        if isnull(r)
+            l = tok.length
+            at = str[min(lastindex(str), i):min(lastindex(str), nextind(str,i,l))]
+            @info "no match" at msg=tok.message
+        else
+            at = str[i:min(lastindex(str), prevind(str,i_,1))]
+            @info "match" at msg=tok.message get(r)
+        end
+    end
+    r, i_
+end
+
 
 export NamedToken
 struct NamedToken{P,T} <: TextParse.AbstractToken{Pair{Symbol,T}}
