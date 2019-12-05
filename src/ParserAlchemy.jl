@@ -1028,7 +1028,7 @@ parenthesisP(open,close) = seq(String,
     open, r"[^][{}()]*", close;
     transform=(v,i) -> join(v))
 delimiter   = r"[-, _/\.;:*\|]"
-word        = r"[^\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵⁶⁷⁸⁹]+"
+word        = r"\p{L}+" # r"[^!\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵⁶⁷⁸⁹]+"
 footnote    = r"^[⁰¹²³⁴⁵⁶⁷⁸⁹]+"
 enum_label = r"(?:[0-9]{1,3}|[ivx]{1,6}|[[:alpha:]])[\.\)]"
 wdelim = r"^[ \t\r\n]+"
