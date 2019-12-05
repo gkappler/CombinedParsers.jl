@@ -35,6 +35,7 @@ variable_colors=Dict(
     :quote => :light_black,
     Symbol("wikt:de") => :light_blue,
     :htmlcomment => :light_black,
+    :unknown => :light_red,
     :meaning => :light_black
 )
 
@@ -536,6 +537,7 @@ end
 import ...ParserAlchemy: footnote
 simple_tokens = [
     ## instance(Token, parser(Regex(" "*regex_string(enum_label)*" ")), :number),
+    instance(Token, r"^[0-9]+", :number),
     instance(Token, parser(word), :literal),
     instance(Token, parser(footnote), :footnote),
     instance(Token, parser(quotes), :quote),
