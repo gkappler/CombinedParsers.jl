@@ -1,4 +1,8 @@
 
+
+@test tokenize(seq("(", rep_until(alt(word,delimiter), ")")), "(balanced parenthesis)") ==
+    ("(",["balanced", " ", "parenthesis"])
+
 @testset "demo data parsing" begin
     1:3 == [1,2,3]
     "1-3" == [1,2,3]
@@ -74,15 +78,23 @@
 
 end
 
-import ParserAlchemy.Tokens: simple_tokens
-inner = alt(AbstractToken, simple_tokens...)
-pushfirst!(inner,ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner))
+@testset "html" begin
+    import ParserAlchemy.Tokens: simple_tokens
+    inner = alt(AbstractToken, simple_tokens...);
+    pushfirst!(inner,ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner));
 
-ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner)
+    ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner)
 
-using BenchmarkTools
-tokenize(inner,"<a font=+1>b <b>x y z</b>c d</a>")|>dump
-                  
+    using BenchmarkTools
+    @test tokenize(inner,"<a font=\"+1\">i<b>bold</b>j</a>") == 
+        Node(:a, [Token(:font,"+1")], AbstractToken[
+            l"i",
+            Node(:b, Token[], AbstractToken[l"bold"]),
+            l"j"])
+
+    @test tokenize(inner,"<a font=+1/>") ==
+        Node(:a, [Token(:font,"+1")], AbstractToken[])
+end                  
 
 
 @testset "continue options of last Either" begin
