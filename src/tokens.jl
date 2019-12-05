@@ -20,6 +20,7 @@ variable_colors=Dict(
     :ext => 36,
     :macro => 36,
     :number => 36,
+    :syllable => :yellow,
     :operator => :yellow,
     :name => :yellow,
     :footnote => :yellow,
@@ -108,7 +109,9 @@ function Base.show(io::IO, z::TokenPair)
     inner_print(io::IO,x) =
         print(io, x)
     
-    if z.key==:italics
+    if z.key==:hyphenation
+        join(io, z.value, "·")
+    elseif z.key==:italics
         with_output_color(inner_print, :underline, io, z.value)
     elseif z.key==:bold
         with_output_color(inner_print, :bold, io, z.value)
