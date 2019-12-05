@@ -20,6 +20,7 @@ variable_colors=Dict(
     :ext => 36,
     :macro => 36,
     :number => 36,
+    :syllable => :yellow,
     :operator => :yellow,
     :name => :yellow,
     :footnote => :yellow,
@@ -34,6 +35,7 @@ variable_colors=Dict(
     :quote => :light_black,
     Symbol("wikt:de") => :light_blue,
     :htmlcomment => :light_black,
+    :unknown => :light_red,
     :meaning => :light_black
 )
 
@@ -108,7 +110,9 @@ function Base.show(io::IO, z::TokenPair)
     inner_print(io::IO,x) =
         print(io, x)
     
-    if z.key==:italics
+    if z.key==:hyphenation
+        join(io, z.value, "·")
+    elseif z.key==:italics
         with_output_color(inner_print, :underline, io, z.value)
     elseif z.key==:bold
         with_output_color(inner_print, :bold, io, z.value)
@@ -232,8 +236,8 @@ struct Node{A,T} <: AbstractToken
         new{A,T}(Symbol(name), _convert(Vector{A},attrs), _convert(Vector{T},value))
     end
 end
-BasePiracy.construct(::Type{Node{T}}; name, attributes=Token[], children=T[]) where T = 
-    Node(name,
+BasePiracy.construct(::Type{Node{A,T}}; name, attributes=Token[], children=T[]) where {A,T} = 
+    Node{A,T}(name,
          _convert(Vector{Token},attributes),
          children)
 ==(a::Node, b::Node) = a.name==b.name && a.attributes==b.attributes && a.children==b.children
@@ -460,7 +464,7 @@ struct Template{I,T} <: AbstractToken
 end
 BasePiracy.construct(::Type{Template{I,T}};template,arguments=TemplateArgument{I,T}[]) where {I,T} =
     Template{I,T}(template,arguments)
-Template(a::String) = Template(a,TemplateArgument{Token,LineContent}[])
+Template(a::String) = Template(a,TemplateArgument{NamedString,LineContent}[])
 ==(a::Template, b::Template) = a.template==b.template && a.arguments==b.arguments
 hash(x::Template, h::UInt) = hash(x.template, hash(x.arguments,h))
 
@@ -533,6 +537,7 @@ end
 import ...ParserAlchemy: footnote
 simple_tokens = [
     ## instance(Token, parser(Regex(" "*regex_string(enum_label)*" ")), :number),
+    instance(Token, r"^[0-9]+", :number),
     instance(Token, parser(word), :literal),
     instance(Token, parser(footnote), :footnote),
     instance(Token, parser(quotes), :quote),

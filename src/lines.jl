@@ -150,7 +150,9 @@ wrap_convert(T::Type, x::Vector{Any}) =
     end
 
 wrap_convert(::Type{Vector{T}}, v::Vector{Any}) where T =
-    T[ wrap_convert(T,x) for x in v ]
+    T[ wrap_convert(T,x)
+       for x in v if !isempty(x) ]
+## remove, use termination empty line
 
 function wrap_convert(::Type{Vector{AbstractToken}}, v::Vector{Any})
     r = AbstractToken[]
@@ -173,7 +175,7 @@ function wrap_convert(::Type{Vector{Line{I,T}}}, v::Vector{Any}) where {I,T}
     r = Line{I,T}[]
     for x in v
         if x isa Vector
-            if eltype(x) <: T
+            if eltype(x) <: T ## possibly aggregate
                 push!(r, Line(I[],x))
             else
                 inner=wrap_convert(Vector{Line{I,T}}, x)
@@ -267,10 +269,6 @@ function nested_wrap_types(l::NamedString{:field}, inner; typenames, type, kw...
     f => wrap_convert(FT, nested_wrap_types(inner; typenames=typenames, kw...))
 end
 
-## remove, use termination token
-function nested_wrap_types(l::NamedString{:index}, inner; typenames, kw...)
-    nested_wrap_types(inner; typenames=typenames, kw...)
-end
 
 token_lines(x::Paragraph; kw...) =
     unnest_lines(Token, nested_tokens(x; kw...))
@@ -283,7 +281,7 @@ unnest_lines(T::Type{<:AbstractToken},x) = unnest_lines(Line{NamedString,T}[],x,
 #     push!(io.tokens,x)
 #     io
 # end
-function unnest_lines(io::Vector{Line{NamedString,T}},x::Vector{AbstractToken}, path) where {T<:AbstractToken}
+function unnest_lines(io::Vector{Line{NamedString,T}},x::Vector{<:AbstractToken}, path) where {T<:AbstractToken}
     push!(io,Line(path,x))
     io
 end
@@ -311,6 +309,9 @@ function unnest_lines(io::Vector{Line{NamedString,T}},tree::Vector, path) where 
     io
 end
 function unnest_lines(io::Vector{Line{NamedString,T}}, b::Pair, path) where {T<:AbstractToken}
+    if !isempty(io) && (io[end].prefix) == LinePrefix([path..., b.first])
+        push!(io,Line(path[1:end-1],T[]))
+    end
     unnest_lines( io, b.second, (path..., b.first) )
 end
 

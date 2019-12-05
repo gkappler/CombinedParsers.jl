@@ -229,6 +229,8 @@ struct ParserPeek{T,P} <: TextParse.AbstractToken{T}
     ParserPeek(message,length, p::P) where P =
         new{result_type(P),P}(message, length, p)
 end
+ParserPeek(ignore,message,length, p::P) where P =
+    p
 
 function TextParse.tryparsenext(tok::ParserPeek, str, i, till, opts=TextParse.default_opts) where {P,T}
     r, i_ = tryparsenext(tok.parser, str,i,till,opts)
@@ -236,10 +238,10 @@ function TextParse.tryparsenext(tok::ParserPeek, str, i, till, opts=TextParse.de
         if isnull(r)
             l = tok.length
             at = str[min(lastindex(str), i):min(lastindex(str), nextind(str,i,l))]
-            @info "no match" at msg=tok.message
+            @info "$(tok.message) no match" at 
         else
             at = str[i:min(lastindex(str), prevind(str,i_,1))]
-            @info "match" at msg=tok.message get(r)
+            @info "$(tok.message) match" at get(r)
         end
     end
     r, i_
@@ -1028,7 +1030,7 @@ parenthesisP(open,close) = seq(String,
     open, r"[^][{}()]*", close;
     transform=(v,i) -> join(v))
 delimiter   = r"[-, _/\.;:*\|]"
-word        = r"[^\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵⁶⁷⁸⁹]+"
+word        = r"\p{L}+" # r"[^!\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵⁶⁷⁸⁹]+"
 footnote    = r"^[⁰¹²³⁴⁵⁶⁷⁸⁹]+"
 enum_label = r"(?:[0-9]{1,3}|[ivx]{1,6}|[[:alpha:]])[\.\)]"
 wdelim = r"^[ \t\r\n]+"
