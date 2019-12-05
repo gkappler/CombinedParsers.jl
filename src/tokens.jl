@@ -235,8 +235,8 @@ struct Node{A,T} <: AbstractToken
         new{A,T}(Symbol(name), _convert(Vector{A},attrs), _convert(Vector{T},value))
     end
 end
-BasePiracy.construct(::Type{Node{T}}; name, attributes=Token[], children=T[]) where T = 
-    Node(name,
+BasePiracy.construct(::Type{Node{A,T}}; name, attributes=Token[], children=T[]) where {A,T} = 
+    Node{A,T}(name,
          _convert(Vector{Token},attributes),
          children)
 ==(a::Node, b::Node) = a.name==b.name && a.attributes==b.attributes && a.children==b.children
@@ -463,7 +463,7 @@ struct Template{I,T} <: AbstractToken
 end
 BasePiracy.construct(::Type{Template{I,T}};template,arguments=TemplateArgument{I,T}[]) where {I,T} =
     Template{I,T}(template,arguments)
-Template(a::String) = Template(a,TemplateArgument{Token,LineContent}[])
+Template(a::String) = Template(a,TemplateArgument{NamedString,LineContent}[])
 ==(a::Template, b::Template) = a.template==b.template && a.arguments==b.arguments
 hash(x::Template, h::UInt) = hash(x.template, hash(x.arguments,h))
 
