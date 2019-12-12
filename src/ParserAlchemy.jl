@@ -124,7 +124,6 @@ function Base.showerror(io::IO, x::PartialMatchException)
     println(io, "incomplete parsing at $(x.index):")
     println(io, "\"$(context(x))\"")
     println(io, "in \"$(x.str)\"\n")
-    println(io, x.pattern)
 end
 
 """
@@ -227,7 +226,7 @@ struct ParserPeek{T,P} <: TextParse.AbstractToken{T}
     length::Int
     parser::P
     ParserPeek(message,length, p::P) where P =
-        new{result_type(P),P}(message, length, p)
+        new{result_type(P),P}(message, length, parser(p))
 end
 ParserPeek(ignore,message,length, p::P) where P =
     p
@@ -238,10 +237,10 @@ function TextParse.tryparsenext(tok::ParserPeek, str, i, till, opts=TextParse.de
         if isnull(r)
             l = tok.length
             at = str[min(lastindex(str), i):min(lastindex(str), nextind(str,i,l))]
-            @info "$(tok.message) no match" at 
+            @info "$(tok.message) no match" at # tok.parser
         else
             at = str[i:min(lastindex(str), prevind(str,i_,1))]
-            @info "$(tok.message) match" at get(r)
+            @info "$(tok.message) match" at get(r) # tok.parser
         end
     end
     r, i_
