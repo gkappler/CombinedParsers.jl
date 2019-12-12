@@ -56,7 +56,7 @@ copy1_append!2(x)=Any[x]
 copy1_append!2(x,y)=push!(x,y) ## append!(x,y)
 
 export nested
-function nested(v::Paragraph; isappendable=isappendable_line, agg=copy1_append!2)
+function nested(v::Vector{<:Line}; isappendable=isappendable_line, agg=copy1_append!2)
     tree = Any[]
     for x in v
         pushtail_nested!(tree, x.prefix, x.tokens; isappendable=isappendable, agg=agg)
@@ -194,7 +194,7 @@ function wrap_convert(::Type{Vector{Line{I,T}}}, v::Vector{Any}) where {I,T}
                 push!(r[end].tokens, x)
             end
         elseif x isa Line{I,T}
-            push!(r, x)
+            x.prefix[end] != NamedString(:instance_separator,"") && push!(r, x)
         else
             error("cannot insert $x::$(typeof(x)) to Vector{Line{$I,$T}}")
         end
@@ -246,11 +246,19 @@ function nested_wrap_types(b::Pair; kw...)
     l, inner = b
     nested_wrap_types(NamedString(l), inner; kw...)
 end
+
 nested_wrap_types(l::NamedString{:whitespace}, inner; typenames, kw...) =
     l => nested_wrap_types(inner; typenames=typenames, kw...)
 
 nested_wrap_types(l::NamedString{:list}, inner; typenames, kw...) =
     l => nested_wrap_types(inner; typenames=typenames, kw...)
+
+nested_wrap_types(l::NamedString{:headline}, inner; typenames, kw...) =
+    l => nested_wrap_types(inner; typenames=typenames, kw...)
+
+nested_wrap_types(l::NamedString{:instance_separator}, inner; typenames, kw...) =
+    Any[] ## nothing ##l => nested_wrap_types(inner; typenames=typenames, kw...)
+
 
 
 function nested_wrap_types(l::NamedString{:type}, inner; typenames, kw...)
@@ -269,8 +277,7 @@ function nested_wrap_types(l::NamedString{:field}, inner; typenames, type, kw...
     f => wrap_convert(FT, nested_wrap_types(inner; typenames=typenames, kw...))
 end
 
-
-token_lines(x::Paragraph; kw...) =
+token_lines(x::Vector{<:Line}; kw...) =
     unnest_lines(Token, nested_tokens(x; kw...))
 
 
@@ -296,9 +303,8 @@ end
 function unnest_lines(io::Vector{Line{NamedString,T}},tree::Vector, path) where {T<:AbstractToken}
     l::Any = nothing
     for (i,b) in enumerate(tree)
-        if b isa Pair ## todo: this could be dne better
-            l == b.first && push!(io,Line(path,T[]))
-            ## ? ( tuple(path..., NamedString(:index,"$i")))
+        if b isa Pair
+            l == b.first && push!(io,Line([ path..., NamedString(:instance_separator,"") ],T[]))
             unnest_lines(io, b,  path)
             l = b.first
         else
@@ -310,7 +316,7 @@ function unnest_lines(io::Vector{Line{NamedString,T}},tree::Vector, path) where 
 end
 function unnest_lines(io::Vector{Line{NamedString,T}}, b::Pair, path) where {T<:AbstractToken}
     if !isempty(io) && (io[end].prefix) == LinePrefix([path..., b.first])
-        push!(io,Line(path[1:end-1],T[]))
+        push!(io,Line([ path[1:end-1]..., NamedString(:instance_separator,"") ],T[]))
     end
     unnest_lines( io, b.second, (path..., b.first) )
 end
