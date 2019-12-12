@@ -386,7 +386,7 @@ end
 
 export rep_stop, rep_until
 rep_stop(p,stop) =
-    rep(seq(NegativeLookahead(stop),p; transform=2))
+    rep(seq(NegativeLookahead(parser(stop)),parser(p); transform=2))
 rep_until(p,until, with_until=false) =
     seq(rep_stop(p,until), until;
         transform = with_until ? nothing : 1)
