@@ -278,7 +278,7 @@ attribute_parser = seq(Token,
                     r"^[-+]?[0-9]+",
                     word,
                     r"^#[0-9A-Fa-f]{6}");
-                transform = (v,i) -> Token(v[1], intern(v[5])),
+                transform = (v,i) -> Token(lowercase(v[1]), intern(v[5])),
                 ## log=true,
                 )
 
