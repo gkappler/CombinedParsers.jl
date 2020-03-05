@@ -5,10 +5,12 @@ using Nullables
 
 using TextParse
 import TextParse: tryparsenext
-using BasePiracy
 import Base: ==, hash
 
+using BasePiracy
+
 export tryparsenext, tokenize, result_type
+
 
 export trimstring
 trimstring(x::AbstractString) =
@@ -22,7 +24,7 @@ revert(x::TextParse.AbstractToken) = error("implement!")
 parser(v::Vector) = [ parser(x) for x in v ]
 
 struct Suffix{S} s::S end
-parser(x::AbstractString) = x
+parser(x::Union{Char,AbstractString}) = x
 revert(x::AbstractString) = Suffix(x)
 regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
 parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
@@ -39,6 +41,7 @@ result_type(x::Type{<:TextParse.AbstractToken{T}}) where T = T
 result_type(x::Type{Pair{Symbol, <:T}}) where T =
     Pair{Symbol, result_type(T)}
 result_type(x::Type{<:AbstractString}) = AbstractString
+result_type(x::Type{Char}) = Char
 result_type(x::Type{Regex}) = AbstractString
 
 ############################################################
@@ -94,9 +97,7 @@ regex_neg_lookahead(e, match=r".") =
              Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s"))
 
 
-ParserTypes = Union{TextParse.AbstractToken, AbstractString, Regex,
-                    Pair{Symbol,
-                         <:Union{TextParse.AbstractToken, AbstractString, Regex}}}
+ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex}
 result_type(x::T) where {T<:ParserTypes} =
     result_type(T)
 
@@ -121,9 +122,10 @@ context(x::PartialMatchException) =
     x.str[min(x.index,end):min(end, nextind(x.str,x.index,x.delta))]
 import Base: showerror
 function Base.showerror(io::IO, x::PartialMatchException)
-    println(io, "incomplete parsing at $(x.index):")
-    println(io, "\"$(context(x))\"")
-    println(io, "in \"$(x.str)\"\n")
+    println(io, "parsing stopped at postion $(x.index) in:")
+    println(io, "$(x.str)")
+    println(io, "."^(x.index-1),"^")
+    ##println(io, x.pattern)
 end
 
 """
@@ -319,6 +321,72 @@ function TextParse.tryparsenext(tok::Filter, str, i, till, opts=TextParse.defaul
         result, i_
     else
         Nullable{result_type(typeof(tok))}(), i
+    end
+end
+
+export AnyChar, any
+struct AnyChar <: TextParse.AbstractToken{Char}
+end
+any() = AnyChar()
+result_type(::Type{AnyChar}) = Char
+regex_string(x::AnyChar) = "."
+@inline ncodeunits(t::AnyChar,state) = state
+
+function TextParse.tryparsenext(tok::AnyChar, str, i, till, opts=TextParse.default_opts)
+    if i <= till
+        Nullable(str[i]), nextind(str,i)
+    else
+        Nullable{Char}(), i
+    end
+end
+
+
+export CharIn
+struct CharIn{S} <: TextParse.AbstractToken{Char}
+    sets::S
+end
+result_type(::Type{<:CharIn}) = Char
+regex_string(x::StepRange) =
+    if x.start == x.stop
+        x.start
+    else
+        x.start*"-"*x.stop
+    end
+regex_string(x::CharIn) =
+    "["*join([regex_string(s) for s in x.sets])*"]"
+function TextParse.tryparsenext(tok::CharIn, str, i, till, opts=TextParse.default_opts)
+    if i <= till
+        for s in tok.sets
+            str[i] in s && return(Nullable(str[i]), nextind(str,i))
+        end
+    end
+    Nullable{Char}(), i
+end
+
+
+export CharNotIn
+struct CharNotIn{S} <: TextParse.AbstractToken{Char}
+    sets::S
+end
+result_type(::Type{<:CharNotIn}) = Char
+regex_string(x::CharNotIn) =
+    "[^"*join([regex_string(s) for s in x.sets])*"]"
+
+function TextParse.tryparsenext(tok::CharNotIn, str, i, till, opts=TextParse.default_opts)
+    if i <= till
+        for s in tok.sets
+            str[i] in s && return(Nullable{Char}(), i)
+        end
+    end
+    (Nullable(str[i]), nextind(str,i))
+end
+
+
+function TextParse.tryparsenext(tok::Char, str, i, till, opts=TextParse.default_opts)
+    if i <= till && str[i] == tok
+        return(Nullable(str[i]), nextind(str,i))
+    else
+        Nullable{Char}(), i
     end
 end
 
