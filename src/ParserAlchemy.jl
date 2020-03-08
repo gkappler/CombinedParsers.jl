@@ -1149,14 +1149,24 @@ parse(p::ParserTypes, s::AbstractString)
 
 parse `s` with parser `p`.
 """
-Base.parse(p::ParserTypes, s::AbstractString) =
-    parse(Parsing(p,s))
+function Base.parse(p::ParserTypes, s::AbstractString)
+    i = _iterate(p,s)
+    i === nothing && return nothing
+    get(p,s,i...)
+end
+
+Base.get(x, sequence, after, (i, till, state)) =
+    get(x, sequence, after, i, till, state)
+    
 
 import Base: iterate
 Base.parse(x::Parsing) =
     get(x,iterate(x)...)
 Base.iterate(x::Parsing) =
-    iterate(x,(1,lastindex(x.sequence),nothing))
+    _iterate(x.parser,x.sequence)
+
+_iterate(parser,sequence) =
+    _iterate(parser, sequence, 1,lastindex(sequence),nothing)
 
 export parse_all
 function parse_all(p::Parsing)
@@ -1171,61 +1181,62 @@ function parse_all(p::Parsing)
 end
 
 
-Base.get(x::Parsing{<:Union{Char,AbstractString}}, after, (i, till, state)) =
-    x.parser
+Base.get(parser::Union{Char,AbstractString}, sequence, after, i, till, state) =
+    parser
 
-@inline function Base.iterate(x::Parsing{Char}, (i, till, state))
-    (state !==nothing || i>till || x.parser != x.sequence[i]) && return(nothing)
-    return i+Base.ncodeunits(x.parser), (i,till,tuple())
+@inline function _iterate(parser::Char, sequence, i, till, state)
+    (state !==nothing || i>till || parser != sequence[i]) && return(nothing)
+    return i+Base.ncodeunits(parser), (i,till,tuple())
 end
 
-Base.get(x::Parsing{<:Union{CharIn,CharNotIn,AnyChar}}, after, (i, till, state)) =
-    x.sequence[i]
+Base.get(x::Union{CharIn,CharNotIn,AnyChar}, sequence, after, i, till, state) =
+    sequence[i]
 
-@inline function Base.iterate(x::Parsing{<:CharIn}, (i, till, state))
+@inline function _iterate(parser::CharIn, sequence, i, till, state)
     (state !==nothing || i>till) && return(nothing)
-    c = x.sequence[i]
-    for s in x.parser.sets
+    c = sequence[i]
+    for s in parser.sets
         c in s && return i+Base.ncodeunits(c), (i,till,tuple())
     end
     return nothing
 end
 
-@inline function Base.iterate(x::Parsing{<:CharNotIn}, (i, till, state))
+@inline function _iterate(parser::CharNotIn, sequence, i, till, state)
     (state !==nothing || i>till) && return(nothing)
-    c = x.sequence[i]
-    for s in x.parser.sets
+    c = sequence[i]
+    for s in parser.sets
         c in s && return nothing 
     end
     return i+Base.ncodeunits(c), (i,till,tuple())
 end
 
-@inline function Base.iterate(x::Parsing{AnyChar}, (i, till, state))
+@inline function _iterate(parser::AnyChar, sequence, i, till, state)
     (state !==nothing || i>till) && return(nothing)
-    c = x.sequence[i]
+    c = sequence[i]
     return i+Base.ncodeunits(c), (i,till,tuple())
 end
 
 
-@inline function Base.iterate(x::Parsing{<:AbstractString}, (i, till, state))
+@inline function _iterate(parser::AbstractString, sequence, i, till, state)
     state !==nothing && return(nothing)
     j = i
-    while j-i<Base.ncodeunits(x.parser)
-        (j > till || x.parser[j-i+1] != x.sequence[j]) && return(nothing)
-        j = nextind(x.sequence, j)
+    while j-i<Base.ncodeunits(parser)
+        (j > till || parser[j-i+1] != sequence[j]) && return(nothing)
+        j = nextind(sequence, j)
     end
     return j, (i,till,tuple())
 end
 
-function Base.get(x::Parsing{<:Sequence}, after, (i, till, state))
-    tuple(( get(Parsing(x.parser.parts[p],x.sequence), p<length(state) ? state[p+1][1] : after, s) for (p,s) in enumerate(state))...)
+function Base.get(parser::Sequence, sequence, after, i, till, state)
+    parser.transform(
+        tuple(( get(parser.parts[p],sequence, p<length(state) ? state[p+1][1] : after, s) for (p,s) in enumerate(state))...)
+        ,i)
 end
 
 
-function Base.iterate(x::Parsing{S}, (i, till, states)) where {S<:Sequence}
+function _iterate(parser::S, sequence, i, till, states) where {S<:Sequence}
     i_ = i
-    sequence = x.sequence
-    parts=x.parser.parts
+    parts=parser.parts
     nexti,states = if states === nothing
         sss = Vector{Any}(undef,length(parts))
         sss[1] = (i_, till, nothing)
@@ -1234,7 +1245,7 @@ function Base.iterate(x::Parsing{S}, (i, till, states)) where {S<:Sequence}
         length(states),states
     end
     while nexti<=length(states)
-        ns = iterate(Parsing(parts[nexti],sequence), states[nexti])
+        ns = _iterate(parts[nexti], sequence, states[nexti]...)
         if ns === nothing
             nexti -= 1
             nexti == 0 && return nothing
@@ -1242,7 +1253,7 @@ function Base.iterate(x::Parsing{S}, (i, till, states)) where {S<:Sequence}
             states[nexti] = ns[2]
             i_ = ns[1]
             nexti += 1
-            if nexti>length(states)
+            if nexti > length(states)
                 return i_, (i_,till,states)
             else
                 states[nexti] = (i_, till, nothing)
@@ -1252,16 +1263,18 @@ function Base.iterate(x::Parsing{S}, (i, till, states)) where {S<:Sequence}
 end
 
 
-function Base.get(x::Parsing{<:Repeat}, after, (i, till, state))
-    [ get(Parsing(x.parser.parser,x.sequence), p<length(state) ? state[p+1][1] : after, s)
-      for (p,s) in enumerate(state) ]
+function Base.get(parser::Repeat, sequence, after, i, till, state)
+    parser.transform(
+        [ get(parser.parser,sequence, p<length(state) ? state[p+1][1] : after, s...)
+          for (p,s) in enumerate(state) ]
+        ,i)
 end
 
-function Base.iterate(p::Parsing{<:Repeat}, (i, till, state))
-    t = p.parser
+export _iterate
+function _iterate(t::Repeat, sequence, i, till, state)
     function fill(j)
         ## x = iterate(Parsing(t.parser,p.sequence), (j,till,nothing))
-        while (x = iterate(Parsing(t.parser,p.sequence), (j,till,nothing)))!==nothing
+        while (x = _iterate(t.parser,sequence, j,till,nothing))!==nothing
             push!(state,x[2])
             j = x[1]
         end
@@ -1272,11 +1285,28 @@ function Base.iterate(p::Parsing{<:Repeat}, (i, till, state))
         fill(i), state
     else
         i_ = i
-        isempty(state) && return nothing
+        if isempty(state)
+            return nothing
+        elseif state[end][1]==i
+            # https://www.pcre.org/original/doc/html/pcrepattern.html:
+            # It is possible to construct infinite loops by following
+            # a subpattern that can match no characters with a
+            # quantifier that has no upper limit, for example:
+            
+            #   (a?)*
+            
+            # Earlier versions of Perl and PCRE used to give an error
+            # at compile time for such patterns. However, because
+            # there are cases where this can be useful, such patterns
+            # are now accepted, but if any repetition of the
+            # subpattern does in fact match no characters, the loop is
+            # forcibly broken.
+            return nothing
+        end
         goback = true
         while goback
             i_ = state[end][1]
-            x = iterate(Parsing(t.parser,p.sequence), state[end])
+            x = _iterate(t.parser,sequence, state[end]...)
             if x === nothing
                 pop!(state)
                 ## @show i_, state
@@ -1292,24 +1322,25 @@ function Base.iterate(p::Parsing{<:Repeat}, (i, till, state))
         end
         i_,state
     end
-    i_, (i, till,state)
+    if length(state)>=t.range[1] && length(state)<=t.range[2]
+        return i_, (i,till,state)
+    else
+        nothing
+    end
 end
 
 
-function Base.get(x::Parsing{<:Either}, after, (i, till, state))
+function Base.get(parser::Either, sequence, after, i, till, state)
     j = state[1]
     lstate = state[2]
-    get(Parsing(x.parser.options[j],x.sequence), after, lstate)
+    get(parser.options[j],sequence, after, lstate...)
 end
 
-function Base.iterate(p::Parsing{<:Either}, (i, till, state))
-    str = p.sequence
-    t = p.parser
-    ## @show i, state
+function _iterate(t::Either, str, i, till, state)
     ## sleep(1)
     fromindex = if state !== nothing
         j, sstate = state
-        nstate = iterate(Parsing(t.options[j], str), (i, till, sstate))
+        nstate = _iterate(t.options[j], str, i, till, sstate[3])
         nstate !== nothing && return nstate[1], (i, till, (j, nstate[2]))
         j + 1
     else
@@ -1317,25 +1348,92 @@ function Base.iterate(p::Parsing{<:Either}, (i, till, state))
     end
     for j in fromindex:length(t.options)
         ## @info "alt" str[i:till] t.options[j]
-        sstate = iterate(Parsing(t.options[j], str), (i, till, nothing))
+        sstate = _iterate(t.options[j], str, i, till, nothing)
         sstate !== nothing && return sstate[1], (i, till, (j, sstate[2]))
     end
     nothing
 end
 
-function Base.get(x::Parsing{<:Optional}, after, (i, till, state))
-    state === missing ? missing : get(Parsing(x.parser.parser,x.sequence), after, (i, till, state))
+function Base.get(parser::Optional, sequence, after, i, till, state)
+    state === missing ? parser.default : get(parser.parser,sequence, after, i, till, state)
 end
 
-function Base.iterate(p::Parsing{<:Optional}, (i, till, state))
-    str = p.sequence
-    t = p.parser
+function _iterate(t::Optional, str, i, till, state)
     if state === nothing
-        r = iterate(Parsing(t.parser, str), ( i, till, nothing) )
+        r = _iterate(t.parser, str, i, till, nothing)
         if r === nothing
             i,(i,till,missing)
         else
-            r[1], @show r[2]
+            r[1], r[2]
+        end
+    elseif state === missing
+        nothing
+    else
+        nothing
+    end
+end
+
+
+
+function Base.get(parser::TextParse.AbstractToken, sequence, after, i, till, state)
+    state
+end
+
+function _iterate(parser::TextParse.AbstractToken, sequence, i, till, state)
+    if state === nothing
+        r,i_ = tryparsenext(parser, sequence, i, till)
+        if isnull(r)
+            nothing
+        else
+            i_,(i,till,get(r))
+        end
+    else
+        nothing
+    end
+end
+
+
+function Base.get(parser::InstanceParser, sequence, after, i, till, state)
+    parser.transform(
+        get(parser.parser,sequence, after, i, till, state)
+        ,i)
+end
+
+function _iterate(parser::InstanceParser, sequence, i, till, state)
+    r = _iterate(parser.parser, sequence, i, till, state )
+end
+
+
+function Base.get(parser::NegativeLookahead, sequence, after, i, till, state)
+    nothing
+end
+
+function _iterate(t::NegativeLookahead, str, i, till, state)
+    if state === nothing
+        r = _iterate(parser, str, i, till, nothing)
+        if r === nothing
+            i,(i,till,missing)
+        else
+            nothing
+        end
+    elseif state === missing
+        nothing
+    else
+        i, (i,till,missing)
+    end
+end
+
+function Base.get(parser::PositiveLookahead, sequence, after, i, till, state)
+    nothing
+end
+
+function _iterate(t::PositiveLookahead, str, i, till, state)
+    if state === nothing
+        r = _iterate(parser, str, i, till, nothing)
+        if r === nothing
+            nothing
+        else
+            i,(i,till,missing)
         end
     elseif state === missing
         nothing
@@ -1345,20 +1443,18 @@ function Base.iterate(p::Parsing{<:Optional}, (i, till, state))
 end
 
 
-
-function Base.get(x::Parsing{<:Regex}, after, (i, till, state))
-    state
+function Base.get(parser::Regex, sequence, after, i, till, state)
+    isempty(state.captures) ? state.match : state.captures
 end
+
 
 """
 Match a regex greedily, and iterate only over that result.
 Caveat: If shorter matches exist these will not be iterated because julia PCRE does not support states.
 """
-function Base.iterate(p::Parsing{<:Regex}, (i, till, state))
+function _iterate(tok::Regex, str, i, till, state)
     state !== nothing && return nothing
-    tok = p.parser
-    str = p.sequence
-    m = match(tok, str,i)
+    m = match(tok, SubString(str,i,till))
     if m === nothing
         nothing
     else
@@ -1367,5 +1463,30 @@ function Base.iterate(p::Parsing{<:Regex}, (i, till, state))
     end
 end
 
+
+function Base.get(parser::FlatMap, sequence, after, i, till, state)
+    get(state[1].parser,sequence, after, i,till,state[2])
+end
+
+function _iterate(tokf::FlatMap, str, i, till, state)
+    T = result_type(tokf)
+    if state === nothing
+        lr = _iterate(tokf.left, str, i, till, nothing)
+        lr === nothing && return nothing
+        i_ = lr[1]
+        rightp = tokf.right(get(tokf.left, str,lr...))
+        rr = nothing
+        while rr === nothing
+            rr = _iterate(rightp, str, i_, till, nothing)
+            if rr === nothing
+                lr = _iterate(tokf.left, str, i, till, lr[2])
+                lr === nothing && return nothing
+                i_ = lr[1]
+            else
+                return rr[1], (i,till,(rightp, rr[2][3]))
+            end
+        end
+    end
+end
 
 end # module
