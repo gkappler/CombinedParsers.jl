@@ -30,11 +30,10 @@ regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
 parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
 revert(x::Regex) = Regex(regex_string(x) * '$', regex_flags(x))
 parser(x::Pair{Symbol, P}) where P =
-    NamedToken{P,result_type(P)}(x.first, parser(x.second))
+    NamedToken(x.first, parser(x.second))
 
 parser(t::Tuple) = tuple([ parser(x) for x in t ]...)
-parser(x::Pair{Symbol, Tuple{P, Type}}) where P =
-    NamedToken{P,x.second[2]}(x.first, x.second[1])
+## parser(x::Pair{Symbol, Tuple{P, Type}}) where P = NamedToken{P,x.second[2]}(x.first, x.second[1])
 
 
 result_type(x::Type{<:TextParse.AbstractToken{T}}) where T = T
@@ -249,10 +248,12 @@ function TextParse.tryparsenext(tok::ParserPeek, str, i, till, opts=TextParse.de
 end
 
 
-export NamedToken
+export NamedToken, with_name
 struct NamedToken{P,T} <: TextParse.AbstractToken{Pair{Symbol,T}}
     name::Symbol
     parser::P
+    NamedToken(name::Symbol,parser) =
+        new{typeof(parser),result_type(parser)}(name,parser)
 end
 
 function TextParse.tryparsenext(tok::NamedToken{P,T}, str, i, till, opts=TextParse.default_opts) where {P,T}
@@ -269,8 +270,16 @@ export InstanceParser, instance
 struct InstanceParser{P,T, F<:Function} <: TextParse.AbstractToken{T}
     transform::F
     parser::P
+    InstanceParser{T}(transform::F, p::P) where {T, F<:Function,P} =
+        new{P,T,F}(transform, p)
 end
-InstanceParser{T}(transform::F, p::P) where {T, F<:Function,P} = InstanceParser{P,T,F}(transform, p)
+indexed_captures(x::InstanceParser,context) =
+    InstanceParser{result_type(x)}(x.transform,indexed_captures(x.parser,context))
+parser(constant::Pair{ParserTypes}) =
+    InstanceParser{typeof(constant.second)}(
+        (v,i) -> constant.second,
+        constant.first)
+
 regex_string(x::Union{NamedToken, InstanceParser}) = regex_string(x.parser)
 
 export instance 
