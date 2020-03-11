@@ -1,5 +1,5 @@
 module ParserAlchemy
-
+import Base: (*), (|), cat
 using Parameters
 using Nullables
 
@@ -11,11 +11,6 @@ using BasePiracy
 
 export tryparsenext, tokenize, result_type
 
-
-export trimstring
-trimstring(x::AbstractString) =
-    replace(x, r"^[ \r\n\t]*|[ \r\n\t]*$" => s"")
-
 include("namedtuples.jl")
 
 export parser
@@ -24,11 +19,8 @@ revert(x::TextParse.AbstractToken) = error("implement!")
 parser(v::Vector) = [ parser(x) for x in v ]
 
 struct Suffix{S} s::S end
-parser(x::Union{Char,AbstractString}) = x
 revert(x::AbstractString) = Suffix(x)
 regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
-parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
-revert(x::Regex) = Regex(regex_string(x) * '$', regex_flags(x))
 parser(x::Pair{Symbol, P}) where P =
     NamedToken(x.first, parser(x.second))
 
@@ -39,70 +31,26 @@ parser(t::Tuple) = tuple([ parser(x) for x in t ]...)
 result_type(x::Type{<:TextParse.AbstractToken{T}}) where T = T
 result_type(x::Type{Pair{Symbol, <:T}}) where T =
     Pair{Symbol, result_type(T)}
-result_type(x::Type{<:AbstractString}) = AbstractString
-result_type(x::Type{Char}) = Char
-result_type(x::Type{Regex}) = AbstractString
+"wrapper for stepping with ncodeunit length."
+struct ConstantParser{N,T} <: TextParse.AbstractToken{T}
+    parser::T
+end
+parser(x::Char) = ConstantParser{Base.ncodeunits(x),Char}(x)
+parser(x::AbstractString) = ConstantParser{Base.ncodeunits(x),typeof(x)}(x)
+indexed_captures(x::ConstantParser,context) = x
 
 ############################################################
 ## Parsing with TextParse.AbstractToken, operators
-
-export regex_escape
-## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
-"""
-        regex_escape(s::AbstractString)
-    regular expression metacharacters are escaped along with whitespace.
-    # Examples
-    ```jldoctest
-    julia> regex_escape("Bang!")
-    "Bang\\!"
-    julia> regex_escape("  ( [ { . ? *")
-    "\\ \\ \\(\\ \\[\\ \\{\\ \\.\\ \\?\\ \\*"
-    julia> regex_escape("/^[a-z0-9_-]{3,16}\$/")
-    "/\\^\\[a\\-z0\\-9_\\-\\]\\{3,16\\}\\\$/"
-    ```
-    """
-function regex_escape(s)
-    res = replace(string(s), r"([()[\]{}?*+\-|^\$\\.&~#\s=!<>|:])" => s"\\\1")
-    replace(res, "\0" => "\\0")
-end
 
 
 export regex_string
 regex_string(x::AbstractString) = regex_escape(x)
 regex_string(::TextParse.Numeric{<:Integer}) = "[[:digit:]]+"
-function regex_string(x::Regex)
-    p=x.pattern
-    if p[1]=='^'
-        p=p[2:end]
-    end
-    if p[end]=='$'
-        p=p[1:end-1]
-    end
-    p
-end
-
-
-
-export regex_tempered_greedy, regex_neg_lookahead
-# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
-regex_tempered_greedy(s,e, flags="s"; withend=true) =
-    Regex("^"*regex_string(s)*"((?:(?!"*regex_string(e)*").)*)"*
-          ( withend ? regex_string(e) : ""),flags)
-
-# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
-regex_neg_lookahead(e, match=r".") =
-    instance(String,
-             (v,i) -> v[1],
-             Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s"))
-
 
 ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex}
-result_type(x::T) where {T<:ParserTypes} =
-    result_type(T)
 
 
 export tokenize
-tokenize(x, str::RegexMatch) = tokenize(x, str.match)
 
 
 struct PartialMatchException{S,P} <: Exception
@@ -191,35 +139,25 @@ log_transform(transform, log, catch_error=false) =
         transform
     end
 
-import Base: Regex
-function Regex(x::ParserTypes) 
-    Regex("^"*regex_string(x))
-end
 
 
-
-function TextParse.tryparsenext(tok::AbstractString, str::AbstractString, i, till, opts=TextParse.default_opts)
-    if startswith(str[i:end], tok)
-        e = nextind(str, i, lastindex(tok))
+function TextParse.tryparsenext(tok::ConstantParser{L,<:AbstractString}, str::AbstractString, i, till, opts=TextParse.default_opts) where L
+    if startswith(str[i:end], tok.parser)
+        e = i+L
         Nullable(tok), e
     else
         Nullable{String}(), i
     end
 end
-
-
-function TextParse.tryparsenext(tok::Regex, str, i, till, opts=TextParse.default_opts)
-    m = match(tok, SubString(str,i,till)) ## idx not working with ^, and without there is no option to force it at begin
-    if m === nothing
-        Nullable{AbstractString}(), i
+function TextParse.tryparsenext(tok::ConstantParser{L,Char}, str, i, till, opts=TextParse.default_opts) where L
+    if i <= till && str[i] == tok.parser
+        return(Nullable(str[i]), i+L)
     else
-        ni = m.match =="" ? i : nextind(str, i, length(m.match))
-        ##@show str[i:min(end,ni)] m str[min(end,ni):end]
-        ( Nullable(isempty(m.captures) ? m.match : m.captures)
-          , ni
-          )
+        Nullable{Char}(), i
     end
 end
+
+
 
 export ParserPeek
 struct ParserPeek{T,P} <: TextParse.AbstractToken{T}
@@ -391,13 +329,6 @@ function TextParse.tryparsenext(tok::CharNotIn, str, i, till, opts=TextParse.def
 end
 
 
-function TextParse.tryparsenext(tok::Char, str, i, till, opts=TextParse.default_opts)
-    if i <= till && str[i] == tok
-        return(Nullable(str[i]), nextind(str,i))
-    else
-        Nullable{Char}(), i
-    end
-end
 
 export FullText
 struct FullText <: TextParse.AbstractToken{AbstractString}
@@ -574,14 +505,6 @@ end
 
 
 
-
-import Base: (*), (|), cat
-(*)(x::Regex, y::Regex) =
-    Regex(x.pattern * y.pattern)
-(*)(x::String, y::Regex) =
-    Regex(regex_escape(x) * y.pattern)
-(*)(x::Regex, y::String) =
-    Regex(x.pattern * regex_escape(y))
 
 (*)(x::Any, y::TextParse.AbstractToken) = seq(parser(x),y)
 (*)(x::TextParse.AbstractToken, y::Any) = seq(x,parser(y))
@@ -790,10 +713,6 @@ function alt(x::Vararg{ParserTypes})
     Either{T}(parts, f)
 end
 
-function alt(x::Vararg{Union{String,Regex}})
-    T = AbstractString
-    instance(T, (v,i) -> v, Regex("^(?:" * join([regex_string(p) for p in x], "|") *")"))
-end
 
 function alt(T::Type, x::Vararg; log=false, transform=(v,i) -> v)
     Either{T}(Any[ parser(y) for y in x ], log_transform(transform, log))
@@ -822,12 +741,6 @@ function TextParse.tryparsenext(t::Either, str, i, till, opts=TextParse.default_
     return Nullable{T}(), i
 end
 
-(|)(x::Regex, y::Regex) =
-    Regex("(?:",x.pattern * "|" * y.pattern * ")")
-(|)(x::String, y::Regex) =
-    Regex("(?:",regex_escape(x) * "|" * y.pattern * ")")
-(|)(x::Regex, y::String) =
-    Regex("(?:",x.pattern * "|" * regex_escape(y) * ")")
 
 
 (|)(x::Any, y::TextParse.AbstractToken) = alt(parser(x),y)
@@ -842,54 +755,6 @@ end
 
 
 ##import Base: findnext
-
-export splitter
-splitter(S, parse; transform_split = v -> tokenize(S, v), kw...) =
-    splitter(Regex(regex_string(S)), parse;
-             transform_split = transform_split, kw...)
-
-function splitter(## R::Type,
-                  split::InstanceParser{Regex,S},
-                  parse::TextParse.AbstractToken{T};
-                  log=false,
-                  transform = (v,i) -> v) where {S, T}    
-    transform_split = split.transform ## (v,i) -> v
-    R = promote_type(S,T)
-    function tpn(str, i, n, opts) ## from util.jl:_split
-        ## @show str
-        ## @show R
-        strs = Vector{R}(undef, 0)#[]
-        lstr = str[i:min(end,n)]
-        r = eachmatch(split.parser, lstr)
-        j = 0
-        for m in r
-            if j <= m.match.offset
-                ## m.match.offset  is indexed at 0!!
-                ## @show lstr nextind(lstr,j) m.match.offset m.match
-                before = SubString(lstr,nextind(lstr,j),prevind(lstr, m.match.offset + (transform_split===nothing ? sizeof(m.match) : 1)))
-                log && @info "before" before
-                push!(strs, (tokenize(parse, before))) # , i+nextind(lstr,j))) ## todo pass pos!
-            end
-            if transform_split!==nothing
-                log && @info "split" before
-                push!(strs, ( transform_split(m, i))) # , i+j) )
-            end
-            j = m.match.offset + sizeof(m.match) # =.ncodeunits
-        end
-        ## j = prevind(lstr,j)
-        if j <= n-i
-            after = SubString(str,i+j,min(lastindex(str),n))
-            log && @info "after" after
-            push!(strs,
-                  (tokenize(parse, after))) ## , i+j)) ## todo pass pos!
-        end
-        result = transform(strs,i)
-        ## error()
-        log && @info "split" lstr strs result i j n
-        return Nullable(result), nextind(str,n)
-    end
-    CustomParser(tpn, R)
-end
 
 
 
@@ -1088,43 +953,6 @@ function rep_delim_par(x, delim; repf=rep, transform=(v,i) -> v, transform_each=
         , kw...)
 end
 
-## export tokenizer_regex
-##function tokenizer_regex()
-##    re = (
-lf          = r"\n"
-newline     = r"\r?\n"
-whitespace  = r"[ \t]+"
-whitenewline = r"[ \t]*\r?\n"
-quotes      = r"[\"'`]"
-inline      = r"[^\n\r]*"
-indentation = r"[ \t]*"
-content_characters = r"[^\t\r\n]+"
-number      = r"[0-9]+"  ## TODO alt(...) csv
-letters     = r"[A-Za-z*-]*"
-# 
-parenthesisP(open,close) = seq(String,
-    open, r"[^][{}()]*", close;
-    transform=(v,i) -> join(v))
-delimiter   = r"[-, _/\.;:*\|]"
-word        = r"\p{L}+" # r"[^!\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵⁶⁷⁸⁹]+"
-footnote    = r"^[⁰¹²³⁴⁵⁶⁷⁸⁹]+"
-enum_label = r"(?:[0-9]{1,3}|[ivx]{1,6}|[[:alpha:]])[\.\)]"
-wdelim = r"^[ \t\r\n]+"
-
-
-
-export emptyline
-emptyline = r"^[ \t]*\r?\n"
-
-extension   = r"\.[[:alnum:]~#]+"
-
-email_regexp = r"[-+_.~a-zA-Z][-+_.~:a-zA-Z0-9]*@[-.a-zA-Z0-9]+"
-
-## is this official??
-author_email = seq(NamedTuple,
-                   :name => opt(r"^[^<]+"),
-                   r" <", :email => rep_until(email_regexp, r">"))
-
 
 pad(x) = seq(opt(whitespace), x, opt(whitespace), transform = v->v[2])
 
@@ -1189,13 +1017,27 @@ function parse_all(p::Parsing)
     R
 end
 
+Base.get(parser::ConstantParser{L}, sequence, after, i, till, state) where L =
+    parser=="" ? "" : sequence[i:prevind(sequence,i+L)]
 
-Base.get(parser::Union{Char,AbstractString}, sequence, after, i, till, state) =
-    parser
+@inline function _iterate(parser::ConstantParser{L,Char}, sequence, i, till, state) where L
+    (state !==nothing || i>till || parser.parser != sequence[i]) && return(nothing)
+    return i+L, (i,till,tuple())
+end
 
-@inline function _iterate(parser::Char, sequence, i, till, state)
-    (state !==nothing || i>till || parser != sequence[i]) && return(nothing)
-    return i+Base.ncodeunits(parser), (i,till,tuple())
+
+@inline function _iterate(parser::ConstantParser{L,<:AbstractString}, sequence, i, till, state) where L
+    state !==nothing && return(nothing)
+    j = i
+    while j-i<L
+        (j > till || parser.parser[j-i+1] != sequence[j]) && return(nothing)
+        j = nextind(sequence, j)
+    end
+    return j, (i,till,tuple())
+end
+
+function _iterate(parser::ConstantParser, sequence, i, till, state)
+    _iterate(parser.parser, sequence, i, till, state)
 end
 
 Base.get(x::Union{CharIn,CharNotIn,AnyChar}, sequence, after, i, till, state) =
@@ -1223,17 +1065,6 @@ end
     (state !==nothing || i>till) && return(nothing)
     c = sequence[i]
     return i+Base.ncodeunits(c), (i,till,tuple())
-end
-
-
-@inline function _iterate(parser::AbstractString, sequence, i, till, state)
-    state !==nothing && return(nothing)
-    j = i
-    while j-i<Base.ncodeunits(parser)
-        (j > till || parser[j-i+1] != sequence[j]) && return(nothing)
-        j = nextind(sequence, j)
-    end
-    return j, (i,till,tuple())
 end
 
 function Base.get(parser::Sequence, sequence, after, i, till, state)
@@ -1452,25 +1283,6 @@ function _iterate(t::PositiveLookahead, str, i, till, state)
 end
 
 
-function Base.get(parser::Regex, sequence, after, i, till, state)
-    isempty(state.captures) ? state.match : state.captures
-end
-
-
-"""
-Match a regex greedily, and iterate only over that result.
-Caveat: If shorter matches exist these will not be iterated because julia PCRE does not support states.
-"""
-function _iterate(tok::Regex, str, i, till, state)
-    state !== nothing && return nothing
-    m = match(tok, SubString(str,i,till))
-    if m === nothing
-        nothing
-    else
-        ni = m.match =="" ? i : nextind(str, i, length(m.match))
-        ni, (i,till,m)
-    end
-end
 
 
 function Base.get(parser::FlatMap, sequence, after, i, till, state)
