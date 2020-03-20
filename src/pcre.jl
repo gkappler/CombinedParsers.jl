@@ -1,3 +1,33 @@
+regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
+
+(*)(x::Regex, y::Regex) =
+    Regex(x.pattern * y.pattern)
+(*)(x::String, y::Regex) =
+    Regex(regex_escape(x) * y.pattern)
+(*)(x::Regex, y::String) =
+    Regex(x.pattern * regex_escape(y))
+
+result_type(x::Type{Regex}) = AbstractString
+parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
+## revert(x::Regex) = Regex(regex_string(x) * '$', regex_flags(x))
+function regex_string(x::Regex)
+    p=x.pattern
+    if p[1]=='^'
+        p=p[2:end]
+    end
+    if p[end]=='$'
+        p=p[1:end-1]
+    end
+    p
+end
+tokenize(x, str::RegexMatch) = tokenize(x, str.match)
+
+(|)(x::Regex, y::Regex) =
+    Regex("(?:",x.pattern * "|" * y.pattern * ")")
+(|)(x::String, y::Regex) =
+    Regex("(?:",regex_escape(x) * "|" * y.pattern * ")")
+(|)(x::Regex, y::String) =
+    Regex("(?:",x.pattern * "|" * regex_escape(y) * ")")
 
 
 export trimstring
@@ -23,6 +53,8 @@ word        = r"\p{L}+" # r"[^!\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵
 footnote    = r"^[⁰¹²³⁴⁵⁶⁷⁸⁹]+"
 enum_label = r"(?:[0-9]{1,3}|[ivx]{1,6}|[[:alpha:]])[\.\)]"
 wdelim = r"^[ \t\r\n]+"
+
+pad(x) = seq(opt(whitespace), x, opt(whitespace), transform = v->v[2])
 
 
 
@@ -68,29 +100,6 @@ function _iterate(tok::Regex, str, i, till, state)
     end
 end
 
-import Base: (*), (|), cat
-(*)(x::Regex, y::Regex) =
-    Regex(x.pattern * y.pattern)
-(*)(x::String, y::Regex) =
-    Regex(regex_escape(x) * y.pattern)
-(*)(x::Regex, y::String) =
-    Regex(x.pattern * regex_escape(y))
-
-result_type(x::Type{Regex}) = AbstractString
-parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
-revert(x::Regex) = Regex(regex_string(x) * '$', regex_flags(x))
-function regex_string(x::Regex)
-    p=x.pattern
-    if p[1]=='^'
-        p=p[2:end]
-    end
-    if p[end]=='$'
-        p=p[1:end-1]
-    end
-    p
-end
-tokenize(x, str::RegexMatch) = tokenize(x, str.match)
-
 function TextParse.tryparsenext(tok::Regex, str, i, till, opts=TextParse.default_opts)
     m = match(tok, SubString(str,i,till)) ## idx not working with ^, and without there is no option to force it at begin
     if m === nothing
@@ -107,13 +116,6 @@ end
 #     T = AbstractString
 #     instance(T, (v,i) -> v, Regex("^(?:" * join([regex_string(p) for p in x], "|") *")"))
 # end
-
-(|)(x::Regex, y::Regex) =
-    Regex("(?:",x.pattern * "|" * y.pattern * ")")
-(|)(x::String, y::Regex) =
-    Regex("(?:",regex_escape(x) * "|" * y.pattern * ")")
-(|)(x::Regex, y::String) =
-    Regex("(?:",x.pattern * "|" * regex_escape(y) * ")")
 
 export splitter
 splitter(S, parse; transform_split = v -> tokenize(S, v), kw...) =
@@ -172,5 +174,6 @@ regex_tempered_greedy(s,e, flags="s"; withend=true) =
 # https://www.rexegg.com/regex-quantifiers.html#tempered_greed
 regex_neg_lookahead(e, match=r".") =
     instance(String,
-             (v,i) -> v[1],
-             Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s"))
+             Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s")) do v,i
+                 v[1]
+             end

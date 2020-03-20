@@ -1,4 +1,11 @@
 
+struct MemoTreeChildren{P}
+    visited::Dict
+    child::P
+    descend::Bool
+end
+
+
 
 import AbstractTrees: print_tree, children, printnode
 function Base.show(io::IO, x::TextParse.AbstractToken)
@@ -9,6 +16,20 @@ function Base.show(io::IO, x::TextParse.AbstractToken)
         print_tree(io, MemoTreeChildren(Dict(),x, true))
     end
 end
+function printnode(io::IO, x::ParserPeek)
+    print(io, x.message," on ")
+    printnode(io,x.parser)
+end
+printnode(io::IO,x::ConstantParser) =
+    print(io,regex_string(x.parser))
+printnode(io::IO, x::Always) =
+    print(io, "always::Nothing")
+printnode(io::IO, x::AnyChar) =
+    print(io, regex_string(x),"::", result_type(x))
+printnode(io::IO, x::CharNotIn) =
+    print(io, regex_string(x),"::", result_type(x))
+printnode(io::IO, x::CharIn) =
+    print(io, regex_string(x),"::", result_type(x))
 printnode(io::IO, x::TextParse.AbstractToken) =
     print(io, "Parser::",result_type(x))
 printnode(io::IO, x::FlatMap) =
@@ -20,11 +41,14 @@ end
 printnode(io::IO, x::Sequence) =
     print(io, "seq::",result_type(x))
 printnode(io::IO, x::Repeat) =
-    print(io, "rep ", regex_operator(x),"::",result_type(x))
+    print(io, "rep ", rep_suffix(x),"::",result_type(x))
 printnode(io::IO, x::Either) =
     print(io, "alt::",result_type(x))
-printnode(io::IO, x::Optional) =
-    print(io, "opt::",result_type(x))
+function printnode(io::IO, x::Optional)
+    print(io, "(")
+    printnode(io,x.parser)
+    print(io,")? || ",x.default)
+end
 function printnode(io::IO, x::NamedToken) 
     print(io, x.name, " ")
     printnode(io, x.parser)
@@ -46,6 +70,9 @@ function MemoTreeChildren(children::Union{Vector, Tuple}, visited::Dict=Dict())
     end
     children_
 end
+printnode(io::IO,x::WrappedParser) = printnode(io,x.parser)
+
+children(x::WrappedParser) = children(x.parser)
 
 children(x::MemoTreeChildren) =
     x.descend ?  MemoTreeChildren(children(x.child), x.visited ) : []
@@ -60,13 +87,13 @@ children(x::InstanceParser) =
     children(x.parser)
 children(x::NamedToken) =
     children(x.parser)
-children(x::Repeat) where {T, F} =
+children(x::Repeat) =
     [ x.parser ]
-children(x::Either) where {T, F} =
+children(x::Either) =
     x.options
 # children(x::TokenizerOp{:greedy, T, F}) where {T, F} =
 #     x.els
-children(x::Optional) where {T, F} =
+children(x::Optional) =
     children(x.parser)
 children(x::Sequence) =
     x.parts
