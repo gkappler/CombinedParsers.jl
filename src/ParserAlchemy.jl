@@ -17,7 +17,9 @@ include("namedtuples.jl")
 @inline _prevind(str,i,parser,x) = prevind(str,i,parser,x)
 @inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
 
-ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex}
+abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
+ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex,
+                    Pair{<:Union{TextParse.AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
 export parser
 parser(x::ParserTypes) = x
 
@@ -58,11 +60,10 @@ end
 end
 
 result_type(x::ParserTypes) = result_type(typeof(x))
-result_type(x::Type{<:TextParse.AbstractToken{T}}) where T = T
+result_type(T::Type{<:Union{Char,AbstractString}}) = T
+result_type(::Type{<:TextParse.AbstractToken{T}}) where T = T
 
 struct MatchState end
-
-abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
 Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state) =
     nothing
 state_type(p::Type{<:AbstractParser}) =  error("implement state_type(::Type{$(p)})")
@@ -283,11 +284,6 @@ function look_ahead(match::Bool, p_)
     end
 end
 
- 
-
-
-
-
 
 
 
@@ -313,36 +309,12 @@ function Base.showerror(io::IO, x::PartialMatchException)
     ##println(io, x.pattern)
 end
 
-
-############################################################
-## Transformations
-
-log_transform(transform, log, catch_error=false) =
-    if catch_error
-        (v,i) -> try
-            r=transform(v,i)
-            log && @info "transformed" transform v r
-            return r
-        catch f
-            @error "transform error: " f RT v tokens transform
-            rethrow(f)
-        end
-    elseif log
-        (v,i) -> begin
-            r=transform(v,i)
-            @info "transformed" transform v r
-            return r
-        end  
-    else
-        transform
-    end
-
 export with_log
 struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
     parser::P
     args::A
     effect::Function
-    SideeffectParser(f::Function, p::ParserTypes,a...) =
+    SideeffectParser(f::Function, p::TextParse.AbstractToken,a...) =
         new{typeof(p),result_type(p),typeof(a)}(p,a,f)
 end
 
@@ -394,6 +366,10 @@ with_log(s::AbstractString,p_, delta=5;nomatch=false) =
     end
     r
 end
+
+
+
+
 export NamedParser, with_name
 struct NamedParser{P,T} <: WrappedParser{P,T}
     name::Symbol
@@ -403,18 +379,32 @@ struct NamedParser{P,T} <: WrappedParser{P,T}
             new{typeof(p),result_type(p)}(name,p)
         end
 end
-
-
 parser(x::Pair{Symbol, P}) where P =
     NamedParser(x.first, parser(x.second))
 with_name(name::Symbol,x; doc="") = 
     NamedParser(name,x)
 
-map_parser(f::Function,x::NamedToken,a...) =
-    NamedToken(x.name,map_parser(f,x.parser,a...))
 
 
-export Transformation, instance
+export Transformation, map_at
+"""
+    Transformation{T}(transform::Function, p_) where {T}
+
+    map_at(f::Function, p, a...)
+
+    map_at(f::Function, Tc::Type, p, a...)
+
+    instance(Tc::Type, p::ParserTypes, a...)
+
+    instance(Tc::Type, p::ParserTypes)
+
+    Base.map(f::Function, Tc::Type, p::ParserTypes, a...)
+
+    Base.map(f::Function, p::ParserTypes, a...)
+
+Parser transforming result of a wrapped parser. 
+`a...` is passed as additional arguments to `f` (at front .
+"""
 struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
     transform::F
     parser::P
@@ -455,31 +445,35 @@ function infer_result_type(f,Tc,p,onerror,ts...)
     end
 end
 
-export instance,instance_at 
-function instance(Tc::Type, p, a...)
-    Transformation{Tc}((v,i) -> Tc(a..., v), p)
-end
-function instance(Tc::Type, p)
-    Transformation{Tc}((v,i) -> _convert(Tc,v), p)
-end
-function instance(f::Function, Tc::Type, p, a...)
-    T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{Tc}((v,i) -> (f(v, a...)), p)
-end
-function instance_at(f::Function, Tc::Type, p, a...)
+export map,map_at 
+function map_at(f::Function, Tc::Type, p, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
     Transformation{Tc}((v,i) -> (f((v), i, a...)), p)
 end
-function instance(f::Function, p_, a...)
-    p=parser(p_)
-    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{T}((v,i) -> (f(v, a...)), p)
-end
-function instance_at(f::Function, p, a...)
+function map_at(f::Function, p, a...)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
     Transformation{T}((v,i) -> (f(v, i, a...)), p)
 end
-@deprecate instance(::Type{T}, f::Function, p::P, a...) where {T, P<:ParserTypes} instance(f,T,p,a...)
+@deprecate instance_at(a...) map_at(a...)
+
+import Base: map
+function instance(Tc::Type, p::ParserTypes, a...)
+    Transformation{Tc}((v,i) -> Tc(a..., v), p)
+end
+function instance(Tc::Type, p::ParserTypes)
+    Transformation{Tc}((v,i) -> _convert(Tc,v), p)
+end
+function Base.map(f::Function, Tc::Type, p::TextParse.AbstractToken, a...)
+    T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
+    Transformation{Tc}((v,i) -> (f(v, a...)), p)
+end
+function Base.map(f::Function, p::TextParse.AbstractToken, a...)
+    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
+    Transformation{T}((v,i) -> (f(v, a...)), p)
+end
+
+@deprecate map(T::Type, f::Function, p::TextParse.AbstractToken, a...) map(f,T,p,a...)
+@deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
 
 
 
@@ -681,10 +675,7 @@ end
 export seq
 struct Sequence{T,P<:Tuple} <: AbstractParser{T}
     parts::P
-    function Sequence{T}(p) where T
-        new{T,typeof(p)}(p)
-    end
-    function Sequence(p)
+    function Sequence(p...)
         parts = tuple( ( parser(x) for x = p )... )
         T = ( result_type(typeof(x)) for x in parts )
         new{Tuple{T...},typeof(parts)}(parts)
@@ -698,14 +689,15 @@ map_parser(f::Function,x::Sequence,a...) =
 
 
 seq(transform::Function, T::Type, a...; kw...) =
-    instance(transform, T, Sequence(a))
+    map(transform, T, Sequence(a...))
 
 seq(transform::Function, a...; kw...) =
-    instance(transform, Sequence(a))
+    map(transform, Sequence(a...))
+
 
 
 function seq(tokens_::Vararg{Union{Pair{Symbol,<:ParserTypes},ParserTypes}})
-    s = Sequence( ( t isa Pair{Symbol,<:ParserTypes} ? NamedParser(t.first,t.second) : t for t in tokens_ ))
+    s = Sequence( ( t isa Pair{Symbol,<:ParserTypes} ? NamedParser(t.first,t.second) : t for t in tokens_ )... )
     names = [ t.first=>i
               for (i,t) in enumerate(tokens_)
               if t isa Pair{Symbol,<:ParserTypes} ]
@@ -717,18 +709,18 @@ function seq(tokens_::Vararg{Union{Pair{Symbol,<:ParserTypes},ParserTypes}})
         ##@show v
         NT( tuple( (v[k.second] for k in names )... ))
     end
-    instance_at(transform, NT, s)
+    map_at(transform, NT, s)
 end
 
 function seq(tokens::Vararg{ParserTypes};
              transform=nothing, kw...)
-    s = Sequence(tokens)
+    s = Sequence(tokens...)
     if transform isa Integer
         seq(transform,tokens...)
     elseif transform===nothing
         s
     elseif transform isa Function
-        instance(transform, s)
+        map(transform, s)
     end
 end
 
@@ -744,13 +736,13 @@ seq(transform::Integer,tokens::Vararg{ParserTypes}) =
     seq(Val{transform}(),tokens...)
 
 function seq(::Val{transform},tokens::Vararg{ParserTypes}) where {transform}
-    s = Sequence(tokens)
-    instance(v -> v[transform], fieldtype(result_type(s),transform), s)
+    s = Sequence(tokens...)
+    map(v -> v[transform], fieldtype(result_type(s),transform), s)
 end
 
 
 function seq(T::Type, tokens::Vararg;
-             log=false,
+             ## log=false,
              transform=:instance)
     parts = tuple( ( parser(x) for x = tokens )... )
     if T==NamedTuple
@@ -761,10 +753,9 @@ function seq(T::Type, tokens::Vararg;
         RT = T
     end
     if transform == :instance
-        transform = (v,i) -> construct(RT,Any[ remove_null(x) for x in v ])
+        transform = (v,i) -> instance(RT,Any[ remove_null(x) for x in v ])
     end
-    tr = log_transform(transform, log)
-    instance(tr,RT,Sequence(parts))
+    map(transform,RT,Sequence(parts...))
 end
 
 
@@ -981,14 +972,14 @@ Repeat(min::Integer,parser) =
 
 rep1(x) =
     Repeat(1,x)
-rep1(T::Type, x;  log=false, transform) =
-    rep1(log_transform(transform, log),T, x)
+rep1(T::Type, x;  transform) =
+    rep1(transform,T, x)
 rep1(transform::Function, T::Type, x) =
-    instance(transform, T, Repeat(1,typemax(Int),parser(x)))
+    map(transform, T, Repeat(1,typemax(Int),parser(x)))
 
 
-rep1(T::Type, x,y::Vararg; log=false, transform, kw...) =
-    rep1(T, seq(x,y...; transform=log_transform(transform, log), kw...), transform=(v,i) -> v)
+rep1(T::Type, x,y::Vararg; transform, kw...) =
+    rep1(T, seq(x,y...; transform=transform, kw...), transform=(v,i) -> v)
 
 
 rep(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) =
@@ -1001,16 +992,16 @@ rep(x::ParserTypes,y::Vararg{ParserTypes}) =
     rep(seq(x,y...) )
 
 rep(transform::Function, a...) =
-    instance(transform, rep(a...))
+    map(transform, rep(a...))
 
 rep(transform::Function, T::Type, a...) =
-    instance(transform, T, rep(a...))
+    map(transform, T, rep(a...))
 
 rep(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) =
-    instance(transform, rep(minmax, a...))
+    map(transform, rep(minmax, a...))
 
 rep(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) =
-    instance(transform,T,
+    map(transform,T,
              Repeat(minmax...,parser(x)))
 
 
@@ -1293,7 +1284,7 @@ opt(T::Type, x_; transform, kw...) =
 
 function opt(transform::Function, T::Type, x;
              default=defaultvalue(T))
-    instance(transform,T,Optional(x, default))
+    map(transform,T,Optional(x, default))
 end
 
 
@@ -1362,7 +1353,7 @@ end
 hash(x::Either, h::UInt) = hash(x.options)
 state_type(::Type{<:Either}) = Pair{Int,<:Any}##Tuple{Int, promote_type( state_type.(t.options)...) }
 
-function alt(x::Union{ParserTypes,Pair}...)
+function alt(x::ParserTypes...)
     parts = Any[ parser(y) for y in x ]
     Ts = ( result_type(typeof(x)) for x in parts )
     T = promote_type(Ts...)
@@ -1372,7 +1363,7 @@ end
 
 
 function alt(T::Type, x::Vararg; transform::Function)
-    instance(transform, T, alt(x...))
+    map(transform, T, alt(x...))
 end
 
 map_parser(f::Function,x::Either,a...) =
@@ -1489,8 +1480,8 @@ end
 export greedy
 function greedy(tokens...;
                 alt = [],
-                transform=(v,i) -> v, log=false)
-    Greedy([tokens...], alt, log_transform(transform, log))
+                transform=(v,i) -> v)
+    Greedy([tokens...], alt, transform)
 end
 
 function TextParse.tryparsenext(tokf::Greedy, str, i, till, opts=TextParse.default_opts)
@@ -1613,7 +1604,7 @@ function alternate(x::ParserTypes, delim::ParserTypes;
         r
     end
 
-    instance_at(tf, Vector{T},
+    map_at(tf, Vector{T},
              seq(
                  opt(x; default=missing),
                  rep(seq(delim, x)),

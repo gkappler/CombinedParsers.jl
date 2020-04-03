@@ -15,9 +15,6 @@ function Base.show(io::IO, x::TextParse.AbstractToken)
         print_tree(io, MemoTreeChildren(Dict(),x, true))
     end
 end
-function printnode(io::IO, x::ParserPeek)
-    print(io, x.message)
-end
 function printnode(io::IO,x::Lazy)
     print(io,"lazy ")
     printnode(io,x.parser)

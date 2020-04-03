@@ -53,7 +53,7 @@ function TextParse.tryparsenext(t::TokenizerOp{:tokenize, T, F}, str, i, till, o
     else
         ( Nullable{T}(inner), i_ )
     end
-    ## instance(RT, (v,i) -> tokenize(result, v), outer)
+    ## map(RT, (v,i) -> tokenize(result, v), outer)
 end
 
 export not

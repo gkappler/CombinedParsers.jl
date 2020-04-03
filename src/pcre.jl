@@ -172,7 +172,7 @@ regex_tempered_greedy(s,e, flags="s"; withend=true) =
 
 # https://www.rexegg.com/regex-quantifiers.html#tempered_greed
 regex_neg_lookahead(e, match=r".") =
-    instance_at(String,
+    map_at(String,
                 Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s")) do v,i
                     v[1]
                 end
