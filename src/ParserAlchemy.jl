@@ -414,11 +414,11 @@ map_parser(f::Function,x::NamedToken,a...) =
     NamedToken(x.name,map_parser(f,x.parser,a...))
 
 
-export InstanceParser, instance
-struct InstanceParser{P,T, F<:Function} <: WrappedParser{P,T}
+export Transformation, instance
+struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
     transform::F
     parser::P
-    InstanceParser{T}(transform::Function, p_) where {T} =
+    Transformation{T}(transform::Function, p_) where {T} =
         let p = parser(p_)
             new{typeof(p),T,typeof(transform)}(transform, p)
         end
@@ -426,19 +426,19 @@ end
 map_parser(f::Function,x::InstanceParser,a...) =
     InstanceParser{result_type(x)}(x.transform,map_parser(f,x.parser,a...))
 parser(constant::Pair{<:ParserTypes}) =
-    InstanceParser{typeof(constant.second)}(
+    Transformation{typeof(constant.second)}(
         (v,i) -> constant.second,
         parser(constant.first))
 
-regex_string(x::Union{NamedParser, InstanceParser}) = regex_string(x.parser)
+regex_string(x::Union{NamedParser, Transformation}) = regex_string(x.parser)
 
-function Base.get(parser::InstanceParser, sequence, till, after, i, state)
+function Base.get(parser::Transformation, sequence, till, after, i, state)
     parser.transform(
         get(parser.parser,sequence, till, after, i, state)
         ,i)
 end
 
-function _iterate(parser::InstanceParser, sequence, till, i, state)
+function _iterate(parser::Transformation, sequence, till, i, state)
     r = _iterate(parser.parser, sequence, till, i, state )
 end
 
@@ -457,26 +457,27 @@ end
 
 export instance,instance_at 
 function instance(Tc::Type, p, a...)
-    InstanceParser{Tc}((v,i) -> Tc(a..., v), p)
+    Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
 function instance(Tc::Type, p)
-    InstanceParser{Tc}((v,i) -> _convert(Tc,v), p)
+    Transformation{Tc}((v,i) -> _convert(Tc,v), p)
 end
 function instance(f::Function, Tc::Type, p, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
-    InstanceParser{Tc}((v,i) -> (f(v, a...)), p)
+    Transformation{Tc}((v,i) -> (f(v, a...)), p)
 end
 function instance_at(f::Function, Tc::Type, p, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
-    InstanceParser{Tc}((v,i) -> (f((v), i, a...)), p)
+    Transformation{Tc}((v,i) -> (f((v), i, a...)), p)
 end
-function instance(f::Function, p, a...) 
+function instance(f::Function, p_, a...)
+    p=parser(p_)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
-    InstanceParser{T}((v,i) -> (f(v, a...)), p)
+    Transformation{T}((v,i) -> (f(v, a...)), p)
 end
 function instance_at(f::Function, p, a...)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
-    InstanceParser{T}((v,i) -> (f(v, i, a...)), p)
+    Transformation{T}((v,i) -> (f(v, i, a...)), p)
 end
 @deprecate instance(::Type{T}, f::Function, p::P, a...) where {T, P<:ParserTypes} instance(f,T,p,a...)
 

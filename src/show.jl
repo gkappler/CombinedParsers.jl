@@ -56,7 +56,7 @@ function printnode(io::IO, x::MemoTreeChildren)
     printnode(io, x.child)
     x.descend || isempty(children(x)) || print(io, " (see at higher level)")
 end
-function printnode(io::IO, x::InstanceParser) 
+function printnode(io::IO, x::Transformation) 
     print(io,"map(")
     printnode(io, x.parser)
     print(io,")::",result_type(x))
@@ -88,7 +88,7 @@ children(x::Missing) =
     ()
 children(x::FlatMap) =
     [ x.left, x.right ]
-children(x::InstanceParser) =
+children(x::Transformation) =
     children(x.parser)
 children(x::NamedParser) =
     children(x.parser)
