@@ -33,10 +33,12 @@ wraps a `parser::P`, succeeds if and only if `parser` succeeds, but consumes no 
 The match is returned.
 Useful for checks like "must be followed by `parser`, but don't consume its match".
 """
-struct PositiveLookbehind{P} <: LookAround
+struct PositiveLookbehind{T,P} <: LookAround{T}
     parser::P
-    PositiveLookbehind(p) =
-        new{typeof(p)}(p)
+    PositiveLookbehind(p_) =
+        let p = parser(p_)
+            new{result_type(p),typeof(p)}(p)
+        end
 end
 # result_type(p::Type{PositiveLookbehind{T}}) where T = T
 
@@ -46,10 +48,12 @@ wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but cons
 `nothing` is returned as match.
 Useful for checks like "must not be followed by `parser`, don't consume its match".
 """
-struct NegativeLookbehind{P} <: LookAround
+struct NegativeLookbehind{T,P} <: LookAround{T}
     parser::P
-    NegativeLookbehind(p) =
-        new{typeof(p)}(p)
+    NegativeLookbehind(p_) =
+        let p = parser(p_)
+            new{result_type(p),typeof(p)}(p)
+        end
 end
 
 export look_behind

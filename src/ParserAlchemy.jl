@@ -179,7 +179,7 @@ end
 
 
 "Parsers that do not consume any input can inherit this type"
-abstract type LookAround <: NIndexParser{0,Nothing} end
+abstract type LookAround{T} <: NIndexParser{0,T} end
 
 export AtStart, AtEnd
 struct AtStart <: NIndexParser{0,AtStart} end
