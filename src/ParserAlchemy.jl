@@ -337,37 +337,63 @@ log_transform(transform, log, catch_error=false) =
         transform
     end
 
-
 export with_log
-struct ParserPeek{P,T} <: WrappedParser{P,T}
-    message::String
-    length::Int
+struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
     parser::P
-    ParserPeek(message,length, p::ParserTypes) =
-        new{result_type(p),typeof(p)}(message, length, p)
+    args::A
+    effect::Function
+    SideeffectParser(f::Function, p::ParserTypes,a...) =
+        new{typeof(p),result_type(p),typeof(a)}(p,a,f)
 end
-Base.show(io::IO,x::ParserPeek) = print(io,"(?#$(x.message))",x.parser)
-with_log(message, p_,length=5) =
-    let p = parser(p_)
-        ParserPeek(string(message),length,p)
-    end
-regex_string(x::ParserPeek{Nothing,Always}) = "$x"
 
 export map_parser
-map_parser(f::Function,x::ParserPeek,a...) =
-    with_log(x.message,
-             map_parser(f,x.parser,a...),x.length)
+map_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
+    SideeffectParser(x.effect,
+                     map_parser(f,mem,x.parser,a...),
+                     x.args...)
 
-@inline function _iterate(parser::ParserPeek, sequence, till, i, state)
+function log_effect(s,start,after,state,log,delta=5)
+    if state === nothing
+        printstyled("no match ",bold=true,color=:underline)
+    else
+        printstyled("   match ";bold=true,color=:green)
+    end
+    print(log)
+    if prevind(s,start)<start
+        printstyled(s[max(1,start-delta):(prevind(s,start))])
+        printstyled(s[start:prevind(s,after)];bold=true,color=:green)
+    end
+    if state === nothing 
+        printstyled(s[after:min(end,after+delta)],bold=true,color=:underline)
+    else
+        printstyled(s[after:min(end,after+delta)],color=:yellow)
+    end
+    println()
+end
+
+function log_effect_match(s,start,after,state,log,delta=5)
+    if state!==nothing
+        log_effect(s,start,after,state,log,delta)
+    end
+end
+
+with_log(s::AbstractString,p_, delta=5;nomatch=false) =
+    let p = parser(p_), log=s*": "
+        SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta)
+        ##with_log(p_; log=s*": ",delta=5)    
+        #with_log(p_;log="", delta=5,nomatch=false) =
+    end
+
+@inline function _iterate(parser::SideeffectParser, sequence, till, i, state)
+    before_i = start_index(sequence,i,parser,state)
     r = _iterate(parser.parser, sequence, till, i, state)
     if r!==nothing
-        @info parser.message
-        #i r
+        parser.effect(sequence,before_i,r...,parser.args...)
+    else
+        parser.effect(sequence,before_i,before_i,nothing,parser.args...)
     end
     r
 end
-
-
 export NamedParser, with_name
 struct NamedParser{P,T} <: WrappedParser{P,T}
     name::Symbol
