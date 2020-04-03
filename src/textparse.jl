@@ -57,7 +57,7 @@ function TextParse.tryparsenext(tok::ConstantParser{L,<:AbstractString}, str::Ab
     if startswith(str[i:end], tok.parser)
         e = i+L
         ## nextind(str, i, lastindex(tok))
-        Nullable(tok), e
+        Nullable(tok.parser), e
     else
         Nullable{String}(), i
     end
@@ -187,14 +187,14 @@ end
         i_ = i
         parts=tokf.parts
         $(parseparts...)
-        R = tokf.transform(tuple( $([ :(($(s)).value) for s in subresult ]...) ), i)
+        R = tuple( $([ :(($(s)).value) for s in subresult ]...) )
         ( Nullable(_convert(T, R)), i_)
     end
 end
 
 function TextParse.tryparsenext(t::Repeat, str, i, till, opts=TextParse.default_opts)
     T = result_type(t)
-    hist = Any[]
+    hist = eltype(T)[]
     i_=i
     repval, i__ = tryparsenext(t.parser, str, i_, till)
     while !isnull(repval) && i_ != i__ && length(hist)<=t.range[2]
@@ -205,7 +205,7 @@ function TextParse.tryparsenext(t::Repeat, str, i, till, opts=TextParse.default_
     if length(hist)<t.range[1]
         Nullable{T}(), i
     else
-        ( Nullable(_convert(T,t.transform(hist,i_))), i_)
+        ( Nullable(hist), i_ )
     end
 end
 
@@ -213,13 +213,7 @@ function TextParse.tryparsenext(t::Optional, str, i, till, opts=TextParse.defaul
     T = result_type(t)
     r, i_ = tryparsenext(t.parser, str, i, till)
     if !isnull(r)
-        try
-            r_ = _convert(T,t.transform(r.value, i))
-            return Nullable(r_), i_
-        catch e
-            @error "error transforming" e t
-            rethrow(e)
-        end
+        return r, i_
     end
     ## @show default(t.els)
     r = t.default
@@ -235,15 +229,7 @@ function TextParse.tryparsenext(t::Either, str, i, till, opts=TextParse.default_
         if !isnull(r)            ## @show i_ seq_join(r.value)
             # @show t.transform t.options[j] r.value
             ## @show match(Regex(regex_string(t.options[j])), str[i:end])
-            try
-                r_ = t.transform(r.value, i)
-                return Nullable(r_), i_
-            catch e
-                @error "cannot transform " t.transform e r
-                rethrow(e)
-                return r,i
-            end            
-            ## return r, i_
+            return r, i_
         end
     end
     return Nullable{T}(), i

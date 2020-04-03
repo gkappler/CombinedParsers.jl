@@ -8,18 +8,19 @@ struct Reverse{V}
     x::V
     lastindex::Int
     Reverse(x) =
-        if lastindex(x) == 1
-            x
-        else
-            new{typeof(x)}(x,lastindex(x))
-        end
+        # if lastindex(x) == 1
+        #     x
+        # else
+        new{typeof(x)}(x,lastindex(x))
+        ##end
 end
-
+set_capture(sequence::Reverse, index::Int, x) =
+    set_capture(sequence.x,index,x)
 reverse_index(x::Reverse,i) =
     x.lastindex-i+1    
 Base.firstindex(x::Reverse) = 1
 Base.lastindex(x::Reverse) = x.lastindex
-Base.getindex(x::Reverse,is::UnitRange) = Reverse(getindex(x.x,reverse_index(x,is.start):reverse_index(x,is.stop)))
+Base.getindex(x::Reverse,is::UnitRange) = getindex(x.x,reverse_index(x,is.stop):reverse_index(x,is.start))
 Base.getindex(x::Reverse,i) = getindex(x.x,reverse_index(x,i))
 Base.nextind(x::Reverse,i::Integer) = reverse_index(x,prevind(x.x,reverse_index(x,i)))
 Base.prevind(x::Reverse,i::Integer) = reverse_index(x,nextind(x.x,reverse_index(x,i)))
@@ -80,7 +81,7 @@ end
 
 function _iterate(t::PositiveLookbehind, str, till, i, state)
     if state === nothing
-        rseq=Reverse(str)
+        rseq=revert(str)
         r = _iterate(t.parser, rseq, till,
                      nextind(rseq,reverse_index(rseq,i)), nothing)
         if r === nothing
@@ -105,3 +106,7 @@ end
 revert(x::Union{AnyChar,CharIn,CharNotIn,UnicodeClass,Always,ConstantParser{N,Char} where N}) = x
 
 map_parser(::typeof(revert),x::Sequence) = seq(( map_parser(revert,p) for p in reverse(x.parts) )...)
+map_parser(::typeof(revert),x::NegativeLookbehind) = NegativeLookahead(x.parser) ##map_parser(revert,@show x.parser))
+map_parser(::typeof(revert),x::NegativeLookahead) = NegativeLookbehind(map_parser(revert,x.parser))
+map_parser(::typeof(revert),x::PositiveLookbehind) = PositiveLookahead(x.parser) ##map_parser(revert,x.parser))
+map_parser(::typeof(revert),x::PositiveLookahead) = PositiveLookbehind(map_parser(revert,x.parser))

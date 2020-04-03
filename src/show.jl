@@ -7,7 +7,6 @@ end
 
 
 
-import AbstractTrees: print_tree, children, printnode
 function Base.show(io::IO, x::TextParse.AbstractToken)
     compact = get(io, :compact, false)
     if false && !compact
@@ -17,27 +16,26 @@ function Base.show(io::IO, x::TextParse.AbstractToken)
     end
 end
 function printnode(io::IO, x::ParserPeek)
-    print(io, x.message," on ")
+    print(io, x.message)
+end
+function printnode(io::IO,x::Lazy)
+    print(io,"lazy ")
     printnode(io,x.parser)
 end
 printnode(io::IO,x::ConstantParser) =
     print(io,regex_string(x.parser))
+printnode(io::IO,x::CharIn) =
+    print(io,regex_string(x))
 printnode(io::IO, x::Always) =
     print(io, "always::Nothing")
 printnode(io::IO, x::AnyChar) =
-    print(io, regex_string(x),"::", result_type(x))
+    print(io, regex_string(x))
 printnode(io::IO, x::CharNotIn) =
-    print(io, regex_string(x),"::", result_type(x))
-printnode(io::IO, x::CharIn) =
-    print(io, regex_string(x),"::", result_type(x))
+    print(io, regex_string(x))
 printnode(io::IO, x::TextParse.AbstractToken) =
     print(io, "Parser::",result_type(x))
 printnode(io::IO, x::FlatMap) =
     print(io, "FlatMap::",result_type(x))
-function printnode(io::IO, x::NegativeLookahead)
-    print(io, "not at ")
-    printnode(io, x.parser)
-end
 printnode(io::IO, x::Sequence) =
     print(io, "seq::",result_type(x))
 printnode(io::IO, x::Repeat) =
@@ -56,11 +54,12 @@ end
     
 function printnode(io::IO, x::MemoTreeChildren)
     printnode(io, x.child)
-    x.descend || print(io, "(see above)")
+    x.descend || isempty(children(x)) || print(io, " (see at higher level)")
 end
 function printnode(io::IO, x::InstanceParser) 
-    print(io,"",result_type(x),"(", ") = ")
+    print(io,"map(")
     printnode(io, x.parser)
+    print(io,")::",result_type(x))
 end
 
 function MemoTreeChildren(children::Union{Vector, Tuple}, visited::Dict=Dict())
@@ -71,8 +70,14 @@ function MemoTreeChildren(children::Union{Vector, Tuple}, visited::Dict=Dict())
     children_
 end
 printnode(io::IO,x::WrappedParser) = printnode(io,x.parser)
-
-children(x::WrappedParser) = children(x.parser)
+children(x::WrappedParser) = (x.parser,)
+printnode(io::IO,x::PositiveLookbehind) = print(io,"(?<=")
+printnode(io::IO,x::NegativeLookbehind) = print(io,"(?<!")
+printnode(io::IO,x::PositiveLookahead) = print(io,"(?=")
+printnode(io::IO,x::NegativeLookahead) = print(io,"(?!")
+printnode(io::IO,x::AtomicGroup) = print(io,"(?>")
+children(x::LookAround) = (x.parser,)
+children(x::Always) = tuple()
 
 children(x::MemoTreeChildren) =
     x.descend ?  MemoTreeChildren(children(x.child), x.visited ) : []
@@ -82,7 +87,7 @@ children(x::Union{Regex,AbstractString}) =
 children(x::Missing) =
     ()
 children(x::FlatMap) =
-    [ x.left, x.right(missing) ]
+    [ x.left, x.right ]
 children(x::InstanceParser) =
     children(x.parser)
 children(x::NamedToken) =

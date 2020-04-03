@@ -13,6 +13,10 @@ export tryparsenext, tokenize, result_type
 
 include("namedtuples.jl")
 
+@inline _prevind(str,i,parser,x::Nothing) = i
+@inline _nextind(str,i,parser,x::Nothing) = i
+@inline _prevind(str,i,parser,x) = prevind(str,i,parser,x)
+@inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
 
 ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex}
 export parser
@@ -42,6 +46,7 @@ function Base.get(parser::TextParse.AbstractToken, sequence, till, after, i, sta
     state[2]
     ## === missing ? missing : get(Parsing(x.parser.parser,x.sequence), after, (i, till, state))
 end
+
 @inline function nextind(str,i::Int,parser::TextParse.AbstractToken,x)
     parser isa AbstractParser && @warn "define nextind(str,i::Int,parser::$(typeof(parser)),x)"
     i+x[1]
@@ -50,6 +55,7 @@ end
     parser isa AbstractParser && @warn "define prevind(str,i::Int,parser::$(typeof(parser)),x)"
     i-x[1]
 end
+
 result_type(x::ParserTypes) = result_type(typeof(x))
 result_type(x::Type{<:TextParse.AbstractToken{T}}) where T = T
 
@@ -59,7 +65,7 @@ abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
 Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state) =
     nothing
 _iterate(x::AbstractParser,str,i,till,state) =
-    error("implement _iterate(x::$(typeof(x)),str,i,till,state::$(typeof(state)))")
+    error("implement _iterate(x::$(typeof(x)),str::$(typeof(str)),i,till,state::$(typeof(state)))")
 function TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.default_opts)
     s = _iterate(x,str,i,till,nothing)
     if s === nothing
@@ -75,7 +81,6 @@ abstract type WrappedParser{T} <: AbstractParser{T} end
     prevind(str,i,parser.parser,x)
 @inline nextind(str,i::Int,parser::WrappedParser,x) =
     nextind(str,i,parser.parser,x)
-regex_string(x::WrappedParser) = regex_string(x.parser)
 Base.get(x::WrappedParser, a...) =
     get(x.parser,a...)
 Base.get(parser::WrappedParser, sequence, till, after, i, state) = 
@@ -109,7 +114,7 @@ Base.get(parser::ConstantParser{L,SubString}, sequence, till, after, i, state) w
 
 @inline function _iterate(parser::ConstantParser{L,Char}, sequence, till, i, state::Nothing) where L
     i>till && return nothing
-    if parser.parser == ( sequence[i])
+    if parser.parser == (@inbounds sequence[i])
         i+L, MatchState()
     else
         nothing
@@ -122,11 +127,11 @@ end
     k = 1
     while k<=L
         (j > till) && return(nothing)
-         pc=parser.parser[k]
-         sc=sequence[j]
+        @inbounds pc=parser.parser[k]
+        @inbounds sc=sequence[j]
         (pc != sc) && return(nothing)
-         j = j + ncodeunits(sc)
-         k = k + ncodeunits(pc)
+        j = j + ncodeunits(sc)
+        k = k + ncodeunits(pc)
     end
     return j, MatchState()
 end
@@ -162,7 +167,7 @@ regex_string(x::AnyChar) = "."
 
 @inline function _iterate(parser::AnyChar, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    nc = Base.ncodeunits(sequence[i])
+    nc = Base.ncodeunits(@inbounds sequence[i])
     return i+nc, MatchState()
 end
 
@@ -183,6 +188,21 @@ _iterate(parser::AtEnd, sequence, till, i, state::Nothing) =
 
 Base.show(io::IO, x::Union{AtStart,AtEnd}) =
     print(io,regex_string(x))
+
+
+
+
+ 
+
+export Never
+"""
+wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but consumes no input.
+`nothing` is returned as match.
+Useful for checks like "must not be followed by `parser`, don't consume its match".
+"""
+struct Never <: AbstractParser{Nothing} end
+regex_string(x::Never) = "(*FAIL)"
+
 
 
 export Always
@@ -207,7 +227,8 @@ struct PositiveLookahead{P} <: LookAround
     PositiveLookahead(p) =
         new{typeof(p)}(p)
 end
-
+regex_string(x::PositiveLookahead) =
+    "(?="*regex_string(x.parser)*")"
 function _iterate(t::PositiveLookahead, str, till, i, state::Nothing)
     r = _iterate(t.parser, str, till, i, nothing)
     if r === nothing
@@ -227,7 +248,8 @@ Useful for checks like "must not be followed by `parser`, don't consume its matc
 struct NegativeLookahead{P} <: LookAround
     parser::P
 end
-
+regex_string(x::NegativeLookahead) =
+    "(?!"*regex_string(x.parser)*")"
 function _iterate(t::NegativeLookahead, str, till, i, state::Nothing)
     r = _iterate(t.parser, str, till, i, nothing)
     if r === nothing
@@ -317,8 +339,6 @@ with_log(message, p_,length=5) =
     end
 regex_string(x::ParserPeek{Nothing,Always}) = "$x"
 
-################################################################################
-
 export map_parser
 map_parser(f::Function,x::ParserPeek,a...) =
     with_log(x.message,
@@ -354,8 +374,10 @@ export InstanceParser, instance
 struct InstanceParser{P,T, F<:Function} <: WrappedParser{T}
     transform::F
     parser::P
-    InstanceParser{T}(transform::F, p::P) where {T, F<:Function,P} =
-        new{P,T,F}(transform, p)
+    InstanceParser{T}(transform::Function, p_) where {T} =
+        let p = parser(p_)
+            new{typeof(p),T,typeof(transform)}(transform, p)
+        end
 end
 map_parser(f::Function,x::InstanceParser,a...) =
     InstanceParser{result_type(x)}(x.transform,map_parser(f,x.parser,a...))
@@ -376,16 +398,41 @@ function _iterate(parser::InstanceParser, sequence, till, i, state)
     r = _iterate(parser.parser, sequence, till, i, state )
 end
 
+function infer_result_type(f,Tc,p,onerror,ts...)
+    Ts = Base.return_types(f, tuple(result_type(p),ts...))
+    isempty(Ts) && error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
+    ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
+    T = first(Ts)
+    if T <: Tc
+        T
+    else
+        @warn "type mismatch $f$(tuple(result_type(p),ts...))::$T<:$Tc"
+        Tc
+    end
+end
 
-export instance 
-function instance(::Type{T}, p::P, a...) where {T, P<:ParserTypes}
-    InstanceParser{T}((v,i) -> T(a..., v), p)
+export instance,instance_at 
+function instance(Tc::Type, p, a...)
+    InstanceParser{Tc}((v,i) -> Tc(a..., v), p)
 end
-function instance(::Type{T}, p::P) where {T, P<:ParserTypes}
-    InstanceParser{T}((v,i) -> _convert(T,v), p)
+function instance(Tc::Type, p)
+    InstanceParser{Tc}((v,i) -> _convert(Tc,v), p)
 end
-function instance(f::Function, ::Type{T}, p::P, a...) where {T, P<:ParserTypes}
-    InstanceParser{T}((v,i) -> _convert(T,f((v), i, a...)), p)
+function instance(f::Function, Tc::Type, p, a...)
+    T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
+    InstanceParser{Tc}((v,i) -> (f(v, a...)), p)
+end
+function instance_at(f::Function, Tc::Type, p, a...)
+    T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
+    InstanceParser{Tc}((v,i) -> (f((v), i, a...)), p)
+end
+function instance(f::Function, p, a...) 
+    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
+    InstanceParser{T}((v,i) -> (f(v, a...)), p)
+end
+function instance_at(f::Function, p, a...)
+    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
+    InstanceParser{T}((v,i) -> (f(v, i, a...)), p)
 end
 @deprecate instance(::Type{T}, f::Function, p::P, a...) where {T, P<:ParserTypes} instance(f,T,p,a...)
 
@@ -397,8 +444,16 @@ include("unicode.jl")
 export CharIn
 struct CharIn{S} <: NIndexParser{1,Char}
     sets::S
+    CharIn(x) = new{typeof(x)}(x)
 end
-CharIn(x::String) = CharIn(tuple( (c for c in x)...) )
+CharIn(x::CharIn) = CharIn(x.sets)
+CharIn(x::CharIn{Tuple{<:CharIn}}) = CharIn(x.sets[1])
+==(x::CharIn,y::CharIn) =
+    x.sets==y.sets
+hash(x::CharIn, h::UInt) = hash(x.sets,h)
+
+
+CharIn(x::String) = CharIn( tuple(Char[ c for c in x]) )
 function Base.in(x::Char, set::CharIn{<:Tuple})
     for s in set.sets
         x in s && return true
@@ -406,6 +461,7 @@ function Base.in(x::Char, set::CharIn{<:Tuple})
     return false
 end
 result_type(::Type{<:CharIn}) = Char
+regex_string_(x::Union{Vector,Set}) = join(regex_string_.(x))
 regex_string_(x::Char) = x == '\\' ? "\\\\" : "$x" ## for [] char ranges
 regex_string(x::Char) = x == '\\' ? "\\\\" : "$x" ## for [] char ranges
 regex_string_(x::StepRange) =
@@ -414,16 +470,20 @@ regex_string_(x::StepRange) =
     else
         x.start*"-"*x.stop
     end
-regex_string_(x::CharIn) = join([regex_string_(s) for s in x.sets])
+regex_string_(x::Tuple) = join([regex_string_(s) for s in x])
+regex_string_(x::CharIn) = regex_string_(x.sets)
 regex_string(x::CharIn) =
     "["*regex_string_(x)*"]"
+
+regex_string(x::CharIn{Tuple{Char}}) =
+    "$(x.sets[1])"
 
 
 
 
 @inline function _iterate(parser::CharIn, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    c = sequence[i]
+    @inbounds c = sequence[i]
     for s in parser.sets
         if c in s
             nc = Base.ncodeunits(c)
@@ -450,7 +510,7 @@ end
 
 @inline function _iterate(parser::CharNotIn, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    c = sequence[i]
+    @inbounds c = sequence[i]
     for s in parser.sets
         c in s && return nothing 
     end
@@ -478,7 +538,7 @@ Repeat `p` until `stop` (`NegativeLookahead`), not matching `stop`.
 Map results of `p` only.
 """
 rep_stop(p,stop) =
-    rep(seq(NegativeLookahead(parser(stop)),parser(p); transform=2))
+    rep(seq(2,NegativeLookahead(parser(stop)),parser(p)))
 
 """
 rep\\_until(p,until, with_until=false;wrap=identity)
@@ -524,12 +584,12 @@ map_parser(f::Function,x::FlatMap,a...) =
 regex_string(x::FlatMap)  = error("regex determined at runtime!")
 
 
-@inline nextind(str,i::Int,parser::FlatMap,x) =
+@inline nextind(str,i::Int,parser::FlatMap,x::Tuple) =
     let li = nextind(str,i,parser.left,x[1])
         nextind(str,li,x[2],x[3])
     end
 
-@inline prevind(str,i::Int,parser::FlatMap,x) =
+@inline prevind(str,i::Int,parser::FlatMap,x::Tuple) =
     let li = prevind(str,i,x[2],x[3])
         prevind(str,li,parser.left,x[1])
     end
@@ -573,30 +633,106 @@ end
 
 
 export seq
-struct Sequence{T,P<:Tuple,F<:Function} <: AbstractParser{T}
+struct Sequence{T,P<:Tuple} <: AbstractParser{T}
     parts::P
-    transform::F
-    function Sequence{T}(p::P, f::F) where {T, P<:Tuple,F<:Function}
-        new{T,P,F}(p, f)
+    function Sequence{T}(p) where T
+        new{T,typeof(p)}(p)
+    end
+    function Sequence(p)
+        parts = tuple( ( parser(x) for x = p )... )
+        T = ( result_type(typeof(x)) for x in parts )
+        new{Tuple{T...},typeof(parts)}(parts)
     end
 end
-parser_types(::Type{Sequence{T, P, F}}) where {T, P, F} =
+parser_types(::Type{Sequence{T, P}}) where {T, P} =
     P
 map_parser(f::Function,x::Sequence,a...) =
     Sequence{result_type(x)}(tuple( (map_parser(f,p,a...)
-                                     for p in x.parts)... ),
-                             x.transform)
+                                     for p in x.parts)... ))
+
+
+seq(transform::Function, T::Type, a...; kw...) =
+    instance(transform, T, Sequence(a))
+
+seq(transform::Function, a...; kw...) =
+    instance(transform, Sequence(a))
+
+
+function seq(tokens_::Vararg{Union{Pair{Symbol,<:ParserTypes},ParserTypes}})
+    s = Sequence( ( t isa Pair{Symbol,<:ParserTypes} ? t.second : t for t in tokens_ ))
+    names = [ t.first=>i
+              for (i,t) in enumerate(tokens_)
+              if t isa Pair{Symbol,<:ParserTypes} ]
+    T = result_type(s)
+    NT= NamedTuple{ tuple( (n.first for n in names)...),
+                    Tuple{ (fieldtype(T,n.second) for n in names)... }}
+    NTn = NamedTuple{ tuple( (n.first for n in names)...) }
+    function transform(v,i)
+        ##@show v
+        NT( tuple( (v[k.second] for k in names )... ))
+    end
+    instance_at(transform, NT, s)
+end
+
+function seq(tokens::Vararg{ParserTypes};
+             transform=nothing, kw...)
+    s = Sequence(tokens)
+    if transform isa Integer
+        seq(transform,tokens...)
+    elseif transform===nothing
+        s
+    elseif transform isa Function
+        instance(transform, s)
+    end
+end
+
+macro select_instance_index(transform)
+    quote
+        function self(v)
+            v[$(transform)]
+        end
+    end |>esc
+end
+
+seq(transform::Integer,tokens::Vararg{ParserTypes}) =
+    seq(Val{transform}(),tokens...)
+
+function seq(::Val{transform},tokens::Vararg{ParserTypes}) where {transform}
+    s = Sequence(tokens)
+    instance(v -> v[transform], fieldtype(result_type(s),transform), s)
+end
+
+
+function seq(T::Type, tokens::Vararg;
+             log=false,
+             transform=:instance)
+    parts = tuple( ( parser(x) for x = tokens )... )
+    if T==NamedTuple
+        fnames = tuple( [ x.name for x in parts if x isa NamedToken ]... )
+        ftypes = [ result_type(typeof(x.parser)) for x in parts if x isa NamedToken ]
+        RT = isempty(fnames) ? T : NamedTuple{fnames, Tuple{ftypes...}}
+    else
+        RT = T
+    end
+    if transform == :instance
+        transform = (v,i) -> construct(RT,Any[ remove_null(x) for x in v ])
+    end
+    tr = log_transform(transform, log)
+    instance(tr,RT,Sequence(parts))
+end
+
 
 
 @inline function prevind(str,i::Int,parser::Sequence,x::MatchState)
-    for p in reverse(parser.parts)
-        i=prevind(str,i,p,MatchState())
+    for p in lastindex(x):-1:1
+        i=prevind(str,i,parser.parts[p],MatchState())
     end
     i
 end
 
 @inline function prevind(str,i::Int,parser::Sequence,x)
-    for (p,e) in zip(reverse(parser.parts),reverse(x))
+    for j in lastindex(x):-1:1
+        (p,e) = parser.parts[j],x[j]
         i=prevind(str,i,p,e)
     end
     i
@@ -608,6 +744,7 @@ end
     end
     i
 end
+
 @inline function nextind(str,i::Int,parser::Sequence,x)
     for (p,e) in zip(parser.parts,x)
         i=nextind(str,i,p,e)
@@ -626,12 +763,12 @@ function Base.get(parser::Sequence, sequence, till, after, i, state)
         r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
         i_=after_
     end
-    parser.transform(tuple(r...),i)
+    tuple(r...)
 end
 
 
 @inline function start_index(sequence,after,parser,state)
-    r=state === nothing ? after : prevind(sequence, after, parser, state)
+    r=state === nothing ? after : _prevind(sequence, after, parser, state)
 end
 
 """
@@ -652,19 +789,21 @@ function _iterate(parser::Sequence, sequence, till, i, states)
     else
         length(states),states
     end
+    length(parts) == 0 && return nothing
     while nexti<=length(states)
         ## compute before next iteration, because states[nexti] might change.
         ## only used if ns===nothing, but states[nexti] might still be modified.
         before_i = start_index(sequence, i_, parts[nexti], states[nexti])
-        if before_i==0
-            println(parts[nexti])
-            error()
-        end
         ns = _iterate(parts[nexti], sequence, till, i_, states[nexti])
         if ns === nothing
             nexti -= 1
-            nexti == 0 && return nothing
             i_ = before_i
+            prune_captures(sequence,i_)
+            nexti == 0 && return nothing
+            if before_i==0
+                println(parts[nexti])
+                error()
+            end
         else
             states[nexti] = ns[2]
             i_ = ns[1]
@@ -679,65 +818,73 @@ function _iterate(parser::Sequence, sequence, till, i, states)
     error("?")
 end
 
-function seq(tokens::Vararg{ParserTypes};
-             transform=nothing, kw...)
-    parts = tuple( ( parser(x) for x = tokens )... )
-    T = [ result_type(typeof(x)) for x in parts]
     ## error()
-    if transform isa Integer
-        seq(T[transform], parts...; 
-            transform = (v,i) -> v[transform], kw...)
-    elseif transform===nothing
-        seq(Tuple{(T...)}, parts...; 
-            transform = (v,i) -> tuple(v...), kw...)
+@generated function _iterate_(parser::Sequence, sequence, till, i, states)
+    pts = parser_types(parser)
+    subsearch = Symbol[ gensym(:subsearch) for i in fieldtypes(pts) ]
+    subresult = Symbol[ gensym(:r) for i in fieldtypes(pts) ]
+    substate = Symbol[ gensym(:s) for i in fieldtypes(pts) ]
+    init = if states===Nothing
+        [
+        quote
+        $(substate[i]) = nothing
+        end
+        for (i,t) in enumerate(fieldtypes(pts))
+        ]
+    elseif states===MatchState
+        [
+        quote
+        $(substate[i]) = MatchState()
+        end
+        for (i,t) in enumerate(fieldtypes(pts))
+        ]
     else
-        seq(Tuple{(T...)}, parts...; 
-            transform = transform, kw...)
+        [
+        quote
+        $(substate[i]) = states[$i]
+        end
+        for (i,t) in enumerate(fieldtypes(pts))
+        ]
     end
+        
+    parseparts = [
+        quote
+        @label $(subsearch[i])
+        @inbounds before_i = start_index(sequence, i_, parts[$i], $(substate[i]))
+        $(subresult[i]) = @inbounds _iterate(parts[$i], sequence, till, i_, $(substate[i]))
+        if $(subresult[i]) === nothing
+        i_ = before_i
+        prune_captures(sequence,i_)
+        @goto $(i == 1 ? :theend : subsearch[i-1])
+        else
+        i_, $(substate[i]) = $(subresult[i])
+        end
+        end
+        for (i,t) in enumerate(fieldtypes(pts))
+    ]
+    R = quote
+        i_ = i
+        parts=parser.parts
+        $(init...)
+        states !== nothing && @goto $(subsearch[end])
+        $(parseparts...)
+        
+        R = if (&)($(( :(($(s) isa MatchState)) for s in substate )...) )
+            MatchState()
+        else
+            tuple( $([ :(($(s))) for s in substate ]...) )
+        end
+        return i_, R
+        @label theend
+        return nothing
+    end
+    ##Core.println( R )
+    R
 end
 
-seq(transform::Function, a...; kw...) =
-    seq(a...; transform=transform, kw...)
 
-function seq(T::Type, tokens::Vararg;
-             combine=false, outer=nothing,
-             partial = false,
-             log=false,
-             transform=:instance, kw...)
-    parts = tuple( ( parser(x) for x = tokens )... )
-    if combine
-        if outer===nothing
-            outer = Regex("^"*join([ "("*regex_string(x)*")" for x in parts ]))
-        else
-            @assert outer==join([ "("*regex_string(x)*")" for x in parts ])
-        end
-    end
-    if T==NamedTuple
-        fnames = tuple( [ x.name for x in parts if x isa NamedToken ]... )
-        ftypes = [ result_type(typeof(x.parser)) for x in parts if x isa NamedToken ]
-        RT = isempty(fnames) ? T : NamedTuple{fnames, Tuple{ftypes...}}
-    else
-        RT = T
-    end
-    if transform == :instance
-        transform = (v,i) -> construct(RT,Any[ remove_null(x) for x in v ])
-    end
-    tr = log_transform(transform, log)
-    result = Sequence{RT}(parts, tr)
-    if outer === nothing
-        result
-    else
-        if true || regex_string(result) == regex_string(outer)
-            re_inner = ( "^" * join([ "(" * regex_string(t) * ")" for t in parts ])) ## when??? * '$' )             
-            ## @warn "compiling regex" re Regex(re_inner) maxlog=1
-            TokenizerOp{:seq_combine, RT}(  ( outer=outer::Regex,
-                                              parts=parts, log=log, partial=partial ) , tr)
-        else
-            tok(outer, result)
-            # instance(RT, (v,i) -> tokenize(result, v), outer)
-        end
-    end
-end
+
+
 
 
 
@@ -749,29 +896,80 @@ end
 
 regex_string(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
+export lazy
+struct Lazy{P,T} <: WrappedParser{P,T}
+    parser::P
+end
+lazy(p_) =
+    let p = parser(p_)
+        Lazy{typeof(p),result_type(p)}(p)
+    end
 
+map_parser(f::Function,mem::AbstractDict,x::Lazy,a...) =
+    get!(mem,x) do
+        lazy(map_parser(f,mem,x.parser,a...))
+    end
 
+regex_string(x::Lazy) =
+    regex_string(x.parser)*"?"
 
 
 export rep, rep1
-struct Repeat{P,T,F<:Function} <: WrappedParser{T}
+struct Repeat{P,T} <: WrappedParser{P,T}
     range::UnitRange{Int}
     parser::P
-    transform::F
+    Repeat(range::UnitRange{Int},p) =
+        let p_=parser(p)
+            new{typeof(p_),Vector{result_type(p_)}}(range,p_)
+        end
 end
-Repeat{T}(parser::P, transform::F) where {T,P,F<:Function} =
-    Repeat{P,T,F}((0:typemax(Int)),parser, transform)
-Repeat{T}(range::UnitRange{Int},parser::P, transform::F) where {T,P,F<:Function} =
-    Repeat{P,T,F}(range,parser, transform)
-Repeat{T}(min::Integer,max::Integer,parser::P, transform::F) where {T,P,F<:Function} =
-    Repeat{P,T,F}((min:max),parser, transform)
-Repeat{T}(min::Integer,parser::P, transform::F) where {T,P,F<:Function} =
-    Repeat{P,T,F}((min:typemax(Int)),parser, transform)
+Repeat(parser) =
+    Repeat((0:typemax(Int)),parser)
+Repeat(min::Integer,max::Integer,parser) =
+    Repeat((min:max),parser)
+Repeat(min::Integer,parser) =
+    Repeat((min:typemax(Int)),parser)
+
+
+rep1(x) =
+    Repeat(1,x)
+rep1(T::Type, x;  log=false, transform) =
+    rep1(log_transform(transform, log),T, x)
+rep1(transform::Function, T::Type, x) =
+    instance(transform, T, Repeat(1,typemax(Int),parser(x)))
+
+
+rep1(T::Type, x,y::Vararg; log=false, transform, kw...) =
+    rep1(T, seq(x,y...; transform=log_transform(transform, log), kw...), transform=(v,i) -> v)
+
+
+rep(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) =
+    Repeat(minmax...,x)
+
+rep(minmax::Tuple{<:Integer,<:Integer},x::ParserTypes,y::Vararg{ParserTypes}) =
+    rep(seq(x,y...),minmax)
+
+rep(x::ParserTypes,y::Vararg{ParserTypes}) =
+    rep(seq(x,y...) )
+
+rep(transform::Function, a...) =
+    instance(transform, rep(a...))
+
+rep(transform::Function, T::Type, a...) =
+    instance(transform, T, rep(a...))
+
+rep(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) =
+    instance(transform, rep(minmax, a...))
+
+rep(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) =
+    instance(transform,T,
+             Repeat(minmax...,parser(x)))
+
+
 
 map_parser(f::Function,x::Repeat,a...) =
-    Repeat{result_type(x)}(x.range,
-                           map_parser(f,x.parser,a...),
-                           x.transform)
+    Repeat(x.range,
+           map_parser(f,x.parser,a...))
                            
 
 
@@ -825,25 +1023,25 @@ end
 end
 
 @inline function prevind(str,i::Int,parser::Repeat,x::Vector)
-    for e in reverse(x)
-        i=prevind(str,i,parser.parser,e)
+    for j in lastindex(x):-1:1
+        i=prevind(str,i,parser.parser,x[j])
     end
     i
 end
 
 function Base.get(parser::Repeat, sequence, till, after, i, state::Vector)
-    r = Vector{Any}(undef,length(state))
+    r = Vector{result_type(parser.parser)}(undef,length(state))
     i_=i
     for (p,s) in enumerate(state)
         after_=nextind(sequence,i_,parser.parser,s)
         r[p] = get(parser.parser,sequence, till, after_, i_, s)
         i_=after_
     end
-    parser.transform(r,i)
+    r
 end
 
 function Base.get(parser::Repeat, sequence, till, after, i, state::Int)
-    r = Vector{Any}(undef,state)
+    r = Vector{result_type(parser.parser)}(undef,state)
     i_=i
     s=MatchState()
     for p in 1:state
@@ -851,7 +1049,7 @@ function Base.get(parser::Repeat, sequence, till, after, i, state::Int)
         r[p] = get(parser.parser,sequence, till, after_, i_, s)
         i_=after_
     end
-    parser.transform(r,i)
+    r
 end
 
 @inline pushstate!(state::Nothing,parser,substate::T) where T =
@@ -875,15 +1073,20 @@ end
 @inline pushstate!(state::Int,parser,substate::MatchState) =
     state + 1
 @inline poplast!(state::Int,parser) =
-    MatchState(), state - 1
+    if iszero(state)
+        nothing, 0
+    else
+        MatchState(), state - 1
+    end
 @inline state_length(parser,state::Int) = state
 
 function _iterate(t::Repeat, sequence, till, i, state)
     function fill(j,state_)
+        j_ = -1 ## ??? match(re"(?:a|(?=b)|.)*\z","abc")
         while (x = _iterate(t.parser,sequence, till,j,nothing))!==nothing && state_length(t,state_) < t.range.stop
-            j==x[1] && state_length(t,state_)>0 && break
+            j_==x[1] && state_length(t,state_)>t.range.start && break
             state_=pushstate!(state_,t.parser,x[2])
-            j==x[1] && break
+            j_=j
             j = x[1]
         end
         j,state_
@@ -912,8 +1115,12 @@ function _iterate(t::Repeat, sequence, till, i, state)
         end
         goback = true
         while goback
+            if state_length(t,state)==0
+                return nothing
+            end
             lstate, state_=poplast!(state,t.parser)
-            before_i = prevind(sequence,i_,t.parser,lstate) ##state[end][1]
+            before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
+            prune_captures(sequence,before_i)
             x = _iterate(t.parser,sequence, till, i_, lstate)
             if x === nothing
                 state_length(t,state_) in t.range && return before_i, state_
@@ -936,32 +1143,67 @@ function _iterate(t::Repeat, sequence, till, i, state)
     end
 end
 
-rep1(x_;  kw...) where T =
-    let x=parser(x_)
-        rep1(Vector{result_type(typeof(x))},x; kw...)
+
+
+
+function _iterate(t_::Lazy{<:Repeat}, sequence, till, i, state)
+    t = t_.parser
+    function fill(j,state_)
+        while state_length(t,state_) < t.range.start && (x = _iterate(t.parser,sequence, till,j,nothing))!==nothing 
+            j==x[1] && state_length(t,state_)>0 && break
+            state_=pushstate!(state_,t.parser,x[2])
+            j==x[1] && break
+            j = x[1]
+        end
+        j,state_
     end
-rep1(T::Type, x;  log=false, transform=(v,i) -> v) =
-    rep1(log_transform(transform, log),T, x)
-rep1(transform::Function, T::Type, x) =
-    Repeat{T}(1,typemax(Int),parser(x), transform)
-
-
-rep1(T::Type, x,y::Vararg; log=false, transform=(v,i) -> v, kw...) =
-    rep1(T, seq(x,y...; transform=log_transform(transform, log), kw...), transform=(v,i) -> v)
-
-rep(x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); kw...) =
-    let p=parser(x)
-        rep(Vector{result_type(p)},p,minmax; kw...)
+    i_ = i
+    state_ = state
+    if state === nothing
+        state = 0
+        i_,state_ = fill(i,state)
+    else
+        if state_length(t,state)<t.range.stop
+            x = _iterate(t.parser,sequence, till, i_, nothing)
+            if x!==nothing && ( x[1]>i_ || state_length(t,state)==0)
+                state_=pushstate!(state,t.parser,x[2])
+                return x[1],state_
+            end
+        end
+        goback = true
+        while goback
+            if state_length(t,state)==0
+                return nothing
+            end
+            lstate, state_=poplast!(state,t.parser)
+            before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
+            x = _iterate(t.parser,sequence, till, i_, lstate)
+            if x === nothing
+                i_ = before_i
+                prune_captures(sequence,i_)
+                if state_length(t,state_)==0
+                    return nothing
+                end
+                state = state_
+            else
+                state_=pushstate!(state_,t.parser,x[2])
+                i_,state_ = fill(x[1],state_)
+                if state_length(t,state_) in t.range
+                    goback = false
+                end
+            end
+        end
     end
+    if state_length(t,state_) in t.range ## && state_length(t,state_)>0
+        return i_, state_
+    else
+        nothing
+    end
+end
 
-rep(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int));  log=false, transform=(v,i) -> v ) = 
-    Repeat{T}(minmax...,parser(x), log_transform(transform, log))
 
-rep(T::Type, x,y::Vararg; log=false, transform=(v,i) -> v, kw...) =
-    rep(T, seq(x,y...; transform=log_transform(transform, log), kw...); transform=(v,i) -> v)
 
-rep(transform::Function, a...; kw...) =
-    rep(a...; transform=transform, kw...)
+
 
 
 
@@ -970,22 +1212,38 @@ rep(transform::Function, a...; kw...) =
 
 
 export opt
-struct Optional{T,P,F<:Function} <: WrappedParser{T}
+struct Optional{T,P} <: WrappedParser{T}
     parser::P
     default::T
-    transform::F
-    function Optional{T}(parser::P,default::D,f::F) where {T,P,D,F<:Function}
+    function Optional(parser,default)
+        T = result_type(parser)
+        D = typeof(default)
         T_ = promote_type(T,D)
         T_ === Any && ( T_ = Union{T,D} )
-        new{T_,P,F}(parser, default,f)
+        new{T_,typeof(parser)}(parser, default)
     end
 end
-Optional{T}(parser::P,f::F) where {T,P,F<:Function} =
-    Optional{T}(parser, defaultvalue(T), f)
-regex_string(x::Optional) where {T, E}  = regex_string(x.parser)*"?"
+
+opt(x;kw...) = opt(parser(x);kw...)
+
+opt(x1,x...;kw...) = opt(seq(x1,x...);kw...)
+
+opt(x::Union{TextParse.AbstractToken,Regex};default=defaultvalue(result_type(x))) =
+    Optional(x,default)
+
+opt(T::Type, x_; transform, kw...) =
+    opt(transform, T, x; kw...)
+
+function opt(transform::Function, T::Type, x;
+             default=defaultvalue(T))
+    instance(transform,T,Optional(x, default))
+end
+
+
+regex_string(x::Optional)  = regex_string(x.parser)*"?"
 map_parser(f::Function,x::Optional,a...) =
-    Optional{result_type(x)}(map_parser(f,x.parser,a...),
-                             x.default,x.transform)
+    Optional(map_parser(f,x.parser,a...),
+             x.default)
 
 
 @inline prevind(str,i::Int,parser::Optional,x::Missing) = i
@@ -997,17 +1255,32 @@ function Base.get(parser::Optional, sequence, till, after, i, state)
 end
 
 function _iterate(t::Optional, str, till, i, state)
-    if state === nothing
-        r = _iterate(t.parser, str, till, i, nothing)
+    if state === missing
+        nothing
+    else
+        before_i = state === nothing ? i : prevind(str,i,t.parser,state) ##state[end][1]
+        r = _iterate(t.parser, str, till, i, state)
         if r === nothing
-            i,missing
+            prune_captures(str,before_i)
+            before_i,missing
         else
             r[1], r[2]
         end
-    elseif state === missing
-        nothing
-    else
-        nothing
+    end
+end
+
+function _iterate(t_::Lazy{<:Optional}, str, till, i, state)
+    t=t_.parser
+    if state === nothing
+        i,missing
+    else 
+        r = _iterate(t.parser, str, till, i,
+                     state === missing ? nothing : state)
+        if r === nothing
+            nothing
+        else
+            r[1], r[2]
+        end            
     end
 end
 
@@ -1017,62 +1290,46 @@ defaultvalue(V::Type{<:Vector}) = eltype(V)[]
 defaultvalue(V::Type{<:VectorDict}) = VectorDict{keytype(V), valtype(V)}(eltype(V)[])
 defaultvalue(V::Type) = missing
 
-function opt(x...; 
-             log=false,
-             transform_seq=(v,i) -> v, kw...)
-    ## @show transform_seq
-    if length(x)==1
-        els = parser(x[1])
-    else
-        ## @show x
-        els = seq(x...; transform=transform_seq,
-                  log=log)
-    end
-    opt(els; log=log, kw...)
-end
-
-opt(x_; kw...) =
-    let x=parser(x_)
-        opt(result_type(typeof(x)), x; kw...)
-    end
-
-function opt(T::Type, x;
-             default=defaultvalue(T),
-             log=false,
-             transform=(v,i) -> v) where { D }
-    ##@show default
-    x=parser(x)
-    RT = promote_type(T,typeof(default))
-    Optional{RT}(x, default,
-                 log_transform(transform, log))
-end
 
 
 
 
 
 export alt
-struct Either{T,Ps,F<:Function} <: AbstractParser{T}
+struct Either{T,Ps} <: AbstractParser{T}
     options::Ps
-    transform::F
-    Either{T}(p::P, f::F) where {T,P,F<:Function} =
-        new{T,P,F}(p::P, f::F)
+    Either{T}(p::P) where {T,P} =
+        new{T,P}(p::P)
 end
 ==(x::Either,y::Either) =
-    x.options==y.options && x.transform==y.transform
-hash(x::Either, h::UInt) = hash(x.options, hash(x.transform,h))
+    x.options==y.options
+hash(x::Either, h::UInt) = hash(x.options)
+
+function alt(x::Union{ParserTypes,Pair}...)
+    parts = Any[ parser(y) for y in x ]
+    Ts = ( result_type(typeof(x)) for x in parts )
+    T = promote_type(Ts...)
+    Any <: T && ( T = Union{Ts...} )
+    Either{T}(parts)
+end
+
+
+function alt(T::Type, x::Vararg; transform::Function)
+    instance(transform, T, alt(x...))
+end
 
 map_parser(f::Function,x::Either,a...) =
     Either{result_type(x)}(
-        tuple( ( map_parser(f,p,a...) for p in x.options )...),
-        x.transform)
+        tuple( ( map_parser(f,p,a...) for p in x.options )...))
 
 
 function Base.push!(x::Either, y)
+    @assert result_type(y) <: result_type(x)
     push!(x.options,y)
     x
 end
 function Base.pushfirst!(x::Either, y)
+    @assert result_type(y) <: result_type(x)
     pushfirst!(x.options,y)
     x
 end
@@ -1086,65 +1343,63 @@ mutable struct MutablePair{K,V}
     MutablePair{K,V}(f,s) where {K,V} =
         new{K,V}(f,s)
 end
-
 Base.show(io::IO, x::MutablePair) =
     print(io, x.first, "=>", x.second)
 @inline function with_state!(x::MutablePair,s)
+    ##s isa Tuple{Int,Nothing} && error()
     x.second=s
     x
 end
 @inline function with_key_state!(x::MutablePair,k,s)
+    ##s isa Tuple{Int,Nothing} && error()
     x.first=k
     x.second=s
     x
 end
 
 @inline function prevind(str,i::Int,parser::Either,x)
+    ## @show i
     prevind(str,i,parser.options[x.first],x.second)
 end
 
 @inline function nextind(str,i::Int,parser::Either,x)
+    ## @show i
     nextind(str,i,parser.options[x.first],x.second)
 end
 
 function Base.get(parser::Either, sequence, till, after, i, state)
     j = state.first
     lstate = state.second
-    parser.transform(
-        (get(parser.options[j],sequence, till, after, i, lstate)),
-        i)
+    get(parser.options[j],sequence, till, after, i, lstate)
 end
 
 
 
 function _iterate(t::Either, str, till, i, state::Union{Nothing,Pair{Int,<:Any},MutablePair{Int,<:Any}})
-    s_ = if state !== nothing
+    ##sleep(1)
+    i, s_ = if state !== nothing
+        before_i = _prevind(str,i,t.options[state.first],state.second) ##state[end][1]
         nstate = _iterate(t.options[state.first], str, till, i, state.second)
         nstate !== nothing && return nstate[1], state.first => nstate[2]
-        state
+        #with_state!(state, nstate[2])
+        prune_captures(str,before_i)
+        before_i, state
     else
-        0=>nothing
+        i, 0=>nothing
+        ##MutablePair{Int,Any}(0,nothing)
     end
     fromindex = s_.first+1
+    ##sstate = nothing
     for j in fromindex:length(t.options)
+        ## @info "alt" j str[i:till] typeof(t.options[j]) #t.options[j] 
         if (sstate = _iterate(t.options[j], str, till, i, nothing)) !== nothing
+            ## i_::Int, nstate_ = sstate
             ns = j=>sstate[2]
+            ## with_key_state!(s_,j,sstate[2])
             return sstate[1], ns
         end
     end
     nothing
-end
-
-function alt(x::Vararg{Union{ParserTypes,Pair}})
-    parts = Any[ parser(y) for y in x ]
-    T = promote_type([ result_type(typeof(x)) for x in parts]...)
-    f = (v,i) -> v
-    Either{T}(parts, f)
-end
-
-
-function alt(T::Type, x::Vararg; log=false, transform=(v,i) -> v)
-    Either{T}(Any[ parser(y) for y in x ], log_transform(transform, log))
 end
 
 
@@ -1267,7 +1522,6 @@ optimized repeated alternations of `x``delim`, optionally starting/ending with `
 if `agg` is nothing, default is to aggregate delim after match is `result_type(delim) <: result_type(x)`, if not missing.
 """
 function alternate(x::ParserTypes, delim::ParserTypes;
-                   log=false,
                    agg = nothing,
                    kw...)
     T, S = result_type(typeof(x)), result_type(typeof(delim))
@@ -1286,7 +1540,7 @@ function alternate(x::ParserTypes, delim::ParserTypes;
         agg
     end
     
-    function tf(v,i)
+    function tf(v,i)::Vector{T}
         ## @show v,i
         r = T[]
         if isempty(v[2])
@@ -1301,14 +1555,12 @@ function alternate(x::ParserTypes, delim::ParserTypes;
         end
         r
     end
-    
-    seq(Vector{T},
-        opt(T, x; default=missing),
-        rep(seq(delim, x)),
-        opt(delim;default=missing);
-        log=log,
-        ## todo: factor out this transform condition!!
-        transform = tf, kw...)
+
+    instance_at(tf, Vector{T},
+             seq(
+                 opt(x; default=missing),
+                 rep(seq(delim, x)),
+                 opt(delim;default=missing)))
 end
 
 
@@ -1387,11 +1639,6 @@ Base.get(x::AtomicGroup, a...) =
 regex_string(x::AtomicGroup) =
     "(?>$(regex_string(x.parser)))"
 
-include("show.jl")
-include("deprecated.jl")
-include("pcre.jl")
-include("re.jl")
-include("tokens.jl")
 export Parsing2
 struct Parsing2{P,S}
     parser::P
@@ -1444,7 +1691,16 @@ export _iterate
 export Numeric
 Numeric = TextParse.Numeric
 
+map_parser(f::Function,x::Numeric,a...) = x
+
+import AbstractTrees: print_tree, children, printnode
 include("reverse.jl")
 include("textparse.jl")
+include("deprecated.jl")
+include("re.jl")
+include("pcre.jl")
+include("tokens.jl")
+
+include("show.jl")
 
 end # module

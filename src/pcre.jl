@@ -66,9 +66,8 @@ extension   = r"\.[[:alnum:]~#]+"
 email_regexp = r"[-+_.~a-zA-Z][-+_.~:a-zA-Z0-9]*@[-.a-zA-Z0-9]+"
 
 ## is this official??
-author_email = seq(NamedTuple,
-                   :name => opt(r"^[^<]+"),
-                   r" <", :email => rep_until(email_regexp, r">"))
+author_email = seq(:name => JoinSubstring(rep(CharNotIn('<'))),
+                   " <", :email => rep_until(email_regexp, r">"))
 
 
 
@@ -173,7 +172,7 @@ regex_tempered_greedy(s,e, flags="s"; withend=true) =
 
 # https://www.rexegg.com/regex-quantifiers.html#tempered_greed
 regex_neg_lookahead(e, match=r".") =
-    instance(String,
-             Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s")) do v,i
-                 v[1]
-             end
+    instance_at(String,
+                Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s")) do v,i
+                    v[1]
+                end
