@@ -4,12 +4,11 @@ using Parameters
 using Nullables
 
 using TextParse
-import TextParse: tryparsenext
 import Base: ==, hash
 
 using BasePiracy
-
-export tryparsenext, tokenize, result_type
+export AbstractParser
+export result_type
 
 include("namedtuples.jl")
 
@@ -26,6 +25,8 @@ parser(x::ParserTypes) = x
 
 ############################################################
 ## Parsing with TextParse.AbstractToken, operators
+
+state_type(p::Type{<:TextParse.AbstractToken}) = Tuple{Int,result_type(p)}
 
 function _iterate(parser::TextParse.AbstractToken, sequence, till, i, state)
     parser isa AbstractParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, i, state)"
@@ -64,6 +65,7 @@ struct MatchState end
 abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
 Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state) =
     nothing
+state_type(p::Type{<:AbstractParser}) =  error("implement state_type(::Type{$(p)})")
 _iterate(x::AbstractParser,str,i,till,state) =
     error("implement _iterate(x::$(typeof(x)),str::$(typeof(str)),i,till,state::$(typeof(state)))")
 function TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.default_opts)
@@ -76,7 +78,8 @@ function TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.defa
 end
 
 "Abstract type for parser wrappers, providing default methods"
-abstract type WrappedParser{T} <: AbstractParser{T} end
+abstract type WrappedParser{P,T} <: AbstractParser{T} end
+state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
 @inline prevind(str,i::Int,parser::WrappedParser,x) =
     prevind(str,i,parser.parser,x)
 @inline nextind(str,i::Int,parser::WrappedParser,x) =
@@ -90,9 +93,10 @@ _iterate(parser::WrappedParser, sequence, till, i, state) =
 
 
 "wrapper for stepping with ncodeunit length."
-struct ConstantParser{N,T} <: WrappedParser{T}
+struct ConstantParser{N,T} <: WrappedParser{T,T}
     parser::T
 end
+state_type(p::Type{<:ConstantParser}) = MatchState
 parser(x::Char) =
     ConstantParser{Base.ncodeunits(x),Char}(x)
 parser(x::AbstractString) =
@@ -111,6 +115,7 @@ Base.get(parser::ConstantParser{1,Char}, sequence, till, after, i, state) where 
 
 Base.get(parser::ConstantParser{L,SubString}, sequence, till, after, i, state) where L =
     parser=="" ? "" : SubString(sequence,i,prevind(sequence,i+L))
+
 
 @inline function _iterate(parser::ConstantParser{L,Char}, sequence, till, i, state::Nothing) where L
     i>till && return nothing
@@ -143,6 +148,7 @@ end
 
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
 abstract type NIndexParser{N,T} <: AbstractParser{T} end
+state_type(p::Type{<:NIndexParser}) = MatchState
 @inline prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i
 @inline nextind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
@@ -200,14 +206,16 @@ wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but cons
 `nothing` is returned as match.
 Useful for checks like "must not be followed by `parser`, don't consume its match".
 """
-struct Never <: AbstractParser{Nothing} end
+struct Never <: LookAround{Never} end
 regex_string(x::Never) = "(*FAIL)"
+_iterate(x::Never,str,i,till,state) =
+    nothing
 
 
 
 export Always
 "Parser matching always and not consuming any input"
-struct Always <: LookAround
+struct Always <: LookAround{Always}
 end
 Base.show(io::IO,x::Always) = print(io,"")
 regex_string(x::Always) = ""
@@ -222,10 +230,12 @@ wraps a `parser::P`, succeeds if and only if `parser` succeeds, but consumes no 
 The match is returned.
 Useful for checks like "must be followed by `parser`, but don't consume its match".
 """
-struct PositiveLookahead{P} <: LookAround
+struct PositiveLookahead{T,P} <: LookAround{T}
     parser::P
-    PositiveLookahead(p) =
-        new{typeof(p)}(p)
+    PositiveLookahead(p_) =
+        let p = parser(p_)
+            new{result_type(p),typeof(p)}(p)
+        end
 end
 regex_string(x::PositiveLookahead) =
     "(?="*regex_string(x.parser)*")"
@@ -245,8 +255,12 @@ wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but cons
 `nothing` is returned as match.
 Useful for checks like "must not be followed by `parser`, don't consume its match".
 """
-struct NegativeLookahead{P} <: LookAround
+struct NegativeLookahead{T,P} <: LookAround{T}
     parser::P
+    NegativeLookahead(p_) =
+        let p = parser(p_)
+            new{result_type(p),typeof(p)}(p)
+        end
 end
 regex_string(x::NegativeLookahead) =
     "(?!"*regex_string(x.parser)*")"
@@ -325,7 +339,7 @@ log_transform(transform, log, catch_error=false) =
 
 
 export with_log
-struct ParserPeek{T,P} <: WrappedParser{T}
+struct ParserPeek{P,T} <: WrappedParser{P,T}
     message::String
     length::Int
     parser::P
@@ -354,24 +368,28 @@ map_parser(f::Function,x::ParserPeek,a...) =
 end
 
 
-export NamedToken, with_name
-struct NamedToken{P,T} <: WrappedParser{Pair{Symbol,T}}
+export NamedParser, with_name
+struct NamedParser{P,T} <: WrappedParser{P,T}
     name::Symbol
     parser::P
-    NamedToken(name::Symbol,parser) =
-        new{typeof(parser),result_type(parser)}(name,parser)
+    NamedParser(name::Symbol,p_) =
+        let p=parser(p_)
+            new{typeof(p),result_type(p)}(name,p)
+        end
 end
+
+
 parser(x::Pair{Symbol, P}) where P =
-    NamedToken(x.first, parser(x.second))
+    NamedParser(x.first, parser(x.second))
 with_name(name::Symbol,x; doc="") = 
-    NamedToken{typeof(x),result_type(x)}(name,x)
+    NamedParser(name,x)
 
 map_parser(f::Function,x::NamedToken,a...) =
     NamedToken(x.name,map_parser(f,x.parser,a...))
 
 
 export InstanceParser, instance
-struct InstanceParser{P,T, F<:Function} <: WrappedParser{T}
+struct InstanceParser{P,T, F<:Function} <: WrappedParser{P,T}
     transform::F
     parser::P
     InstanceParser{T}(transform::Function, p_) where {T} =
@@ -386,7 +404,7 @@ parser(constant::Pair{<:ParserTypes}) =
         (v,i) -> constant.second,
         parser(constant.first))
 
-regex_string(x::Union{NamedToken, InstanceParser}) = regex_string(x.parser)
+regex_string(x::Union{NamedParser, InstanceParser}) = regex_string(x.parser)
 
 function Base.get(parser::InstanceParser, sequence, till, after, i, state)
     parser.transform(
@@ -609,6 +627,7 @@ function Base.get(parser::FlatMap, sequence, till, after, i, state)
               state[3])
 end
 
+state_type(p::Type{<:FlatMap{T,P}}) where {T,P} = Tuple{state_type(P),<:Any,<:Any}
 function _iterate(tokf::FlatMap, str, till, i, state)
     T = result_type(tokf)
     if state === nothing
@@ -659,7 +678,7 @@ seq(transform::Function, a...; kw...) =
 
 
 function seq(tokens_::Vararg{Union{Pair{Symbol,<:ParserTypes},ParserTypes}})
-    s = Sequence( ( t isa Pair{Symbol,<:ParserTypes} ? t.second : t for t in tokens_ ))
+    s = Sequence( ( t isa Pair{Symbol,<:ParserTypes} ? NamedParser(t.first,t.second) : t for t in tokens_ ))
     names = [ t.first=>i
               for (i,t) in enumerate(tokens_)
               if t isa Pair{Symbol,<:ParserTypes} ]
@@ -708,8 +727,8 @@ function seq(T::Type, tokens::Vararg;
              transform=:instance)
     parts = tuple( ( parser(x) for x = tokens )... )
     if T==NamedTuple
-        fnames = tuple( [ x.name for x in parts if x isa NamedToken ]... )
-        ftypes = [ result_type(typeof(x.parser)) for x in parts if x isa NamedToken ]
+        fnames = tuple( [ x.name for x in parts if x isa NamedParser ]... )
+        ftypes = [ result_type(typeof(x.parser)) for x in parts if x isa NamedParser ]
         RT = isempty(fnames) ? T : NamedTuple{fnames, Tuple{ftypes...}}
     else
         RT = T
@@ -771,6 +790,8 @@ end
     r=state === nothing ? after : _prevind(sequence, after, parser, state)
 end
 
+
+state_type(p::Type{<:Sequence}) = Vector{Any}
 """
 _iterate(parser, sequence, till, i, states)
 
@@ -1052,24 +1073,11 @@ function Base.get(parser::Repeat, sequence, till, after, i, state::Int)
     r
 end
 
-@inline pushstate!(state::Nothing,parser,substate::T) where T =
-    T[substate]
-@inline function pushstate!(state::Vector,parser,substate)
-    push!(state,substate)
-end
-@inline function poplast!(state::Vector,parser)
-    l=pop!(state)
-    l,state
-end
-@inline state_length(parser::Repeat,x::Vector{}) = length(x)
-@inline state_length(parser::Repeat,x::Nothing) = 0
-
-
-@inline pushstate!(state::Nothing,parser,substate::MatchState) =
-    1
-
-@inline pushstate!(state::Int,parser,substate) =
-    push!(Any[ MatchState() for i in 1:state ], substate)
+@inline state_type(::Type{<:Repeat{P}}) where P =
+    emptystate_type(Vector{state_type(P)})
+@inline emptystate_type(::Type{Vector{MatchState}}) = Int
+@inline emptystate(::Type{Int}) = 0
+@inline state_length(parser,state::Int) = state
 @inline pushstate!(state::Int,parser,substate::MatchState) =
     state + 1
 @inline poplast!(state::Int,parser) =
@@ -1078,23 +1086,42 @@ end
     else
         MatchState(), state - 1
     end
-@inline state_length(parser,state::Int) = state
+
+@inline emptystate_type(::Type{Vector{T}}) where T =
+    Vector{emptystate_type(T)}
+@inline emptystate_type(T::Type) = T
+@inline state_length(parser::Repeat,x::Vector) =
+    length(x)
+@inline emptystate(::Type{Vector{T}}) where T =
+    emptystate_type(T)[]
+
+@inline function pushstate!(state::Vector,parser,substate)
+    push!(state,substate)
+end
+@inline function poplast!(state::Vector,parser)
+    l=pop!(state)
+    l,state
+end
+
+
+function fill_rep(t::Repeat, sequence, till, j,state_::S) where S
+    j_ = -1
+    while state_length(t,state_) < t.range.stop && ( x = _iterate(t.parser,sequence, till,j,nothing) )!==nothing
+        ##@info "rep fill..." x state_
+        ## e.g. match(re"(?:a|(?=b)|.)*\z","abc")
+        j_==x[1] && state_length(t,state_)>t.range.start && break
+        state_=pushstate!(state_,t.parser, x[2])
+        j_=j
+        j = x[1]
+    end
+    j,state_,state_length(t,state_) < t.range.start
+end
+
 
 function _iterate(t::Repeat, sequence, till, i, state)
-    function fill(j,state_)
-        j_ = -1 ## ??? match(re"(?:a|(?=b)|.)*\z","abc")
-        while (x = _iterate(t.parser,sequence, till,j,nothing))!==nothing && state_length(t,state_) < t.range.stop
-            j_==x[1] && state_length(t,state_)>t.range.start && break
-            state_=pushstate!(state_,t.parser,x[2])
-            j_=j
-            j = x[1]
-        end
-        j,state_
-    end
-    i_ = i
-    if state === nothing
-        state = 0
-        i_,state_ = fill(i,state)
+    i_,state_,goback = if state === nothing
+        es = emptystate(state_type(typeof(t)))
+        fill_rep(t,sequence,till,i, es)
     else
         if state_length(t,state)==0
             return nothing
@@ -1113,27 +1140,27 @@ function _iterate(t::Repeat, sequence, till, i, state)
             # forcibly broken.
         #     return nothing
         end
-        goback = true
-        while goback
-            if state_length(t,state)==0
-                return nothing
-            end
-            lstate, state_=poplast!(state,t.parser)
-            before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
-            prune_captures(sequence,before_i)
-            x = _iterate(t.parser,sequence, till, i_, lstate)
-            if x === nothing
-                state_length(t,state_) in t.range && return before_i, state_
-                i_ = before_i
-                if state_length(t,state_)==0
-                    goback = false
-                end
-                state = state_
-            else
-                state_=pushstate!(state_,t.parser,x[2])
-                i_,state_ = fill(x[1],state_)
+        i, state, true
+    end
+    while goback
+        if state_length(t,state_)==0
+            return nothing
+        end
+        lstate, state_=poplast!(state_,t.parser)
+        before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
+        prune_captures(sequence,before_i)
+        x = _iterate(t.parser,sequence, till, i_, lstate)
+        if x === nothing
+            state_length(t,state_) in t.range && return before_i, state_
+            i_ = before_i
+            if state_length(t,state_)==0
                 goback = false
             end
+        elseif before_i==x[1]
+            i_ = before_i
+        else
+            state_=pushstate!(state_,t.parser,x[2])
+            i_,state_,goback = fill_rep(t,sequence,till,x[1],state_)
         end
     end
     if state_length(t,state_) in t.range
@@ -1146,22 +1173,23 @@ end
 
 
 
+function fill_rep(t_::Lazy{<:Repeat}, sequence, till, j,state_)
+    t = t_.parser
+    while state_length(t,state_) < t.range.start && (x = _iterate(t.parser,sequence, till,j,nothing))!==nothing 
+        j==x[1] && state_length(t,state_)>0 && break
+        state_=pushstate!(state_,t.parser,x[2])
+        j==x[1] && break
+        j = x[1]
+    end
+    j,state_
+end
 function _iterate(t_::Lazy{<:Repeat}, sequence, till, i, state)
     t = t_.parser
-    function fill(j,state_)
-        while state_length(t,state_) < t.range.start && (x = _iterate(t.parser,sequence, till,j,nothing))!==nothing 
-            j==x[1] && state_length(t,state_)>0 && break
-            state_=pushstate!(state_,t.parser,x[2])
-            j==x[1] && break
-            j = x[1]
-        end
-        j,state_
-    end
     i_ = i
     state_ = state
     if state === nothing
-        state = 0
-        i_,state_ = fill(i,state)
+        es = emptystate(state_type(typeof(t)))
+        i_,state_ = fill_rep(t_,sequence,till,i,es)
     else
         if state_length(t,state)<t.range.stop
             x = _iterate(t.parser,sequence, till, i_, nothing)
@@ -1187,7 +1215,7 @@ function _iterate(t_::Lazy{<:Repeat}, sequence, till, i, state)
                 state = state_
             else
                 state_=pushstate!(state_,t.parser,x[2])
-                i_,state_ = fill(x[1],state_)
+                i_,state_ = fill_rep(t_,sequence,till,x[1],state_)
                 if state_length(t,state_) in t.range
                     goback = false
                 end
@@ -1212,7 +1240,8 @@ end
 
 
 export opt
-struct Optional{T,P} <: WrappedParser{T}
+struct None end
+struct Optional{P,T} <: WrappedParser{P,T}
     parser::P
     default::T
     function Optional(parser,default)
@@ -1220,9 +1249,10 @@ struct Optional{T,P} <: WrappedParser{T}
         D = typeof(default)
         T_ = promote_type(T,D)
         T_ === Any && ( T_ = Union{T,D} )
-        new{T_,typeof(parser)}(parser, default)
+        new{typeof(parser),T_}(parser, default)
     end
 end
+state_type(::Type{<:Optional{P}}) where P = Union{None,state_type(P)}##Tuple{Int, promote_type( state_type.(t.options)...) }
 
 opt(x;kw...) = opt(parser(x);kw...)
 
@@ -1246,36 +1276,35 @@ map_parser(f::Function,x::Optional,a...) =
              x.default)
 
 
-@inline prevind(str,i::Int,parser::Optional,x::Missing) = i
-@inline nextind(str,i::Int,parser::Optional,x::Missing) = i
+@inline prevind(str,i::Int,parser::Optional,x::None) = i
+@inline nextind(str,i::Int,parser::Optional,x::None) = i
 
 
 function Base.get(parser::Optional, sequence, till, after, i, state)
-    state === missing ? parser.default : get(parser.parser,sequence, till, after, i, state)
+    state === None() ? parser.default : get(parser.parser,sequence, till, after, i, state)
 end
 
+_iterate(t::Optional, str, till, i, state::None) =
+    nothing
+
 function _iterate(t::Optional, str, till, i, state)
-    if state === missing
-        nothing
+    before_i = state === nothing ? i : prevind(str,i,t.parser,state) ##state[end][1]
+    r = _iterate(t.parser, str, till, i, state)
+    if r === nothing
+        prune_captures(str,before_i)
+        return tuple(before_i, None())
     else
-        before_i = state === nothing ? i : prevind(str,i,t.parser,state) ##state[end][1]
-        r = _iterate(t.parser, str, till, i, state)
-        if r === nothing
-            prune_captures(str,before_i)
-            before_i,missing
-        else
-            r[1], r[2]
-        end
+        r[1], r[2]
     end
 end
 
 function _iterate(t_::Lazy{<:Optional}, str, till, i, state)
     t=t_.parser
     if state === nothing
-        i,missing
+        i,None()
     else 
         r = _iterate(t.parser, str, till, i,
-                     state === missing ? nothing : state)
+                     state === None() ? nothing : state)
         if r === nothing
             nothing
         else
@@ -1304,6 +1333,7 @@ end
 ==(x::Either,y::Either) =
     x.options==y.options
 hash(x::Either, h::UInt) = hash(x.options)
+state_type(::Type{<:Either}) = Pair{Int,<:Any}##Tuple{Int, promote_type( state_type.(t.options)...) }
 
 function alt(x::Union{ParserTypes,Pair}...)
     parts = Any[ parser(y) for y in x ]
@@ -1613,7 +1643,7 @@ end
 
 
 export atomic
-struct AtomicGroup{P,T} <: WrappedParser{T}
+struct AtomicGroup{P,T} <: WrappedParser{P,T}
     parser::P
     AtomicGroup(parser) =
         new{typeof(parser),result_type(parser)}(parser)

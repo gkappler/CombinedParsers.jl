@@ -47,7 +47,7 @@ function printnode(io::IO, x::Optional)
     printnode(io,x.parser)
     print(io,")? || ",x.default)
 end
-function printnode(io::IO, x::NamedToken) 
+function printnode(io::IO, x::NamedParser) 
     print(io, x.name, " ")
     printnode(io, x.parser)
 end
@@ -90,7 +90,7 @@ children(x::FlatMap) =
     [ x.left, x.right ]
 children(x::InstanceParser) =
     children(x.parser)
-children(x::NamedToken) =
+children(x::NamedParser) =
     children(x.parser)
 children(x::Repeat) =
     [ x.parser ]

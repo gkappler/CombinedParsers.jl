@@ -160,7 +160,7 @@ end
 
 
 export on_options
-struct OnOptions{P,T} <: WrappedParser{T}
+struct OnOptions{P,T} <: WrappedParser{P,T}
     parser::P
     flags::UInt32
     OnOptions(parser,flags::UInt32) =
@@ -187,7 +187,7 @@ on_options(flags::UInt32,p) =
 end
 
 export JoinSubstring
-struct JoinSubstring{P} <: WrappedParser{SubString}
+struct JoinSubstring{P} <: WrappedParser{P,SubString}
     parser::P
 end
 map_parser(f::Function,x::JoinSubstring,a...) =
@@ -201,14 +201,14 @@ Base.get(x::JoinSubstring, sequence, till, after, i, state) =
 Capture a parser result, optionally with a name.
 `index` field is recursively set when calling 'indexed_captures` on the parser.
 """
-struct Capture{T,P} <: WrappedParser{T}
+struct Capture{P,T} <: WrappedParser{P,T}
     parser::P
     name::Union{Nothing,Symbol}
     index::Int
     Capture(name::Union{Nothing,Symbol},x,index=-1) =
-        new{result_type(x),typeof(x)}(x,name==Symbol("") ? nothing : name,index)
+        new{typeof(x),result_type(x)}(x,name==Symbol("") ? nothing : name,index)
     Capture(x::Capture,index) =
-        new{result_type(x),typeof(x.parser)}(x.parser,x.name,index)
+        new{typeof(x.parser),result_type(x)}(x.parser,x.name,index)
 end
 regex_string(x::Capture) =
     let name = (x.name===nothing ? "" : "?<$(x.name)>")
@@ -255,14 +255,14 @@ end
 
 
 
-struct ParserWithCaptures{T,P} <: WrappedParser{T}
+struct ParserWithCaptures{P,T} <: WrappedParser{P,T}
     parser::P
     captures::Vector{ParserTypes}
     names::Dict{Symbol,Int}
     ParserWithCaptures(parser,cs::Captures) =
-        new{result_type(parser),typeof(parser)}(parser,cs.captures,cs.names)
+        new{typeof(parser),result_type(parser)}(parser,cs.captures,cs.names)
     ParserWithCaptures(parser,captures,names) =
-        new{result_type(parser),typeof(parser)}(parser,captures,names)
+        new{typeof(parser),result_type(parser)}(parser,captures,names)
 end
 function printnode(io::IO,x::ParserWithCaptures)
     print(io,"regular expression combinator")
@@ -495,6 +495,7 @@ end
 end
 
 
+state_type(::Type{<:BackReference}) = Int
 @inline function _iterate(p::BackReference, sequence::WithCaptures, till, i, state)
     return nothing
 end
@@ -554,6 +555,7 @@ end
 @inline function _iterate(parser::SubRoutine, sequence::WithCaptures, till, i, state)
     _iterate(sequence.subroutines[parser.index].parser, copy_captures(sequence), till, i, state)
 end
+state_type(::Type{<:SubRoutine}) = Any
 
 Base.match(parser::ParserTypes,sequence::AbstractString) =
     match(indexed_captures(parser),sequence)
