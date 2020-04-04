@@ -821,6 +821,23 @@ seq(transform::Function, T::Type, a...; kw...) =
 seq(transform::Function, a...; kw...) =
     map(transform, Sequence(a...))
 
+export sseq
+sseq_(x::Sequence) = sseq_(x.parts...)
+sseq_(x::Always) = tuple()
+sseq_() = tuple()
+sseq_(x1) = tuple(x1)
+sseq_(x1,x...) = Iterators.flatten( Any[ sseq_(x1), ( sseq_(e) for e in x )... ] )
+
+"""
+    sseq(x...)
+
+Simplifying seq, flatten Sequences, remove Always lookarounds.
+"""
+function sseq(x...)
+    opts = collect(sseq_(x...))
+    length(opts)==1 ? opts[1] : seq(opts...)
+end
+
 
 
 function seq(tokens_::Vararg{Union{Pair{Symbol,<:ParserTypes},ParserTypes}})
