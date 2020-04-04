@@ -384,7 +384,29 @@ parser(x::Pair{Symbol, P}) where P =
 with_name(name::Symbol,x; doc="") = 
     NamedParser(name,x)
 
+export @with_names
+with_names(x) = x
+function with_names(node::Expr)
+    if node.head == :(=) && length(node.args) == 2 && isa(node.args[1], Symbol)
+        node.args[2] = Expr(:call, :with_name, QuoteNode(node.args[1]), node.args[2])
+    end
+    if node.head != :call 
+        node.args = map(with_names, node.args)
+    end
+    node
+end
 
+
+"""
+Sets names of parsers within begin/end block to match the variables they are asigned to.
+
+so, for example
+  foo = AnyChar() 
+will set the name field of AnyChar() to :foo.
+"""
+macro with_names(block)
+    esc(with_names(block))
+end
 
 export Transformation, map_at
 """
