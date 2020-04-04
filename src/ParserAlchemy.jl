@@ -1508,6 +1508,11 @@ function alt(x::ParserTypes...)
     Either{T}(parts)
 end
 
+with_name(x::Either,a...) =
+    Either{result_type(x)}(empty(x.options))
+revert(x::Either) =
+    Either{result_type(x)}(empty(x.options))
+
 function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
     if haskey(mem,x)
         mem[x]
