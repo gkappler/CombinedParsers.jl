@@ -584,15 +584,13 @@ struct CharIn{S} <: NIndexParser{1,Char}
     sets::S
     CharIn(x) = new{typeof(x)}(x)
 end
-CharIn(x::CharIn) = CharIn(x.sets)
-CharIn(x::CharIn{Tuple{<:CharIn}}) = CharIn(x.sets[1])
+
 ==(x::CharIn,y::CharIn) =
     x.sets==y.sets
 hash(x::CharIn, h::UInt) = hash(x.sets,h)
 _ismatch(c,p::CharIn) = _ismatch(c,p.sets)
 
 
-CharIn(x::String) = CharIn( tuple(Char[ c for c in x]) )
 result_type(::Type{<:CharIn}) = Char
 regex_string_(x::Union{Vector,Set}) = join(regex_string_.(x))
 regex_string_(x::Char) = x == '\\' ? "\\\\" : "$x" ## for [] char ranges
@@ -649,11 +647,17 @@ export CharMatcher
 CharMatcher = Union{Char, AnyChar, CharIn, CharNotIn, UnicodeClass,StepRange{Char,Int},AbstractString}
 
 
-CharIn(x::Union{Missing,CharMatcher}...) =
-    CharIn(tuple((e for e in x if e!==missing)...))
-
-CharNotIn(x::Union{Missing,CharMatcher}...) =
-    CharNotIn(tuple((e for e in x if e!==missing)...))
+for T in [:CharIn,:CharNotIn]
+    eval(quote
+         $T(x::Union{CharMatcher}...) = $T(tuple( x...))
+         $T(x::$T{Tuple{<:$T}}) = $T(x.sets[1])
+         $T(x::$T) = x #$T(x.sets)
+         $T(x::AbstractString...) = $T( Char[ c for x_ in x for c in x_] )
+         $T(x1::Char,x::Char...) = $T( Char[ x1, ( c for c in x )... ] )
+         $T(x::Union{Missing,CharMatcher}...) = $T((e for e in x if e!==missing)...)
+         end)
+end
+         
 
 
 export rep_stop, rep_until
@@ -707,9 +711,15 @@ struct FlatMap{T,P,Q<:Function} <: AbstractParser{T}
     end
 end
 
-after(right::Function,left::ParserTypes,T::Type) =
+after(right::Function,left::TextParse.AbstractToken,T::Type) =
     FlatMap{T}(left,right)
 
+function after(right::Function,left::TextParse.AbstractToken)
+    result_type(left)
+    RT = infer_result_type(right,Any,left,"")
+    T=result_type(RT)
+    FlatMap{T}(left,right)
+end
 
 map_parser(f::Function,mem::AbstractDict,x::FlatMap,a...) =
     get!(mem,x) do
@@ -748,19 +758,38 @@ state_type(p::Type{<:FlatMap{T,P}}) where {T,P} = Tuple{state_type(P),<:Any,<:An
 function _iterate(tokf::FlatMap, str, till, i, state)
     T = result_type(tokf)
     if state === nothing
+        before_i = i
         lr = _iterate(tokf.left, str, till, i, nothing)
         lr === nothing && return nothing
-        @show i_ = lr[1]
+        i_ = lr[1]
         rightp = tokf.right(get(tokf.left, str, till, lr[1],i,lr[2]))
         rr = nothing
         while rr === nothing
             rr = _iterate(rightp, str, till, i_, nothing)
             if rr === nothing
-                lr = _iterate(tokf.left, str, till, i, lr[2])
+                lr = _iterate(tokf.left, str, till, i_, lr[2])
                 lr === nothing && return nothing
+                rightp = tokf.right(get(tokf.left, str, till, lr[1],before_i,lr[2]))
                 i_ = lr[1]
             else
                 return rr[1], (lr[2], rightp, rr[2])
+            end
+        end
+    else
+        lstate,rightp,rstate = state
+        i_=i
+        before_i = start_index(str,i_,tokf.left,lstate)
+        rr = nothing
+        while rr === nothing
+            rr = _iterate(rightp, str, till, i_, rstate)
+            if rr === nothing
+                lr = _iterate(tokf.left, str, till, i_, lstate)
+                lr === nothing && return nothing
+                i_,lstate = lr
+                rightp = tokf.right(get(tokf.left, str, till, i_,before_i,lstate))
+                rstate = nothing
+            else
+                return rr[1], (lstate, rightp, rr[2])
             end
         end
     end
