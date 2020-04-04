@@ -1,3 +1,6 @@
+function ismatch(c::WithOptions{Char},p)
+    _ismatch(c.x,p)
+end
 regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
 
 (*)(x::Regex, y::Regex) =

@@ -139,7 +139,7 @@ Base.get(parser::ConstantParser{L,SubString}, sequence, till, after, i, state) w
 
 @inline function _iterate(parser::ConstantParser{L,Char}, sequence, till, i, state::Nothing) where L
     i>till && return nothing
-    if parser.parser == (@inbounds sequence[i])
+    if ismatch(sequence[i],parser.parser)
         i+L, MatchState()
     else
         nothing
@@ -152,9 +152,9 @@ end
     k = 1
     while k<=L
         (j > till) && return(nothing)
-        @inbounds pc=parser.parser[k]
-        @inbounds sc=sequence[j]
-        (pc != sc) && return(nothing)
+        pc=parser.parser[k] # @inbounds
+        sc=sequence[j] # @inbounds
+        !ismatch(sc,pc) && return(nothing)
         j = j + ncodeunits(sc)
         k = k + ncodeunits(pc)
     end
@@ -190,10 +190,31 @@ struct AnyChar <: NIndexParser{1,Char} end
 any() = AnyChar()
 regex_string(x::AnyChar) = "."
 
+struct MatchingNever{T} end
+ismatch(c::MatchingNever,p) = false
+ismatch(c::MatchingNever,p::AnyChar) = false
+_ismatch(c,p::AnyChar) = true
+_ismatch(c::Char,p::Union{StepRange,Set}) = c in p
+
+function _ismatch(x::Char, set::Union{Tuple,Vector})
+    for s in set
+        ismatch(x,s) && return true
+    end
+    return false
+end
+function _ismatch(c::Char,p::Char)
+    c==p
+end
+function ismatch(c::Char,p)
+    _ismatch(c, p)
+end
+
 
 @inline function _iterate(parser::AnyChar, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    nc = Base.ncodeunits(@inbounds sequence[i])
+    c = sequence[i] # @inbounds
+    !ismatch(c,parser) && return nothing
+    nc = Base.ncodeunits(c)
     return i+nc, MatchState()
 end
 
@@ -568,15 +589,10 @@ CharIn(x::CharIn{Tuple{<:CharIn}}) = CharIn(x.sets[1])
 ==(x::CharIn,y::CharIn) =
     x.sets==y.sets
 hash(x::CharIn, h::UInt) = hash(x.sets,h)
+_ismatch(c,p::CharIn) = _ismatch(c,p.sets)
 
 
 CharIn(x::String) = CharIn( tuple(Char[ c for c in x]) )
-function Base.in(x::Char, set::CharIn{<:Tuple})
-    for s in set.sets
-        x in s && return true
-    end
-    return false
-end
 result_type(::Type{<:CharIn}) = Char
 regex_string_(x::Union{Vector,Set}) = join(regex_string_.(x))
 regex_string_(x::Char) = x == '\\' ? "\\\\" : "$x" ## for [] char ranges
@@ -600,12 +616,11 @@ regex_string(x::CharIn{Tuple{Char}}) =
 
 @inline function _iterate(parser::CharIn, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    @inbounds c = sequence[i]
-    for s in parser.sets
-        if c in s
-            nc = Base.ncodeunits(c)
-            return i+nc, MatchState()
-        end
+    c = sequence[i] # @inbounds
+    c isa MatchingNever && return nothing
+    if ismatch(c,parser.sets)
+        nc = Base.ncodeunits(c)
+        return i+nc, MatchState()
     end
     return nothing
 end
@@ -617,20 +632,14 @@ struct CharNotIn{S} <: NIndexParser{1,Char}
 end
 result_type(::Type{<:CharNotIn}) = Char
 regex_string(x::CharNotIn) =
-    "[^"*join([regex_string_(s) for s in x.sets])*"]"
-function Base.in(x::Char, set::CharNotIn{<:Tuple})
-    for s in set.sets
-        x in s && return false
-    end
-    return true
-end
+    "[^"*escape_string(join([regex_string_(s) for s in x.sets]))*"]"
+_ismatch(c,p::CharNotIn) = !_ismatch(c,p.sets)
 
 @inline function _iterate(parser::CharNotIn, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    @inbounds c = sequence[i]
-    for s in parser.sets
-        c in s && return nothing 
-    end
+    c = sequence[i] # @inbounds
+    c isa MatchingNever && return nothing
+    ismatch(c,parser.sets) && return nothing 
     nc = Base.ncodeunits(c)
     return i+nc, MatchState()
 end

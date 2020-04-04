@@ -170,7 +170,7 @@ struct UnicodeClass{I}
 end
 UnicodeClass(abbrev::String...) =
     UnicodeClass(tuple((unicode_classes[a][3] for a in abbrev)...))
-Base.in(x::Char, set::UnicodeClass{<:Tuple}) =
+ismatch(x::Char, set::UnicodeClass{<:Tuple}) =
     in_any(Base.Unicode.category_code(x),set.class)
 
 
