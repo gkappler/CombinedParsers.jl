@@ -1483,6 +1483,7 @@ defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
 defaultvalue(V::Type{<:VectorDict}) = VectorDict{keytype(V), valtype(V)}(eltype(V)[])
 defaultvalue(V::Type) = missing
+defaultvalue(V::Type{<:AbstractParser}) = Always()
 
 
 
