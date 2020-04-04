@@ -69,14 +69,6 @@ Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state) =
 state_type(p::Type{<:AbstractParser}) =  error("implement state_type(::Type{$(p)})")
 _iterate(x::AbstractParser,str,i,till,state) =
     error("implement _iterate(x::$(typeof(x)),str::$(typeof(str)),i,till,state::$(typeof(state)))")
-function TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.default_opts)
-    s = _iterate(x,str,i,till,nothing)
-    if s === nothing
-        Nullable{result_type(x)}(),i
-    else
-        Nullable(get(x,str,till,s[1],i,s[2])),s[1]
-    end
-end
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,T} <: AbstractParser{T} end
@@ -482,7 +474,7 @@ macro with_names(block)
     esc(with_names(block))
 end
 
-export Transformation, map_at
+export Transformation
 """
     Transformation{T}(transform::Function, p_) where {T}
 
@@ -531,7 +523,7 @@ function _iterate(parser::Transformation, sequence, till, i, state)
     r = _iterate(parser.parser, sequence, till, i, state )
 end
 
-function infer_result_type(f,Tc,p,onerror,ts...)
+function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...)
     Ts = Base.return_types(f, tuple(result_type(p),ts...))
     isempty(Ts) && error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
@@ -604,7 +596,7 @@ regex_string_(x::StepRange) =
 regex_string_(x::Tuple) = join([regex_string_(s) for s in x])
 regex_string_(x::CharIn) = regex_string_(x.sets)
 regex_string(x::CharIn) =
-    "["*regex_string_(x)*"]"
+    "["*escape_string(regex_string_(x))*"]"
 
 regex_string(x::CharIn{Tuple{Char}}) =
     "$(x.sets[1])"
