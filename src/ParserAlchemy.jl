@@ -1525,6 +1525,21 @@ function alt(T::Type, x::Vararg; transform::Function)
     map(transform, T, alt(x...))
 end
 
+export salt
+salt_(x::Either) = salt_(x.options...)
+salt_(x::Never) = tuple()
+salt_() = tuple()
+salt_(x1) = tuple(x1)
+salt_(x1,x...) = Iterators.flatten( Any[ salt_(x1), ( salt_(e) for e in x )... ] )
+"""
+    salt(x...)
+
+Simplifying alt, flattens nested Eithers, remove Never parsers.
+"""
+function salt(x...)
+    opts = collect(salt_(x...))
+    length(opts)==1 ? opts[1] : alt(opts...)
+end
 
 
 function Base.push!(x::Either, y)
