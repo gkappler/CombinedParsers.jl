@@ -93,6 +93,25 @@ _iterate(parser::WrappedParser, sequence, till, i, state) =
     _iterate(parser.parser, sequence, till, i, state)
 
 
+export JoinSubstring
+"""
+Wrapped parser, getting the matched SubString.
+"""
+struct JoinSubstring{P} <: WrappedParser{P,SubString}
+    parser::P
+end
+map_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
+    get!(mem,x) do
+        JoinSubstring(
+            map_parser(f,mem,x.parser,a...))
+    end
+
+regex_string(x::JoinSubstring) =
+    regex_string(x.parser)
+Base.get(x::JoinSubstring, sequence, till, after, i, state) =
+    SubString(sequence, i, prevind(sequence,after))
+
+
 "wrapper for stepping with ncodeunit length."
 struct ConstantParser{N,T} <: WrappedParser{T,T}
     parser::T
