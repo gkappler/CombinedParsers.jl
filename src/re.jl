@@ -473,12 +473,20 @@ capture_index(name,delta,index,context) =
         index
     end
 
-function map_parser(::typeof(indexed_captures),x::BackReference,context)
-    idx = capture_index(x.name,Symbol(""),x.index,context)
-    if idx < 1 || idx>lastindex(context.captures)
-        x.fallback()
-    else
-        BackReference(x.fallback,x.name, idx)
+function map_parser(::typeof(with_name),mem::AbstractDict,x::BackReference,a...)
+    get!(mem,x) do
+        with_log("backreference $x",x)
+    end
+end
+
+function map_parser(::typeof(indexed_captures),mem::AbstractDict,x::BackReference,context,a...)
+    get!(mem,x) do
+        idx = capture_index(x.name,Symbol(""),x.index,context)
+        if idx < 1 || idx>lastindex(context.subroutines)
+            x.fallback()
+        else
+            BackReference(x.fallback,x.name, idx)
+        end
     end
 end
 

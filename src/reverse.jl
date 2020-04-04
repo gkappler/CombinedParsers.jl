@@ -58,7 +58,7 @@ end
 
 export look_behind
 function look_behind(match::Bool, p_)
-    p = revert(parser(p_))
+    p = map_parser(revert,IdDict(),parser(p_))
     if match
         PositiveLookbehind(p)
     else
@@ -100,17 +100,33 @@ end
 
 for T in [PositiveLookahead,NegativeLookahead,PositiveLookbehind,NegativeLookbehind]
     eval(quote
-         map_parser(f::Function,x_::$T,a...) =
-         let x = map_parser(f,x_.parser,a...)
+         map_parser(f::Function,mem::AbstractDict,x_::$T,a...) =
+         let x = map_parser(f,mem,x_.parser,a...)
          $T(x)
          end
          end)
 end
 
-revert(x::Union{AnyChar,CharIn,CharNotIn,UnicodeClass,Always,ConstantParser{N,Char} where N}) = x
-
-map_parser(::typeof(revert),x::Sequence) = seq(( map_parser(revert,p) for p in reverse(x.parts) )...)
-map_parser(::typeof(revert),x::NegativeLookbehind) = NegativeLookahead(x.parser) ##map_parser(revert,@show x.parser))
-map_parser(::typeof(revert),x::NegativeLookahead) = NegativeLookbehind(map_parser(revert,x.parser))
-map_parser(::typeof(revert),x::PositiveLookbehind) = PositiveLookahead(x.parser) ##map_parser(revert,x.parser))
-map_parser(::typeof(revert),x::PositiveLookahead) = PositiveLookbehind(map_parser(revert,x.parser))
+revert(x::Union{AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,ConstantParser{N,Char} where N}) = x
+revert(x::AtStart) = AtEnd()
+revert(x::AtEnd) = AtStart()
+map_parser(::typeof(revert),mem::AbstractDict,x::Sequence) =
+    get!(mem,x) do
+        seq(( map_parser(revert,mem,p) for p in reverse(x.parts) )...)
+    end
+map_parser(::typeof(revert),mem::AbstractDict,x::NegativeLookbehind) =
+    get!(mem,x) do
+        NegativeLookahead(x.parser) ##map_parser(revert,@show x.parser))
+    end
+map_parser(::typeof(revert),mem::AbstractDict,x::NegativeLookahead) =
+    get!(mem,x) do
+        NegativeLookbehind(x.parser) ##map_parser(revert,x.parser))
+    end
+map_parser(::typeof(revert),mem::AbstractDict,x::PositiveLookbehind) =
+    get!(mem,x) do
+        PositiveLookahead(x.parser) ##map_parser(revert,x.parser))
+    end
+map_parser(::typeof(revert),mem::AbstractDict,x::PositiveLookahead) =
+    get!(mem,x) do
+        PositiveLookbehind(x.parser) ##map_parser(revert,x.parser))
+    end

@@ -384,6 +384,40 @@ parser(x::Pair{Symbol, P}) where P =
 with_name(name::Symbol,x; doc="") = 
     NamedParser(name,x)
 
+with_name(x::AbstractParser,a...) = x
+function map_parser(f::typeof(with_name),mem::AbstractDict,x::NamedParser,message::Function)
+    get!(mem,x) do
+        r = NamedParser(x.name,map_parser(f,mem,x.parser,message))
+        log=message(x)
+        if log!==nothing
+            with_log("$(log)",r)
+        else
+            r
+        end
+    end
+end
+
+map_parser(f::Function,mem::AbstractDict,x::NamedParser,a...) =
+    get!(mem,x) do
+        NamedParser(x.name,map_parser(f,mem,x.parser,a...))
+    end
+
+
+
+export log_names
+function log_names(x,names=nothing; exclude=nothing)
+    message = if names === nothing
+        if exclude === nothing
+            x -> x isa NamedParser ? x.name : nothing
+        else
+            x -> ( x isa NamedParser && !in(x.name,exclude) ) ? x.name : nothing
+        end
+    else
+        x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
+    end
+    map_parser(with_name,Dict(),x, message)
+end
+
 export @with_names
 with_names(x) = x
 function with_names(node::Expr)
@@ -435,8 +469,11 @@ struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
             new{typeof(p),T,typeof(transform)}(transform, p)
         end
 end
-map_parser(f::Function,x::InstanceParser,a...) =
-    InstanceParser{result_type(x)}(x.transform,map_parser(f,x.parser,a...))
+map_parser(f::Function,mem::AbstractDict,x::Transformation,a...) =
+    get!(mem,x) do
+        Transformation{result_type(x)}(x.transform,map_parser(f,mem,x.parser,a...))
+    end
+
 parser(constant::Pair{<:ParserTypes}) =
     Transformation{typeof(constant.second)}(
         (v,i) -> constant.second,
@@ -622,10 +659,16 @@ rep_until(p,until, with_until=false;wrap=identity) =
         transform = with_until ? nothing : 1)
 
 
-map_parser(f::Function,x::Union{ConstantParser,AtStart,AtEnd},a...) = f(x,a...)
-map_parser(f::Function,x::Union{Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always},a...) = f(x,a...)
+map_parser(f::Function,mem::AbstractDict,x::Union{ConstantParser,AtStart,AtEnd},a...) =
+    get!(mem,x) do
+        f(x,a...)
+    end
+map_parser(f::Function,mem::AbstractDict,x::Union{Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never},a...) =
+    get!(mem,x) do
+        f(x,a...)
+    end
 
-indexed_captures(x::Union{ConstantParser,AtStart,AtEnd,Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,LookAround},context) = x
+indexed_captures(x::Union{ConstantParser,AtStart,AtEnd,Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,LookAround},context,reset_number) = x
 
 export FlatMap,after
 struct FlatMap{T,P,Q<:Function} <: AbstractParser{T}
@@ -639,9 +682,12 @@ end
 after(right::Function,left::ParserTypes,T::Type) =
     FlatMap{T}(left,right)
 
-map_parser(f::Function,x::FlatMap,a...) =
-    FlatMap{result_type(x)}(map_parser(f,x.left),x.right)
 
+map_parser(f::Function,mem::AbstractDict,x::FlatMap,a...) =
+    get!(mem,x) do
+        FlatMap{result_type(x)}(map_parser(f,mem,x.left),
+                                v -> map_parser(f,mem,x.right(v),a...))
+    end
 regex_string(x::FlatMap)  = error("regex determined at runtime!")
 
 
@@ -705,10 +751,12 @@ struct Sequence{T,P<:Tuple} <: AbstractParser{T}
 end
 parser_types(::Type{Sequence{T, P}}) where {T, P} =
     P
-map_parser(f::Function,x::Sequence,a...) =
-    Sequence{result_type(x)}(tuple( (map_parser(f,p,a...)
-                                     for p in x.parts)... ))
 
+map_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
+    get!(mem,x) do
+        Sequence( ( map_parser(f,mem,p,a...)
+                    for p in x.parts)... )
+    end
 
 seq(transform::Function, T::Type, a...; kw...) =
     map(transform, T, Sequence(a...))
@@ -1028,10 +1076,11 @@ rep(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) 
 
 
 
-map_parser(f::Function,x::Repeat,a...) =
-    Repeat(x.range,
-           map_parser(f,x.parser,a...))
-                           
+map_parser(f::Function,mem::AbstractDict,x::Repeat,a...) =
+    get!(mem,x) do
+        Repeat(x.range,
+               map_parser(f,mem,x.parser,a...))
+    end
 
 
 rep_suffix(x::Repeat) =
@@ -1311,10 +1360,12 @@ end
 
 
 regex_string(x::Optional)  = regex_string(x.parser)*"?"
-map_parser(f::Function,x::Optional,a...) =
-    Optional(map_parser(f,x.parser,a...),
-             x.default)
 
+map_parser(f::Function,mem::AbstractDict,x::Optional,a...) =
+    get!(mem,x) do
+        Optional(map_parser(f,mem,x.parser,a...),
+                 x.default)
+    end
 
 @inline prevind(str,i::Int,parser::Optional,x::None) = i
 @inline nextind(str,i::Int,parser::Optional,x::None) = i
@@ -1383,14 +1434,23 @@ function alt(x::ParserTypes...)
     Either{T}(parts)
 end
 
+function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
+    if haskey(mem,x)
+        mem[x]
+    else
+        mem[x] = r = f(x,a...)
+        for p in x.options
+            push!(r,map_parser(f,mem,p,a...))
+        end
+        r
+    end
+end
+
 
 function alt(T::Type, x::Vararg; transform::Function)
     map(transform, T, alt(x...))
 end
 
-map_parser(f::Function,x::Either,a...) =
-    Either{result_type(x)}(
-        tuple( ( map_parser(f,p,a...) for p in x.options )...))
 
 
 function Base.push!(x::Either, y)
@@ -1688,9 +1748,12 @@ struct AtomicGroup{P,T} <: WrappedParser{P,T}
     AtomicGroup(parser) =
         new{typeof(parser),result_type(parser)}(parser)
 end
-map_parser(f::Function,x::AtomicGroup,a...) =
-    AtomicGroup(
-        map_parser(f,x.parser,a...))
+
+map_parser(f::Function,mem::AbstractDict,x::AtomicGroup,a...) =
+    get!(mem,x) do
+        AtomicGroup(
+            map_parser(f,mem,x.parser,a...))
+    end
 
 atomic(x) =
     AtomicGroup(parser(x))
@@ -1761,7 +1824,7 @@ export _iterate
 export Numeric
 Numeric = TextParse.Numeric
 
-map_parser(f::Function,x::Numeric,a...) = x
+map_parser(f::Function,mem::AbstractDict,x::Numeric,a...) = x
 
 import AbstractTrees: print_tree, children, printnode
 include("reverse.jl")
