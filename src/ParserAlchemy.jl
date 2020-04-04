@@ -1552,6 +1552,15 @@ function Base.pushfirst!(x::Either, y)
     pushfirst!(x.options,y)
     x
 end
+
+function Base.push!(x::NamedParser{<:Either}, y)
+    push!(x.parser,y)
+    x
+end
+function Base.pushfirst!(x::NamedParser{<:Either}, y)
+    pushfirst!(x.parser,y)
+    x
+end
 regex_string(x::Either)  = "(?:" * join([ regex_string(p) for p in x.options],"|") * ")"
 
 
