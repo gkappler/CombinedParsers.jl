@@ -1,5 +1,4 @@
 export revert
-revert(x) = map_parser(revert,x)
 
 revert(x::String) = Reverse(x)
 
@@ -14,10 +13,20 @@ struct Reverse{V}
         new{typeof(x)}(x,lastindex(x))
         ##end
 end
-set_capture(sequence::Reverse, index::Int, x) =
-    set_capture(sequence.x,index,x)
+revert(x::Reverse) = x.x
 reverse_index(x::Reverse,i) =
     x.lastindex-i+1    
+reverse_index(x::AbstractString,i) =
+    i
+
+Base.SubString(x::Reverse,start,stop) =
+    SubString(x.x, reverse_index(x,stop), reverse_index(x,start))
+
+function set_capture(sequence::Reverse, index::Int, x)
+    @warn "check"
+    set_capture(sequence.x,index,x)
+end
+
 Base.firstindex(x::Reverse) = 1
 Base.lastindex(x::Reverse) = x.lastindex
 Base.getindex(x::Reverse,is::UnitRange) = getindex(x.x,reverse_index(x,is.stop):reverse_index(x,is.start))
@@ -41,6 +50,7 @@ struct PositiveLookbehind{T,P} <: LookAround{T}
         end
 end
 # result_type(p::Type{PositiveLookbehind{T}}) where T = T
+regex_prefix(x::PositiveLookbehind) = "(?<="
 
 export NegativeLookbehind
 """
@@ -55,6 +65,7 @@ struct NegativeLookbehind{T,P} <: LookAround{T}
             new{result_type(p),typeof(p)}(p)
         end
 end
+regex_prefix(x::NegativeLookbehind) = "(?<!"
 
 export look_behind
 function look_behind(match::Bool, p_)
@@ -68,9 +79,10 @@ end
 
 function _iterate(t::NegativeLookbehind, str, till, i, state)
     if state === nothing
-        rseq=Reverse(str)
+        rseq=revert(str)
+        i < 1 && return i, tuple()
         r = _iterate(t.parser, rseq, till,
-                     nextind(rseq,reverse_index(rseq,i)), nothing)
+                     reverse_index(rseq,prevind(str,i)), nothing)
         if r === nothing
             i,tuple()
         else
@@ -86,8 +98,9 @@ end
 function _iterate(t::PositiveLookbehind, str, till, i, state)
     if state === nothing
         rseq=revert(str)
+        i < 1 && return nothing
         r = _iterate(t.parser, rseq, till,
-                     nextind(rseq,reverse_index(rseq,i)), nothing)
+                     reverse_index(rseq,prevind(rseq,i)), nothing)
         if r === nothing
             nothing
         else
