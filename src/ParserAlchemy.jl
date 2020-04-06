@@ -641,6 +641,12 @@ export CharIn
 struct CharIn{S} <: NIndexParser{1,Char}
     sets::S
     CharIn(x) = new{typeof(x)}(x)
+    CharIn(x::Vector) =
+        if length(x) == 1
+            new{typeof(x[1])}(x[1])
+        else
+            new{typeof(x)}(x)
+        end
 end
 
 ==(x::CharIn,y::CharIn) =
