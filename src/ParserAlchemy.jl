@@ -367,7 +367,6 @@ function Base.showerror(io::IO, x::PartialMatchException)
     ##println(io, x.pattern)
 end
 
-export with_log
 struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
     parser::P
     args::A
@@ -387,6 +386,17 @@ function print_constructor(io::IO,x::SideeffectParser)
     end
     print(io," |> $c")
 end
+
+export with_log, with_effect
+with_effect(f::Function,p,a...) =
+    SideeffectParser(f,p,a...)
+
+with_log(s::AbstractString,p_, delta=5;nomatch=false) =
+    let p = parser(p_), log=s*": "
+        SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta)
+        ##with_log(p_; log=s*": ",delta=5)    
+        #with_log(p_;log="", delta=5,nomatch=false) =
+    end
 
 export map_parser
 map_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
@@ -459,6 +469,9 @@ parser(x::Pair{Symbol, P}) where P =
     NamedParser(x.first, parser(x.second))
 with_name(name::Symbol,x; doc="") = 
     NamedParser(name,x)
+
+with_name(name::AbstractString,x; doc="") =
+    name=="" ? x : NamedParser(Symbol(name),x)
 
 with_name(x::AbstractParser,a...) = x
 function map_parser(f::typeof(with_name),mem::AbstractDict,x::NamedParser,message::Function)
@@ -543,6 +556,11 @@ struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
     Transformation{T}(transform::Function, p_) where {T} =
         let p = parser(p_)
             new{typeof(p),T,typeof(transform)}(transform, p)
+        end
+    Transformation{T}(transform::Function, p_::NamedParser) where {T} =
+        let p = p_.parser
+            tp = new{typeof(p),T,typeof(transform)}(transform, p)
+            with_name(p_.name,tp)
         end
 end
 map_parser(f::Function,mem::AbstractDict,x::Transformation,a...) =
