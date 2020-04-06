@@ -22,7 +22,11 @@ ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex,
                     Pair{<:Union{TextParse.AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
 export parser
 parser(x::ParserTypes) = x
-
+regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
+regex_prefix(x::AbstractParser) = ""
+regex_suffix(x::AbstractParser) = ""
+regex_inner(x::AbstractParser) = ""
+print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 
 ############################################################
@@ -72,6 +76,18 @@ _iterate(x::AbstractParser,str,i,till,state) =
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,T} <: AbstractParser{T} end
+
+children(x::WrappedParser) = children(x.parser)
+children_char = '\U1F5C4'
+
+function print_constructor(io::IO,x::WrappedParser)
+    print_constructor(io, x.parser)
+    print(io, " |> ", typeof(x).name)
+end
+
+regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
+regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
+regex_inner(x::WrappedParser) = regex_inner(x.parser)
 state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
 @inline prevind(str,i::Int,parser::WrappedParser,x) =
     prevind(str,i,parser.parser,x)
@@ -98,8 +114,6 @@ map_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
             map_parser(f,mem,x.parser,a...))
     end
 
-regex_string(x::JoinSubstring) =
-    regex_string(x.parser)
 Base.get(x::JoinSubstring, sequence, till, after, i, state) =
     SubString(sequence, i, prevind(sequence,after))
 
@@ -109,12 +123,16 @@ struct ConstantParser{N,T} <: WrappedParser{T,T}
     parser::T
 end
 state_type(p::Type{<:ConstantParser}) = MatchState
+children(x::ConstantParser) = ()
+regex_prefix(x::ConstantParser) = ""
+print_constructor(io::IO,x::ConstantParser) = print(io,"")
+regex_inner(x::ConstantParser) = regex_string(x.parser)
+regex_suffix(x::ConstantParser) = ""
 parser(x::Char) =
     ConstantParser{Base.ncodeunits(x),Char}(x)
 parser(x::AbstractString) =
     ConstantParser{Base.ncodeunits(x),SubString}(x)
 
-regex_string(x::ConstantParser) = regex_string(x.parser)
 @inline nextind(str,i::Int,parser::ConstantParser{L},x) where L =
     i+L
 @inline prevind(str,i::Int,parser::ConstantParser{L},x) where L = 
@@ -172,6 +190,8 @@ state_type(p::Type{<:NIndexParser}) = MatchState
 _iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, i, state::MatchState)  =
     nothing
 
+print_constructor(io::IO,x::NIndexParser) = nothing
+
 Base.get(parser::NIndexParser{0}, sequence, till, after, i, state) =
     parser
 Base.get(x::NIndexParser{1,Char}, sequence, till, after, i, state) =
@@ -180,7 +200,7 @@ Base.get(x::NIndexParser{1,Char}, sequence, till, after, i, state) =
 export AnyChar, any
 struct AnyChar <: NIndexParser{1,Char} end
 any() = AnyChar()
-regex_string(x::AnyChar) = "."
+regex_inner(x::AnyChar) = "."
 
 struct MatchingNever{T} end
 ismatch(c::MatchingNever,p) = false
@@ -213,15 +233,16 @@ end
 
 "Parsers that do not consume any input can inherit this type"
 abstract type LookAround{T} <: NIndexParser{0,T} end
+children(x::LookAround) = (x.parser,)
 
 export AtStart, AtEnd
 struct AtStart <: NIndexParser{0,AtStart} end
-regex_string(x::AtStart) = "^"
+regex_prefix(x::AtStart) = "^"
 _iterate(parser::AtStart, sequence, till, i, state::Nothing) =
     i == 1 ? (i, MatchState()) : nothing
 
 struct AtEnd <: NIndexParser{0,AtEnd} end
-regex_string(x::AtEnd) = "\$"
+regex_suffix(x::AtEnd) = "\$"
 _iterate(parser::AtEnd, sequence, till, i, state::Nothing) =
     i > till ? (i, MatchState()) : nothing
 
@@ -240,7 +261,10 @@ wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but cons
 Useful for checks like "must not be followed by `parser`, don't consume its match".
 """
 struct Never <: LookAround{Never} end
-regex_string(x::Never) = "(*FAIL)"
+children(x::Union{Never,Always}) = tuple()
+regex_prefix(x::Never) = "(*"
+regex_inner(x::Never) = "FAIL"
+regex_suffix(x::Never) = ")"
 _iterate(x::Never,str,i,till,state) =
     nothing
 
@@ -251,7 +275,9 @@ export Always
 struct Always <: LookAround{Always}
 end
 Base.show(io::IO,x::Always) = print(io,"")
-regex_string(x::Always) = ""
+regex_prefix(x::Always) = ""
+regex_inner(x::Always) = ""
+regex_suffix(x::Always) = ""
 _iterate(parser::Always, str, till, i, s::Nothing) =
     i, MatchState()
 
@@ -270,8 +296,9 @@ struct PositiveLookahead{T,P} <: LookAround{T}
             new{result_type(p),typeof(p)}(p)
         end
 end
-regex_string(x::PositiveLookahead) =
-    "(?="*regex_string(x.parser)*")"
+regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
+regex_suffix(x::LookAround) = regex_suffix(x.parser)*")"
+regex_inner(x::LookAround) = regex_string(x.parser)
 function _iterate(t::PositiveLookahead, str, till, i, state::Nothing)
     r = _iterate(t.parser, str, till, i, nothing)
     if r === nothing
@@ -295,8 +322,7 @@ struct NegativeLookahead{T,P} <: LookAround{T}
             new{result_type(p),typeof(p)}(p)
         end
 end
-regex_string(x::NegativeLookahead) =
-    "(?!"*regex_string(x.parser)*")"
+regex_prefix(x::NegativeLookahead) = "(?!"*regex_prefix(x.parser)
 function _iterate(t::NegativeLookahead, str, till, i, state::Nothing)
     r = _iterate(t.parser, str, till, i, nothing)
     if r === nothing
@@ -349,6 +375,18 @@ struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
     SideeffectParser(f::Function, p::TextParse.AbstractToken,a...) =
         new{typeof(p),result_type(p),typeof(a)}(p,a,f)
 end
+children(x::SideeffectParser) = children(x.parser)
+function print_constructor(io::IO,x::SideeffectParser)
+    print_constructor(io,x.parser)
+    c = if x.effect == log_effect
+        "with_log(;nomatch=true)"
+    elseif x.effect == log_effect_match
+        "with_log"
+    else
+        "with_effect($(x.effect))"
+    end
+    print(io," |> $c")
+end
 
 export map_parser
 map_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
@@ -358,19 +396,24 @@ map_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
 
 function log_effect(s,start,after,state,log,delta=5)
     if state === nothing
-        printstyled("no match ",bold=true,color=:underline)
+        printstyled("no match ",
+                    bold=true,color=:underline)
     else
-        printstyled("   match ";bold=true,color=:green)
+        printstyled("   match ";
+                    bold=true,color=:green)
     end
     print(log)
     if prevind(s,start)<start
-        printstyled(s[max(1,start-delta):(prevind(s,start))])
-        printstyled(s[start:prevind(s,after)];bold=true,color=:green)
+        printstyled(escape_string(s[max(1,start-delta):(prevind(s,start))]))
+        printstyled(escape_string(s[start:prevind(s,after)]);
+                    bold=true,color=:green)
     end
     if state === nothing 
-        printstyled(s[after:min(end,after+delta)],bold=true,color=:underline)
+        printstyled(escape_string(s[after:min(end,after+delta)]),
+                    bold=true,color=:underline)
     else
-        printstyled(s[after:min(end,after+delta)],color=:yellow)
+        printstyled(escape_string(s[after:min(end,after+delta)]),
+                    color=:yellow)
     end
     println()
 end
@@ -380,13 +423,6 @@ function log_effect_match(s,start,after,state,log,delta=5)
         log_effect(s,start,after,state,log,delta)
     end
 end
-
-with_log(s::AbstractString,p_, delta=5;nomatch=false) =
-    let p = parser(p_), log=s*": "
-        SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta)
-        ##with_log(p_; log=s*": ",delta=5)    
-        #with_log(p_;log="", delta=5,nomatch=false) =
-    end
 
 @inline function _iterate(parser::SideeffectParser, sequence, till, i, state)
     before_i = start_index(sequence,i,parser,state)
@@ -411,6 +447,14 @@ struct NamedParser{P,T} <: WrappedParser{P,T}
             new{typeof(p),result_type(p)}(name,p)
         end
 end
+children(x::NamedParser) = children(x.parser)
+function print_constructor(io::IO,x::NamedParser)
+    print_constructor(io,x.parser)
+    print(io, " |> with_name(:")
+    printstyled(io, x.name, color=:yellow)
+    print(io, ")")
+end
+
 parser(x::Pair{Symbol, P}) where P =
     NamedParser(x.first, parser(x.second))
 with_name(name::Symbol,x; doc="") = 
@@ -511,7 +555,11 @@ parser(constant::Pair{<:ParserTypes}) =
         (v,i) -> constant.second,
         parser(constant.first))
 
-regex_string(x::Union{NamedParser, Transformation}) = regex_string(x.parser)
+children(x::Transformation) = children(x.parser)
+function print_constructor(io::IO,x::Transformation)
+    print_constructor(io,x.parser)
+    print(io," |> map(",x.transform,")")
+end
 
 function Base.get(parser::Transformation, sequence, till, after, i, state)
     parser.transform(
@@ -585,8 +633,8 @@ _ismatch(c,p::CharIn) = _ismatch(c,p.sets)
 
 result_type(::Type{<:CharIn}) = Char
 regex_string_(x::Union{Vector,Set}) = join(regex_string_.(x))
-regex_string_(x::Char) = x == '\\' ? "\\\\" : "$x" ## for [] char ranges
-regex_string(x::Char) = x == '\\' ? "\\\\" : "$x" ## for [] char ranges
+regex_string(x::Char) = escape_string("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
+regex_string_(x::Char) = escape_string("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
 regex_string_(x::StepRange) =
     if x.start == x.stop
         x.start
@@ -595,10 +643,11 @@ regex_string_(x::StepRange) =
     end
 regex_string_(x::Tuple) = join([regex_string_(s) for s in x])
 regex_string_(x::CharIn) = regex_string_(x.sets)
-regex_string(x::CharIn) =
-    "["*escape_string(regex_string_(x))*"]"
+regex_inner(x::CharIn) =
+    "["*regex_string_(x)*"]"
 
-regex_string(x::CharIn{Tuple{Char}}) =
+print_constructor(io::IO,x::CharIn{Char}) = nothing
+regex_inner(x::CharIn{Char}) =
     "$(x.sets[1])"
 
 
@@ -621,8 +670,8 @@ struct CharNotIn{S} <: NIndexParser{1,Char}
     sets::S
 end
 result_type(::Type{<:CharNotIn}) = Char
-regex_string(x::CharNotIn) =
-    "[^"*escape_string(join([regex_string_(s) for s in x.sets]))*"]"
+regex_inner(x::CharNotIn) =
+    "[^"*join([regex_string_(s) for s in x.sets])*"]"
 _ismatch(c,p::CharNotIn) = !_ismatch(c,p.sets)
 
 @inline function _iterate(parser::CharNotIn, sequence, till, i, state::Nothing)
@@ -703,6 +752,11 @@ struct FlatMap{T,P,Q<:Function} <: AbstractParser{T}
     end
 end
 
+children(x::FlatMap) = ( x.left, x.right )
+function print_constructor(io::IO,x::FlatMap)
+    print_constructor(io,x.left)
+    print(io, "FlatMap(",x.right,")" )
+end
 after(right::Function,left::TextParse.AbstractToken,T::Type) =
     FlatMap{T}(left,right)
 
@@ -718,7 +772,7 @@ map_parser(f::Function,mem::AbstractDict,x::FlatMap,a...) =
         FlatMap{result_type(x)}(map_parser(f,mem,x.left),
                                 v -> map_parser(f,mem,x.right(v),a...))
     end
-regex_string(x::FlatMap)  = error("regex determined at runtime!")
+regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
 
 @inline nextind(str,i::Int,parser::FlatMap,x::Tuple) =
@@ -745,6 +799,7 @@ function Base.get(parser::FlatMap, sequence, till, after, i, state)
               li,
               state[3])
 end
+
 
 state_type(p::Type{<:FlatMap{T,P}}) where {T,P} = Tuple{state_type(P),<:Any,<:Any}
 function _iterate(tokf::FlatMap, str, till, i, state)
@@ -800,6 +855,11 @@ struct Sequence{T,P<:Tuple} <: AbstractParser{T}
 end
 parser_types(::Type{Sequence{T, P}}) where {T, P} =
     P
+
+
+
+print_constructor(io::IO,x::Sequence) = print(io,"seq")
+children(x::Sequence) = x.parts
 
 map_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
     get!(mem,x) do
@@ -1069,7 +1129,7 @@ end
 (*)(x::TextParse.AbstractToken, y::Any) = seq(x,parser(y))
 (*)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = seq(x,y)
 
-regex_string(x::Sequence)  = join([ regex_string(p) for p in x.parts])
+regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
 export lazy
 struct Lazy{P,T} <: WrappedParser{P,T}
@@ -1085,9 +1145,13 @@ map_parser(f::Function,mem::AbstractDict,x::Lazy,a...) =
         lazy(map_parser(f,mem,x.parser,a...))
     end
 
-regex_string(x::Lazy) =
-    regex_string(x.parser)*"?"
+regex_inner(x::Lazy) = regex_inner(x.parser)
+regex_suffix(x::Lazy) = regex_suffix(x.parser)*"?"
 
+function print_constructor(io::IO, x::Lazy)
+    print_constructor(io,x.parser)
+    print(io, " |> lazy" )
+end
 
 export rep, rep1
 struct Repeat{P,T} <: WrappedParser{P,T}
@@ -1104,6 +1168,33 @@ Repeat(min::Integer,max::Integer,parser) =
     Repeat((min:max),parser)
 Repeat(min::Integer,parser) =
     Repeat((min:typemax(Int)),parser)
+
+function print_constructor(io::IO,x::Repeat)
+    print_constructor(io,x.parser)
+    print(io, " |> rep" )
+end
+
+regex_inner(x::Repeat) = regex_string(x.parser)
+regex_suffix(x::Repeat) = 
+    regex_suffix(x.parser)*if x.range.start == 0
+        if x.range.stop == typemax(Int)
+            "*"
+        else            
+            "{,$(x.range.stop)}"
+        end
+    else
+        if x.range.stop == typemax(Int)
+            if x.range.start == 1
+                "+"
+            else
+                "{$(x.range.start),}"
+            end
+        elseif x.range.start==x.range.stop
+            "{$(x.range.start)}"
+        else
+            "{$(x.range.start),$(x.range.stop)}"
+        end
+    end
 
 
 rep1(x) =
@@ -1149,32 +1240,6 @@ map_parser(f::Function,mem::AbstractDict,x::Repeat,a...) =
     end
 
 
-rep_suffix(x::Repeat) =
-    if x.range.start == 0
-        if x.range.stop == typemax(Int)
-            "*"
-        else            
-            "{,$(x.range.stop)}"
-        end
-    else
-        if x.range.stop == typemax(Int)
-            if x.range.start == 1
-                "+"
-            else
-                "{$(x.range.start),}"
-            end
-        elseif x.range.start==x.range.stop
-            "{$(x.range.start)}"
-        else
-            "{$(x.range.start),$(x.range.stop)}"
-        end
-    end
-
-function regex_string(x::Repeat)
-    r = regex_string(x.parser)
-    op = rep_suffix(x)
-    "$r$op"
-end
 
 
 @inline function prevind(str,i::Int,parser::Repeat,x::Int)
@@ -1425,8 +1490,15 @@ function opt(transform::Function, T::Type, x;
 end
 
 
-regex_string(x::Optional)  = regex_string(x.parser)*"?"
 
+children(x::Optional) = children(x.parser)
+regex_inner(x::Optional) = regex_inner(x.parser)
+regex_suffix(x::Optional) = regex_suffix(x.parser)*"?"
+
+function print_constructor(io::IO, x::Optional)
+    print_constructor(io,x.parser)
+    print(io, " |> opt(default=$(x.default))")
+end
 map_parser(f::Function,mem::AbstractDict,x::Optional,a...) =
     get!(mem,x) do
         Optional(map_parser(f,mem,x.parser,a...),
@@ -1492,6 +1564,11 @@ end
     x.options==y.options
 hash(x::Either, h::UInt) = hash(x.options)
 state_type(::Type{<:Either}) = Pair{Int,<:Any}##Tuple{Int, promote_type( state_type.(t.options)...) }
+children(x::Either) = x.options
+regex_prefix(x::Either) = "|"
+regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
+regex_suffix(x::Either) = "..."
+print_constructor(io::IO,x::Either) = print(io,"alt")
 
 function alt(x::ParserTypes...)
     parts = Any[ parser(y) for y in x ]
@@ -1559,7 +1636,6 @@ function Base.pushfirst!(x::NamedParser{<:Either}, y)
     pushfirst!(x.parser,y)
     x
 end
-regex_string(x::Either)  = "(?:" * join([ regex_string(p) for p in x.options],"|") * ")"
 
 
 
@@ -1865,8 +1941,14 @@ end
 Base.get(x::AtomicGroup, a...) =
     get(x.parser,a...)
 
-regex_string(x::AtomicGroup) =
-    "(?>$(regex_string(x.parser)))"
+function print_constructor(io::IO,x::AtomicGroup)
+    print_constructor(io,x.parser)
+    print(io, " |> atomic" )
+end
+
+regex_prefix(x::AtomicGroup) = "(?>"*regex_prefix(x.parser)
+regex_suffix(x::AtomicGroup) = regex_suffix(x.parser)*")"
+regex_inner(x::AtomicGroup) = regex_inner(x.parser)
 
 export Parsing2
 struct Parsing2{P,S}
