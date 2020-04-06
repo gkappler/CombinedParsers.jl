@@ -1142,16 +1142,9 @@ end
 end
 
 
-
-
-
-
-
-
-
-(*)(x::Any, y::TextParse.AbstractToken) = seq(parser(x),y)
-(*)(x::TextParse.AbstractToken, y::Any) = seq(x,parser(y))
-(*)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = seq(x,y)
+(*)(x::Any, y::TextParse.AbstractToken) = sseq(parser(x),y)
+(*)(x::TextParse.AbstractToken, y::Any) = sseq(x,parser(y))
+(*)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = sseq(x,y)
 
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
@@ -1498,6 +1491,11 @@ struct Optional{P,T} <: WrappedParser{P,T}
 end
 state_type(::Type{<:Optional{P}}) where P = Union{None,state_type(P)}##Tuple{Int, promote_type( state_type.(t.options)...) }
 
+
+
+opt(p_::NamedParser;kw...) =
+    with_name(p_.name,opt(p_.parser;kw...))
+
 opt(x;kw...) = opt(parser(x);kw...)
 
 opt(x1,x...;kw...) = opt(seq(x1,x...);kw...)
@@ -1602,6 +1600,14 @@ function alt(x::ParserTypes...)
     Either{T}(parts)
 end
 
+function alt(transform::Function, x::Vararg)
+    map(transform, alt(x...))
+end
+
+function alt(T::Type, x::Vararg; transform::Function)
+    map(transform, T, alt(x...))
+end
+
 with_name(x::Either,a...) =
     Either{result_type(x)}(empty(x.options))
 revert(x::Either) =
@@ -1620,10 +1626,6 @@ function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
 end
 
 
-function alt(T::Type, x::Vararg; transform::Function)
-    map(transform, T, alt(x...))
-end
-
 export salt
 salt_(x::Either) = salt_(x.options...)
 salt_(x::Never) = tuple()
@@ -1639,6 +1641,12 @@ function salt(x...)
     opts = collect(salt_(x...))
     length(opts)==1 ? opts[1] : alt(opts...)
 end
+
+
+(|)(x::Any, y::TextParse.AbstractToken) = salt(parser(x),y)
+(|)(x::TextParse.AbstractToken, y::Any) = salt(x,parser(y))
+(|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = salt(x,y)
+
 
 
 function Base.push!(x::Either, y)
@@ -1729,10 +1737,6 @@ function _iterate(t::Either, str, till, i, state::Union{Nothing,Pair{Int,<:Any},
 end
 
 
-
-(|)(x::Any, y::TextParse.AbstractToken) = alt(parser(x),y)
-(|)(x::TextParse.AbstractToken, y::Any) = alt(x,parser(y))
-(|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = alt(x,y)
 
 
 
@@ -2033,9 +2037,11 @@ include("reverse.jl")
 include("textparse.jl")
 include("deprecated.jl")
 include("re.jl")
-include("pcre.jl")
 include("tokens.jl")
 
 include("show.jl")
 
 end # module
+
+
+
