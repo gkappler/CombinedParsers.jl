@@ -1,123 +1,340 @@
+pcre_option = 
+    alt(
+        "mark" => UInt32(0),
+        "aftertext" => UInt32(0),
+        "dupnames" => UInt32(0),
+        "no_start_optimize" => UInt32(0),
+        "subject_literal" => UInt32(0),
+        "jitstack=256" => UInt32(0),
+        "xx" => Base.PCRE.EXTENDED_MORE,
+        'i' => Base.PCRE.CASELESS,
+        'm' => Base.PCRE.MULTILINE,
+        'n' => Base.PCRE.NO_AUTO_CAPTURE,
+        'U' => Base.PCRE.UNGREEDY,
+        'J' => Base.PCRE.DUPNAMES,
+        's' => Base.PCRE.DOTALL,
+        'x' => Base.PCRE.EXTENDED,
+        'g' => UInt32(0),
+        'B' => UInt32(0)
+    );
+
+pcre_options = rep1(UInt32, seq(1,pcre_option,opt(','))) do v
+    |(v...)
+end
+
+pcre_options_parser=seq(2,AtStart(),opt(pcre_options,default=UInt32(0)),AtEnd())
+
+function print_opts(io,opts)
+    if (opts & Base.PCRE.CASELESS ) != 0; print(io, 'i'); end
+    if (opts & Base.PCRE.MULTILINE) != 0; print(io, 'm'); end
+    if (opts & Base.PCRE.DOTALL   ) != 0; print(io, 's'); end
+    if (opts & Base.PCRE.EXTENDED_MORE ) != 0; print(io, "xx"); end
+    if (opts & Base.PCRE.EXTENDED ) != 0; print(io, 'x'); end
+    if (opts & Base.PCRE.DUPNAMES   ) != 0; print(io, 'J'); end
+    if (opts & Base.PCRE.UNGREEDY ) != 0; print(io, 'U'); end
+end
+options_string(flags) =
+    let sio = IOBuffer()
+        print_opts(sio, flags)
+        String(take!(sio))
+    end
+
+"""
+A lazy element transformation type (e.g. AbstractString), 
+`getindex` wraps elements in `with_options(flags,...)`.
+
+With parsing options
+
+TODO: make flags a transformation function?
+"""
+struct WithOptions{S}
+    x::S
+    flags::UInt32
+    function WithOptions(x,flags)
+        @assert !isa(x,WithOptions)
+        new{typeof(x)}(x,flags)
+    end
+end
+export flags
+flags(x::WithOptions) = x.flags
+flags(x) = UInt32(0)
+
+import Base: Regex
+Base.Regex(x::WithOptions) =
+    Regex(x.x, options_string(x.flags))
+Base.show(io::IO, x::WithOptions) =
+    print(io,x.x)
+
+Base.getindex(x::WithOptions,i...) =
+    with_options(x.flags,(getindex(x.x,i...)))
+
+with_options(flags::UInt32,x::WithOptions) =
+    with_options(flags,x.x)
+with_options(flags::UInt32,x) =
+    flags == 0 ? x : WithOptions(x,flags)
+with_options(options::AbstractString,str::AbstractString) =
+    with_options(parse(pcre_options,options),str)
+
+
+
+with_options(set_flags::UInt32, unset_flags::UInt32,x::AbstractString) =
+    with_options(set_flags,x)
+with_options(set_flags::UInt32, unset_flags::UInt32,x::WithOptions) =
+    with_options(set_flags | ( x.flags & ~unset_flags ),x.x)
+Base.SubString(x::WithOptions,a...) =
+    SubString(x.x,a...)
+
+Base.length(x::WithOptions) =
+    length(x.x)
+Base.lastindex(x::WithOptions) =
+    lastindex(x.x)
+Base.firstindex(x::WithOptions) =
+    firstindex(x.x)
+Base.prevind(x::WithOptions,i::Integer,n::Integer) =
+    prevind(x.x,i,n)
+Base.nextind(x::WithOptions,i::Integer,n::Integer) =
+    nextind(x.x,i,n)
+Base.prevind(x::WithOptions,i::Integer) =
+    prevind(x.x,i)
+Base.nextind(x::WithOptions,i::Integer) =
+    nextind(x.x,i)
+Base.ncodeunits(x::WithOptions) =
+    ncodeunits(x.x)
+Base.iterate(x::WithOptions{<:AbstractString},a...) =
+    let n = iterate(x.x,a...)
+        n===nothing ? nothing : convert(Char,WithOptions(n[1],x.flags)),n[2]
+    end
+
+
 function ismatch(c::WithOptions{Char},p)
     _ismatch(c.x,p)
 end
-regex_flags(x) = replace(string(x), r"^.*\"([^\"]*)$"s => s"\1")
 
-(*)(x::Regex, y::Regex) =
-    Regex(x.pattern * y.pattern)
-(*)(x::String, y::Regex) =
-    Regex(regex_escape(x) * y.pattern)
-(*)(x::Regex, y::String) =
-    Regex(x.pattern * regex_escape(y))
-
-result_type(x::Type{Regex}) = AbstractString
-parser(x::Regex) = Regex("^" * regex_string(x), regex_flags(x))
-## revert(x::Regex) = Regex(regex_string(x) * '$', regex_flags(x))
-function regex_string(x::Regex)
-    p=x.pattern
-    if p[1]=='^'
-        p=p[2:end]
-    end
-    if p[end]=='$'
-        p=p[1:end-1]
-    end
-    p
+function Base.convert(::Type{AbstractParser},x::Char)
+    CharIn(x)
 end
-tokenize(x, str::RegexMatch) = tokenize(x, str.match)
 
-(|)(x::Regex, y::Regex) =
-    Regex("(?:",x.pattern * "|" * y.pattern * ")")
-(|)(x::String, y::Regex) =
-    Regex("(?:",regex_escape(x) * "|" * y.pattern * ")")
-(|)(x::Regex, y::String) =
-    Regex("(?:",x.pattern * "|" * regex_escape(y) * ")")
+import Base: convert
+function Base.convert(::Type{Char},y::WithOptions{Char})
+    if !iszero(y.flags & Base.PCRE.CASELESS)
+        lowercase(y.x)
+    else
+        y.x
+    end
+end
+function Base.convert(::Type{AbstractParser},x::WithOptions{Char})
+    if x.flags & Base.PCRE.CASELESS > 0
+        CharIn(unique([lowercase(x.x),uppercase(x.x)])...)
+    else
+        CharIn(x.x)
+    end
+end
+parser(x::WithOptions{Char}) =
+    convert(AbstractParser,x)
+
+
+revert(x::WithOptions) =
+    WithOptions(revert(x.x),x.flags)
+
+
+
+
+
+
+
+
+export set_options, with_options, on_options, map
+"""
+A wrapper matching the inner parser on `with_options(set_flags, unset_flags, sequence)`.
+"""
+struct ParserOptions{P,T} <: WrappedParser{P,T}
+    parser::P
+    set_flags::UInt32
+    unset_flags::UInt32
+    ParserOptions(parser,set::UInt32,unset::UInt32) =
+        new{typeof(parser),result_type(parser)}(parser,set,unset)
+end
+map_parser(f::Function,mem::AbstractDict,x::ParserOptions,a...) =
+    get!(mem,x) do
+        ParserOptions(
+            map_parser(f,mem,x.parser,a...),
+            x.set_flags,x.unset_flags)
+    end
+
+set_options(set::UInt32,unset::UInt32,p) =
+    ParserOptions(parser(p),set,unset)
+
+set_options(set::UInt32,parser) =
+    set_options(set,UInt32(0),parser)
+
+
+function printnode(io::IO,x::ParserOptions)
+    print(io,"(?")
+    print_opts(io,x.set_flags)
+    if x.unset_flags!=0
+        print(io,"-")
+        print_opts(io,x.unset_flags)
+    end
+    print(io,")")
+end
+
+
+@inline Base.get(parser::ParserOptions, sequence, till, after, i, state) =
+    get(parser.parser,
+        with_options(parser.set_flags,parser.unset_flags,sequence),
+        till, after, i, state)
+
+
+@inline function _iterate(parser::ParserOptions, sequence, till, i, state)
+    _iterate(parser.parser,
+             with_options(parser.set_flags,parser.unset_flags,sequence),
+             till, i, state)
+end
+
+
+
+
+"""
+Lazy wrapper for a sequence, masking elements in `getindex` with MatchingNever if any of `flags` are not set.
+
+TODO: make flags a filter function?
+"""
+struct FilterOptions{S}
+    x::S
+    flags::UInt32
+end
+import Base: Regex
+Base.show(io::IO, x::FilterOptions) =
+    print(io,"\"",x.x,"\"[",options_string(x.flags),"]")
+
+Base.getindex(x::FilterOptions,i) =
+    if_options(x.flags,x.x[i])
+if_options(flags::UInt32,x::Char) =
+    iszero(flags) ? x : MatchingNever{Char}()
+if_options(flags::UInt32,x::WithOptions{Char}) =
+    if (flags & x.flags) == flags
+        x.x
+    else
+        MatchingNever{Char}()
+    end
+
+if_options(flags::UInt32,x::FilterOptions) =
+    FilterOptions(x.x,flags | x.flags)
+if_options(flags::UInt32,x) =
+    iszero(flags) ? x : FilterOptions(x,flags)
+
+Base.length(x::FilterOptions) =
+    length(x.x)
+Base.lastindex(x::FilterOptions) =
+    lastindex(x.x)
+Base.firstindex(x::FilterOptions) =
+    firstindex(x.x)
+Base.prevind(x::FilterOptions,i::Integer,n::Integer) =
+    prevind(x.x,i,n)
+Base.nextind(x::FilterOptions,i::Integer,n::Integer) =
+    nextind(x.x,i,n)
+Base.prevind(x::FilterOptions,i::Integer) =
+    prevind(x.x,i)
+Base.nextind(x::FilterOptions,i::Integer) =
+    nextind(x.x,i)
+Base.ncodeunits(x::FilterOptions) =
+    ncodeunits(x.x)
+Base.iterate(x::FilterOptions{<:AbstractString},a...) =
+    let n = iterate(x.x,a...)
+        n===nothing ? nothing : convert(Char,FilterOptions(n[1],x.flags)),n[2]
+    end
+
+Base.convert(::Type{Union{Char,CharIn}},x::FilterOptions{Char}) = x.x
+
+
+function Base.in(x::FilterOptions,set)
+    if !iszero(x.flags & Base.PCRE.CASELESS)
+        lowercase(x.x) in set || uppercase(x.x) in set
+    else
+        x.x in set
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+export on_options
+"""
+Parser wrapper sequence with `if_options`.
+"""
+struct OnOptionsParser{P,T} <: WrappedParser{P,T}
+    parser::P
+    flags::UInt32
+    OnOptionsParser(parser,flags::UInt32) =
+        new{typeof(parser),result_type(parser)}(parser,flags)
+end
+
+function print_constructor(io::IO, x::OnOptionsParser)
+    print_constructor(io,x.parser)
+    print(io," |> on_options(\"$(options_string(x.flags))\")")
+end
+
+map_parser(f::Function,mem::AbstractDict,x::OnOptionsParser,a...) =
+    get!(mem,x) do
+        OnOptionsParser(
+            map_parser(f,mem,x.parser,a...),
+            x.flags)
+    end
+        
+on_options(flags::Integer,p) =
+    OnOptionsParser(parser(p),UInt32(flags))
+
+@inline function _iterate(parser::OnOptionsParser, sequence, till, i, state)
+    _iterate(parser.parser,
+             (if_options(parser.flags,sequence)), till, i, state)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 export trimstring
+trimstring(x::Nothing) = nothing
 trimstring(x::AbstractString) =
     replace(x, r"^[ \r\n\t]*|[ \r\n\t]*$" => s"")
-
-lf          = r"\n"
-newline     = r"\r?\n"
-whitespace  = r"[ \t]+"
-whitenewline = r"[ \t]*\r?\n"
-quotes      = r"[\"'`]"
-inline      = r"[^\n\r]*"
-indentation = r"[ \t]*"
-content_characters = r"[^\t\r\n]+"
-number      = r"[0-9]+"  ## TODO alt(...) csv
-letters     = r"[A-Za-z*-]*"
-# 
-parenthesisP(open,close) = seq(String,
-    open, r"[^][{}()]*", close;
-    transform=(v,i) -> join(v))
-delimiter   = r"[-, _/\.;:*\|!?&]"
-word        = r"\p{L}+" # r"[^!\[\]\(\){<>},*;:=\| \t_/\.\n\r\"'`⁰¹²³⁴⁵⁶⁷⁸⁹]+"
-footnote    = r"^[⁰¹²³⁴⁵⁶⁷⁸⁹]+"
-enum_label = r"(?:[0-9]{1,3}|[ivx]{1,6}|[[:alpha:]])[\.\)]"
-wdelim = r"^[ \t\r\n]+"
-
-pad(x) = seq(opt(whitespace), x, opt(whitespace), transform = v->v[2])
-
-
-
-export emptyline
-emptyline = r"^[ \t]*\r?\n"
-
-extension   = r"\.[[:alnum:]~#]+"
-
-email_regexp = r"[-+_.~a-zA-Z][-+_.~:a-zA-Z0-9]*@[-.a-zA-Z0-9]+"
-
-## is this official??
-author_email = seq(:name => JoinSubstring(rep(CharNotIn('<'))),
-                   " <", :email => rep_until(email_regexp, r">"))
-
-
-
-
-import Base: Regex
-function Regex(x::ParserTypes) 
-    Regex("^"*regex_string(x))
-end
-
-## todo: optimize function
-## rep(x::Regex) = Regex(regex_string(rep(x; log=false)))
-function Base.get(parser::Regex, sequence, after, i, till, state)
-    isempty(state.captures) ? state.match : state.captures
-end
-
-
-"""
-Match a regex greedily, and iterate only over that result.
-Caveat: If shorter matches exist these will not be iterated because julia PCRE does not support states.
-"""
-function _iterate(tok::Regex, str, i, till, state)
-    state !== nothing && return nothing
-    m = match(tok, SubString(str,i,till))
-    if m === nothing
-        nothing
-    else
-        ni = m.match =="" ? i : nextind(str, i, length(m.match))
-        ni, (i,till,m)
-    end
-end
-
-function TextParse.tryparsenext(tok::Regex, str, i, till, opts=TextParse.default_opts)
-    m = match(tok, SubString(str,i,till)) ## idx not working with ^, and without there is no option to force it at begin
-    if m === nothing
-        Nullable{AbstractString}(), i
-    else
-        ni = m.match =="" ? i : nextind(str, i, length(m.match))
-        ##@show str[i:min(end,ni)] m str[min(end,ni):end]
-        ( Nullable(isempty(m.captures) ? m.match : m.captures)
-          , ni
-          )
-    end
-end
-# function alt(x::Vararg{Union{String,Regex}})
-#     T = AbstractString
-#     instance(T, (v,i) -> v, Regex("^(?:" * join([regex_string(p) for p in x], "|") *")"))
-# end
 
 export splitter
 splitter(S, parse; transform_split = v -> tokenize(S, v), kw...) =
@@ -128,7 +345,8 @@ function splitter(## R::Type,
                   split::Transformation{Regex,S},
                   parse::TextParse.AbstractToken{T};
                   log=false,
-                  transform = (v,i) -> v) where {S, T}    
+                  transform = (v,i) -> v) where {S, T}
+    @warn "todo: using old regex splitting..."
     transform_split = split.transform ## (v,i) -> v
     R = promote_type(S,T)
     function tpn(str, i, n, opts) ## from util.jl:_split
@@ -166,16 +384,3 @@ function splitter(## R::Type,
     end
     CustomParser(tpn, R)
 end
-
-export regex_tempered_greedy, regex_neg_lookahead
-# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
-regex_tempered_greedy(s,e, flags="s"; withend=true) =
-    Regex("^"*regex_string(s)*"((?:(?!"*regex_string(e)*").)*)"*
-          ( withend ? regex_string(e) : ""),flags)
-
-# https://www.rexegg.com/regex-quantifiers.html#tempered_greed
-regex_neg_lookahead(e, match=r".") =
-    map_at(String,
-                Regex("^((?:(?!"*regex_string(e)*")"*regex_string(match)*")*)","s")) do v,i
-                    v[1]
-                end
