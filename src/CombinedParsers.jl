@@ -1182,7 +1182,7 @@ end
 
 map_parser(f::Function,mem::AbstractDict,x::Lazy,a...) =
     get!(mem,x) do
-        lazy(map_parser(f,mem,x.parser,a...))
+        Lazy(map_parser(f,mem,x.parser,a...))
     end
 
 regex_inner(x::Lazy) = regex_inner(x.parser)
@@ -1504,12 +1504,13 @@ struct None end
 struct Optional{P,T} <: WrappedParser{P,T}
     parser::P
     default::T
-    function Optional(parser,default)
-        T = result_type(parser)
+    function Optional(p_;default=defaultvalue(result_type(p_)))
+        p = parser(p_)
+        T = result_type(p)
         D = typeof(default)
         T_ = promote_type(T,D)
         T_ === Any && ( T_ = Union{T,D} )
-        new{typeof(parser),T_}(parser, default)
+        new{typeof(p),T_}(p, default)
     end
 end
 state_type(::Type{<:Optional{P}}) where P = Union{None,state_type(P)}##Tuple{Int, promote_type( state_type.(t.options)...) }
@@ -1519,19 +1520,16 @@ state_type(::Type{<:Optional{P}}) where P = Union{None,state_type(P)}##Tuple{Int
 Optional(p_::NamedParser;kw...) =
     with_name(p_.name,Optional(p_.parser;kw...))
 
-Optional(x;kw...) = Optional(parser(x);kw...)
 
 Optional(x1,x...;kw...) = Optional(seq(x1,x...);kw...)
 
-Optional(x::Union{TextParse.AbstractToken,Regex};default=defaultvalue(result_type(x))) =
-    Optional(x,default)
 
 Optional(T::Type, x_; transform, kw...) =
     Optional(transform, T, x; kw...)
 
 function Optional(transform::Function, T::Type, x;
              default=defaultvalue(T))
-    map(transform,T,Optional(x, default))
+    map(transform,T,Optional(x; default=default))
 end
 
 

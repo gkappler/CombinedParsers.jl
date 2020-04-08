@@ -11,7 +11,8 @@
 #(*NO_AUTO_POSSESS)
 #(*LIMIT_MATCH=d)
 #(*LIMIT_RECURSION=d)
-whitespace = " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B"
+whitespace_string = " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B"
+whitespace = CharIn(whitespace_string)
 meta_chars = raw"\^$.[|()?*+{"
 
 # The horizontal space characters are:
@@ -49,12 +50,12 @@ vertical_space=(
 
 
 bracket_range(start) =
-    with_name(:char_range,seq(start,
-        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,rep),
+    with_name(:char_range,Sequence(start,
+        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
         '-',
-        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,rep),
+        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
         bracket_char) do v
-            if v[1] isa CombinedParsers.WithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
+            if v[1] isa WithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
                 cs = convert(Char,v[1]):convert(Char,v[5])
                 CharIn(unique([ ( lowercase(x) for x in cs )...,
                                 ( uppercase(x) for x in cs )... ]))
@@ -64,7 +65,7 @@ bracket_range(start) =
             end
         end)
 
-function character_base(base,mind=0,maxd=1000)
+function character_base(base,mind=0,maxd=typemax(Int))
     dig = if base == 16
         hex_digit
     elseif base == 8
@@ -74,7 +75,7 @@ function character_base(base,mind=0,maxd=1000)
     else
         error()
     end
-    rep(Int,dig,(mind,maxd)) do v
+    Repeat(Int,dig,(mind,maxd)) do v
         isempty(v) ? 0 : parse(Int,join(v),base=base)
     end
 end
@@ -82,13 +83,13 @@ end
 skip_whitespace_on(flags, wrap=identity) =
     with_name(:skip_ws,on_options(
         flags,
-        wrap(CharIn(whitespace...,'\n'))=>Always()))
+        wrap(CharIn(whitespace_string...,'\n'))=>Always()))
 
 
-bsr = atomic(alt("\r\n",CharIn('\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
+bsr = Atomic(Either("\r\n",CharIn('\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
 
 skip_whitespace_and_comments =
-    rep(alt(
+    Repeat(Either(
         skip_whitespace_on(
             Base.PCRE.EXTENDED),
         ## comment
@@ -96,10 +97,10 @@ skip_whitespace_and_comments =
             Base.PCRE.EXTENDED,
             with_name(
                 :comment,
-                seq('#',rep(CharIn(whitespace)),
-                    rep_until(
+                Sequence('#',Repeat(whitespace),
+                    Repeat_until(
                         AnyChar(),
-                        seq(rep(CharIn(whitespace)),alt(bsr,AtEnd())),
+                        Sequence(Repeat(whitespace),Either(bsr,AtEnd())),
                         wrap = JoinSubstring
                     )) do v
                 with_log(v[3],Always())
@@ -107,11 +108,11 @@ skip_whitespace_and_comments =
             )),
         with_name(
             :comment,
-            seq(
-                "(?#",rep(CharIn(whitespace)),
-                rep_until(
+            Sequence(
+                "(?#",Repeat(whitespace),
+                Repeat_until(
                     AnyChar(),
-                    seq(rep(CharIn(whitespace)),')'),
+                    Sequence(Repeat(whitespace),')'),
                     wrap = JoinSubstring
                 )) do v
         with_log(v[3],Always())
@@ -127,7 +128,7 @@ make_control(c) =
 
 
 seq_log(f::Function,a...) =
-    seq(f, ( with_log("$i",e) for (i,e) in enumerate(a) )...)
+    Sequence(f, ( with_log("$i",e) for (i,e) in enumerate(a) )...)
 
 struct UnsupportedError <: Exception
     message::String
@@ -136,7 +137,7 @@ Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax 
 
  
 hex_digit = CharIn('A':'F','a':'f','0':'9')
-integer = seq(opt('-'),character_base(10,1)) do v
+integer = Sequence(Optional('-'),character_base(10,1)) do v
     if v[1]===missing
         v[2]
     else
@@ -144,36 +145,39 @@ integer = seq(opt('-'),character_base(10,1)) do v
     end
 end
 
-at_linestart = alt(AtStart(),PositiveLookbehind(bsr))
-lineend   = alt(AtEnd(),bsr)
-at_lineend   = alt(AtEnd(),PositiveLookahead(bsr))
+at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
+lineend   = Either(AtEnd(),bsr)
+at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
 
 
 # pattern alternatives
 # circumflex and dollar https://www.pcre.org/original/doc/html/pcrepattern.html#SEC6
-pattern = alt(on_options(Base.PCRE.MULTILINE, '^' => at_linestart),
-              '^' => AtStart(),
-              on_options(Base.PCRE.MULTILINE, '$' => at_lineend),
-              on_options(Base.PCRE.DOLLAR_ENDONLY, '$' => AtEnd()),
-              '$' => alt(AtEnd(),
-                         PositiveLookahead(seq(2,'\n',AtEnd())))
-              );
-# alt allows adding alternatives qith push!, that themselves use the alt object for recursive parsers.
+pattern = Either(
+    on_options(Base.PCRE.MULTILINE, '^' => at_linestart),
+    '^' => AtStart(),
+    on_options(Base.PCRE.MULTILINE, '$' => at_lineend),
+    on_options(Base.PCRE.DOLLAR_ENDONLY, '$' => AtEnd()),
+    '$' => Either(AtEnd(),
+                  PositiveLookahead(Sequence(2,'\n',AtEnd())))
+);
+
+# Either allows adding alternatives qith push!, that themselves use the Either object for recursive parsers.
 
 # https://www.regular-expressions.info/refcharacters.html
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC4
-char =  alt(
+char =  Either(
     CharNotIn([ c for c in meta_chars]),
-    seq(2,'\\', CharIn(Set(vcat([m for m in meta_chars],whitespace))))) do v
+    Sequence(2,'\\', CharIn(meta_chars))) do v
         convert(AbstractParser,v)
     end
-push!(pattern,char);
+@with_names repeatable = Either{AbstractParser}(Any[char])
+push!(pattern,repeatable);
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC5
 escape_sequence(stop=AtEnd()) =
-    seq(2,"\\Q",
-        rep_until(AnyChar(),
-                  alt("\\E",PositiveLookahead(stop)),
+    Sequence(2,"\\Q",
+        Repeat_until(AnyChar(),
+                  Either("\\E",PositiveLookahead(stop)),
                   wrap=JoinSubstring));
 push!(pattern,
       map(parser, with_name(:escape_sequence, escape_sequence())));
@@ -182,24 +186,24 @@ push!(pattern,
 word=CharIn(UnicodeClass("L","N"),'_')
 
 non_word=CharNotIn(UnicodeClass("L","N"),'_')
-non_word_ = alt(non_word,AtStart(),AtEnd())
+non_word_ = Either(non_word,AtStart(),AtEnd())
 
-word_boundary = alt(
-    seq(PositiveLookbehind(word),PositiveLookahead(non_word_)),
-    seq(PositiveLookbehind(non_word_),PositiveLookahead(word))
+word_boundary = Either(
+    Sequence(PositiveLookbehind(word),PositiveLookahead(non_word_)),
+    Sequence(PositiveLookbehind(non_word_),PositiveLookahead(word))
 )
     
 @with_names simple_assertion =
-    seq(2,
+    Sequence(2,
         '\\',
-        alt(
+        Either(
             'A' => AtStart(),
             map_at('G') do v,i
             @warn "limited \\G support: ignoring pcre2 startoffset"
             AtStart()
             end,
             'z' => AtEnd(),
-            'Z' => PositiveLookahead(seq(opt(bsr),AtEnd())),
+            'Z' => PositiveLookahead(Sequence(Optional(bsr),AtEnd())),
             'b' => word_boundary,
             'B' => NegativeLookahead(word_boundary)
         ))
@@ -208,72 +212,72 @@ push!(pattern,simple_assertion);
 push!(pattern,parser( "\\R" => bsr ));
 
 name = JoinSubstring(
-    seq(CharIn('a':'z','A':'Z','_'),
-        rep(CharIn('0':'9','a':'z','A':'Z','_'))))
+    Sequence(CharIn('a':'z','A':'Z','_'),
+        Repeat(CharIn('0':'9','a':'z','A':'Z','_'))))
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
 @with_names backreference = map(
-    alt(
-        seq(2,'\\',alt(
+    Either(
+        Sequence(2,'\\',Either(
             integer, ## todo: maybe octal char
-            seq(2,'g',integer),
-            seq(2,"g{",integer,'}'),
-            seq(2,"g{",name,'}'),
-            seq(2,"k<",name,'>'),  # perl
-            seq(2,"k'",name,'\''), # 
+            Sequence(2,'g',integer),
+            Sequence(2,"g{",integer,'}'),
+            Sequence(2,"g{",name,'}'),
+            Sequence(2,"k<",name,'>'),  # perl
+            Sequence(2,"k'",name,'\''), # 
         )),
-        seq(2,"(?P=",name,')'))) do v
+        Sequence(2,"(?P=",name,')'))) do v
             Backreference(v) do
                 ## todo: backreference, if a capture with number (in decimal) is defined,
                 ## escaped_character otherwise (if name/index not found)
                 #   \ddd      character with octal code ddd, or back reference
                 ## todo: error on \g<ddd>
                 v isa Integer || error("capture group $v not found!")
-                parse(seq(character_base(8,1,3),
-                          rep(AnyChar())) do v
-                      seq(parser(Char(v[1])),
+                parse(Sequence(character_base(8,1,3),
+                          Repeat(AnyChar())) do v
+                      Sequence(parser(Char(v[1])),
                           v[2]...)
                       end,
                       "$v")
             end
         end;
-push!(pattern,backreference);
+push!(repeatable,backreference);
 
 
 @with_names escaped_character = 
-    seq(2, '\\',
-        alt(
-            'a' => ('\a'), # alarm, that is, the BEL character (hex 07)
-            seq('c',AnyChar()) do v  # \cx "control-x", where x is any ASCII character
-            make_control(v[2])
-            end,
-            'e' => '\e',   #  escape (hex 1B)
-            'f' => '\f',   #  form feed (hex 0C)
-            'n' => '\n',   #  linefeed (hex 0A)
-            'r' => '\r',   #  carriage return (hex 0D)
-            't' => '\t',   #  tab (hex 09)
-            '"' => '"',
-            #   \0dd      character with octal code 0dd
-            seq(Char,'0',character_base(8,0,2), transform=v->(Char(v[2]))),
-            #   \ddd      character with octal code ddd, or back reference
-            ## seq(Char,character_base(8,3,3), transform=v->(Char(v[1]))),
-            ## see backreference, if a capture with number (in decimal) is defined
-            #   \o{ddd..} character with octal code ddd..
-            seq(Char,'o','{',character_base(8),'}', transform=v->(Char(v[3]))),
-            #   \xhh      character with hex code hh
-            seq(Char,'x','{',character_base(16),'}', transform=v->(Char(v[3]))),
-            #   \x{hhh..} character with hex code hhh.. (non-JavaScript mode)
-            seq(Char,'x',character_base(16,0,2), transform=v->(Char(v[2]))),
-            #   \uhhhh    character with hex code hhhh (JavaScript mode only)
-            seq(Char,'h',character_base(16,4,4), transform=v->(Char(v[2]))),
-            CharNotIn('Q','E')
-        ))
+    Sequence(2, '\\',
+             Either(
+                 'a' => ('\a'), # alarm, that is, the BEL character (hex 07)
+                 Sequence('c',AnyChar()) do v  # \cx "control-x", where x is any ASCII character
+                 make_control(v[2])
+                 end,
+                 'e' => '\e',   #  escape (hex 1B)
+                 'f' => '\f',   #  form feed (hex 0C)
+                 'n' => '\n',   #  linefeed (hex 0A)
+                 'r' => '\r',   #  carriage return (hex 0D)
+                 't' => '\t',   #  tab (hex 09)
+                 '"' => '"',
+                 #   \0dd      character with octal code 0dd
+                 Sequence('0',character_base(8,0,2)) do v; Char(v[2]); end,
+                 #   \ddd      character with octal code ddd, or back reference
+                 ## Sequence(Char,character_base(8,3,3), transform=v->(Char(v[1]))),
+                 ## see backreference, if a capture with number (in decimal) is defined
+                 #   \o{ddd..} character with octal code ddd..
+                 Sequence('o','{',character_base(8),'}') do v; Char(v[3]); end,
+                 #   \xhh      character with hex code hh
+                 Sequence('x','{',character_base(16),'}') do v; Char(v[3]); end,
+                 #   \x{hhh..} character with hex code hhh.. (non-JavaScript mode)
+                 Sequence('x',character_base(16,0,2)) do v; Char(v[2]); end,
+                 #   \uhhhh    character with hex code hhhh (JavaScript mode only)
+                 Sequence('h',character_base(16,4,4)) do v; Char(v[2]); end,
+                 CharNotIn('Q','E')
+             ))
 
 
 @with_names generic_character_type =
-    seq(
+    Sequence(2,
         '\\',
-        alt(
+        Either(
             # "any decimal digit"),
             'd' => CharIn('0':'9'),
             # "any character that is not a decimal digit"),
@@ -294,30 +298,31 @@ push!(pattern,backreference);
             'w' => word,
             # "any "non-word" character"),
             'W' => non_word,
-        ),
-        transform=2);
-push!(pattern,generic_character_type);
+        ));
+push!(repeatable,generic_character_type);
 
 
 
 # https://www.regular-expressions.info/posixbrackets.html#class
 bracket_char = let bracket_meta_chars = raw"]\^-"
-    alt(
+    Either(
         CharNotIn([ c for c in bracket_meta_chars]),
         escaped_character
     )
 end;
 
 
-@with_names bracket=seq(
-    CombinedParsers.AbstractParser,
-    '[',opt('^')
-    , rep(alt(
+@with_names bracket=Sequence(
+    AbstractParser,
+    '[',Optional('^')
+    , Repeat(Either(
         bracket_range(']'),
         ']'=>']'),(0,1))
-    , rep(alt(
-        seq("[:",
-            alt(
+    , Repeat(Either(
+        Sequence(
+            2,
+            "[:",
+            Either(
                 "alnum" => CharIn(UnicodeClass("L","N")), # Xan
                 "alpha" => CharIn(UnicodeClass("L")),
                 ##"ascii" => CharIn(UnicodeClass("InBasicLatin")),
@@ -333,9 +338,8 @@ end;
                 "word" => CharIn(UnicodeClass("L","Nl","Nd","Pc")),
                 "xdigit" => hex_digit,
             ),
-            ":]",
-            transform=2),
-        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,rep) => Never(),
+            ":]"),
+        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat) => Never(),
         "\\E" => Never(),
         with_name(:escape_sequence,map(v->CharIn(v),escape_sequence())),
         generic_character_type,
@@ -352,18 +356,17 @@ end;
             CharNotIn(r...)
         end
     end;
-push!(pattern,bracket);
+push!(repeatable,bracket);
 
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
-@with_names repetition = alt(
+@with_names repetition = Either(
     "+"=>(1,typemax(Int)),
     "*"=>(0,typemax(Int)),
     "?"=>(0,1),
-    seq(Tuple{Int,Int},
+    Sequence(Tuple{Int,Int},
         "{",integer,
-        opt(seq(",",opt(integer, default=typemax(Int)),
-                transform=2)),"}") do v
+        Optional(Sequence(2,",",Optional(integer, default=typemax(Int)))),"}") do v
     if v[3] isa Missing
     (v[2],v[2])
     else
@@ -372,47 +375,49 @@ push!(pattern,bracket);
     end
 )
 
-@with_names quantified=seq(
+@with_names quantified=Sequence(
+    AbstractParser,
     skip_whitespace_and_comments,
-    pattern,
+    repeatable,
     skip_whitespace_and_comments, ## for test 1130, preserve in map?
-    opt(repetition, default=(1,1)),
+    Optional(repetition, default=(1,1)),
     skip_whitespace_and_comments,
-    opt(map(v->convert(Char,v),CharIn('+','?'))), # possessive quantifier, strip option
+    Optional(map(v->convert(Char,v),CharIn('+','?'))), # possessive quantifier, strip option
     skip_whitespace_and_comments
 ) do v
-    pat = sseq(v[2],v[3]...)
+    pat = sSequence(v[2],v[3]...)
     result = if v[4]==(1,1)
         parser(pat)
     elseif v[4]==(0,1)
-        opt(pat)
+        Optional(pat)
     else
-        rep(pat,v[4])
+        Repeat(pat,v[4])
     end
     if v[6] === missing
         result
     elseif v[6]=='+'
-        atomic(result)
+        Atomic(result)
     elseif v[6]=='?'
-        lazy(result)
+        Lazy(result)
     else
         result
     end
 end;
+push!(pattern, quantified)
+
 
 # Sequences and Alternation
-@with_names sequence = rep(quantified) do v
-    length(v) ==1 ? v[1] : seq(v...)
+@with_names sequence = Repeat(pattern) do v
+    length(v) ==1 ? v[1] : Sequence(v...)
 end;
 
 
 
-alternations = seq(
-    sequence, rep(seq('|',sequence, transform=2))) do v
-        CombinedParsers.AbstractParser[v[1],v[2]...]
+alternations = Sequence(
+    sequence, Repeat(Sequence(2, '|',sequence))) do v
+        AbstractParser[v[1],v[2]...]
     end;
 
-import CombinedParsers: pcre_options
 #  Options apply to subpattern, 
 #  (a(?i)b|c)
 #  matches "ab", "aB", and "c".
@@ -429,37 +434,39 @@ import CombinedParsers: pcre_options
 # option setting. This is because the effects of option
 # settings happen at compile time. There would be some
 # very weird behaviour otherwise."
-@with_names pcre_option_start = seq(
+@with_names pcre_option_start = Sequence(
     2,
     "(?",
-    alt(seq(opt('^'),
-            alt(seq(pcre_options,
-                    opt(seq('-',pcre_options,transform=2), default=UInt32(0))),
-                seq(Tuple{UInt32,UInt32},'-',pcre_options,transform=v -> (UInt32(0),v[2])))    
-            ) do v
-        if v[1]===missing
-        # The two "extended" options are not independent; unsetting either one cancels the effects of both of them.
-        affects_extended = !iszero((v[2][1] | v[2][2]) & ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE ))
-        v[2][1], affects_extended ? (v[2][1] | ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE )) : v[2][2]
-        else
-        (v[2][1],Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL| Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE | v[2][2])
-        end
-        end,
-        '^' => (UInt32(0),Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL | Base.PCRE.EXTENDED  | Base.PCRE.EXTENDED_MORE )
-        ));
+    Either(Sequence(Optional('^'),
+                    Either(Sequence(pcre_options,
+                                    Optional(Sequence(2, '-',pcre_options), default=UInt32(0))),
+                           Sequence(Tuple{UInt32,UInt32},'-',pcre_options) do v
+                           (UInt32(0),v[2])
+                           end)
+           ) do v
+    if v[1]===missing
+    # The two "extended" options are not independent; unsetting either one cancels the effects of both of them.
+    affects_extended = !iszero((v[2][1] | v[2][2]) & ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE ))
+    v[2][1], affects_extended ? (v[2][1] | ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE )) : v[2][2]
+    else
+    (v[2][1],Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL| Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE | v[2][2])
+    end
+    end,
+    '^' => (UInt32(0),Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL | Base.PCRE.EXTENDED  | Base.PCRE.EXTENDED_MORE )
+));
 
 
 options_alternations = after(
-    seq(pcre_option_start,opt(')')),
+    Sequence(pcre_option_start,Optional(')')),
     Vector{AbstractParser}) do l
-        set_options(l[1]..., l[2] === missing ?  seq(alternations,')',transform=1) : alternations)
+        set_options(l[1]..., l[2] === missing ?  Sequence(1, alternations,')') : alternations)
     end;
 
 option_sequences = map(
     AbstractParser,
-    seq(
+    Sequence(
         alternations,
-        rep(options_alternations))) do v
+        Repeat(options_alternations))) do v
             r = Any[ AbstractParser[e] for e in v[1] ]
             ro = v[2]
             for i in 1:length(ro)
@@ -470,102 +477,102 @@ option_sequences = map(
                     push!(r,AbstractParser[ x ])
                 end
             end
-            salt( ( sseq(x...) for x in r)... )
+            sEither( ( sSequence(x...) for x in r)... )
         end;
 alternation = option_sequences;
 
 
 # Atomic groups
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC18
-@with_names atomic_group=seq("(",alt("?>","*atomic:"),alternation,")") do v
-    atomic(v[3])
+@with_names atomic_group=Sequence("(",Either("?>","*atomic:"),alternation,")") do v
+    Atomic(v[3])
 end;
-push!(pattern,atomic_group);
+push!(repeatable,atomic_group);
 
-@with_names captured=seq("(",
-             alt(seq(2,"?<",name,'>'),
-                 seq(2,"?P<",name,'>'),
-                 seq(2,"?'",name,"'"),
+@with_names captured=Sequence("(",
+             Either(Sequence(2,"?<",name,'>'),
+                 Sequence(2,"?P<",name,'>'),
+                 Sequence(2,"?'",name,"'"),
                  ""),
              alternation,
              ")") do v
-                 with_name(v[2],CombinedParsers.capture(Symbol(v[2]),v[3]))
+                 with_name(v[2],Capture(Symbol(v[2]),v[3]))
              end;
-push!(pattern,captured);
+push!(repeatable,captured);
 
 
 
-@with_names subpattern=seq(
+@with_names subpattern=Sequence(
     2,
     "(?:",alternation,")");
-push!(pattern,subpattern);
+push!(repeatable,subpattern);
 
 
-@with_names lookahead=seq(
+@with_names lookahead=Sequence(
     2,
     "(",
-    alt(seq(v -> look_ahead(true,v[2]),
-            alt("?=","*positive_lookahead:","*pla:"),alternation),
-        seq(v -> look_ahead(false,v[2]),
-            alt("?!","*negative_lookahead:","*nla:"),alternation)),
+    Either(Sequence(v -> look_ahead(true,v[2]),
+            Either("?=","*positive_lookahead:","*pla:"),alternation),
+        Sequence(v -> look_ahead(false,v[2]),
+            Either("?!","*negative_lookahead:","*nla:"),alternation)),
     ")");
 push!(pattern,lookahead);
 
 
 
-@with_names lookbehind=seq(
+@with_names lookbehind=Sequence(
     2,
     "(",
-    alt(seq(v -> look_behind(true,v[2]),
-            alt("?<=","*positive_lookbehind:","*plb:"),alternation),
-        seq(v -> look_behind(false,v[2]),
-            alt("?<!","*negative_lookbehind:","*nlb:"),alternation)),
+    Either(Sequence(v -> look_behind(true,v[2]),
+            Either("?<=","*positive_lookbehind:","*plb:"),alternation),
+        Sequence(v -> look_behind(false,v[2]),
+            Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
     ")");
 push!(pattern,lookbehind);
 
 
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
-@with_names subroutine = seq(
+@with_names subroutine = Sequence(
     2,"(?",
-    alt(seq(alt('+','-',""),
+    Either(Sequence(Either('+','-',""),
             integer) do v
         Subroutine(nothing,Symbol(v[1]),v[2])
         end,
-        seq(alt('&',"P>"), name) do v 
+        Sequence(Either('&',"P>"), name) do v 
         Subroutine(Symbol(v[2]),Symbol(""),-1)
         end),
     ')');
-push!(pattern,subroutine);
+push!(repeatable,subroutine);
 
-@with_names resetting_capture_numbers = seq(
+@with_names resetting_capture_numbers = Sequence(
     "(?|",
     alternation,
     ")") do v
         DupSubpatternNumbers(v[2])
     end;
-push!(pattern,resetting_capture_numbers);
+push!(repeatable,resetting_capture_numbers);
 
 
-@with_names condition = alt(
-    seq(2,'(',alt(integer,
+@with_names condition = Either(
+    Sequence(2,'(',Either(integer,
                   "DEFINE",
-                  seq('R',alt(integer,seq(2,'&',name))),
-                  seq(2,'\'',name,'\''),
-                  seq(2,'<',name,'>'),
+                  Sequence('R',Either(integer,Sequence(2,'&',name))),
+                  Sequence(2,'\'',name,'\''),
+                  Sequence(2,'<',name,'>'),
                   name),
         ')'),
     lookbehind,
     lookahead)
 
 @with_names conditional = map(
-    seq("(?",condition,
+    Sequence("(?",condition,
         sequence,
-        opt(seq(2,"|",sequence), default=Always()),
+        Optional(Sequence(2,"|",sequence), default=Always()),
         ")")) do v
             c = v[2]
             if c=="DEFINE"
-                atomic(alt(Always(),v[3])) ## ignore in match
+                Atomic(Either(Always(),v[3])) ## ignore in match
             elseif c isa Union{Integer,AbstractString}
                 Conditional(Backreference(c) do
                             c == "R" && return Subroutine()
@@ -578,46 +585,47 @@ push!(pattern,resetting_capture_numbers);
                 Conditional(Subroutine(c[2]),v[3],v[4])
             end
         end
-push!(pattern, conditional);
+push!(repeatable, conditional);
 
 
 # https://www.regular-expressions.info/refbasic.html
-dot = alt(
+dot = Either(
     on_options(Base.PCRE.DOTALL,'.') => AnyChar(), ## todo: allow \n matching context 
     '.' => CharNotIn('\n'), ## todo: allow \n matching context 
     "\\N" => CharNotIn('\n')
 )
-push!(pattern,dot);
+push!(repeatable,dot);
 
-push!(pattern,map(parser,escaped_character));
+push!(repeatable,map(parser,escaped_character));
 
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC13
 @with_names sequence_with_options = after(
-    seq(1,pcre_option_start,':'),AbstractParser) do v
-        seq(1,set_options(v..., alternation),')')
+    Sequence(1,pcre_option_start,':'),AbstractParser) do v
+        Sequence(1,set_options(v..., alternation),')')
     end
-push!(pattern,sequence_with_options);
+push!(repeatable,sequence_with_options);
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC27
-@with_names backtrack_control = seq(
+@with_names backtrack_control = Sequence(
     2,"(*",
-    alt(seq("ACCEPT",opt(seq(2,":",JoinSubstring(rep_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("ACCEPT")); end,
-        seq(alt("FAIL","F"),opt(seq(2,":",JoinSubstring(rep_stop(AnyChar(),parser(')')))))) do v; Never(); end,
-        seq("PRUNE",opt(seq(2,":",JoinSubstring(rep_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("PRUNE")); end,
-        seq("SKIP",opt(seq(2,":",JoinSubstring(rep_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("SKIP")); end,
-        seq(opt(parser("MARK")),':',
-            JoinSubstring(rep_stop(AnyChar(),parser(')')))) do v; with_log(v[3],Always()); end,
-        seq("COMMIT",opt(seq(2,":",JoinSubstring(rep_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("COMMIT")); end,
-        seq("THEN",opt(seq(2,":",JoinSubstring(rep_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("THEN")); end,
+    Either(Sequence("ACCEPT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("ACCEPT")); end,
+        Sequence(Either("FAIL","F"),Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; Never(); end,
+        Sequence("PRUNE",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("PRUNE")); end,
+        Sequence("SKIP",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("SKIP")); end,
+        Sequence(Optional(parser("MARK")),':',
+            JoinSubstring(Repeat_stop(AnyChar(),parser(')')))) do v; with_log(v[3],Always()); end,
+        Sequence("COMMIT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("COMMIT")); end,
+        Sequence("THEN",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("THEN")); end,
         ),
     ")");
 push!(pattern,backtrack_control);
 
-push!(pattern,map(alt("\\K")) do v throw(UnsupportedError(v)); end);
+push!(pattern,map(Either("\\K")) do v throw(UnsupportedError(v)); end);
 
-pcre_parser = seq(AtStart(),alternation,AtEnd()) do v
-    CombinedParsers.indexed_captures(v[2])
+export pcre_parser, @re_str, Regcomb
+pcre_parser = Sequence(AtStart(),alternation,AtEnd()) do v
+    indexed_captures(v[2])
 end
 
 function Regcomb(x)
@@ -634,23 +642,6 @@ function Regcomb(x)
         end
     end
 end
-
-function Regcomb(x::CombinedParsers.CatStrings)
-    try 
-        r=parse(pcre_parser,x)
-        r === nothing && error("invalid regex")
-        r
-    catch e
-        if e isa UnsupportedError
-            println(x,": ",e)
-            throw(UnsupportedError(e.message))
-        else
-            rethrow(e)
-        end
-    end
-end
-
-import CombinedParsers: pcre_options_parser
 
 function Regcomb(x::AbstractString,flags::AbstractString)
     o = parse(pcre_options_parser,flags)
