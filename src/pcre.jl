@@ -1,5 +1,5 @@
 pcre_option = 
-    alt(
+    Either(
         "mark" => UInt32(0),
         "aftertext" => UInt32(0),
         "dupnames" => UInt32(0),
@@ -18,11 +18,11 @@ pcre_option =
         'B' => UInt32(0)
     );
 
-pcre_options = rep1(UInt32, seq(1,pcre_option,opt(','))) do v
+pcre_options = Repeat1(UInt32, Sequence(1,pcre_option,Optional(','))) do v
     |(v...)
 end
 
-pcre_options_parser=seq(2,AtStart(),opt(pcre_options,default=UInt32(0)),AtEnd())
+pcre_options_parser=Sequence(2,AtStart(),Optional(pcre_options,default=UInt32(0)),AtEnd())
 
 function print_opts(io,opts)
     if (opts & Base.PCRE.CASELESS ) != 0; print(io, 'i'); end
@@ -105,7 +105,7 @@ Base.iterate(x::WithOptions{<:AbstractString},a...) =
         n===nothing ? nothing : convert(Char,WithOptions(n[1],x.flags)),n[2]
     end
 
-
+import ..ParserAlchemy: ismatch, _ismatch
 function ismatch(c::WithOptions{Char},p)
     _ismatch(c.x,p)
 end
@@ -168,14 +168,16 @@ set_options(set::UInt32,parser) =
     set_options(set,UInt32(0),parser)
 
 
-function printnode(io::IO,x::ParserOptions)
-    print(io,"(?")
-    print_opts(io,x.set_flags)
+function regex_prefix(x::ParserOptions)
+    "(?" * options_string(x.set_flags) *
     if x.unset_flags!=0
-        print(io,"-")
-        print_opts(io,x.unset_flags)
+        "-" * options_string(x.unset_flags)
+    else
+        ""
     end
-    print(io,")")
+end
+function regex_suffix(x::ParserOptions)
+    ")"
 end
 
 
