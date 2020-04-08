@@ -1,16 +1,12 @@
-module ParserAlchemy
+module CombinedParsers
 import Base: (*), (|), cat, get, prevind, nextind
-using Parameters
 using Nullables
 
 using TextParse
 import Base: ==, hash
 
-using BasePiracy
 export AbstractParser
 export result_type
-
-include("namedtuples.jl")
 
 @inline _prevind(str,i,parser,x::Nothing) = i
 @inline _nextind(str,i,parser,x::Nothing) = i
@@ -1592,7 +1588,6 @@ end
 
 defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
-defaultvalue(V::Type{<:VectorDict}) = VectorDict{keytype(V), valtype(V)}(eltype(V)[])
 defaultvalue(V::Type) = missing
 defaultvalue(V::Type{<:AbstractParser}) = Always()
 
@@ -2067,7 +2062,6 @@ include("reverse.jl")
 include("textparse.jl")
 include("deprecated.jl")
 include("re.jl")
-include("tokens.jl")
 
 include("show.jl")
 

@@ -1,9 +1,9 @@
 cd("/home/gregor/dev/julia")
 using Pkg
-Pkg.activate("ParserAlchemy")
-using ParserAlchemy
-using ParserAlchemy.Regexp
-import ParserAlchemy: ParserTypes
+Pkg.activate("CombinedParsers")
+using CombinedParsers
+import CombinedParsers: ParserTypes
+using CombinedParsers.Regexp
 using BenchmarkTools
 using Test
 
@@ -71,7 +71,6 @@ end
 
 tests_string=read("/home/gregor/dev/pcre/testdata/testoutput1",String);
 tests = parse(tests_parser, tests_string);
-
 
 
 
@@ -338,7 +337,6 @@ ignore_idx = [14, 15, 32, 35, 39, 40, 69, 70,75, 81,97,98,
 optimize_idx = [664,
                 705,707]
 
-
 ignore_idx = optimize_idx = [14,    ## conditions
                              69,70, ## DEFINE
                              210,
@@ -482,7 +480,7 @@ end
 
 using PyCall
 
-re_tests_py=read("ParserAlchemy/test/re_tests.py",String)
+re_tests_py=read("CombinedParsers/test/re_tests.py",String)
 re_tests = pyeval(re_tests_py,SUCCEED=1,FAIL=2,SYNTAX_ERROR=3);
 length(re_tests)
 e = re_tests[188]

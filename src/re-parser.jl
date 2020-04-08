@@ -643,22 +643,6 @@ function Regcomb(x)
     end
 end
 
-function Regcomb(x::CatStrings)
-    try 
-        r=parse(pcre_parser,x)
-        r === nothing && error("invalid regex")
-        r
-    catch e
-        if e isa UnsupportedError
-            println(x,": ",e)
-            throw(UnsupportedError(e.message))
-        else
-            rethrow(e)
-        end
-    end
-end
-
-
 function Regcomb(x::AbstractString,flags::AbstractString)
     o = parse(pcre_options_parser,flags)
     Regcomb(with_options(o...,x))
