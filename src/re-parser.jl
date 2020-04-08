@@ -372,7 +372,7 @@ push!(repeatable,bracket);
     (v[2],v[2])
     else
     (v[2],v[3])
-    end
+    end::Tuple{Int,Int}
     end
 )
 
