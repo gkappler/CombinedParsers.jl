@@ -1,10 +1,10 @@
 module Regexp
-using ..ParserAlchemy
+using ..CombinedParsers
 
 using TextParse
-import ..ParserAlchemy: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, CatStrings, MatchingNever
-import ..ParserAlchemy: parser, prune_captures, map_parser, _iterate, print_constructor
-import ..ParserAlchemy: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string
+import ..CombinedParsers: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
+import ..CombinedParsers: parser, prune_captures, map_parser, _iterate, print_constructor
+import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string
 
 import Base: prevind, nextind
 

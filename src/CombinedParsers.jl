@@ -1588,7 +1588,6 @@ end
 
 defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
-defaultvalue(V::Type{<:VectorDict}) = VectorDict{keytype(V), valtype(V)}(eltype(V)[])
 defaultvalue(V::Type) = missing
 defaultvalue(V::Type{<:AbstractParser}) = Always()
 
@@ -2063,7 +2062,6 @@ include("reverse.jl")
 include("textparse.jl")
 include("deprecated.jl")
 include("re.jl")
-include("tokens.jl")
 
 include("show.jl")
 

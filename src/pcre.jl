@@ -105,7 +105,7 @@ Base.iterate(x::WithOptions{<:AbstractString},a...) =
         n===nothing ? nothing : convert(Char,WithOptions(n[1],x.flags)),n[2]
     end
 
-import ..ParserAlchemy: ismatch, _ismatch
+import ..CombinedParsers: ismatch, _ismatch
 function ismatch(c::WithOptions{Char},p)
     _ismatch(c.x,p)
 end
