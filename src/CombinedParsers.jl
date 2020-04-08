@@ -1190,7 +1190,7 @@ regex_suffix(x::Lazy) = regex_suffix(x.parser)*"?"
 
 function print_constructor(io::IO, x::Lazy)
     print_constructor(io,x.parser)
-    print(io, " |> lazy" )
+    print(io, " |> Lazy" )
 end
 
 export Repeat1, Repeat
@@ -1521,7 +1521,7 @@ Optional(p_::NamedParser;kw...) =
     with_name(p_.name,Optional(p_.parser;kw...))
 
 
-Optional(x1,x...;kw...) = Optional(seq(x1,x...);kw...)
+Optional(x1,x...;kw...) = Optional(Sequence(x1,x...);kw...)
 
 
 Optional(T::Type, x_; transform, kw...) =
@@ -1544,8 +1544,8 @@ function print_constructor(io::IO, x::Optional)
 end
 map_parser(f::Function,mem::AbstractDict,x::Optional,a...) =
     get!(mem,x) do
-        Optional(map_parser(f,mem,x.parser,a...),
-                 x.default)
+        Optional(map_parser(f,mem,x.parser,a...);
+                 default=x.default)
     end
 
 @inline prevind(str,i::Int,parser::Optional,x::None) = i

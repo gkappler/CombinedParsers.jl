@@ -13,6 +13,7 @@ include("/home/gregor/dev/julia/ParserAlchemy/test/pcretest-parser.jl");
 parse(log_names(pcre_parser),"(?:[a-z])(b)*\\1")
 
 
+import CombinedParsers.Regexp: skip_whitespace_and_comments
 @testset "test parsing" begin
     parse(pcre_parser,"(a)")
     @test parse(integer,"09")==9
@@ -42,7 +43,7 @@ parse(log_names(pcre_parser),"(?:[a-z])(b)*\\1")
                  0: abc
                 """
                 ).pattern.x=="^abc\$"
-    @test parse(rep(seq(comment_or_empty,
+    @test parse(Repeat(Sequence(comment_or_empty,
                         testspec)),"""
                 /a(*F:X)b/
                     abc

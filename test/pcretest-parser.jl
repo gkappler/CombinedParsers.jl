@@ -1,4 +1,4 @@
-import ParserAlchemy.Regexp: at_linestart, whitespace, integer
+import CombinedParsers.Regexp: at_linestart, whitespace, integer, escaped_character, pcre_options
 unescaped=map(Repeat_until(AnyChar(), Sequence(Repeat(' '),'\n');
                         wrap=JoinSubstring)) do v
                             join(parse(Repeat(Either(escaped_character,AnyChar())),v))

@@ -5,6 +5,7 @@ using TextParse
 import ..CombinedParsers: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, map_parser, _iterate, print_constructor
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string
+import ..CombinedParsers: revert, reverse_index, state_type
 
 import Base: prevind, nextind
 
@@ -68,7 +69,7 @@ Base.SubString(x::WithCaptures,a...) =
     SubString(x.match,a...)
 
 
-
+export Capture
 """
 Capture a parser result, optionally with a name.
 `index` field is recursively set when calling 'indexed_captures` on the parser.
@@ -106,7 +107,7 @@ end
 function map_parser(f::typeof(indexed_captures),mem::AbstractDict,x::Capture,context,a...)
     get!(mem,x) do
         index=nextind(context,x)
-        context.subroutines[index]=capture(x.name,map_parser(indexed_captures,mem,x.parser,context,a...),index)
+        context.subroutines[index]=Capture(x.name,map_parser(indexed_captures,mem,x.parser,context,a...),index)
     end
 end
 

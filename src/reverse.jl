@@ -125,7 +125,7 @@ revert(x::AtStart) = AtEnd()
 revert(x::AtEnd) = AtStart()
 map_parser(::typeof(revert),mem::AbstractDict,x::Sequence) =
     get!(mem,x) do
-        seq(( map_parser(revert,mem,p) for p in reverse(x.parts) )...)
+        Sequence(( map_parser(revert,mem,p) for p in reverse(x.parts) )...)
     end
 map_parser(::typeof(revert),mem::AbstractDict,x::NegativeLookbehind) =
     get!(mem,x) do
