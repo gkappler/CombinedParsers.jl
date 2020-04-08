@@ -1,3 +1,4 @@
+import AbstractTrees: print_tree, printnode
 
 """
 decurse recursive patterns
@@ -13,16 +14,18 @@ children(x::MemoTreeChildren) =
 
 function printnode(io::IO, x::MemoTreeChildren)
     printnode(io, x.child)
-    x.descend || isempty(children(x.child)) || printstyled(io, " # see top-level", color=:light_black)
+    x.descend || isempty(children(x.child)) || printstyled(io, " # branches hidden", color=:light_black)
 end
 
 children(x::Union{Regex,AbstractString}) = ()
 
 
+function Base.show(io::IO, x::Union{ConstantParser,NIndexParser})
+    print(io, "re\"",regex_string(x),"\"") ##!!
+end
 function Base.show(io::IO, x::AbstractParser)
-    compact = get(io, :compact, false)
     if false && !compact
-        print(io, x) ##!!
+        print(io, regex_string(x)) ##!!
     else
         print_tree(io, MemoTreeChildren(Dict(),x, true))
     end
@@ -41,7 +44,7 @@ function printnode_(io::IO, x::AbstractParser)
         printstyled(io, children_char,bold=true)
     end
     printstyled(io, regex_suffix(x), bold=true, color=:cyan)
-    printstyled(io, "             ")
+    printstyled(io, " ")
     print_constructor(io,x) # , color=:yellow)
 end
 

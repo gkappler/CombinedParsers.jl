@@ -18,6 +18,7 @@ ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex,
                     Pair{<:Union{TextParse.AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
 export parser
 parser(x::ParserTypes) = x
+export regex_string
 regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
 regex_prefix(x::AbstractParser) = ""
 regex_suffix(x::AbstractParser) = ""
@@ -73,6 +74,7 @@ _iterate(x::AbstractParser,str,i,till,state) =
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,T} <: AbstractParser{T} end
 
+import AbstractTrees: children
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
 
@@ -237,10 +239,14 @@ regex_prefix(x::AtStart) = "^"
 _iterate(parser::AtStart, sequence, till, i, state::Nothing) =
     i == 1 ? (i, MatchState()) : nothing
 
+print_constructor(io::IO, x::AtStart) = print(io,"AtStart")
+
 struct AtEnd <: NIndexParser{0,AtEnd} end
 regex_suffix(x::AtEnd) = "\$"
 _iterate(parser::AtEnd, sequence, till, i, state::Nothing) =
     i > till ? (i, MatchState()) : nothing
+
+print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
 
 Base.show(io::IO, x::Union{AtStart,AtEnd}) =
     print(io,regex_string(x))
@@ -257,7 +263,6 @@ wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but cons
 Useful for checks like "must not be followed by `parser`, don't consume its match".
 """
 struct Never <: LookAround{Never} end
-children(x::Union{Never,Always}) = tuple()
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
@@ -271,6 +276,7 @@ export Always
 struct Always <: LookAround{Always}
 end
 Base.show(io::IO,x::Always) = print(io,"")
+children(x::Union{Never,Always}) = tuple()
 regex_prefix(x::Always) = ""
 regex_inner(x::Always) = ""
 regex_suffix(x::Always) = ""
@@ -457,7 +463,7 @@ children(x::NamedParser) = children(x.parser)
 function print_constructor(io::IO,x::NamedParser)
     print_constructor(io,x.parser)
     print(io, " |> with_name(:")
-    printstyled(io, x.name, color=:yellow)
+    printstyled(io, x.name, bold=true,color=:red)
     print(io, ")")
 end
 
@@ -610,6 +616,9 @@ end
 @deprecate instance_at(a...) map_at(a...)
 
 import Base: map
+function Base.map(Tc::Type, p::TextParse.AbstractToken, a...)
+    Transformation{Tc}((v,i) -> Tc(a..., v), p)
+end
 function instance(Tc::Type, p::ParserTypes, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
@@ -650,11 +659,34 @@ end
 hash(x::CharIn, h::UInt) = hash(x.sets,h)
 _ismatch(c,p::CharIn) = _ismatch(c,p.sets)
 
+export regex_escape
+## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
+"""
+        regex_escape(s::AbstractString)
+    regular expression metacharacters are escaped along with whitespace.
+    # Examples
+    ```jldoctest
+    julia> regex_escape("Bang!")
+    "Bang\\!"
+    julia> regex_escape("  ( [ { . ? *")
+    "\\ \\ \\(\\ \\[\\ \\{\\ \\.\\ \\?\\ \\*"
+    julia> regex_escape("/^[a-z0-9_-]{3,16}\$/")
+    "/\\^\\[a\\-z0\\-9_\\-\\]\\{3,16\\}\\\$/"
+    ```
+    """
+function regex_escape(s)
+    res = replace(escape_string(string(s)), r"([()[\]{}?*+\-|^\$.&~#\s=!<>|:])" => s"\\\1")
+    replace(res, "\0" => "\\0")
+end
+export regex_string
+regex_string(x::AbstractString) = regex_escape(x)
+regex_string_(x::AbstractString) = regex_escape(x)
+regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
 
 result_type(::Type{<:CharIn}) = Char
 regex_string_(x::Union{Vector,Set}) = join(regex_string_.(x))
-regex_string(x::Char) = escape_string("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
-regex_string_(x::Char) = escape_string("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
+regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
+regex_string_(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
 regex_string_(x::StepRange) =
     if x.start == x.stop
         x.start
@@ -668,7 +700,7 @@ regex_inner(x::CharIn) =
 
 print_constructor(io::IO,x::CharIn{Char}) = nothing
 regex_inner(x::CharIn{Char}) =
-    "$(x.sets[1])"
+    regex_string_(x.sets[1])
 
 
 
@@ -721,35 +753,38 @@ end
          
 
 
-export rep_stop, rep_until
+export Repeat_stop, Repeat_until
 """
-rep_stop(p,stop)
+Repeat_stop(p,stop)
 
 Repeat `p` until `stop` (`NegativeLookahead`), not matching `stop`.
 Map results of `p` only.
 """
-rep_stop(p,stop) =
-    rep(seq(2,NegativeLookahead(parser(stop)),parser(p)))
+Repeat_stop(p,stop) =
+    Repeat(Sequence(2,NegativeLookahead(parser(stop)),parser(p)))
 
 """
-rep\\_until(p,until, with_until=false;wrap=identity)
+Repeat\\_until(p,until, with_until=false;wrap=identity)
 
-Repeat `p` until `stop` (see `rep_stop`), 
+Repeat `p` until `stop` (see `Repeat_stop`), 
 followed by `stop` (returned iif `wrap_until==true`).
 
-To map repeats of `p`, the `rep_stop` is `wrap`ped by keyword argument, e.g.
+To map repeats of `p`, the `Repeat_stop` is `wrap`ped by keyword argument, e.g.
 
-parse(rep_until(AnyChar(),'b'),"acb")
+parse(Repeat_until(AnyChar(),'b'),"acb")
 
 [ 'a', 'c' ]
 
-parse(rep_until(AnyChar(),'b';wrap=JoinSubstring),"acb")
+parse(Repeat_until(AnyChar(),'b';wrap=JoinSubstring),"acb")
 
 "ac"
 """
-rep_until(p,until, with_until=false;wrap=identity) =
-    seq(wrap(rep_stop(p,until)), until;
-        transform = with_until ? nothing : 1)
+Repeat_until(p,until, with_until=false;wrap=identity) =
+    if with_until
+        Sequence(wrap(Repeat_stop(p,until)), until)
+    else
+        Sequence(1, wrap(Repeat_stop(p,until)), until)
+    end
 
 
 map_parser(f::Function,mem::AbstractDict,x::Union{ConstantParser,AtStart,AtEnd},a...) =
@@ -761,7 +796,6 @@ map_parser(f::Function,mem::AbstractDict,x::Union{Char,AbstractString,AnyChar,Ch
         f(x,a...)
     end
 
-indexed_captures(x::Union{ConstantParser,AtStart,AtEnd,Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,LookAround},context,reset_number) = x
 
 export FlatMap,after
 struct FlatMap{T,P,Q<:Function} <: AbstractParser{T}
@@ -864,100 +898,57 @@ end
 
 
 
-export seq
+export Sequence
 struct Sequence{T,P<:Tuple} <: AbstractParser{T}
     parts::P
     function Sequence(p...)
         parts = tuple( ( parser(x) for x = p )... )
         T = ( result_type(typeof(x)) for x in parts )
-        new{Tuple{T...},typeof(parts)}(parts)
+        s = new{Tuple{T...},typeof(parts)}(parts)
+        names = [ t.first=>i
+                  for (i,t) in enumerate(p)
+                  if t isa Pair{Symbol,<:ParserTypes} ]
+        isempty(names) && return s
+        T = result_type(s)
+        NT= NamedTuple{ tuple( (n.first for n in names)...),
+                        Tuple{ (fieldtype(T,n.second) for n in names)... }}
+        NTn = NamedTuple{ tuple( (n.first for n in names)...) }
+        function transform(v,i)
+            ##@show v
+            NT( tuple( (v[k.second] for k in names )... ))
+        end
+        map_at(transform, NT, s)
     end
 end
-parser_types(::Type{Sequence{T, P}}) where {T, P} =
-    P
 
 
-
-print_constructor(io::IO,x::Sequence) = print(io,"seq")
-children(x::Sequence) = x.parts
-
-map_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
-    get!(mem,x) do
-        Sequence( ( map_parser(f,mem,p,a...)
-                    for p in x.parts)... )
-    end
-
-seq(transform::Function, T::Type, a...; kw...) =
+Sequence(transform::Function, T::Type, a...; kw...) =
     map(transform, T, Sequence(a...))
 
-seq(transform::Function, a...; kw...) =
+Sequence(transform::Function, a...; kw...) =
     map(transform, Sequence(a...))
-
-export sseq
-sseq_(x::Sequence) = sseq_(x.parts...)
-sseq_(x::Always) = tuple()
-sseq_() = tuple()
-sseq_(x1) = tuple(x1)
-sseq_(x1,x...) = Iterators.flatten( Any[ sseq_(x1), ( sseq_(e) for e in x )... ] )
-
-"""
-    sseq(x...)
-
-Simplifying seq, flatten Sequences, remove Always lookarounds.
-"""
-function sseq(x...)
-    opts = collect(sseq_(x...))
-    length(opts)==1 ? opts[1] : seq(opts...)
-end
-
-
-
-function seq(tokens_::Vararg{Union{Pair{Symbol,<:ParserTypes},ParserTypes}})
-    s = Sequence( ( t isa Pair{Symbol,<:ParserTypes} ? NamedParser(t.first,t.second) : t for t in tokens_ )... )
-    names = [ t.first=>i
-              for (i,t) in enumerate(tokens_)
-              if t isa Pair{Symbol,<:ParserTypes} ]
-    T = result_type(s)
-    NT= NamedTuple{ tuple( (n.first for n in names)...),
-                    Tuple{ (fieldtype(T,n.second) for n in names)... }}
-    NTn = NamedTuple{ tuple( (n.first for n in names)...) }
-    function transform(v,i)
-        ##@show v
-        NT( tuple( (v[k.second] for k in names )... ))
-    end
-    map_at(transform, NT, s)
-end
 
 function seq(tokens::Vararg{ParserTypes};
              transform=nothing, kw...)
-    s = Sequence(tokens...)
     if transform isa Integer
-        seq(transform,tokens...)
+        Sequence(transform,tokens...)
     elseif transform===nothing
-        s
+        Sequence(tokens...)
     elseif transform isa Function
         map(transform, s)
     end
 end
 
-macro select_instance_index(transform)
-    quote
-        function self(v)
-            v[$(transform)]
-        end
-    end |>esc
-end
+Sequence(transform::Integer,tokens::Vararg{ParserTypes}) =
+    Sequence(Val{transform}(),tokens...)
 
-seq(transform::Integer,tokens::Vararg{ParserTypes}) =
-    seq(Val{transform}(),tokens...)
-
-function seq(::Val{transform},tokens::Vararg{ParserTypes}) where {transform}
+function Sequence(::Val{transform},tokens::Vararg{ParserTypes}) where {transform}
     s = Sequence(tokens...)
     map(v -> v[transform], fieldtype(result_type(s),transform), s)
 end
 
 
-function seq(T::Type, tokens::Vararg;
+function Sequence(T::Type, tokens::Vararg;
              ## log=false,
              transform=:instance)
     parts = tuple( ( parser(x) for x = tokens )... )
@@ -972,6 +963,39 @@ function seq(T::Type, tokens::Vararg;
         transform = (v,i) -> instance(RT,Any[ remove_null(x) for x in v ])
     end
     map(transform,RT,Sequence(parts...))
+end
+
+@deprecate seq(a...; kw...) Sequence(a...; kw...)
+
+parser_types(::Type{Sequence{T, P}}) where {T, P} =
+    P
+
+
+
+print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
+children(x::Sequence) = x.parts
+
+map_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
+    get!(mem,x) do
+        Sequence( ( map_parser(f,mem,p,a...)
+                    for p in x.parts)... )
+    end
+
+export sSequence
+sSequence_(x::Sequence) = sSequence_(x.parts...)
+sSequence_(x::Always) = tuple()
+sSequence_() = tuple()
+sSequence_(x1) = tuple(x1)
+sSequence_(x1,x...) = Iterators.flatten( Any[ sSequence_(x1), ( sSequence_(e) for e in x )... ] )
+
+"""
+    sSequence(x...)
+
+Simplifying seq, flatten Sequences, remove Always lookarounds.
+"""
+function sSequence(x...)
+    opts = collect(sSequence_(x...))
+    length(opts)==1 ? opts[1] : seq(opts...)
 end
 
 
@@ -1022,6 +1046,9 @@ end
 
 @inline function start_index(sequence,after,parser,state)
     r=state === nothing ? after : _prevind(sequence, after, parser, state)
+end
+
+function prune_captures(sequence,after_i)
 end
 
 
@@ -1138,20 +1165,20 @@ end
 end
 
 
-(*)(x::Any, y::TextParse.AbstractToken) = sseq(parser(x),y)
-(*)(x::TextParse.AbstractToken, y::Any) = sseq(x,parser(y))
-(*)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = sseq(x,y)
+(*)(x::Any, y::TextParse.AbstractToken) = sSequence(parser(x),y)
+(*)(x::TextParse.AbstractToken, y::Any) = sSequence(x,parser(y))
+(*)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = sSequence(x,y)
 
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
-export lazy
+export Lazy
 struct Lazy{P,T} <: WrappedParser{P,T}
     parser::P
+    Lazy(p_) =
+        let p = parser(p_)
+            new{typeof(p),result_type(p)}(p)
+        end
 end
-lazy(p_) =
-    let p = parser(p_)
-        Lazy{typeof(p),result_type(p)}(p)
-    end
 
 map_parser(f::Function,mem::AbstractDict,x::Lazy,a...) =
     get!(mem,x) do
@@ -1166,7 +1193,7 @@ function print_constructor(io::IO, x::Lazy)
     print(io, " |> lazy" )
 end
 
-export rep, rep1
+export Repeat1, Repeat
 struct Repeat{P,T} <: WrappedParser{P,T}
     range::UnitRange{Int}
     parser::P
@@ -1184,7 +1211,7 @@ Repeat(min::Integer,parser) =
 
 function print_constructor(io::IO,x::Repeat)
     print_constructor(io,x.parser)
-    print(io, " |> rep" )
+    print(io, " |> Repeat" )
 end
 
 regex_inner(x::Repeat) = regex_string(x.parser)
@@ -1210,41 +1237,41 @@ regex_suffix(x::Repeat) =
     end
 
 
-rep1(x) =
+Repeat1(x) =
     Repeat(1,x)
-rep1(T::Type, x;  transform) =
-    rep1(transform,T, x)
-rep1(transform::Function, T::Type, x) =
+Repeat1(T::Type, x;  transform) =
+    Repeat1(transform,T, x)
+Repeat1(transform::Function, T::Type, x) =
     map(transform, T, Repeat(1,typemax(Int),parser(x)))
 
 
-rep1(T::Type, x,y::Vararg; transform, kw...) =
-    rep1(T, seq(x,y...; transform=transform, kw...), transform=(v,i) -> v)
+Repeat1(T::Type, x,y::Vararg; transform, kw...) =
+    Repeat1(T, seq(x,y...; transform=transform, kw...), transform=(v,i) -> v)
 
 
-rep(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) =
+Repeat(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) =
     Repeat(minmax...,x)
 
-rep(minmax::Tuple{<:Integer,<:Integer},x::ParserTypes,y::Vararg{ParserTypes}) =
-    rep(seq(x,y...),minmax)
+Repeat(minmax::Tuple{<:Integer,<:Integer},x::ParserTypes,y::Vararg{ParserTypes}) =
+    Repeat(seq(x,y...),minmax)
 
-rep(x::ParserTypes,y::Vararg{ParserTypes}) =
-    rep(seq(x,y...) )
+Repeat(x::ParserTypes,y::Vararg{ParserTypes}) =
+    Repeat(seq(x,y...) )
 
-rep(transform::Function, a...) =
-    map(transform, rep(a...))
+Repeat(transform::Function, a...) =
+    map(transform, Repeat(a...))
 
-rep(transform::Function, T::Type, a...) =
-    map(transform, T, rep(a...))
+Repeat(transform::Function, T::Type, a...) =
+    map(transform, T, Repeat(a...))
 
-rep(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) =
-    map(transform, rep(minmax, a...))
+Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) =
+    map(transform, Repeat(minmax, a...))
 
-rep(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) =
+Repeat(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) =
     map(transform,T,
              Repeat(minmax...,parser(x)))
 
-
+@deprecate rep(a...;kw...) Repeat(a...;kw...)
 
 map_parser(f::Function,mem::AbstractDict,x::Repeat,a...) =
     get!(mem,x) do
@@ -1472,7 +1499,7 @@ end
 
 
 
-export opt
+export Optional
 struct None end
 struct Optional{P,T} <: WrappedParser{P,T}
     parser::P
@@ -1489,20 +1516,20 @@ state_type(::Type{<:Optional{P}}) where P = Union{None,state_type(P)}##Tuple{Int
 
 
 
-opt(p_::NamedParser;kw...) =
-    with_name(p_.name,opt(p_.parser;kw...))
+Optional(p_::NamedParser;kw...) =
+    with_name(p_.name,Optional(p_.parser;kw...))
 
-opt(x;kw...) = opt(parser(x);kw...)
+Optional(x;kw...) = Optional(parser(x);kw...)
 
-opt(x1,x...;kw...) = opt(seq(x1,x...);kw...)
+Optional(x1,x...;kw...) = Optional(seq(x1,x...);kw...)
 
-opt(x::Union{TextParse.AbstractToken,Regex};default=defaultvalue(result_type(x))) =
+Optional(x::Union{TextParse.AbstractToken,Regex};default=defaultvalue(result_type(x))) =
     Optional(x,default)
 
-opt(T::Type, x_; transform, kw...) =
-    opt(transform, T, x; kw...)
+Optional(T::Type, x_; transform, kw...) =
+    Optional(transform, T, x; kw...)
 
-function opt(transform::Function, T::Type, x;
+function Optional(transform::Function, T::Type, x;
              default=defaultvalue(T))
     map(transform,T,Optional(x, default))
 end
@@ -1515,7 +1542,7 @@ regex_suffix(x::Optional) = regex_suffix(x.parser)*"?"
 
 function print_constructor(io::IO, x::Optional)
     print_constructor(io,x.parser)
-    print(io, " |> opt(default=$(x.default))")
+    print(io, " |> Optional(default=$(x.default))")
 end
 map_parser(f::Function,mem::AbstractDict,x::Optional,a...) =
     get!(mem,x) do
@@ -1572,7 +1599,7 @@ defaultvalue(V::Type{<:AbstractParser}) = Always()
 
 
 
-export alt
+export alt, Either
 struct Either{T,Ps} <: AbstractParser{T}
     options::Ps
     Either{T}(p::P) where {T,P} =
@@ -1583,12 +1610,14 @@ end
 hash(x::Either, h::UInt) = hash(x.options)
 state_type(::Type{<:Either}) = Pair{Int,<:Any}##Tuple{Int, promote_type( state_type.(t.options)...) }
 children(x::Either) = x.options
+regex_string(x::WrappedParser{<:Either}) = regex_inner(x)
+regex_string(x::Either) = regex_inner(x)
 regex_prefix(x::Either) = "|"
 regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
 regex_suffix(x::Either) = "..."
-print_constructor(io::IO,x::Either) = print(io,"alt")
+print_constructor(io::IO,x::Either) = print(io,"Either")
 
-function alt(x::ParserTypes...)
+function Either(x::ParserTypes...)
     parts = Any[ parser(y) for y in x ]
     Ts = ( result_type(typeof(x)) for x in parts )
     T = promote_type(Ts...)
@@ -1596,18 +1625,21 @@ function alt(x::ParserTypes...)
     Either{T}(parts)
 end
 
-function alt(transform::Function, x::Vararg)
-    map(transform, alt(x...))
+function Either(transform::Function, x::Vararg)
+    map(transform, Either(x...))
 end
 
-function alt(T::Type, x::Vararg; transform::Function)
-    map(transform, T, alt(x...))
+
+function Either(T::Type, x::Vararg; transform::Function)
+    map(transform, T, Either(x...))
 end
+
+@deprecate alt(a...) Either(a...)
 
 with_name(x::Either,a...) =
-    Either{result_type(x)}(empty(x.options))
+    Either{result_type(x)}(Any[])
 revert(x::Either) =
-    Either{result_type(x)}(empty(x.options))
+    Either{result_type(x)}(Any[])
 
 function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
     if haskey(mem,x)
@@ -1622,36 +1654,36 @@ function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
 end
 
 
-export salt
-salt_(x::Either) = salt_(x.options...)
-salt_(x::Never) = tuple()
-salt_() = tuple()
-salt_(x1) = tuple(x1)
-salt_(x1,x...) = Iterators.flatten( Any[ salt_(x1), ( salt_(e) for e in x )... ] )
+export sEither
+sEither_(x::Either) = sEither_(x.options...)
+sEither_(x::Never) = tuple()
+sEither_() = tuple()
+sEither_(x1) = tuple(x1)
+sEither_(x1,x...) = Iterators.flatten( Any[ sEither_(x1), ( sEither_(e) for e in x )... ] )
 """
-    salt(x...)
+    sEither(x...)
 
 Simplifying alt, flattens nested Eithers, remove Never parsers.
 """
-function salt(x...)
-    opts = collect(salt_(x...))
-    length(opts)==1 ? opts[1] : alt(opts...)
+function sEither(x...)
+    opts = collect(sEither_(x...))
+    length(opts)==1 ? opts[1] : Either(opts...)
 end
 
 
-(|)(x::Any, y::TextParse.AbstractToken) = salt(parser(x),y)
-(|)(x::TextParse.AbstractToken, y::Any) = salt(x,parser(y))
-(|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = salt(x,y)
+(|)(x::Any, y::TextParse.AbstractToken) = sEither(parser(x),y)
+(|)(x::TextParse.AbstractToken, y::Any) = sEither(x,parser(y))
+(|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = sEither(x,y)
 
 
 
 function Base.push!(x::Either, y)
-    @assert result_type(y) <: result_type(x)
+    result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x))")
     push!(x.options,y)
     x
 end
 function Base.pushfirst!(x::Either, y)
-    @assert result_type(y) <: result_type(x)
+    result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x))")
     pushfirst!(x.options,y)
     x
 end
@@ -1882,20 +1914,21 @@ function alternate(x::ParserTypes, delim::ParserTypes;
         r
     end
 
+    ## todo: factor out this transform condition!!
     map_at(tf, Vector{T},
              seq(
-                 opt(x; default=missing),
-                 rep(seq(delim, x)),
-                 opt(delim;default=missing)))
+                 Optional(x; default=missing),
+                 Repeat(seq(delim, x)),
+                 Optional(delim;default=missing)))
 end
 
 
-export rep_delim
-rep_delim(x::TextParse.AbstractToken{T}, delim::TextParse.AbstractToken{S}; kw...) where {T,S} =
-    rep_delim(promote_type(S,T), x, delim; kw...)
-function rep_delim(
+export Repeat_delim
+Repeat_delim(x::TextParse.AbstractToken{T}, delim::TextParse.AbstractToken{S}; kw...) where {T,S} =
+    Repeat_delim(promote_type(S,T), x, delim; kw...)
+function Repeat_delim(
     T::Type, x, delim;
-    log=false,repf=rep,
+    log=false,repf=Repeat,
     transform=(v,i) -> v,
     transform_each=(v,i) -> v, kw...)
     x = parser(x)
@@ -1905,11 +1938,11 @@ function rep_delim(
         transform(map(p -> transform_each(p,i),  L  ),i)
     end
     seq(Vector{T},
-        opt(delim; default=T[], log=log),
+        Optional(delim; default=T[], log=log),
         repf(Vector{T},
              seq(x, delim; log=log); log=log,
              transform = (v,i) -> vcat([ [x...] for x in v ]...)),
-        opt(x; default=T[], log=log)
+        Optional(x; default=T[], log=log)
         ; log=log,
         ## todo: factor out this transform condition!!
         transform = (t)
@@ -1917,18 +1950,18 @@ function rep_delim(
 end
 
 
-export rep_delim_par
-function rep_delim_par(x, delim; repf=rep, transform=(v,i) -> v, transform_each=v -> v, kw...)
+export Repeat_delim_par
+function Repeat_delim_par(x, delim; repf=Repeat, transform=(v,i) -> v, transform_each=v -> v, kw...)
     x = parser(x)
     delim = parser(delim)
     T = result_type(typeof(x))
     D = result_type(typeof(delim))
     seq(Vector{T},
-        opt(Vector{D}, delim; transform = (v,i) -> D[v]),
+        Optional(Vector{D}, delim; transform = (v,i) -> D[v]),
         repf(seq(T, x, delim; 
                  transform = (v, i) -> v[1]);
              transform=(v,i) -> v),
-        opt(Vector{T}, x; transform = (v,i) -> T[v])
+        Optional(Vector{T}, x; transform = (v,i) -> T[v])
         ; 
         ## todo: factor out this transform condition!!
         transform = (v,i)  -> transform(
@@ -1938,7 +1971,7 @@ function rep_delim_par(x, delim; repf=rep, transform=(v,i) -> v, transform_each=
 end
 
 
-export atomic
+export Atomic
 struct AtomicGroup{P,T} <: WrappedParser{P,T}
     parser::P
     AtomicGroup(parser) =
@@ -1951,7 +1984,7 @@ map_parser(f::Function,mem::AbstractDict,x::AtomicGroup,a...) =
             map_parser(f,mem,x.parser,a...))
     end
 
-atomic(x) =
+Atomic(x) =
     AtomicGroup(parser(x))
 
 @inline function _iterate(parser::AtomicGroup, sequence, till, i, state)
@@ -1967,7 +2000,7 @@ Base.get(x::AtomicGroup, a...) =
 
 function print_constructor(io::IO,x::AtomicGroup)
     print_constructor(io,x.parser)
-    print(io, " |> atomic" )
+    print(io, " |> Atomic" )
 end
 
 regex_prefix(x::AtomicGroup) = "(?>"*regex_prefix(x.parser)
@@ -1985,9 +2018,9 @@ end
 
 import Base: parse
 """
-parse(p::ParserTypes, s::AbstractString)
+```parse(parser::ParserTypes, str::AbstractString)```
 
-parse `s` with parser `p`.
+Parse a string with a CombinedParser as an instance of `result_type(parser)`.
 """
 function Base.parse(p::TextParse.AbstractToken, s)
     i = _iterate(p,s)
@@ -2028,7 +2061,6 @@ Numeric = TextParse.Numeric
 
 map_parser(f::Function,mem::AbstractDict,x::Numeric,a...) = x
 
-import AbstractTrees: print_tree, children, printnode
 include("reverse.jl")
 include("textparse.jl")
 include("deprecated.jl")

@@ -1,28 +1,16 @@
-include("pcre.jl")
+module Regexp
+using ..ParserAlchemy
 
-export regex_escape
-## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
-"""
-        regex_escape(s::AbstractString)
-    regular expression metacharacters are escaped along with whitespace.
-    # Examples
-    ```jldoctest
-    julia> regex_escape("Bang!")
-    "Bang\\!"
-    julia> regex_escape("  ( [ { . ? *")
-    "\\ \\ \\(\\ \\[\\ \\{\\ \\.\\ \\?\\ \\*"
-    julia> regex_escape("/^[a-z0-9_-]{3,16}\$/")
-    "/\\^\\[a\\-z0\\-9_\\-\\]\\{3,16\\}\\\$/"
-    ```
-    """
-function regex_escape(s)
-    res = replace(string(s), r"([()[\]{}?*+\-|^\$\\.&~#\s=!<>|:])" => s"\\\1")
-    replace(res, "\0" => "\\0")
-end
-export regex_string
-regex_string(x::AbstractString) = regex_escape(x)
-regex_string_(x::AbstractString) = regex_escape(x)
-regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
+using TextParse
+import ..ParserAlchemy: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, CatStrings, MatchingNever
+import ..ParserAlchemy: parser, prune_captures, map_parser, _iterate, print_constructor
+import ..ParserAlchemy: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string
+
+import Base: prevind, nextind
+
+indexed_captures(x::Union{ConstantParser,AtStart,AtEnd,Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,LookAround},context,reset_number) = x
+
+include("pcre.jl")
 
 
 
@@ -89,18 +77,18 @@ struct Capture{P,T} <: WrappedParser{P,T}
     parser::P
     name::Union{Nothing,Symbol}
     index::Int
-    Capture(name::Union{Nothing,Symbol},x,index=-1) =
-        new{typeof(x),result_type(x)}(x,name==Symbol("") ? nothing : name,index)
+    Capture(name::Union{Nothing,Symbol},x_,index=-1) =
+        let x = parser(x_)
+            new{typeof(x),result_type(x)}(x,name==Symbol("") ? nothing : name,index)
+        end
     Capture(x::Capture,index) =
         new{typeof(x.parser),result_type(x)}(x.parser,x.name,index)
 end
-capture(x,index=-1) =
+Capture(x,index=-1) =
     Capture(nothing,x,index)
-capture(name::Union{Nothing,Symbol},x,index=-1) =
-    Capture(name,parser(x),index)
 function print_constructor(io::IO,x::Capture)
     print_constructor(io,x.parser)
-    print(io, " |> capture" )
+    print(io, " |> Capture" )
 end
 
 regex_prefix(x::Capture) =
@@ -111,7 +99,7 @@ regex_suffix(x::Capture) = regex_suffix(x.parser)*")"
 
 function map_parser(f::Function,mem::AbstractDict,x::Capture,a...)
     get!(mem,x) do
-        capture(x.name,map_parser(f,mem,x.parser,a...),x.index)
+        Capture(x.name,map_parser(f,mem,x.parser,a...),x.index)
     end
 end
 
@@ -149,8 +137,6 @@ set_capture(sequence::WithCaptures{<:Reverse}, index::Int, start,stop) =
                         stop):reverse_index(sequence.match,
                                             start))
 
-function prune_captures(sequence,after_i)
-end
 function prune_captures(sequence::WithCaptures,after_i)
     for i in 1:length(sequence.captures)
         cv = sequence.captures[i]
@@ -386,18 +372,15 @@ struct Conditional{C,Y,N,T} <: AbstractParser{T}
 end
 
 function regex_prefix(x::Conditional)
-    "(?("*regex_string_(x.condition)*")"*regex_string(x.yes)*(isa(x.no, Always) ? "" : ( "|" * regex_string(x.no)))*")"
+    "(?("*regex_string_(x.condition)*")"
 end
 function regex_suffix(x::Conditional)
     ")"
 end
-function regex_string(x::Conditional)
-    "(?("*regex_string_(x.condition)*")"*regex_string(x.yes)*(isa(x.no, Always) ? "" : ( "|" * regex_string(x.no)))*")"
-end
+regex_inner(x::Conditional) =
+    regex_string(x.yes)*(isa(x.no, Always) ? "" : ( "|" * regex_string(x.no)))
 
 
-printnode(io::IO,x::Conditional{<:Backreference}) = print(io,"(?(",regex_string_(x.condition),")")
-printnode(io::IO,x::Conditional) = print(io,"(?",regex_string(x.condition),"")
 children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
 
@@ -492,7 +475,7 @@ end
 function Base.nextind(context::ParserWithCaptures,x::Capture)
     if x.name!==nothing
         if haskey(context.names,x.name)
-            return @show context.names[x.name]
+            return context.names[x.name]
         end
     end
     if x.index<0
@@ -556,7 +539,7 @@ end
 
 function Base.show(io::IO,m::ParseMatch)
     x=getfield(m,1)
-    print(io,"ParseMatch(\"",m.match,"\"")
+    print(io,"ParseMatch(\"",escape_string(m.match),"\"")
     indnames=Dict( ( k.second=>k.first for k in pairs(x.names) )... )
     for i in 1:length(x.captures)
         print(io, ", ",get(indnames,i,i),"=")
@@ -587,10 +570,11 @@ end
 
 
 
-Base.match(parser::ParserTypes,sequence::AbstractString) =
-    match(indexed_captures(parser),sequence)
+Base.match(parser::ParserTypes,sequence::AbstractString; kw...) =
+    match(indexed_captures(parser),sequence; kw...)
 
-function Base.match(parser::ParserWithCaptures,sequence::AbstractString)
+function Base.match(parser::ParserWithCaptures,sequence::AbstractString; log=false)
+    log && ( parser=log_names(parser) )
     s = WithCaptures(sequence,parser)
     start,till=1, lastindex(s)
     i = nothing
@@ -610,4 +594,8 @@ parse `s` with parser `p`.
 function _iterate(p::ParserWithCaptures, sequence::AbstractString)
     s = WithCaptures(sequence,p)
     i = _iterate(p,s)
+end
+
+include("re-parser.jl")
+
 end

@@ -3,568 +3,298 @@ using Pkg
 Pkg.activate("CombinedParsers")
 using CombinedParsers
 import CombinedParsers: ParserTypes
+using CombinedParsers.Regexp
 using BenchmarkTools
 using Test
 
-@test parse(rep(rep('a')),"a") == Any[Any['a']]
 
-integer = Numeric(Int)
-parse(integer,"09")==9
+include("/home/gregor/dev/julia/ParserAlchemy/test/pcretest-parser.jl");
 
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC2
-# affect . ^ $
-# alt("(*CR)" => with_doc(CharNotIn('\r'), "carriage return"),
-#     "(*LF)" => with_doc(CharNotIn('\r'), "linefeed"),
-#     "(*CRLF)" => with_doc("carriage return, followed by linefeed"),
-#     "(*ANYCRLF)" => with_doc("any of the three above"),
-#     "(*ANY)" => with_doc("all Unicode newline sequences"))
-
-#(*NO_AUTO_POSSESS)
-#(*LIMIT_MATCH=d)
-#(*LIMIT_RECURSION=d)
-
-bsr = atomic(alt(Union{Char,String},"\r\n",CharIn('\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
-whitespace = " \t\U0085\U200E\U200F\U2028\U2029"
-
-## recursive pattern alternatives
-at_linestart = alt(AtStart(),PositiveLookbehind(bsr))
-lineend   = alt(AtEnd(),bsr)
-at_lineend   = alt(AtEnd(),PositiveLookahead(bsr))
-pattern = alt(ParserTypes,
-              on_options(Base.PCRE.MULTILINE, '^' => at_linestart),
-              '^' => AtStart(),
-              on_options(Base.PCRE.MULTILINE, '$' => at_lineend),
-              '$' => AtEnd()
-              );
+parse(log_names(pcre_parser),"(?:[a-z])(b)*\\1")
 
 
+@testset "test parsing" begin
+    parse(pcre_parser,"(a)")
+    @test parse(integer,"09")==9
+    @test parse(comment_or_empty,
+                "# This set of tests is for features that are compatible with all versions of\n\n \t \n") ==
+    ["# This set of tests is for features that are compatible with all versions of\n","\n", " \t \n"]
+    @test parse(skip_whitespace_and_comments,with_options(Base.PCRE.EXTENDED,"# some comment   \n")) == [ with_log("some comment",Always()) ]
+    @test parse(skip_whitespace_and_comments,"# some comment   \n") == []
+    @test parse(match_test,"""
+                    abc
+                 0: abc
+                """) == (sequence="abc", expect = [(i=0,result="abc")])
+    @test parse(match_test,"""
+                    abc
+                 0: \xff
+                """) == (sequence="abc", expect = [(i=0,result="\xff")])
+    @test parse(testspec,
+                raw"""
+                /^abc$/m
+                    abc
+                 0: abc
+                    qqq\nabc
+                 0: abc
+                    abc\nzzz
+                 0: abc
+                    qqq\nabc\nzzz
+                 0: abc
+                """
+                ).pattern.x=="^abc\$"
+    @test parse(rep(seq(comment_or_empty,
+                        testspec)),"""
+                /a(*F:X)b/
+                    abc
+                No match, mark = X
+                """)[1][2].pattern=="a(*F:X)b"
+    test_pcre"""
+            /\Aabc\z/m
+                abc
+             0: abc
+            \= Expect no match
+                abc\n   
+            No match
+                qqq\nabc
+            No match
+                abc\nzzz
+            No match
+                qqq\nabc\nzzz
+            No match
 
-pcre_options = rep1(UInt32,
-    alt(
-        'i' => Base.PCRE.CASELESS,
-        'm' => Base.PCRE.MULTILINE,
-        'U' => Base.PCRE.UNGREEDY,
-        'J' => Base.PCRE.DUPNAMES,
-        's' => Base.PCRE.DOTALL,
-        'x' => Base.PCRE.EXTENDED),
-    transform=(v,i) -> |(v...))
-
-testspec = seq(
-    '/',rep_until(
-        AnyChar(),
-        seq('/',opt(pcre_options,default=UInt32(0)),'\n',
-            transform=2),
-        true; wrap=JoinSubstring),
-    rep(seq(
-        "    ",
-        rep_until(AnyChar(), '\n'; wrap=JoinSubstring),
-        rep(seq(rep(' '),integer,':',rep(' '),
-                rep_until(AnyChar(), '\n'; wrap=JoinSubstring),
-                transform=(v,i) -> (i=v[2],result=v[5]))),
-        transform=(v,i) -> (
-            sequence = Meta.parse("\""*v[2]*"\""), # v[2],
-            expect = v[3])
-    )),
-    opt(seq("\\= Expect no match\n",
-            rep(seq(
-                "    ",
-                rep_until(AnyChar(), '\n'; wrap=JoinSubstring),
-                "No match\n",
-                transform=2
-            )),
-            transform=2)),
-    transform = (v,i) -> (
-        pattern = (with_options(reverse(v[2])...)),
-        tests = v[3],
-        tests_nomatch = v[4])
-);
+            /(?|(abc)|(xyz))/B
+               >abc<
+               >xyz<
+            """
+end
 
 
 tests_string=read("/home/gregor/dev/pcre/testdata/testoutput1",String);
-
-@time _iterate(rep(seq(
-    rep(alt(seq(at_linestart,'#',rep_until(AnyChar(),'\n',wrap=JoinSubstring)),
-            seq(at_linestart,rep_until(CharIn(whitespace),'\n',wrap=JoinSubstring)))))),
-              raw"""
-# This set of tests is for features that are compatible with all versions of
-# Perl >= 5.10, in non-UTF mode. It should run clean for the 8-bit, 16-bit, and
-# 32-bit PCRE libraries, and also using the perltest.sh script.
-    
-#forbid_utf
-#newline_default lf any anycrlf
-#perltest
-
-""")
+tests = parse(tests_parser, tests_string);
 
 
-_iterate(seq(at_linestart,'#',rep_until(AnyChar(),'\n',wrap=JoinSubstring)),
-         "# This set of tests is for features that are compatible with all versions of\n")
 
+
+## check specific case
+err_idx = 989 
+err_test=tests[1][err_idx][2];x=err_test.pattern
+pp=Regcomb(x)
+match(pp,err_test.test[1].sequence)
+@pcre_testset err_test true
+
+
+
+
+
+##parse(quantified, with_options("x","b #c\n*"))
+##parse(alt( ( with_log("$i",e;nomatch=true) for (i,e) in enumerate(pattern.options) )...), "(?-i)")
+
+
+##parse(quantified,with_options(Base.PCRE.CASELESS,"a*?"))
+result_type(bracket)
+parse(bracket,"[a\\E]")
+##parse(bracket,with_options("i","[^]a]"))
+parse(pattern,"[")
+
+
+## push!(pattern,seq('\\', AnyChar()) do v; parser(v[2]); end);
+
+## parse(skip_whitespace_on(Base.PCRE.EXTENDED),with_options("x"," a"))|>dump
+## parse(seq(parse(skip_whitespace_and_comments,with_options("x"," (?#xxx) (?#yyy) "))...),"a")
+
+## push!(pattern,lazy(opt(comment_par)));
+
+## parse_all(lazy(opt(comment_par)),"(?#a)")
+
+
+parse(skip_whitespace_on(Base.PCRE.EXTENDED),with_options("x","  "))
+
+parse(skip_whitespace_on(0),"\v(?#ss=)")
+
+
+
+
+parse(
+    after(with_log("left",alt("a","ab"))) do v
+    parser(v)
+    end,
+    "abab")
 # parse(pattern,with_options(Base.PCRE.MULTILINE,"^"))
 
-skip_blindspace =
-    parser( alt(
-        on_options(Base.PCRE.EXTENDED,
-                   rep(CharIn(whitespace))),
-        Always())
-            => Always());
 
-skip_comment =
-    on_options(Base.PCRE.EXTENDED,
-               seq('#',rep(CharIn(whitespace)),
-                   rep_until(
-                       AnyChar(),
-                       seq(rep(CharIn(whitespace)),alt(bsr,AtEnd())),
-                       wrap = JoinSubstring
-                   ),
-                   transform=(v,i) -> with_log(v[3],Always())
-                   ));
-
-using Test
-@test parse(skip_comment,with_options(Base.PCRE.EXTENDED,"# some comment   \n")) == with_log("some comment",Always())
-@test parse(skip_comment,"# some comment   \n") === nothing
-
-pushfirst!(pattern,skip_comment);
-
-comment_par = seq(
-    '(', '?', '#',rep(CharIn(whitespace)),
-    rep_until(
-        AnyChar(),
-        seq(rep(CharIn(whitespace)),')'),
-        wrap = JoinSubstring
-    ),
-    transform=(v,i) -> with_log(v[5],Always())
-);
-
-@test parse(comment_par,"(?# comment)") == with_log("comment",Always())
-@test match(r"(?# comment)a","a").match == "a"
-## match(re"(?# comment)a","a").match == "a"
-
-push!(pattern,comment_par);
-
-# https://www.regular-expressions.info/refcharacters.html
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC4
-char = let meta_chars = raw"\^$.[|()?*+{"
-    alt(Char,
-        CharNotIn([ c for c in meta_chars]),
-        seq('\\', CharIn(Set(vcat([m for m in meta_chars],whitespace))),
-            transform=2),
-        transform=(v,i) -> convert(Char,v)
-        )
-end;
-
-@test parse(char,with_options(Base.PCRE.CASELESS,"A")) =='a'
-@test parse(char,"A") =='A'
-@test parse(char,"\\^") =='^'
-@test parse(char,"^") === nothing
+# alt(
+#     ,
+#     skip_comment,
+#     comment_par,
+#     rep("\\E") => Always())
 
 
-push!(pattern,char);
+# function f(v)
+#     with_log(v[5],Always())
+# end
+# map(f,comment_par)
+# ParserAlchemy.infer_result_type(f,Any,comment_par,"")
+# parse(parse(comment_par,"(?#abc)"),"")
+# Tuple{Char,Char,Char,Array{Char,1},SubString})
+# result_type(comment_par)
 
+parse(sequence_with_options,"(?i:abc)")
 
+@testset "comments" begin
+    ##@test parse(comment_par,"(?# comment)") == with_log("comment",Always())
+    @test match(re"(?# comment)a","a").match == "a"
+    ## match(re"(?# comment)a","a").match == "a"
+end
 
+@testset "char" begin
+    ##@test match(parse(char,with_options(Base.PCRE.CASELESS,"A")) =='a'
+    @test parse(char,"A") == CharIn('A')
+    @test parse(char,"\\^") == CharIn('^')
+    @test parse(char,"^") === nothing
+    @test parse(escape_sequence(),raw"\Q[].\E")=="[]."
+    ##@btime _iterate(pattern,".")
+    ## @btime _iterate(pattern,"\\N")
+    @test parse(character_base(8),"765")==501
+    @test parse(character_base(10),"765")==765
+    @test parse(character_base(16),"765")==1893
+    @test parse(character_base(16),"")==0
+    @test parse(seq("\\x{",character_base(16),"}",transform=v -> Char(v[2])),"\\x{10}") == '\x10'
+    @test parse(rep(escaped_character),raw"\a\t\r\n") == collect("\a\t\r\n")
+    @test parse(parser(parse(escaped_character,"\\o{100}")),"@")=='@'
+    @test parse(parser(parse(escaped_character,"\\x10")),"\U0010")=='\x10'
+    @test parse(parser(parse(escaped_character,"\\x{010}")),"\U0010")=='\x10'
+    @test parse(escaped_character,"\\t")==('\t')
+    @test parse(escaped_character,"\\x{0065}") == ('e')
+    @test parse(character_base(8,3,3),"100")==64
+    match(r"\100","@")
+    match(r"\x100","@")
+    match(r"\o{100}","@")
+    match(r"\x1","\U0010")
+end
 
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC5
-escape_sequence = seq(String,"\\Q",rep_until(CombinedParsers.any(),"\\E"),
-                      transform=(v,i)->join(v[2]));
-_iterate(escape_sequence,raw"\Q[].\E")
-push!(pattern,escape_sequence);
+@testset "char groups" begin
+    @test_pcre "\\d+" "1123"
+    @test_pcre "\\D+" "abcd"
+    @test_pcre "\\R" "\n"
+    @test_pcre "\\W" " "
+end
 
-match(r"\Q \Ea"x," a")
+match(re"(ab)","ab")
 
-# https://www.regular-expressions.info/refbasic.html
-dot = alt(
-    on_options(Base.PCRE.DOTALL,'.') => AnyChar(), ## todo: allow \n matching context 
-    '.' => CharNotIn('\n'), ## todo: allow \n matching context 
-    "\\N" => CharNotIn('\n')
-)
-@btime _iterate(pattern,".")
-@btime _iterate(pattern,"\\N")
-push!(pattern,dot);
+@testset "brackets" begin
+    @test parse(bracket_char,"a")=='a'
+    @test parse(bracket,"[a-z]")==CharIn('a':'z')
+    @test parse(bracket,with_options(Base.PCRE.EXTENDED_MORE,"[a-z ]"))==CharIn('a':'z')
+    @test parse(bracket,"[\x3f-\x5F]")==CharIn('?':'_')
+    @test parse(parser(']'),"]")==']'
+    @test parse(parse(bracket,"[]abc]"),"]")==']'
+    @test parse(parse(bracket,"[]-_abc-]"),"]")==']'
+    parse(alternation,"[-]abc\\]")
+    @test match(re"[-]abc]","a") === nothing
+    @test parse(re"[]abc-]","-")=='-'
+    @test parse(re" [a- z]"xxx,"b")=='b'
+    @test parse(re" [a- z]"xx,"b")==nothing
+    @test parse(re"[a- z]","b")==nothing
+    @test parse(re"[a- z]"xx,"b")=='b'
+    ##@test match(r" [a-z]"xxx,"b")==match(re" [a-z]"xxx,"b")
+end
 
+@testset "internal options" begin
+    @test match(r"(?xx)[a- x]","b")==match(re"(?xx)[a- x]","b")    
+    @test parse(pcre_options,"i")==Base.PCRE.CASELESS
+    @test parse(parse(option_sequences,"a|b(?i)a"),"bA")==('b','A')
+end
 
-# The horizontal space characters are:
-horizontal_space=(
-    '\U0009', # "Horizontal tab (HT)"),
-    '\U0020', # "Space"),
-    '\U00A0', # "Non-break space"),
-    '\U1680', # "Ogham space mark"),
-    '\U180E', # "Mongolian vowel separator"),
-    '\U2000', # "En quad"),
-    '\U2001', # "Em quad"),
-    '\U2002', # "En space"),
-    '\U2003', # "Em space"),
-    '\U2004', # "Three-per-em space"),
-    '\U2005', # "Four-per-em space"),
-    '\U2006', # "Six-per-em space"),
-    '\U2007', # "Figure space"),
-    '\U2008', # "Punctuation space"),
-    '\U2009', # "Thin space"),
-    '\U200A', # "Hair space"),
-    '\U202F', # "Narrow no-break space"),
-    '\U205F', # "Medium mathematical space"),
-    '\U3000' # "Ideographic space"))
-)
+@testset "repetitions and optional" begin
+    @test parse(opt('a'),"b")===missing
+    @test parse(opt('a'),"a")==='a'
+    @test tokenize(repetition,"{1,}") == (1,typemax(Int))
+    @test parse(repetition,"*") == (0,typemax(Int))
+    @test parse(repetition,"+") == (1,typemax(Int))
+    @test parse(repetition,"{3}") == (3,3)
+    @test parse(repetition,"?") == (0,1)
+    @test match(parse(quantified,"a*"),"aaab").match=="aaa"
+    @test parse(parse(quantified,"a*?"),"aa")==Char[]
 
-# The vertical space characters are:
-vertical_space=(
-    '\U000A', # "Linefeed (LF)"),
-    '\U000B', # "Vertical tab (VT)"),
-    '\U000C', # "Form feed (FF)"),
-    '\U000D', # "Carriage return (CR)"),
-    '\U0085', # "Next line (NEL)"),
-    '\U2028', # "Line separator"),
-    '\U2029') # "Paragraph separator"))
-
-
-
-hex_digit = CharIn('A':'F','a':'f','0':'9')
-function character_base(base,mind=0,maxd=1000)
-    dig = if base == 16
-        hex_digit
-    elseif base == 8
-        CharIn('0':'7')
-    elseif base ==10
-        CharIn('0':'9')
-    else
-        error()
-    end
-    rep(Int,dig,(mind,maxd),
-        transform=(v,i) -> isempty(v) ? 0 : parse(Int,join(v),base=base))
+    ## lazy support
+    @test_pcre "a*?(abc)?" "abc"
+    ## lazy rep
+    @test_pcre "a(?:b|(c|e){1,2}?|d)+?(.)" "ace"
+    @test parse(parse(quantified,"a*"),"aa")==Char['a','a']
+    @test tokenize(quantified,"a?")|>regex_string == "a?"
+    parse(quantified,"a{3}")
+    parse(quantified,with_options(Base.PCRE.EXTENDED,"a {3}"))
+    parse(parse(sequence,"ab*"), "abbb")
+    pp=parse(sequence,"ab*")
+    ##@btime _iterate(pp, "abbb")
+    ##@btime match(r"ab*","abbb")
 end
 
 
-parse(character_base(8),"765")
-parse(character_base(10),"765")
-parse(character_base(16),"765")
-parse(character_base(16),"")
+
+@testset "alternations" begin
+    parse(alternation,"a|b")
+    parse(alternation,
+          with_options(Base.PCRE.EXTENDED|Base.PCRE.EXTENDED_MORE,
+                       "a {3}bc | d | [a - e]# comment?"))
+    @test parse(seq(AtStart(),alternation,AtEnd(), transform=2),"")==seq()
+    ## push!(pattern,alternation) ## stackoverflow
+end
+
+@testset "sequences, captures" begin
+    match(parse(captured,"(ab)"),"ab")
+    parse(captured,"()")    
+    pp = parse(captured,"(?<a>ab)")
+    @btime match(pp,"ab")
+    parse(parse(captured,"(ab)"), "ab")
+    parse(parse(subpattern,"(?:ab)"), "ab")
+    parse(atomic_group,"(?>ab*)")|>regex_string
+    parse(backreference,"(?P=ab)")|>dump
+    parse(backreference,"\\1")|>dump
+    parse(backreference,"\\g-1")|>dump
+    parse(subroutine,"(?-1)")|>dump
+    @test_pcre "((((a)(b))))(c)" "abc" true
+    @test_pcre "(a)|(d)" "a" true
+    @test_pcre "(a)|(d)" "d" true
+    @test_pcre "(1a(2b?)*)*0" "1a1a21a2b22b0" true
+    @test_pcre "(1a(2b?)*)*0" "1a1a21a2b22b0" true
+    @test_pcre "(ab)*c" "ababc" true
+    @test_pcre "^(ab)*c\$" "ababc" true
+    @test_pcre "(?<ab>foo)\\1" "foofoo"
+    re"(?<ab>foo)(?P=ab)" 
+    @test_pcre "(?<ab>foo)(?P=ab)" "foofoo" true
+    re"(?<ab>foo|bar)(?1)"
+    @test_pcre "(?<ab>foo|bar)(?1)" "foobar" true
+    @test_pcre "(ab)(?<ab>foo)\\g-1" "abfoofoo" true
+    ## recursive back references
+    @test_pcre "(a|b\\1)+" "aaa" true
+    @test_pcre "(a|b\\1)+" "aba" true
+    @test_pcre "(a|b\\1)+" "ababbaa" true
+    @test_pcre "(ab)(?<ab>foo)\\g-1\\g-2" "abfoofooab" true
+    @test_pcre "(se|respo)nse and ((?1)nse)" "sense and response" true
+    re"(?<a>ab)(?#comment)"
+    @test_pcre "^ab*(?<ab>c)" "ac"
+    @test_pcre raw"\Q \Ea" " a" true "x"
+    @test_pcre "a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz" "abcxyzpqrrrabbxyyyypqAzz" true
+end                 
 
 
-parse(seq("\\x{",character_base(16),"}",transform=(v,i) -> Char(v[2])),"\\x{10}")
-
-word=CharIn(UnicodeClass("L","N"),'_')
-
-non_word=CharNotIn(UnicodeClass("L","N"),'_')
-
-simple_assertions =
-    seq(
-        '\\',
-        alt(
-            'A' => AtStart(),
-            'z' => AtEnd(),
-            'Z' => PositiveLookahead(seq(opt(bsr),AtEnd())),
-            'b' => alt(
-                PositiveLookahead(seq(AtStart(),word)),
-                PositiveLookahead(seq(word,AtEnd())),
-                seq(PositiveLookbehind(word),PositiveLookahead(non_word)),
-                seq(PositiveLookbehind(non_word),PositiveLookahead(word))
-            ),
-            # 'B' => alt(
-            #     NegativeLookahead(seq(AtStart(),word)),
-            #     NegativeLookahead(seq(word,AtEnd())),
-            #     seq(NegativeLookbehind(word),PositiveLookahead(non_word)),
-            #     seq(NegativeLookbehind(non_word),PositiveLookahead(word))
-            # ),
-        ),
-        transform=2)
-push!(pattern,simple_assertions);
-
-push!(pattern,parser( "\\R" => bsr ));
-
-escaped_character = 
-    seq('\\',
-        alt(Char,
-            'a' => ('\a'), #   \a        alarm, that is, the BEL character (hex 07)
-            seq(Char,'c',AnyChar(), transform=(v,i)->error("not supported \\c$(v[2])")), #   \cx       "control-x", where x is any ASCII character
-            'e' => ('\e'), #   \e        escape (hex 1B)
-            'f' => ('\f'), #   \f        form feed (hex 0C)
-            'n' => ('\n'), #   \n        linefeed (hex 0A)
-            'r' => ('\r'), #   \r        carriage return (hex 0D)
-            't' => ('\t'), #   \t        tab (hex 09)
-            seq(Char,'0',character_base(8,0,2), transform=(v,i)->(Char(v[2]))), #   \0dd      character with octal code 0dd
-            seq(Char,character_base(8,3,3), transform=(v,i)->(Char(v[1]))), ## todo: backreference, if a capture with number (in decimal) is defined #   \ddd      character with octal code ddd, or back reference
-            seq(Char,'o','{',character_base(8),'}', transform=(v,i)->(Char(v[3]))), #   \o{ddd..} character with octal code ddd..
-            seq(Char,'x','{',character_base(16),'}', transform=(v,i)->(Char(v[3]))), #   \xhh      character with hex code hh
-            seq(Char,'x',character_base(16,0,2), transform=(v,i)->(Char(v[2]))), #   \x{hhh..} character with hex code hhh.. (non-JavaScript mode)
-            seq(Char,'h',character_base(16,4,4), transform=(v,i)->(Char(v[2]))), #   \uhhhh    character with hex code hhhh (JavaScript mode only)
-        ),
-        transform=2);
-push!(pattern,escaped_character);
-
-generic_character_type =
-    seq(
-        '\\',
-        alt(
-            'd' => CharIn('0':'9'), # "any decimal digit"),
-            'D' => CharNotIn('0':'9'), # "any character that is not a decimal digit"),
-            'h' => CharIn(horizontal_space...), # "any horizontal white space character"),
-            'H' => CharNotIn(horizontal_space...), # "any character that is not a horizontal white space character"),
-            's' => CharIn(horizontal_space...,vertical_space...), # "any white space character"),
-            'S' => CharNotIn(horizontal_space...,vertical_space...), # "any character that is not a white space character"),
-            'v' => CharIn(vertical_space...), # "any vertical white space character"),
-            'V' => CharNotIn(vertical_space...), # "any character that is not a vertical white space character"),
-            'w' => word, # "any "word" character"),
-            'W' => non_word, # "any "non-word" character"),
-        ),
-        transform=2);
-
-parse(parser(parse(escaped_character,"\\100")),"@")
-parse(parser(parse(escaped_character,"\\o{100}")),"@")
-
-parse(parser(parse(escaped_character,"\\x10")),"\U0010")
-parse(parser(parse(escaped_character,"\\x{010}")),"\U0010")
-
-parse(escaped_character,"\\t")
-
-using Test
-@test parse(escaped_character,"\\x{0065}") == ('e')
-_iterate(escaped_character,"\\x{0065}")
-
-parse(character_base(8,3,3),"100")
-push!(pattern,generic_character_type);
+@testset "look around" begin
+    pp = seq('a',rep('b'),NegativeLookbehind(seq('b','b')),rep('b'),'c')
+    parse(pp, "abbbc")
+    parse(map_parser(revert,pp), "cbbba")
 
 
+    pp = seq('a',rep('b'),NegativeLookbehind(seq('b')),rep('b'),'c')
+    parse(pp, "abbbc")
+    map_parser(revert,pp)
 
+    @test_pcre "ab*(?<=ab)c" "abc" true
 
-Char(64)
-match(r"\100","@")
-match(r"\x100","@")
-match(r"\o{100}","@")
-parse(parser(parse(escaped_character,"\\100")),"@")
-match(r"\x1","\U0010")
-"\x10"[1]
-
-
-
-skip_whitespace_on(flags) =
-    alt(on_options(flags,rep(CharIn(whitespace...))=>Always()),
-        Always())
-
-# https://www.regular-expressions.info/posixbrackets.html#class
-
-bracket_char = let bracket_meta_chars = raw"][\^-"
-    seq(Char,
-        skip_whitespace_on(Base.PCRE.EXTENDED_MORE),
-        alt(
-            CharNotIn([ c for c in bracket_meta_chars]),
-            CharNotIn([ c for c in bracket_meta_chars]),
-            seq('\\', CharIn([ c for c in bracket_meta_chars]),
-                transform=2),
-            escaped_character
-        ),
-        skip_whitespace_on(Base.PCRE.EXTENDED_MORE),
-        transform=(v,i) -> convert(Char,v[2]))
-end;
-
-parse(bracket_char,"a")
-parse(bracket_char,with_options(Base.PCRE.EXTENDED_MORE,"  a  "))
-
-parse(opt('a'),"b")
-_iterate(opt('a'),"b")
-
-bracket=seq(CharMatcher,
-            '[',opt('^')
-            , opt(']')
-            , rep(alt(CharMatcher,
-                      seq("[:",
-                          alt(CharMatcher,
-                              "alnum" => CharIn(UnicodeClass("L","N")), # Xan
-                              "alpha" => CharIn(UnicodeClass("L")),
-                              ##"ascii" => CharIn(UnicodeClass("InBasicLatin")),
-                              "blank" => CharIn(UnicodeClass("Zs"),'\t'),
-                              "cntrl" => CharIn(UnicodeClass("Cc")),
-                              "digit" => CharIn(UnicodeClass("Nd")),
-                              "graph" => CharNotIn(UnicodeClass("Z","C")),
-                              "lower" => CharIn(UnicodeClass("Ll")),
-                              "print" => CharIn(UnicodeClass("C")),
-                              "punct" => CharIn(UnicodeClass("P")),
-                              "space" => CharIn(UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
-                              "upper" => CharIn(UnicodeClass("Lu")),
-                              "word" => CharIn(UnicodeClass("L","Nl","Nd","Pc")),
-                              "xdigit" => hex_digit,
-                              ),
-                          ":]",
-                          transform=2),
-                      generic_character_type,
-                      seq(CharIn{StepRange{Char,Int}},bracket_char,'-',bracket_char, transform=(v,i)->CharIn(v[1]:v[3]))
-                      , bracket_char))
-            , ']'
-            , transform = (v,i) -> if (@show v)[2]===missing
-            CharIn(v[3],v[4]...)
-            else
-            CharNotIn(v[3],v[4]...)
-            end);
-
-using BenchmarkTools
-@btime _iterate(bracket,"[a-z]")
-parse(bracket,with_options(Base.PCRE.EXTENDED_MORE,"[a-z ]"))
-parse(bracket,"[\x3f-\x5F]")
-parse(parser(']'),"]")
-parse(bracket,"[]abc]")
-parse(bracket,with_options(Base.PCRE.EXTENDED_MORE,"[a- z]"))
-
-pp = bracket;
-s = with_options(Base.PCRE.EXTENDED_MORE,"[a- z]")
-
-
-match(r"(?xx)[a- x]","b")
-match(r"(?xx)[a- x]","b")
-
-push!(pattern,bracket);
-
-
-
-
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
-repetition = alt(
-    "+"=>(1,typemax(Int)),
-    "*"=>(0,typemax(Int)),
-    "?"=>(0,1),
-    seq(Tuple{Int,Int},
-        "{",integer,
-        opt(",",opt(integer, default=typemax(Int)),
-            transform_seq=2),"}",
-        transform=(v,i) -> if v[3]===missing
-        (v[2],v[2])
-        else
-        (v[2],v[3])
-        end
-        ));
-parse(repetition,"{1,}")
-tokenize(repetition,"{1,}")
-parse(repetition,"*")
-parse(repetition,"+")
-parse(repetition,"{3}")
-parse(repetition,"{1,}")
-parse(repetition,"?")
-
-quantified=seq(
-    ParserTypes,
-    skip_whitespace_on(Base.PCRE.EXTENDED),
-    pattern,
-    skip_whitespace_on(Base.PCRE.EXTENDED),
-    opt(repetition, default=(1,1)),
-    skip_whitespace_on(Base.PCRE.EXTENDED),
-    opt('+'), # possessive quantifier
-    skip_whitespace_on(Base.PCRE.EXTENDED)
-) do v,i
-    result = if v[4]==(1,1)
-        parser(v[2])
-    elseif v[4]==(0,1)
-        opt(v[2])
-    else
-        rep(v[2],v[4])
-    end
-    if v[6]!==missing
-        atomic(result)
-    else
-        result
-    end
-end;
-
-tokenize(quantified,"a?")|>regex_string
-
-
-_iterate(pattern,with_options(Base.PCRE.EXTENDED,"a"))|>dump
-parse(quantified,"a{3}")
-parse(quantified,with_options(Base.PCRE.EXTENDED,"a {3}"))
-
-sequence = rep(ParserTypes,
-               quantified) do v,i
-                   length(v) ==1 ? v[1] : seq(v...)
-               end;
-
-parse(parse(sequence,"ab*"), "abbb")
-pp=parse(sequence,"ab*")
-@btime _iterate(pp, "abbb")
-@btime match(r"ab*","abbb")
-
-
-alternations = seq(Vector{ParserTypes},
-                   sequence, rep(seq('|',sequence, transform=2)),
-                   transform=(v,i) -> [v[1],v[2]...]);
-
-alternation = instance(
-    ParserTypes,
-    alternations) do v,i
-        length(v)==1 ? v[1] : alt(v...)
-    end;
-                                 
-
-parse(alternation,"a|b")
-
-parse(alternation,with_options(Base.PCRE.EXTENDED|Base.PCRE.EXTENDED_MORE,"a {3}bc | d | [a - e]# comment?"))
-
-
-macro re_str(x)
-    esc(quote
-        println($x)
-        r=parse(seq(AtStart(),alternation,AtEnd(), transform=2),$x)
-        r === nothing && error("invalid regex")
-        CombinedParsers.indexed_captures(r)
-        end)
+    Regcomb("ab*(?<=ab)c","")
 end
 
 
-macro test_pcre(pattern,seq,log=false)
-    quote
-        let name = string($seq)
-            @testset "$name" begin
-                pcre=Regex($pattern)
-                pc  =CombinedParsers.indexed_captures(parse(alternation,$pattern))
-                pcre_m = match(pcre,$seq)
-                pc_m = match(pc,$seq)
-                if $log
-                    println("testing r\"",$pattern,"\" on \"",$seq,"\"")
-                    println(pc_m)
-                    println(pcre_m)
-                end
-                if pcre_m === nothing
-                    @test pcre_m == pc_m
-                else
-                    @test pcre_m.match==pc_m.match
-                    @test pcre_m.captures==pc_m.captures
-                end
-            end
-        end
-    end |> esc
-end
-
-## push!(pattern,alternation) ## stackoverflow
-
-# Atomic groups
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC18
-atomic_group=seq(ParserTypes,
-                 "(?>",alternation,")",
-                 transform=(v,i)->atomic(v[2]));
-parse(atomic_group,"(?>ab*)")|>regex_string
-push!(pattern,atomic_group);
-# sequences and alternation
-
-
-name = seq(String,
-           CharIn('a':'z','A':'Z'),rep(CharIn('0':'9','a':'z','A':'Z')),
-           transform=(v,i)->v[1]*join(v[2]));
-
-
-captured=seq(ParserTypes,
-             "(",
-             alt(seq("?<",name,'>', transform=2),
-                 seq("?P<",name,'>', transform=2),
-                 seq("?'",name,"'", transform=2),
-                 ""),
-             alternation,
-             ")",
-             transform=(v,i)->CombinedParsers.capture(Symbol(@show v[2]),v[3]));
-match(parse(captured,"(ab)"),"ab")
-pp = parse(captured,"(?<a>ab)")
-@btime match(pp,"ab")
-
-parse(parse(captured,"(ab)"), "ab")
-push!(pattern,captured);
-
-
-re"(?<a>ab)(?#comment)"
 
 ## last value in captures in rep
 @btime match(r"(?:(a.))*","abac")
@@ -573,133 +303,10 @@ re"(?<a>ab)(?#comment)"
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC16
 match(r"(?J)(?:(?<n>foo)|(?<n>bar))\k<n>","foofoo")
 
-subpattern=seq("(?:",alternation,")",
-               transform=2);
-parse(parse(subpattern,"(?:ab)"),
-      "ab")
-push!(pattern,subpattern);
 
-
-lookaheads=seq("(?",
-               alt(seq(ParserTypes,
-                       '=',alternation,
-                       transform=(v,i) -> look_ahead(true,v[2])),
-                   seq(ParserTypes,
-                       '!',alternation,
-                       transform=(v,i) -> look_ahead(false,v[2]))),
-               ")",
-               transform=2);
-push!(pattern,lookaheads);
-
-
-
-pp = seq('a',rep('b'),NegativeLookbehind(seq('b','b')),rep('b'),'c')
-parse(pp, "abbbc")
-parse(map_parser(revert,pp), "cbbba")
-
-lookbehinds=seq("(?<",
-                alt(seq(ParserTypes,
-                        '=',alternation,
-                        transform=(v,i) -> look_behind(true,v[2])),
-                    seq(ParserTypes,
-                        '!',alternation,
-                        transform=(v,i) -> look_behind(false,v[2]))),
-                ")",
-                transform=2);
-push!(pattern,lookbehinds);
-
-
-pp = seq('a',rep('b'),NegativeLookbehind(seq('b')),rep('b'),'c')
-parse(pp, "abbbc")
-map_parser(revert,pp)
- 
-
-@test_pcre "ab*(?<=ab)c" "abc" true
-  
-
-@test_pcre "((((a)(b))))(c)" "abc" true
-
-@test_pcre "(a)|(d)" "a" true
-
-
-@test_pcre "(1a(2b?)*)*0" "1a1a21a2b22b0" true
-
-@test_pcre "(1a(2b?)*)*0" "1a1a21a2b22b0" true
-
-@test_pcre "(ab)*c" "ababc" true
-
-
-@test_pcre "^(ab)*c\$" "ababc" true
-
-
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
-backreference = instance(
-    ParserTypes,
-    alt(
-        seq('\\',alt(Union{Int,String},
-                     integer, ## todo: maybe octal char
-                     seq('g',integer,transform=2),
-                     seq("g{",integer,'}',transform=2),
-                     seq("g{",name,'}',transform=2),
-                     seq("k<",name,'>',transform=2),  # perl
-                     seq("k'",name,'\'',transform=2), # 
-                     ),
-            transform=2),
-        seq("(?P=",name,')',transform=2))) do v,i
-            BackReference(v)
-        end;
-parse(backreference,"(?P=ab)")|>dump
-parse(backreference,"\\1")|>dump
-parse(backreference,"\\g-1")|>dump
-push!(pattern,backreference);
-
-
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
-subroutine = seq("(?",alt('+','-',""),
-                 integer,')',
-                 transform=(v,i)->SubRoutine(nothing,Symbol(v[2]),v[3])
-                 );
-parse(subroutine,"(?-1)")|>dump
-push!(pattern,subroutine);
-
-
-@test_pcre "(?<ab>foo)\\1" "foofoo"
-re"(?<ab>foo)(?P=ab)" 
-
-@test_pcre "(?<ab>foo)(?P=ab)" "foofoo" true
-
-re"(?<ab>foo|bar)(?1)"
-@test_pcre "(?<ab>foo|bar)(?1)" "foobar" true
-
-@test_pcre "(ab)(?<ab>foo)\\g-1" "abfoofoo" true
-
-## recursive back references
-@test_pcre "(a|b\\1)+" "aaa" true
-@test_pcre "(a|b\\1)+" "aba" true
-@test_pcre "(a|b\\1)+" "ababbaa" true
-
-@test_pcre "(ab)(?<ab>foo)\\g-1\\g-2" "abfoofooab" true
-
-@test_pcre "(se|respo)nse and ((?1)nse)" "sense and response" true
-
-
-@test_pcre "\\d+" "1123"
-@test_pcre "\\D+" "abcd"
-
-@test_pcre "\\R" "\n"
-@test_pcre "\\W" " "
-
-@test_pcre "^ab*(?<ab>c)" "ac"
-
-@test_pcre "a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz" "abcxyzpqrrrabbxyyyypqAzz" true
 
 
 parse_all(re"a*(abc)?", "abc")
-
-
-## todo: support lazy
-@test_pcre "a*?(abc)?" "abc"
-
 
 
 @test_pcre "the quick brown fox" "What the quick brown fox"
@@ -708,457 +315,159 @@ parse_all(re"a*(abc)?", "abc")
 
 
 
-## TODO: lazy rep
-## @test_pcre "a(?:b|(c|e){1,2}?|d)+?(.)" "ace"
-                  
 
 
-parse(testspec,raw"""
-/the quick brown fox/
-    the quick brown fox
- 0: the quick brown fox
-    What do you know about the quick brown fox?
- 0: the quick brown fox
-\= Expect no match
-    The quick brown FOX
-No match
-    What do you know about THE QUICK BROWN FOX?
-No match
-""")
 
 
-tt = parse(testspec,
-raw"""
-/^abc$/m
-    abc
- 0: abc
-    qqq\nabc
- 0: abc
-    abc\nzzz
- 0: abc
-    qqq\nabc\nzzz
- 0: abc
-"""
-           )
 
-@test_pcre tt.pattern tt.tests[1].sequence
-@pcre_testset tt true
 
-Regcomb(x::AbstractString) = @re_str(x)
-Regcomb(x::CombinedParsers.WithOptions{<:AbstractString}) = set_options(x.flags,@re_str(x))
-macro pcre_testset(tt,log=false)
-    quote
-        let ts = $(tt), name = string(ts.pattern)
-            ## println(ts)
-            @testset "$name" begin
-                pcre=Regex(ts.pattern)
-                ## pc  =CombinedParsers.indexed_captures(set_options(ts.pattern.flags,parse(alternation,ts.pattern)))
-                pc  =Regcomb(ts.pattern)
-                ## println(pc)
-                for seq in ts.tests
-                    pcre_m = match(pcre,seq.sequence)
-                    pc_m = match(pc,seq.sequence)
-                    if $log
-                        println("testing r\"",name,"\" on \"",seq.sequence,"\"")
-                        println(pc_m)
-                        println(pcre_m)                    
-                    end
-                    if pcre_m === nothing
-                        @test pcre_m == pc_m
+ignore_idx = [14, 15, 32, 35, 39, 40, 69, 70,75, 81,97,98,
+              101,104,112,117,118,119,120,121,129,135,140,154,156,185,186,188,189,190,191,192,
+              210,238,239,240,241,242,243,244,245,246:261...,275,277:280...,
+              314,315,319,323:326..., 329,392,
+              430,431,435,436,482,493,494,495,
+              518,531:559...,562,573:580...,583:594...,598,
+              608:610...,619,627:629...,647,652,653,655:658...,660,662,663,665,666,668,669,675:681...,693:699...,
+              704,709,713:717...,719:726...,728,755:756...,770,771,783,784,794:798...,
+              800,804:808...,811,814:817...,828,830:839...,842:890...,
+              904,910,913,914,915,918:960...,962:985...,988,
+              1000:1035...,1037,1039:1085...,1091,1092,1094,
+              1102:1106...,1108:1111...,1113:1118...,1120,1121,1124,1126,1132,1134:1140...,1142,1145,1146,1148,1149,1152:1155...,1158,1159,1160,1167:1170...,1172,1173,1174,1176:1182...,1188:1232...,1236,1239,1240,1243,1246,1248:1252...
+              ]
+optimize_idx = [664,
+                705,707]
+
+ignore_idx = optimize_idx = [14,    ## conditions
+                             69,70, ## DEFINE
+                             210,
+                             664, ## slooow
+                             706, ## slooow
+                             1173] 
+unsupported=Dict{Any,Any}()
+errors=Any[]
+@testset "pcre testset 1" begin    
+    for (i,tt) in enumerate(tests[1])
+        if !in(i,ignore_idx) && !in(i,optimize_idx)
+            nam = string(tt[2].pattern)[1:min(end,20)]
+            tr = @testset "$i $(nam)" begin
+                try
+                    println(i)
+                    @pcre_testset tt[2] true
+                catch e
+                    ##sleep(.1)
+                    if e isa UnsupportedError
+                        @warn "unsupported" e.message tt[2].pattern
+                        ##readline()
+                        global unsupported
+                        push!(get!(()->Any[],unsupported,e.message),(i,tt[2]))
+                        (results =[],)
                     else
-                        @test pcre_m.match==pc_m.match &&
-                            pcre_m.match.offset==pc_m.match.offset &&
-                            pcre_m.match.ncodeunits==pc_m.match.ncodeunits
-                        @test pcre_m.captures==pc_m.captures
+                        @warn "error in $i" tt[2].pattern exception=e
+                        ##readline()
+                        global errors
+                        push!(errors,(i,tt[2]))
                     end
-                end
-                for seq in ts.tests_nomatch
-                    if $log
-                        println("testing r\"",name,"\" on \"",seq,"\"")
-                    end
-                    pcre_m = match(pcre,seq)
-                    pc_m = match(pc,seq)
-                    @test pcre_m === nothing && pc_m===nothing
                 end
             end
+            if !isempty(tr.results)
+                @warn "error in $i $(regex_string(tt[2].pattern))"
+                global err_idx,err_test=i,tt[2]
+                global errors
+                push!(errors,(i,tt[2]))
+                ##readline()
+            end
         end
-    end |> esc
+    end
 end
 
-@pcre_testset parse(testspec,raw"""
-    /^[\x3f-\x5F]+$/i
-        WXY_^ABC
-     0: WXY_^ABC
-        WXY_^abc
-     0: WXY_^abc
-        wxy_^ABC
-     0: wxy_^ABC
-    """)
-
-macro test_pcre_str(x)
-    quote
-        @pcre_testset parse(testspec,$x) true
-    end |> esc
-end
-
-test_pcre"""
-/^[\x3f-\x5F]+$/i
-    WXY_^ABC
- 0: WXY_^ABC
-    WXY_^abc
- 0: WXY_^abc
-    wxy_^ABC
- 0: wxy_^ABC
-"""
-
-test_pcre"""
-/^[W-c]+$/i
-    WXY_^abc
- 0: WXY_^abc
-    wxy_^ABC
- 0: wxy_^ABC
-"""
-
-test_pcre"""
-/the quick brown fox/
-    the quick brown fox
- 0: the quick brown fox
-    What do you know about the quick brown fox?
- 0: the quick brown fox
-\= Expect no match
-    The quick brown FOX
-No match
-    What do you know about THE QUICK BROWN FOX?
-No match
-"""
-
-test_pcre"""
-/abcd\t\n\r\f\a\e\071\x3b\$\\\?caxyz/
-    abcd\t\n\r\f\a\e9;\$\\?caxyz
- 0: abcd\x09\x0a\x0d\x0c\x07\x1b9;$\?caxyz
-"""
-
-pp = re"a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz"
-match(pp, "abxyzpqrrrabxyyyypqAzz")
-
-match(re"a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz",
-      "abxyzpqrrrabxyyyypqAzz")
-
-      ##"abxyzpqrrrabbxyyyypqAzz")
-      "abxyzpqrrabbxyyyypqAzz")
-
-test_pcre"""
-/a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz/
-    abxyzpqrrrabbxyyyypqAzz
- 0: abxyzpqrrrabbxyyyypqAzz
-    abxyzpqrrrabbxyyyypqAzz
- 0: abxyzpqrrrabbxyyyypqAzz
-    aabxyzpqrrrabbxyyyypqAzz
- 0: aabxyzpqrrrabbxyyyypqAzz
-    aaabxyzpqrrrabbxyyyypqAzz
- 0: aaabxyzpqrrrabbxyyyypqAzz
-    aaaabxyzpqrrrabbxyyyypqAzz
- 0: aaaabxyzpqrrrabbxyyyypqAzz
-    abcxyzpqrrrabbxyyyypqAzz
- 0: abcxyzpqrrrabbxyyyypqAzz
-    aabcxyzpqrrrabbxyyyypqAzz
- 0: aabcxyzpqrrrabbxyyyypqAzz
-    aaabcxyzpqrrrabbxyyyypAzz
- 0: aaabcxyzpqrrrabbxyyyypAzz
-    aaabcxyzpqrrrabbxyyyypqAzz
- 0: aaabcxyzpqrrrabbxyyyypqAzz
-    aaabcxyzpqrrrabbxyyyypqqAzz
- 0: aaabcxyzpqrrrabbxyyyypqqAzz
-    aaabcxyzpqrrrabbxyyyypqqqAzz
- 0: aaabcxyzpqrrrabbxyyyypqqqAzz
-    aaabcxyzpqrrrabbxyyyypqqqqAzz
- 0: aaabcxyzpqrrrabbxyyyypqqqqAzz
-    aaabcxyzpqrrrabbxyyyypqqqqqAzz
- 0: aaabcxyzpqrrrabbxyyyypqqqqqAzz
-    aaabcxyzpqrrrabbxyyyypqqqqqqAzz
- 0: aaabcxyzpqrrrabbxyyyypqqqqqqAzz
-    aaaabcxyzpqrrrabbxyyyypqAzz
- 0: aaaabcxyzpqrrrabbxyyyypqAzz
-    abxyzzpqrrrabbxyyyypqAzz
- 0: abxyzzpqrrrabbxyyyypqAzz
-    aabxyzzzpqrrrabbxyyyypqAzz
- 0: aabxyzzzpqrrrabbxyyyypqAzz
-    aaabxyzzzzpqrrrabbxyyyypqAzz
- 0: aaabxyzzzzpqrrrabbxyyyypqAzz
-    aaaabxyzzzzpqrrrabbxyyyypqAzz
- 0: aaaabxyzzzzpqrrrabbxyyyypqAzz
-    abcxyzzpqrrrabbxyyyypqAzz
- 0: abcxyzzpqrrrabbxyyyypqAzz
-    aabcxyzzzpqrrrabbxyyyypqAzz
- 0: aabcxyzzzpqrrrabbxyyyypqAzz
-    aaabcxyzzzzpqrrrabbxyyyypqAzz
- 0: aaabcxyzzzzpqrrrabbxyyyypqAzz
-    aaaabcxyzzzzpqrrrabbxyyyypqAzz
- 0: aaaabcxyzzzzpqrrrabbxyyyypqAzz
-    aaaabcxyzzzzpqrrrabbbxyyyypqAzz
- 0: aaaabcxyzzzzpqrrrabbbxyyyypqAzz
-    aaaabcxyzzzzpqrrrabbbxyyyyypqAzz
- 0: aaaabcxyzzzzpqrrrabbbxyyyyypqAzz
-    aaabcxyzpqrrrabbxyyyypABzz
- 0: aaabcxyzpqrrrabbxyyyypABzz
-    aaabcxyzpqrrrabbxyyyypABBzz
- 0: aaabcxyzpqrrrabbxyyyypABBzz
-    >>>aaabxyzpqrrrabbxyyyypqAzz
- 0: aaabxyzpqrrrabbxyyyypqAzz
-    >aaaabxyzpqrrrabbxyyyypqAzz
- 0: aaaabxyzpqrrrabbxyyyypqAzz
-    >>>>abcxyzpqrrrabbxyyyypqAzz
- 0: abcxyzpqrrrabbxyyyypqAzz
-\= Expect no match
-    abxyzpqrrabbxyyyypqAzz
-No match
-    abxyzpqrrrrabbxyyyypqAzz
-No match
-    abxyzpqrrrabxyyyypqAzz
-No match
-    aaaabcxyzzzzpqrrrabbbxyyyyyypqAzz
-No match
-    aaaabcxyzzzzpqrrrabbbxyyypqAzz
-No match
-    aaabcxyzpqrrrabbxyyyypqqqqqqqAzz
-No match
-"""
-
-test_pcre"""
-/^(abc){1,2}zz/
-    abczz
- 0: abczz
- 1: abc
-    abcabczz
- 0: abcabczz
- 1: abc
-\= Expect no match
-    zz
-No match
-    abcabcabczz
-No match
-    >>abczz
-No match
-"""
-
-test_pcre"""
-/^(b+|a){1,2}c/
-    bc
- 0: bc
- 1: b
-    bbc
- 0: bbc
- 1: bb
-    bbbc
- 0: bbbc
- 1: bbb
-    bac
- 0: bac
- 1: a
-    bbac
- 0: bbac
- 1: a
-    aac
- 0: aac
- 1: a
-    abbbbbbbbbbbc
- 0: abbbbbbbbbbbc
- 1: bbbbbbbbbbb
-    bbbbbbbbbbbac
- 0: bbbbbbbbbbbac
- 1: a
-\= Expect no match
-    aaac
-No match
-    abbbbbbbbbbbac
-No match
-"""
-
-test_pcre"""
-/^(ba|b*){1,2}?bc/
-    babc
- 0: babc
- 1: ba
-    bbabc
- 0: bbabc
- 1: ba
-    bababc
- 0: bababc
- 1: ba
-\= Expect no match
-    bababbc
-No match
-    babababc
-No match
-"""
-
-test_pcre"""
-/^[ab\]cde]/
-    athing
- 0: a
-    bthing
- 0: b
-    ]thing
- 0: ]
-    cthing
- 0: c
-    dthing
- 0: d
-    ething
- 0: e
-\= Expect no match
-    fthing
-No match
-    [thing
-No match
-    \\thing
-No match
-"""
-
-test_pcre"""
-/^[]cde]/
-    ]thing
- 0: ]
-    cthing
- 0: c
-    dthing
- 0: d
-    ething
- 0: e
-\= Expect no match
-    athing
-No match
-    fthing
-No match
-"""
 
 
-test_pcre"""
-/^[^ab\]cde]/
-    fthing
- 0: f
-    [thing
- 0: [
-    \\thing
- 0: \
-\= Expect no match
-    athing
-No match
-    bthing
-No match
-    ]thing
-No match
-    cthing
-No match
-    dthing
-No match
-    ething
-No match
-"""
+@test_pcre "(|\\1xxx)+" "xxx" true
+@test_pcre "(\\1xxx|)+" "xxx" true
+@test_pcre "(?P<abn>\\g{abn}xxx|)+" "xxx" true
 
-match(re"^[\x3f-\x5F]+$","WXY_^abc")
+re"(\1xxx|)+"
 
-
-macro R_str(s)
-    s
-end
-
-Meta.parse("\""*tt.tests[2].sequence*"\"")
-
-
-parse(,
-      " 0: abc
- 1: a
-")
-
-
-pcre_option_start = seq(
-    "(?",
-    alt(seq(pcre_options,
-            opt(seq('-',pcre_options,transform=2), default=UInt32(0))),
-        seq(Tuple{UInt32,UInt32},'-',pcre_options,transform=(v,i) -> (UInt32(0),v[2]))),
-    transform=2
+issues = Dict(
+    887 => "do I misunderstand recursive backreferences https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19?",
+    1146 => "case-ignoring backreferences",
+    1139 => "DUPNAMES",
+    1138 => "DUPNAMES",
+    579:580 => "internal option s does not carry over end of subexpressions as e.g. i"
 )
-        
 
-parse(pcre_option_start,"(?x-s") |>dump
+[ s.first => length(s.second) for s in unsupported ]
+##(err_idx,err_test) = pop!(unsupported[ "\\B" ])
 
-parse(pcre_option_start,"(?-i") |>dump
-
-r"(?-iJ)a"
-
-option_sequences = seq(
-    opt(alternation),
-    rep(after(seq(pcre_option_start,opt(')')),ParserTypes) do l
-        l === missing && return "?"
-        ## @show l
-        instance((v,i) -> ParserTypes[ set_options(l[1]..., p) for p in v ],
-                 Vector{ParserTypes},
-                 set_options(l[1]...,
-                             l[2] === missing ?
-                             seq(alternations,')',transform=1) : alternations)
-                 )
-        end
-        )) do v,i
-            l,ro=v
-            for i in 1:length(ro)
-                ## @show ro[i]
-                pushfirst!(ro[i],l)
-                l = pop!(ro[i])
-                ## @show l,r
-            end
-            ## @show ro
-            alt( (seq(r...) for r in ro)...,l)
-        end;
-
-parse(parse(option_sequences,"abc(?i)BD|e"),
-      "E")
-
-parse(option_sequences,"abc(?i)BD|e")
-
-match(parse(option_sequences,
-            with_options(Base.PCRE.EXTENDED,"   ^    a   (?# begins with a)  b\\sc (?# then b c) \$ (?# then end)")),
-      "ab c")
-
-match(parse(option_sequences,"a(?i)aa|bb(?-i)cc|dd"),"bBcc")
-
-match(r"(a(?i)a|bc|d)Bc","aABcd")
-parse(parse(option_sequences,"a(?i)a|b(?-i)c|d"),"Bc")
-match(r"a(?i)a|b(?-i)c|d","BC")
-
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC13
-internal_options = seq(
-    pcre_option_start,")",
-    rep_stop(quantified,
-             alt(')', '|'
-                 #  Options apply to subpattern, 
-                 #  (a(?i)b|c)
-                 #  matches "ab", "aB", and "c".
-                 #
-                 #  Note, in PCRE, "
-                 #  changes made in one alternative do carry on into
-                 #  subsequent branches within the same subpattern. For
-                 #  example,
-                 #
-                 #  (a(?i)b|c)
-                 #
-                 # matches "ab", "aB", "c", and "C", even though when
-                 # matching "C" the first branch is abandoned before the
-                 # option setting. This is because the effects of option
-                 # settings happen at compile time. There would be some
-                 # very weird behaviour otherwise."
-                 )),
-    transform=(v,i) -> with_options(|(v[2]...),seq(v[4]...))
-    );
+(err_idx,err_test) = pop!(errors);
+x=err_test.pattern
+err_idx = 1148
+err_test=tests[1][err_idx][2];x=err_test.pattern
+@pcre_testset err_test true
 
 
+x
+pp=Regcomb(x)
+Regex(x)
 
-parse(parse(internal_options,"(?i)bcd|"),"Bcd")
+subtest_idx=1
+s = err_test.test[subtest_idx].sequence
+err_test.test[subtest_idx].expect
+
+mm=match(log_names(pp),s)
+parse(pp,s)
+getfield(mm,1).captures
+match(Regex(x),s)
+ParserAlchemy.flagstring(x.flags)
+using StringEncodings
+
+encode("-","ASCII")
+
+decode(collect(UInt8(0x2d):UInt8(0x2f)),"ASCII")
+
+collect('+':'\U002f')
+
+s = err_test.tests_nomatch[subtest_idx]
+
+_iterate(pp,s)
+parse(pp,s)
+mm.match|>lastindex
+getfield(mm,1).captures
 
 
-push!(pattern,internal_options);
+tests[1][6][2].test
 
-parse(parse(alternation,"(a(?i)b|c)"),"aB")
+i=1245 ## capture backref
+i=525 ## capture backref
+570
+572
+826
+827
+903
+1163
+1241
+1242
+i=1247
+
+i=6
+tt=tests[1][i]
+ts=tt[2]
+ttt=@pcre_testset tt[2] true
+pp=Regcomb(ts.pattern)
+match(pp,"abc\n ")
+pp=Regex(ts.pattern)
+match(pp,"abc\n ")
+
+ttt=@testset "pcre testset 1" begin
+    @test true
+    @test false
+end
+ttt |> dump
+
+err_idx,=i,tt
+readline()
+end
+
 
 # I would like to do a short survey, can you please raise your hand if you
 #     - have written a regex in your life?
@@ -1208,6 +517,4 @@ R=@testset "python regex" begin
         end
     end
 end
-
-
 
