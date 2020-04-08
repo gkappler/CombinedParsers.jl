@@ -1,16 +1,12 @@
-module ParserAlchemy
+module CombinedParsers
 import Base: (*), (|), cat, get, prevind, nextind
-using Parameters
 using Nullables
 
 using TextParse
 import Base: ==, hash
 
-using BasePiracy
 export AbstractParser
 export result_type
-
-include("namedtuples.jl")
 
 @inline _prevind(str,i,parser,x::Nothing) = i
 @inline _nextind(str,i,parser,x::Nothing) = i

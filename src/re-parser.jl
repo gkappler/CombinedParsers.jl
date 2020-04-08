@@ -54,7 +54,7 @@ bracket_range(start) =
         '-',
         skip_whitespace_on(Base.PCRE.EXTENDED_MORE,rep),
         bracket_char) do v
-            if v[1] isa ParserAlchemy.WithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
+            if v[1] isa CombinedParsers.WithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
                 cs = convert(Char,v[1]):convert(Char,v[5])
                 CharIn(unique([ ( lowercase(x) for x in cs )...,
                                 ( uppercase(x) for x in cs )... ]))
@@ -310,7 +310,7 @@ end;
 
 
 @with_names bracket=seq(
-    ParserAlchemy.AbstractParser,
+    CombinedParsers.AbstractParser,
     '[',opt('^')
     , rep(alt(
         bracket_range(']'),
@@ -409,10 +409,10 @@ end;
 
 alternations = seq(
     sequence, rep(seq('|',sequence, transform=2))) do v
-        ParserAlchemy.AbstractParser[v[1],v[2]...]
+        CombinedParsers.AbstractParser[v[1],v[2]...]
     end;
 
-import ParserAlchemy: pcre_options
+import CombinedParsers: pcre_options
 #  Options apply to subpattern, 
 #  (a(?i)b|c)
 #  matches "ab", "aB", and "c".
@@ -489,7 +489,7 @@ push!(pattern,atomic_group);
                  ""),
              alternation,
              ")") do v
-                 with_name(v[2],ParserAlchemy.capture(Symbol(v[2]),v[3]))
+                 with_name(v[2],CombinedParsers.capture(Symbol(v[2]),v[3]))
              end;
 push!(pattern,captured);
 
@@ -617,7 +617,7 @@ push!(pattern,backtrack_control);
 push!(pattern,map(alt("\\K")) do v throw(UnsupportedError(v)); end);
 
 pcre_parser = seq(AtStart(),alternation,AtEnd()) do v
-    ParserAlchemy.indexed_captures(v[2])
+    CombinedParsers.indexed_captures(v[2])
 end
 
 function Regcomb(x)
@@ -635,7 +635,7 @@ function Regcomb(x)
     end
 end
 
-function Regcomb(x::ParserAlchemy.CatStrings)
+function Regcomb(x::CombinedParsers.CatStrings)
     try 
         r=parse(pcre_parser,x)
         r === nothing && error("invalid regex")
@@ -650,7 +650,7 @@ function Regcomb(x::ParserAlchemy.CatStrings)
     end
 end
 
-import ParserAlchemy: pcre_options_parser
+import CombinedParsers: pcre_options_parser
 
 function Regcomb(x::AbstractString,flags::AbstractString)
     o = parse(pcre_options_parser,flags)

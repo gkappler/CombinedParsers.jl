@@ -1,8 +1,8 @@
 cd("/home/gregor/dev/julia")
 using Pkg
-Pkg.activate("ParserAlchemy")
-using ParserAlchemy
-import ParserAlchemy: ParserTypes
+Pkg.activate("CombinedParsers")
+using CombinedParsers
+import CombinedParsers: ParserTypes
 using BenchmarkTools
 using Test
 
@@ -165,7 +165,7 @@ push!(pattern,char);
 
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC5
-escape_sequence = seq(String,"\\Q",rep_until(ParserAlchemy.any(),"\\E"),
+escape_sequence = seq(String,"\\Q",rep_until(CombinedParsers.any(),"\\E"),
                       transform=(v,i)->join(v[2]));
 _iterate(escape_sequence,raw"\Q[].\E")
 push!(pattern,escape_sequence);
@@ -501,7 +501,7 @@ macro re_str(x)
         println($x)
         r=parse(seq(AtStart(),alternation,AtEnd(), transform=2),$x)
         r === nothing && error("invalid regex")
-        ParserAlchemy.indexed_captures(r)
+        CombinedParsers.indexed_captures(r)
         end)
 end
 
@@ -511,7 +511,7 @@ macro test_pcre(pattern,seq,log=false)
         let name = string($seq)
             @testset "$name" begin
                 pcre=Regex($pattern)
-                pc  =ParserAlchemy.indexed_captures(parse(alternation,$pattern))
+                pc  =CombinedParsers.indexed_captures(parse(alternation,$pattern))
                 pcre_m = match(pcre,$seq)
                 pc_m = match(pc,$seq)
                 if $log
@@ -555,7 +555,7 @@ captured=seq(ParserTypes,
                  ""),
              alternation,
              ")",
-             transform=(v,i)->ParserAlchemy.capture(Symbol(@show v[2]),v[3]));
+             transform=(v,i)->CombinedParsers.capture(Symbol(@show v[2]),v[3]));
 match(parse(captured,"(ab)"),"ab")
 pp = parse(captured,"(?<a>ab)")
 @btime match(pp,"ab")
@@ -745,14 +745,14 @@ raw"""
 @pcre_testset tt true
 
 Regcomb(x::AbstractString) = @re_str(x)
-Regcomb(x::ParserAlchemy.WithOptions{<:AbstractString}) = set_options(x.flags,@re_str(x))
+Regcomb(x::CombinedParsers.WithOptions{<:AbstractString}) = set_options(x.flags,@re_str(x))
 macro pcre_testset(tt,log=false)
     quote
         let ts = $(tt), name = string(ts.pattern)
             ## println(ts)
             @testset "$name" begin
                 pcre=Regex(ts.pattern)
-                ## pc  =ParserAlchemy.indexed_captures(set_options(ts.pattern.flags,parse(alternation,ts.pattern)))
+                ## pc  =CombinedParsers.indexed_captures(set_options(ts.pattern.flags,parse(alternation,ts.pattern)))
                 pc  =Regcomb(ts.pattern)
                 ## println(pc)
                 for seq in ts.tests
@@ -1171,7 +1171,7 @@ parse(parse(alternation,"(a(?i)b|c)"),"aB")
 
 using PyCall
 
-re_tests_py=read("ParserAlchemy/test/re_tests.py",String)
+re_tests_py=read("CombinedParsers/test/re_tests.py",String)
 re_tests = pyeval(re_tests_py,SUCCEED=1,FAIL=2,SYNTAX_ERROR=3);
 length(re_tests)
 e = re_tests[188]

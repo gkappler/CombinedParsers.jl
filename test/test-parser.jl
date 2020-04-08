@@ -61,7 +61,7 @@
                  :no =>Numeric(Int)),
              "Am Hang 19")
 
-    import ParserAlchemy: inline, newline, rep1, whitenewline, whitespace
+    import CombinedParsers: inline, newline, rep1, whitenewline, whitespace
     person = seq(NamedTuple,
                  "Name: ", :name => inline, rep(newline),
                  :adresses => alternate(
@@ -79,11 +79,11 @@
 end
 
 @testset "html" begin
-    import ParserAlchemy.Tokens: simple_tokens
+    import CombinedParsers.Tokens: simple_tokens
     inner = alt(AbstractToken, simple_tokens...);
-    pushfirst!(inner,ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner));
+    pushfirst!(inner,CombinedParsers.Tokens.html(r"^[[:alpha:]]+",inner));
 
-    ParserAlchemy.Tokens.html(r"^[[:alpha:]]+",inner)
+    CombinedParsers.Tokens.html(r"^[[:alpha:]]+",inner)
 
     using BenchmarkTools
     @test tokenize(inner,"<a font=\"+1\">i<b>bold</b>j</a>") == 
@@ -98,7 +98,7 @@ end
 
 
 @testset "continue options of last Either" begin
-    import ParserAlchemy: wdelim
+    import CombinedParsers: wdelim
     ok = alternate(
         seq(Token,
             word, opt(wdelim),"=", opt(wdelim),

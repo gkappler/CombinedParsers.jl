@@ -263,10 +263,10 @@ function Base.show(io::IO, x::Node) where {T}
 end
 
 import InternedStrings: intern
-import ..ParserAlchemy: ParserTypes, instance, rep, seq, alt, opt, parenthesisP, alternate, FlatMap, rep_until
-import ..ParserAlchemy: result_type, regex_string
-import ..ParserAlchemy: regex_neg_lookahead
-import ..ParserAlchemy: enum_label, parser, word, delimiter, quotes, extension, whitespace, wdelim
+import ..CombinedParsers: ParserTypes, instance, rep, seq, alt, opt, parenthesisP, alternate, FlatMap, rep_until
+import ..CombinedParsers: result_type, regex_string
+import ..CombinedParsers: regex_neg_lookahead
+import ..CombinedParsers: enum_label, parser, word, delimiter, quotes, extension, whitespace, wdelim
 
 
 export attribute_parser
@@ -534,7 +534,7 @@ end
 
 
 
-import ...ParserAlchemy: footnote
+import ...CombinedParsers: footnote
 simple_tokens = [
     ## instance(Token, parser(Regex(" "*regex_string(enum_label)*" ")), :number),
     instance(Token, r"^[0-9]+", :number),
@@ -584,7 +584,7 @@ filename    = alt(
     append_element_f(tokenstring, instance(Token, parser(""), :ext))
 )
 
-import ..ParserAlchemy: tokenize
+import ..CombinedParsers: tokenize
 tokenize(x) = tokenize(tokenstring, x)
 
 
