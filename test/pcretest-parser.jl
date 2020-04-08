@@ -1,43 +1,44 @@
-unescaped=map(rep_until(AnyChar(), seq(rep(' '),'\n');
+import ParserAlchemy.Regexp: at_linestart, whitespace, integer
+unescaped=map(Repeat_until(AnyChar(), Sequence(Repeat(' '),'\n');
                         wrap=JoinSubstring)) do v
-                            join(parse(rep(alt(escaped_character,AnyChar())),v))
+                            join(parse(Repeat(Either(escaped_character,AnyChar())),v))
                         end;
-comment_or_empty = rep(
-    JoinSubstring(alt(seq(at_linestart,'#',rep_until(AnyChar(),'\n')),
-                      seq(at_linestart,rep_until(CharIn(whitespace),'\n')))));
+comment_or_empty = Repeat(
+    JoinSubstring(Either(Sequence(at_linestart,'#',Repeat_until(AnyChar(),'\n')),
+                      Sequence(at_linestart,Repeat_until(whitespace,'\n')))));
 
 @with_names begin
-    match_test = seq(rep1(' '),
+    match_test = Sequence(Repeat1(' '),
                      :sequence => unescaped,
-                     :expect => rep(seq(
-                         rep(' '),
-                         :i => alt(integer,"MK"),':',
-                         rep(' '),
+                     :expect => Repeat(Sequence(
+                         Repeat(' '),
+                         :i => Either(integer,"MK"),':',
+                         Repeat(' '),
                          :result => unescaped))
                      );
 
-    testspec = seq(
+    testspec = Sequence(
         :pattern => map(
             v -> (with_options(reverse(v)...)),
             after(CharIn("/'\""),Any) do s
-            rep_until(AnyChar(), seq(
-                2, s, opt(pcre_options,default=UInt32(0)),
-                rep(CharIn(whitespace)), '\n'),
+            Repeat_until(AnyChar(), Sequence(
+                2, s, Optional(pcre_options,default=UInt32(0)),
+                Repeat(whitespace), '\n'),
                       true; wrap=JoinSubstring)
             end),
-        :test => rep(match_test),
-        :tests_nomatch => opt(
-            seq(2, opt("\\= Expect no match",rep_until(AnyChar(), '\n'; wrap=JoinSubstring)),
-                rep(seq(2,
-                        rep1(' '),
+        :test => Repeat(match_test),
+        :tests_nomatch => Optional(
+            Sequence(2, Optional("\\= Expect no match",Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)),
+                Repeat(Sequence(2,
+                        Repeat1(' '),
                         unescaped,
-                        opt(seq("No match",
-                                rep_until(AnyChar(), '\n'; wrap=JoinSubstring)))
+                        Optional(Sequence("No match",
+                                Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)))
                         ))))
     );
 end;
 
-tests_parser = seq(rep(seq(comment_or_empty,
+tests_parser = Sequence(Repeat(Sequence(comment_or_empty,
                            testspec)),
                    comment_or_empty,
                    AtEnd());

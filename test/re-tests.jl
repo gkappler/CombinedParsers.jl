@@ -2,13 +2,15 @@ cd("/home/gregor/dev/julia")
 using Pkg
 Pkg.activate("ParserAlchemy")
 using ParserAlchemy
+using ParserAlchemy.Regexp
 import ParserAlchemy: ParserTypes
 using BenchmarkTools
 using Test
 
 
-include("/home/gregor/dev/julia/ParserAlchemy/test/re.jl");
 include("/home/gregor/dev/julia/ParserAlchemy/test/pcretest-parser.jl");
+
+parse(log_names(pcre_parser),"(?:[a-z])(b)*\\1")
 
 
 @testset "test parsing" begin
@@ -46,33 +48,32 @@ include("/home/gregor/dev/julia/ParserAlchemy/test/pcretest-parser.jl");
                     abc
                 No match, mark = X
                 """)[1][2].pattern=="a(*F:X)b"
+    test_pcre"""
+            /\Aabc\z/m
+                abc
+             0: abc
+            \= Expect no match
+                abc\n   
+            No match
+                qqq\nabc
+            No match
+                abc\nzzz
+            No match
+                qqq\nabc\nzzz
+            No match
+
+            /(?|(abc)|(xyz))/B
+               >abc<
+               >xyz<
+            """
 end
-
-
-test_pcre"""
-        /\Aabc\z/m
-            abc
-         0: abc
-        \= Expect no match
-            abc\n   
-        No match
-            qqq\nabc
-        No match
-            abc\nzzz
-        No match
-            qqq\nabc\nzzz
-        No match
-
-        /(?|(abc)|(xyz))/B
-           >abc<
-           >xyz<
-        """
-
-
 
 
 tests_string=read("/home/gregor/dev/pcre/testdata/testoutput1",String);
 tests = parse(tests_parser, tests_string);
+
+
+
 
 
 ## check specific case
@@ -85,7 +86,6 @@ match(pp,err_test.test[1].sequence)
 
 
 
-##parse(seq(skip_comment,rep(AnyChar())),with_options("x","# comment \n   "))
 
 ##parse(quantified, with_options("x","b #c\n*"))
 ##parse(alt( ( with_log("$i",e;nomatch=true) for (i,e) in enumerate(pattern.options) )...), "(?-i)")
@@ -520,8 +520,3 @@ R=@testset "python regex" begin
     end
 end
 
-open("bla","w") do io
-    for e in tests[1] 
-        println(io,e[2].pattern)
-    end
-end
