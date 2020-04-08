@@ -130,6 +130,7 @@ make_control(c) =
 seq_log(f::Function,a...) =
     Sequence(f, ( with_log("$i",e) for (i,e) in enumerate(a) )...)
 
+export UnsupportedError
 struct UnsupportedError <: Exception
     message::String
 end
