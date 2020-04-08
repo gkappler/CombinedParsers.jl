@@ -136,12 +136,6 @@ char_matcher =  Either(
 
 
 
-    [36m[1m|[22m[39m[0m[1m🗄[22m[36m[1m...[22m[39m[0m Either
-    ├─ [36m[1m[^\\\^\$\.\[\|\(\)\?\*\+\{][22m[39m[0m  |> with_name(:[31m[1mcharacter[22m[39m)
-    └─ [0m[1m🗄[22m[0m Sequence |> map(#31) |> with_name(:[31m[1mescaped meta[22m[39m)
-       ├─ [36m[1m\\[22m[39m[0m 
-       └─ [36m[1m[\\\^\$\.\[\|\(\)\?\*\+\{][22m[39m[0m 
-
 
 
 
@@ -279,17 +273,6 @@ repeatable = Either{AbstractParser}(
 parse(log_names(quantified), raw"\++?")
 ```
 
-    [32m[1m   match [22m[39mescaped meta: [32m[1m\\+[22m[39m[33m+?[39m
-    [32m[1m   match [22m[39mrepetition: [0m\\+[32m[1m+[22m[39m[33m?[39m
-    [32m[1m   match [22m[39mquantified: [32m[1m\\++?[22m[39m
-
-
-
-
-
-    [36m[1m\+[22m[39m[36m[1m+?[22m[39m[0m  |> Repeat |> Lazy
-
-
 
 
 ### Sequences and Alternations
@@ -337,71 +320,6 @@ alternation
 
 
 
-    [0m[1m🗄[22m[0m Sequence |> map(#33) |> with_name(:[31m[1malternation[22m[39m)
-    ├─ [0m[1m🗄[22m[36m[1m*[22m[39m[0m Sequence |> map(#33) |> with_name(:[31m[1mquantified[22m[39m) |> Repeat |> map(#33) |> with_name(:[31m[1msequence[22m[39m)
-    │  ├─ [36m[1m|[22m[39m[0m[1m🗄[22m[36m[1m...[22m[39m[0m Either
-    │  │  ├─ [36m[1m|[22m[39m[0m[1m🗄[22m[36m[1m...[22m[39m[0m Either |> map(#25)
-    │  │  │  ├─ [36m[1m[^\\\^\$\.\[\|\(\)\?\*\+\{][22m[39m[0m  |> with_name(:[31m[1mcharacter[22m[39m)
-    │  │  │  └─ [0m[1m🗄[22m[0m Sequence |> map(#31) |> with_name(:[31m[1mescaped meta[22m[39m)
-    │  │  │     ├─ [36m[1m\\[22m[39m[0m 
-    │  │  │     │  ⋮
-    │  │  │     │  
-    │  │  │     └─ [36m[1m[\\\^\$\.\[\|\(\)\?\*\+\{][22m[39m[0m 
-    │  │  │        ⋮
-    │  │  │        
-    │  │  ├─ [0m[1m🗄[22m[0m Sequence |> map(#33) |> with_name(:[31m[1mcapture_group[22m[39m)
-    │  │  │  ├─ [36m[1m\([22m[39m[0m 
-    │  │  │  ├─ [36m[1m|[22m[39m[0m[1m🗄[22m[36m[1m...[22m[39m[0m Either
-    │  │  │  │  ├─ [0m[1m🗄[22m[0m Sequence |> map(#31)
-    │  │  │  │  │  ⋮
-    │  │  │  │  │  
-    │  │  │  │  ├─ [0m[1m🗄[22m[0m Sequence |> map(#31)
-    │  │  │  │  │  ⋮
-    │  │  │  │  │  
-    │  │  │  │  ├─ [0m[1m🗄[22m[0m Sequence |> map(#31)
-    │  │  │  │  │  ⋮
-    │  │  │  │  │  
-    │  │  │  │  └─ [0m 
-    │  │  │  │     ⋮
-    │  │  │  │     
-    │  │  │  ├─ [0m[1m🗄[22m[0m Sequence |> map(#33) |> with_name(:[31m[1malternation[22m[39m)
-    │  │  │  │  ├─ [0m[1m🗄[22m[36m[1m*[22m[39m[0m Sequence |> map(#33) |> with_name(:[31m[1mquantified[22m[39m) |> Repeat |> map(#33) |> with_name(:[31m[1msequence[22m[39m)[90m # branches hidden[39m
-    │  │  │  │  │  ⋮
-    │  │  │  │  │  
-    │  │  │  │  └─ [0m[1m🗄[22m[36m[1m*[22m[39m[0m Sequence |> map(#31) |> Repeat[90m # branches hidden[39m
-    │  │  │  │     ⋮
-    │  │  │  │     
-    │  │  │  └─ [36m[1m\)[22m[39m[0m 
-    │  │  └─ [0m[1m🗄[22m[0m Sequence |> map(#31) |> with_name(:[31m[1mnoncapture_group[22m[39m)
-    │  │     ├─ [36m[1m\(\?\:[22m[39m[0m 
-    │  │     ├─ [0m[1m🗄[22m[0m Sequence |> map(#33) |> with_name(:[31m[1malternation[22m[39m)[90m # branches hidden[39m
-    │  │     └─ [36m[1m\)[22m[39m[0m 
-    │  ├─ [36m[1m|[22m[39m[0m[1m🗄[22m[36m[1m...?[22m[39m[0m Either |> Optional(default=(1, 1)) |> with_name(:[31m[1mrepetition[22m[39m)
-    │  │  ├─ [36m[1m\?[22m[39m[0m  |> map(#19)
-    │  │  ├─ [36m[1m\+[22m[39m[0m  |> map(#19)
-    │  │  ├─ [36m[1m\*[22m[39m[0m  |> map(#19)
-    │  │  └─ [0m[1m🗄[22m[0m Sequence |> map(#33)
-    │  │     ├─ [36m[1m\{[22m[39m[0m 
-    │  │     ├─ [0m[1m🗄[22m[0m Sequence |> map(#33)
-    │  │     │  ├─ [36m[1m\-[22m[39m[36m[1m?[22m[39m[0m  |> Optional(default=missing)
-    │  │     │  │  ⋮
-    │  │     │  │  
-    │  │     │  └─ [36m[1m[0-9][22m[39m[36m[1m+[22m[39m[0m  |> Repeat |> map(#31)
-    │  │     │     ⋮
-    │  │     │     
-    │  │     ├─ [0m[1m🗄[22m[36m[1m?[22m[39m[0m Sequence |> map(#31) |> Optional(default=missing)
-    │  │     │  ├─ [36m[1m,[22m[39m[0m 
-    │  │     │  │  ⋮
-    │  │     │  │  
-    │  │     │  └─ [0m[1m🗄[22m[36m[1m?[22m[39m[0m Sequence |> map(#33) |> Optional(default=9223372036854775807)
-    │  │     │     ⋮
-    │  │     │     
-    │  │     └─ [36m[1m\}[22m[39m[0m 
-    │  └─ [36m[1m[\+\?][22m[39m[36m[1m?[22m[39m[0m  |> map(#33) |> Optional(default=missing)
-    └─ [0m[1m🗄[22m[36m[1m*[22m[39m[0m Sequence |> map(#31) |> Repeat
-       ├─ [36m[1m\|[22m[39m[0m 
-       └─ [0m[1m🗄[22m[36m[1m*[22m[39m[0m Sequence |> map(#33) |> with_name(:[31m[1mquantified[22m[39m) |> Repeat |> map(#33) |> with_name(:[31m[1msequence[22m[39m)[90m # branches hidden[39m
-
 
 
 
@@ -414,31 +332,6 @@ alternation
 ab_parser = parse(log_names(alternation),"(?:a|b)+")
 ```
 
-    result_type(alternation) = AbstractParser
-    [32m[1m   match [22m[39msequence: [0m([33m?:a|b)[39m
-    [32m[1m   match [22m[39malternation: [0m([33m?:a|b)[39m
-    [32m[1m   match [22m[39mcharacter: [0m(?:[32m[1ma[22m[39m[33m|b)+[39m
-    [32m[1m   match [22m[39mrepetition: [0m(?:a[33m|b)+[39m
-    [32m[1m   match [22m[39mquantified: [0m(?:[32m[1ma[22m[39m[33m|b)+[39m
-    [32m[1m   match [22m[39msequence: [0m(?:[32m[1ma[22m[39m[33m|b)+[39m
-    [32m[1m   match [22m[39mcharacter: [0m(?:a|[32m[1mb[22m[39m[33m)+[39m
-    [32m[1m   match [22m[39mrepetition: [0m?:a|b[33m)+[39m
-    [32m[1m   match [22m[39mquantified: [0m(?:a|[32m[1mb[22m[39m[33m)+[39m
-    [32m[1m   match [22m[39msequence: [0m(?:a|[32m[1mb[22m[39m[33m)+[39m
-    [32m[1m   match [22m[39malternation: [0m(?:[32m[1ma|b[22m[39m[33m)+[39m
-    [32m[1m   match [22m[39mnoncapture_group: [32m[1m(?:a|b)[22m[39m[33m+[39m
-    [32m[1m   match [22m[39mrepetition: [0m:a|b)[32m[1m+[22m[39m
-    [32m[1m   match [22m[39mquantified: [32m[1m(?:a|b)+[22m[39m
-    [32m[1m   match [22m[39msequence: [32m[1m(?:a|b)+[22m[39m
-    [32m[1m   match [22m[39malternation: [32m[1m(?:a|b)+[22m[39m
-
-
-
-
-
-    [36m[1m|[22m[39m[0m[1m🗄[22m[36m[1m...+[22m[39m[0m Either |> Repeat
-    ├─ [36m[1ma[22m[39m[0m 
-    └─ [36m[1mb[22m[39m[0m 
 
 
 
