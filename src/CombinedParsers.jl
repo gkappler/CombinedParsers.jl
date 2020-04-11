@@ -398,16 +398,41 @@ function print_constructor(io::IO,x::SideeffectParser)
     end
     print(io," |> $c")
 end
+regex_string(x::SideeffectParser) = regex_string(x.parser)
 
 export with_log, with_effect
+"""
+    with_effect(f::Function,p,a...)
+
+Call `f(sequence,before_i,after_i,state,a...)` if `p` matches,
+ `f(sequence,before_i,before_i,nothing,a...)` otherwise.
+"""
 with_effect(f::Function,p,a...) =
     SideeffectParser(f,p,a...)
 
+@inline function _iterate(parser::SideeffectParser, sequence, till, i, state)
+    before_i = start_index(sequence,i,parser,state)
+    r = _iterate(parser.parser, sequence, till, i, state)
+    if r!==nothing
+        parser.effect(sequence,before_i,r...,parser.args...)
+    else
+        parser.effect(sequence,before_i,before_i,nothing,parser.args...)
+    end
+    r
+end
+
+"""
+    with_log(s::AbstractString,p, delta=5;nomatch=false)
+
+Log matching process of parser `p`, displaying `delta` characters left of and right of match.
+
+If `nomatch==true`, also log when parser does not match.
+
+See also: [`log_names`](@ref), [`with_effect`](@ref)
+"""
 with_log(s::AbstractString,p_, delta=5;nomatch=false) =
     let p = parser(p_), log=s*": "
         SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta)
-        ##with_log(p_; log=s*": ",delta=5)    
-        #with_log(p_;log="", delta=5,nomatch=false) =
     end
 
 export map_parser
@@ -444,17 +469,6 @@ function log_effect_match(s,start,after,state,log,delta=5)
     if state!==nothing
         log_effect(s,start,after,state,log,delta)
     end
-end
-
-@inline function _iterate(parser::SideeffectParser, sequence, till, i, state)
-    before_i = start_index(sequence,i,parser,state)
-    r = _iterate(parser.parser, sequence, till, i, state)
-    if r!==nothing
-        parser.effect(sequence,before_i,r...,parser.args...)
-    else
-        parser.effect(sequence,before_i,before_i,nothing,parser.args...)
-    end
-    r
 end
 
 

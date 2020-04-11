@@ -399,9 +399,6 @@ function map_parser(::typeof(indexed_captures),mem::AbstractDict,x::Conditional,
     end
 end
 
-regex_string(x::SideeffectParser) = regex_string(x.parser)
-
-
 @inline Base.get(parser::Conditional, sequence, till, after, i, state) =
     get(state.first == :yes ? parser.yes : parser.no, sequence, till, after, i, state.second)
 
