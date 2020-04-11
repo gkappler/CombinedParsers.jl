@@ -129,8 +129,6 @@ function Base.convert(::Type{AbstractParser},x::WithOptions{Char})
         CharIn(x.x)
     end
 end
-parser(x::WithOptions{Char}) =
-    convert(AbstractParser,x)
 
 
 revert(x::WithOptions) =

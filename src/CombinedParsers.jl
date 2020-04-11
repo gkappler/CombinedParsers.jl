@@ -17,7 +17,9 @@ abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
 ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex,
                     Pair{<:Union{TextParse.AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
 export parser
-parser(x::ParserTypes) = x
+import Base: convert
+"calls convert(TextParse.AbstractToken,x)."
+parser(x) = Base.convert(TextParse.AbstractToken, x)
 export regex_string
 regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
 regex_prefix(x::AbstractParser) = ""
@@ -126,9 +128,17 @@ regex_prefix(x::ConstantParser) = ""
 print_constructor(io::IO,x::ConstantParser) = print(io,"")
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
-parser(x::Char) =
+
+"""
+    `convert(::Type{TextParse.AbstractToken},x::Union{AbstractString,Char})`
+
+A ConstantParser matching x.
+"""
+Base.convert(::Type{TextParse.AbstractToken},x::Char) =
     ConstantParser{Base.ncodeunits(x),Char}(x)
-parser(x::AbstractString) =
+Base.convert(::Type{TextParse.AbstractToken},x::StepRange{Char,<:Integer}) =
+    CharIn(x)
+Base.convert(::Type{TextParse.AbstractToken},x::AbstractString) =
     ConstantParser{Base.ncodeunits(x),SubString}(x)
 
 @inline nextind(str,i::Int,parser::ConstantParser{L},x) where L =
@@ -467,7 +477,15 @@ function print_constructor(io::IO,x::NamedParser)
     print(io, ")")
 end
 
-parser(x::Pair{Symbol, P}) where P =
+"""
+    convert(::Type{TextParse.AbstractToken},x::Pair{Symbol, P}) where P
+
+A parser labelled with name `x.first`.
+Labels are useful in printing and logging.
+
+See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
+"""
+Base.convert(::Type{TextParse.AbstractToken},x::Pair{Symbol, P}) where P =
     NamedParser(x.first, parser(x.second))
 with_name(name::Symbol,x; doc="") = 
     NamedParser(name,x)
@@ -570,7 +588,15 @@ map_parser(f::Function,mem::AbstractDict,x::Transformation,a...) =
         Transformation{result_type(x)}(x.transform,map_parser(f,mem,x.parser,a...))
     end
 
-parser(constant::Pair{<:ParserTypes}) =
+
+"""
+    convert(::Type{TextParse.AbstractToken},constant::Pair{<:ParserTypes})
+
+A parser mapping matches of `x.first` to constant `x.second`.
+
+See also: [`@map`](@ref), [`map_at`](@ref)
+"""
+Base.convert(::Type{TextParse.AbstractToken},constant::Pair{<:ParserTypes}) =
     Transformation{typeof(constant.second)}(
         (v,i) -> constant.second,
         parser(constant.first))
@@ -623,7 +649,7 @@ function instance(Tc::Type, p::ParserTypes, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
 function instance(Tc::Type, p::ParserTypes)
-    Transformation{Tc}((v,i) -> _convert(Tc,v), p)
+    Transformation{Tc}((v,i) -> convert(Tc,v), p)
 end
 function Base.map(f::Function, Tc::Type, p::TextParse.AbstractToken, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
@@ -1834,7 +1860,7 @@ function TextParse.tryparsenext(tokf::Greedy, str, i, till, opts=TextParse.defau
                 cr, ci = tryparsenext(tokf.alt[ai].second, str, i_, till)
             end
             if isnull(cr)
-                return Nullable{T}(_convert(T, tokf.transform(R,i))), i_
+                return Nullable{T}(convert(T, tokf.transform(R,i))), i_
             elseif ai == 0
                 push!(hist, get(cr))
                 i__ = ci
