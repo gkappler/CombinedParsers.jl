@@ -28,6 +28,7 @@ function Base.show(io::IO, x::AbstractParser)
         print(io, regex_string(x)) ##!!
     else
         print_tree(io, MemoTreeChildren(Dict(),x, true))
+        println(io,"::",result_type(x))
     end
 end
 
