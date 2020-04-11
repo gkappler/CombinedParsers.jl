@@ -2106,7 +2106,6 @@ map_parser(f::Function,mem::AbstractDict,x::Numeric,a...) = x
 
 include("reverse.jl")
 include("textparse.jl")
-include("deprecated.jl")
 include("re.jl")
 
 include("show.jl")

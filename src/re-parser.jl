@@ -172,7 +172,6 @@ char =  Either(
         convert(AbstractParser,v)
     end
 @with_names repeatable = Either{AbstractParser}(Any[char])
-push!(pattern,repeatable);
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC5
 escape_sequence(stop=AtEnd()) =
@@ -182,7 +181,6 @@ escape_sequence(stop=AtEnd()) =
                   wrap=JoinSubstring));
 push!(pattern,
       map(parser, with_name(:escape_sequence, escape_sequence())));
-
 
 word=CharIn(UnicodeClass("L","N"),'_')
 
