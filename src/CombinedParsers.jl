@@ -464,9 +464,10 @@ export NamedParser, with_name
 struct NamedParser{P,T} <: WrappedParser{P,T}
     name::Symbol
     parser::P
-    NamedParser(name::Symbol,p_) =
+    doc::String
+    NamedParser(name::Symbol,p_,doc="") =
         let p=parser(p_)
-            new{typeof(p),result_type(p)}(name,p)
+            new{typeof(p),result_type(p)}(name,p,doc)
         end
 end
 children(x::NamedParser) = children(x.parser)
@@ -487,14 +488,23 @@ See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
 Base.convert(::Type{TextParse.AbstractToken},x::Pair{Symbol, P}) where P =
     NamedParser(x.first, parser(x.second))
+
+"""
+    with_name(name::Symbol,x; doc="")
+
+A parser labelled with `name`.
+Labels are useful in printing and logging.
+
+See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
+"""
 with_name(name::Symbol,x; doc="") = 
-    NamedParser(name,x)
+    NamedParser(name,x,doc)
 
 with_name(name::AbstractString,x; doc="") =
-    name=="" ? x : NamedParser(Symbol(name),x)
+    name=="" && doc=="" ? x : NamedParser(Symbol(name),x,doc)
 
-with_name(x::AbstractParser,a...) = x
-function map_parser(f::typeof(with_name),mem::AbstractDict,x::NamedParser,message::Function)
+log_names_(x::AbstractParser,a...) = x
+function map_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function)
     get!(mem,x) do
         r = NamedParser(x.name,map_parser(f,mem,x.parser,message))
         log=message(x)
@@ -524,7 +534,7 @@ function log_names(x,names=nothing; exclude=nothing)
     else
         x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
     end
-    map_parser(with_name,Dict(),x, message)
+    map_parser(log_names_,Dict(),x, message)
 end
 
 export @with_names
@@ -1659,10 +1669,6 @@ end
 
 @deprecate alt(a...) Either(a...)
 
-with_name(x::Either,a...) =
-    Either{result_type(x)}(Any[])
-revert(x::Either) =
-    Either{result_type(x)}(Any[])
 
 function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
     if haskey(mem,x)

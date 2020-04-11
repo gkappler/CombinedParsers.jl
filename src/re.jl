@@ -196,7 +196,7 @@ capture_index(name,delta,index,context) =
         index
     end
 
-function map_parser(::typeof(with_name),mem::AbstractDict,x::Backreference,a...)
+function map_parser(::typeof(log_names),mem::AbstractDict,x::Backreference,a...)
     get!(mem,x) do
         with_log("backreference $x",x)
     end
@@ -385,7 +385,7 @@ regex_inner(x::Conditional) =
 children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
 
-function map_parser(::typeof(with_name),mem::AbstractDict,x::Conditional,a...)
+function map_parser(::typeof(log_names),mem::AbstractDict,x::Conditional,a...)
     get!(mem,x) do
         with_log("conditional $(regex_string(x))",x)
     end
