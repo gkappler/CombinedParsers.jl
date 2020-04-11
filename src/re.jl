@@ -516,6 +516,17 @@ struct ParseMatch{C<:WithCaptures}
     end
 end
 
+function Base.getindex(x::ParseMatch,i::Integer)
+    m = getfield(x,1)
+    c = m.captures[i]
+    isempty(c) ? nothing : match_string(m.match,c[end])
+end
+
+function Base.getindex(m::ParseMatch,i::Symbol)
+    x=getfield(m,1)
+    getindex(m,x.names[i])
+end
+
 match_string(x::SubString,y::UnitRange{<:Integer}) =
     SubString(x.string,x.offset+y.start,x.offset+y.stop)
 
