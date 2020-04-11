@@ -1688,7 +1688,7 @@ function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
     if haskey(mem,x)
         mem[x]
     else
-        mem[x] = r = f(x,a...)
+        mem[x] = r = Either{result_type(x)}(Any[])
         for p in x.options
             push!(r,map_parser(f,mem,p,a...))
         end
