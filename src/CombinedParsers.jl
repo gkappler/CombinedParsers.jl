@@ -1,5 +1,5 @@
 module CombinedParsers
-import Base: (*), (|), cat, get, prevind, nextind
+import Base: (^), (*), (~), (/), (|), (!), cat, get, prevind, nextind
 using Nullables
 
 using TextParse
@@ -1259,6 +1259,25 @@ Repeat(min::Integer,max::Integer,parser) =
 Repeat(min::Integer,parser) =
     Repeat((min:typemax(Int)),parser)
 
+
+import Base.join
+
+function Base.join(x::Repeat,delim_)
+    delim = parser(delim_)
+    ## todo: the get function could be optimized
+    @show x.range
+    map(x.parser * ( ( delim_ * x.parser )[2] )^x.range) do (f,r)
+        pushfirst!(r,f)
+        r
+    end
+end
+
+(^)(x::AbstractParser, ::typeof(+)) = Repeat1(x)
+(^)(x::AbstractParser, ::typeof(*)) = Repeat(x)
+(^)(x::AbstractParser, reps::Integer) = Repeat(x,(reps,reps))
+(^)(x::AbstractParser, reps::Tuple{<:Integer,<:Integer}) = Repeat(x,reps)
+(^)(x::AbstractParser, reps::UnitRange{<:Integer}) = Repeat(reps,x)
+
 function print_constructor(io::IO,x::Repeat)
     print_constructor(io,x.parser)
     print(io, " |> Repeat" )
@@ -2050,14 +2069,36 @@ regex_prefix(x::AtomicGroup) = "(?>"*regex_prefix(x.parser)
 regex_suffix(x::AtomicGroup) = regex_suffix(x.parser)*")"
 regex_inner(x::AtomicGroup) = regex_inner(x.parser)
 
-export Parsing2
-struct Parsing2{P,S}
+
+
+
+export Parsings
+struct Parsings{P,S}
     parser::P
     sequence::S
     till::Int
-    Parsing2(parser,sequence) =
+    Parsings(parser,sequence) =
         new{typeof(parser),typeof(sequence)}(parser,sequence,lastindex(sequence))
 end
+result_type(::Type{<:Parsings{P}}) where P =
+    result_type(P)
+Base.eltype(T::Type{<:Parsings}) =
+    result_type(T)
+Base.IteratorSize(::Type{<:Parsings}) = Base.SizeUnknown()
+
+import Base: iterate
+function Base.iterate(x::Parsings, s=(1,nothing))
+    s_ = _iterate(x.parser,x.sequence,x.till,s...)
+    s_ === nothing && return s_
+    get(x.parser,x.sequence,x.till,s_[1],1,s_[2]), s_
+end
+
+export parse_all
+function parse_all(parser::ParserTypes, sequence::AbstractString)
+    p=Parsings(parser,sequence)
+end
+
+
 
 import Base: parse
 """
@@ -2071,28 +2112,10 @@ function Base.parse(p::TextParse.AbstractToken, s)
     get(p,s,lastindex(s),i[1],1,i[2])
 end
 
-import Base: iterate
-Base.parse(x::Parsing2) =
-    get(x,iterate(x)...)
-Base.iterate(x::Parsing2) =
-    _iterate(x.parser,x.sequence)
-
     
 
 _iterate(parser,sequence) =
     _iterate(parser, sequence, lastindex(sequence),1,nothing)
-
-export parse_all
-function parse_all(parser::ParserTypes, sequence::AbstractString)
-    p=Parsing2(parser,sequence)
-    R=Any[]
-    x=iterate(p)
-    while x!==nothing
-        push!(R,get(p.parser,p.sequence,p.till,x[1],1,x[2]))
-        x = _iterate(p.parser,p.sequence,p.till,x[1],x[2])
-    end
-    R
-end
 
 
 
