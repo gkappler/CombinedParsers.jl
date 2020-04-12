@@ -972,6 +972,11 @@ struct Sequence{T,P<:Tuple} <: AbstractParser{T}
     end
 end
 
+"""
+    Sequence(;kw...)
+
+Sequence keyword argument constructors transform the parsing into a named tuple.
+"""
 Sequence(;kw...) =
     Sequence(kw...)
 
