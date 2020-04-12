@@ -172,6 +172,8 @@ struct Backreference <: AbstractParser{AbstractString}
     Backreference(f::Function,name::AbstractString) =
         new(Symbol(name),-1,f)
 end
+
+regex_string_(x::Function) = "#\$($x)"
                                                           
 regex_string_(x::Backreference) =
    if x.name !== nothing

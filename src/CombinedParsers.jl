@@ -213,6 +213,7 @@ regex_inner(x::AnyChar) = "."
 struct MatchingNever{T} end
 ismatch(c::MatchingNever,p) = false
 ismatch(c::MatchingNever,p::AnyChar) = false
+_ismatch(c,p::Function) = p(c)
 _ismatch(c,p::AnyChar) = true
 _ismatch(c::Char,p::Union{StepRange,Set}) = c in p
 
