@@ -13,18 +13,32 @@ export result_type
 @inline _prevind(str,i,parser,x) = prevind(str,i,parser,x)
 @inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
 
+"""
+Abstract parser type.
+"""
 abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
+
+"Julia types that can convert(TextParse.AbstractToken,x). TODO: remove"
 ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex,
                     Pair{<:Union{TextParse.AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
+
 export parser
 import Base: convert
 "calls convert(TextParse.AbstractToken,x)."
 parser(x) = Base.convert(TextParse.AbstractToken, x)
 export regex_string
+"""
+    regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
+"""
 regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
+
+"Prefix printed in parser tree node."
 regex_prefix(x::AbstractParser) = ""
+"Suffix printed in parser tree node."
 regex_suffix(x::AbstractParser) = ""
+"See [`regex_string`](@ref)"
 regex_inner(x::AbstractParser) = ""
+"Print constructor pipeline in parser tree node."
 print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 
