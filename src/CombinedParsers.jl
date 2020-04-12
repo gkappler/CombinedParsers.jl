@@ -1279,6 +1279,8 @@ Repeat(parser) =
     Repeat((0:typemax(Int)),parser)
 Repeat(min::Integer,max::Integer,parser) =
     Repeat((min:max),parser)
+Repeat(parser;min::Integer,max::Integer) =
+    Repeat((min:max),parser)
 Repeat(min::Integer,parser) =
     Repeat((min:typemax(Int)),parser)
 
