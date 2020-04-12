@@ -1668,8 +1668,10 @@ defaultvalue(V::Type{<:AbstractParser}) = Always()
 export alt, Either
 struct Either{T,Ps} <: AbstractParser{T}
     options::Ps
-    Either{T}(p::P) where {T,P} =
+    Either{T}(p::P) where {T,P<:Union{Tuple,Vector}} =
         new{T,P}(p::P)
+    Either{T}(p::AbstractParser...) where {T} =
+        new{T,Vector{Any}}(Any[p...])
 end
 ==(x::Either,y::Either) =
     x.options==y.options
@@ -1733,19 +1735,55 @@ function sEither(x...)
 end
 
 
-(|)(x::Any, y::TextParse.AbstractToken) = sEither(parser(x),y)
-(|)(x::TextParse.AbstractToken, y::Any) = sEither(x,parser(y))
-(|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = sEither(x,y)
 
+"""
+  `(|)(x::TextParse.AbstractToken, y)`
+
+  `(|)(x, y::TextParse.AbstractToken)`
+
+  `(|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken)`
+
+Operator syntax for parser `sEither(x, y)`.
+"""
+(|)(x, y::ParserTypes) = sEither(parser(x),y)
+(|)(x::ParserTypes, y) = sEither(x,parser(y))
+(|)(x::ParserTypes, y::ParserTypes) = sEither(x,y)
+
+"""
+  `(|)(x::TextParse.AbstractToken{T}, default::Union{T,Missing})`
+
+Operator syntax for parser `Optional(x, default=default)`.
+"""
+function (|)(x::TextParse.AbstractToken{T}, default::Union{T,Missing}) where { T }
+    Optional(x,default=default)
+end
+function (|)(x::Char, y::Char)
+    CharIn(tuple(x,y))
+end
+function (|)(x::CharIn, y::Char)
+    CharIn(tuple(x.sets...,y))
+end
+
+(|)(x::TextParse.AbstractToken{<:AbstractString}, default::String) =
+    error("ambiguous | operator:  disambiguate as `x | parser(\"$(escape_string(default))\")` or `Optional(x,default=\"$(escape_string(default))\")`.")
+
+"""
+    `(|)(x::Either, T::Type)`
+
+Return new Either with `T` added to result_type(x).
+todo: Note that the options array is kept. As a consequence `push!`on result will also push to `x`.
+"""
+(|)(x::Either, T::Type) =
+    Either{Union{result_type(x),T}}(x.options)
 
 
 function Base.push!(x::Either, y)
-    result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x))")
+    result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     push!(x.options,y)
     x
 end
 function Base.pushfirst!(x::Either, y)
-    result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x))")
+    result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     pushfirst!(x.options,y)
     x
 end
