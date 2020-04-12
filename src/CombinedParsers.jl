@@ -128,6 +128,9 @@ map_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
             map_parser(f,mem,x.parser,a...))
     end
 
+export map_match
+map_match(f::Function,p_) =
+    map(f, JoinSubstring(parser(p_)))
 Base.get(x::JoinSubstring, sequence, till, after, i, state) =
     SubString(sequence, i, prevind(sequence,after))
 
