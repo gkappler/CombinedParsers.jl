@@ -49,6 +49,7 @@ parse(log_names(expr), "1/((1+2)*4+3*(5*2))")
 
 ### Limitations
 This is an alpha release.
+Collaborations are very welcome!
 
 CombinedParsers.jl was tested against the PCRE C library testset.
 Some tests did not pass: 3130 passed, 123 failed, 0 errored, 0 broken.
@@ -345,21 +346,8 @@ For date and primitive types.
     - mutable matcher types
     - matcher types not parametric
 
-## CombinedParsers.jl
-- more expressive than regular expressions
-- provides compiled regular expression parsers in pure julia
-- arbitrary transformations with convenient syntax
-     - parsing and transformation are decoupled for optimized performance.
-     - Julia type inference for result_types
-- logging helps debugging complex parsers.
-- higher-order parsers depending on the parsing state
-- iterate interface to lazily generate all valid parsings
-- TextParse interface to include ParserIterators e.g. in CSV.jl.
-- generalize from strings to parsing any iterator type
-- MIT licenced, https://github.com/gkappler/CombinedParsers.jl
 
 
 
-### Collaborations are very welcome!
 
 
