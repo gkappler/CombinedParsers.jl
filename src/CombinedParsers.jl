@@ -684,6 +684,14 @@ import Base: map
 function Base.map(Tc::Type, p::TextParse.AbstractToken, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
+function Base.map(i::Integer, p::TextParse.AbstractToken)
+    T=result_type(p)
+    Transformation{fieldtype(T,i)}((v,_) -> getindex(v,i), p)
+end
+function Base.map(is::Union{UnitRange,NTuple{N,<:Integer} where N}, p::TextParse.AbstractToken)
+    T=result_type(p)
+    Transformation{Tuple{(fieldtype(T,i) for i in is)...}}((v,_) -> getindex(v,is), p)
+end
 function instance(Tc::Type, p::ParserTypes, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
@@ -1047,6 +1055,8 @@ parser_types(::Type{Sequence{T, P}}) where {T, P} =
 
 print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
 children(x::Sequence) = x.parts
+
+Base.getindex(x::AbstractParser, i) = map(i,x)
 
 map_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
     get!(mem,x) do
