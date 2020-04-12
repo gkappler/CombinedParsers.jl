@@ -972,11 +972,14 @@ struct Sequence{T,P<:Tuple} <: AbstractParser{T}
     end
 end
 
+Sequence(;kw...) =
+    Sequence(kw...)
 
-Sequence(transform::Function, T::Type, a...; kw...) =
+
+Sequence(transform::Function, T::Type, a...) =
     map(transform, T, Sequence(a...))
 
-Sequence(transform::Function, a...; kw...) =
+Sequence(transform::Function, a...) =
     map(transform, Sequence(a...))
 
 function seq(tokens::Vararg{ParserTypes};
