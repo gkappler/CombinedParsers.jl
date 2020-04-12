@@ -362,15 +362,17 @@ function _iterate(t::NegativeLookahead, str, till, i, state::Nothing)
     end
 end
 
-export look_ahead
-function look_ahead(match::Bool, p_)
+export Lookahead
+function Lookahead(does_match::Bool, p_)
     p = parser(p_)
-    if match
+    if does_match
         PositiveLookahead(p)
     else
         NegativeLookahead(p)
     end
 end
+
+@deprecate look_ahead(does_match,p) Lookahead(does_match, p)
 
 
 

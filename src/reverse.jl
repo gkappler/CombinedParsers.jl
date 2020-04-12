@@ -67,15 +67,16 @@ struct NegativeLookbehind{T,P} <: LookAround{T}
 end
 regex_prefix(x::NegativeLookbehind) = "(?<!"
 
-export look_behind
-function look_behind(match::Bool, p_)
+export Lookbehind
+function Lookbehind(does_match::Bool, p_)
     p = map_parser(revert,IdDict(),parser(p_))
-    if match
+    if does_match
         PositiveLookbehind(p)
     else
         NegativeLookbehind(p)
     end
 end
+@deprecate look_behind(does_match,p) Lookbehind(does_match, p)
 
 function _iterate(t::NegativeLookbehind, str, till, i, state)
     if state === nothing
