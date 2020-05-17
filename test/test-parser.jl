@@ -144,7 +144,6 @@ end
     inner = Either{Any}(!Repeat(CharNotIn("<>")));
     pushfirst!(inner,html(!re"[[:alpha:]]+",inner,attributes));
     parse(inner,"<a font=1><b>b</b>a</a>")
-    using BenchmarkTools
     @test parse(inner,"<a font=\"+1\">i<b>bold</b>j</a>") == 
         (tag="a", attrs=["font"=>"+1"], children=[
             "i",
