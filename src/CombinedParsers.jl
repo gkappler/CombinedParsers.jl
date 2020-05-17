@@ -2028,17 +2028,18 @@ function alternate(x::ParserTypes, delim::ParserTypes;
             ( r, xmatch, delimmatch ) -> begin
                 xmatch !== missing && push!(r,xmatch)
                 delimmatch !== missing && push!(r,delimmatch)
+                r::Vector{T}
             end
         else
             ( r, xmatch, delimmatch ) -> begin
                 xmatch !== missing && push!(r,xmatch)
+                r::Vector{T}
             end 
         end
     else
         agg
     end
-    
-    function tf(v,i)::Vector{T}
+    function tf(v)
         ## @show v,i
         r = T[]
         if isempty(v[2])
@@ -2051,15 +2052,14 @@ function alternate(x::ParserTypes, delim::ParserTypes;
             end
             af(r, ms[end][2],v[3])
         end
-        r
+        r::Vector{T}
     end
 
     ## todo: factor out this transform condition!!
-    map_at(tf, Vector{T},
-             seq(
-                 Optional(x; default=missing),
-                 Repeat(seq(delim, x)),
-                 Optional(delim;default=missing)))
+    Sequence(tf,
+             Optional(x; default=missing),
+             Repeat(seq(delim, x)),
+             Optional(delim;default=missing))
 end
 
 
