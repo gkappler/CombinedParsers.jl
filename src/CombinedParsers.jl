@@ -1253,6 +1253,8 @@ end
 end
 
 
+(!)(x::TextParse.AbstractToken) = JoinSubstring(x)
+
 (*)(x::Any, y::TextParse.AbstractToken) = sSequence(parser(x),y)
 (*)(x::TextParse.AbstractToken, y::Any) = sSequence(x,parser(y))
 (*)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = sSequence(x,y)
