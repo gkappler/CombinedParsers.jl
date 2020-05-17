@@ -1290,11 +1290,9 @@ struct Repeat{P,T} <: WrappedParser{P,T}
             new{typeof(p_),Vector{result_type(p_)}}(range,p_)
         end
 end
-Repeat(parser) =
-    Repeat((0:typemax(Int)),parser)
 Repeat(min::Integer,max::Integer,parser) =
     Repeat((min:max),parser)
-Repeat(parser;min::Integer,max::Integer) =
+Repeat(parser;min::Integer=0,max::Integer=typemax(Int)) =
     Repeat((min:max),parser)
 Repeat(min::Integer,parser) =
     Repeat((min:typemax(Int)),parser)
@@ -1305,8 +1303,8 @@ import Base.join
 function Base.join(x::Repeat,delim_)
     delim = parser(delim_)
     ## todo: the get function could be optimized
-    @show x.range
-    map(x.parser * ( ( delim_ * x.parser )[2] )^x.range) do (f,r)
+    ##@show x.range
+    map(x.parser * ( ( delim_ * x.parser )[2] )^(x.range.start-1, x.range.stop-1)) do (f,r)
         pushfirst!(r,f)
         r
     end
