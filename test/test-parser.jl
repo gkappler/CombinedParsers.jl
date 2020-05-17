@@ -1,4 +1,6 @@
 using CombinedParsers.Regexp
+import CombinedParsers.Regexp: word, non_word
+import CombinedParsers.Regexp: newline, inline, whitespace
 
 @test parse(Sequence("(", Repeat_until(!Either(Repeat(word),!Repeat(non_word)), ")")), "(balanced parenthesis)") ==
     ("(",["balanced", " ", "parenthesis"])

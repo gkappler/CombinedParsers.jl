@@ -49,6 +49,13 @@ vertical_space=(
     '\U2029') # "Paragraph separator"))
 
 
+bsr = Atomic(Either("\r\n",CharIn('\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
+
+newline = bsr
+inline = !Repeat(CharNotIn(vertical_space))
+whitespace = !Repeat(CharIn(horizontal_space))
+
+
 bracket_range(start) =
     with_name(:char_range,Sequence(start,
         skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
@@ -85,8 +92,6 @@ skip_whitespace_on(flags, wrap=identity) =
         flags,
         wrap(CharIn(whitespace_string...,'\n'))=>Always()))
 
-
-bsr = Atomic(Either("\r\n",CharIn('\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
 
 skip_whitespace_and_comments =
     Repeat(Either(
