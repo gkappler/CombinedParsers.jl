@@ -1323,7 +1323,7 @@ function print_constructor(io::IO,x::Repeat)
     print(io, " |> Repeat" )
 end
 
-regex_inner(x::Repeat) = regex_string(x.parser)
+regex_inner(x::Repeat) = regex_inner(x.parser)
 regex_suffix(x::Repeat) = 
     regex_suffix(x.parser)*if x.range.start == 0
         if x.range.stop == typemax(Int)
