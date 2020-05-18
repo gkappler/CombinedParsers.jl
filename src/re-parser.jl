@@ -82,8 +82,8 @@ function character_base(base,mind=0,maxd=typemax(Int))
     else
         error()
     end
-    Repeat(Int,dig,(mind,maxd)) do v
-        isempty(v) ? 0 : parse(Int,join(v),base=base)
+    Repeat(dig,(mind,maxd)) do v
+        (isempty(v) ? 0 : parse(Int,join(v),base=base))::Int
     end
 end
 
