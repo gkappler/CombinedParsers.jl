@@ -343,7 +343,7 @@ splitter(S, parse; transform_split = v -> tokenize(S, v), kw...) =
 
 function splitter(## R::Type,
                   split::Transformation{Regex,S},
-                  parse::TextParse.AbstractToken{T};
+                  parse::AbstractToken{T};
                   log=false,
                   transform = (v,i) -> v) where {S, T}
     @warn "todo: using old regex splitting..."

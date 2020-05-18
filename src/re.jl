@@ -3,8 +3,8 @@ A regular expression parser transforming a PCRE string to a CombinedParser equiv
 """
 module Regexp
 using ..CombinedParsers
-
 using TextParse
+import TextParse: AbstractToken
 import ..CombinedParsers: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, map_parser, _iterate, print_constructor
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string

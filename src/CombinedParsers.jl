@@ -11,6 +11,7 @@ import Base: (^), (*), (~), (/), (|), (!), cat, get, prevind, nextind
 using Nullables
 
 using TextParse
+import TextParse: AbstractToken
 import Base: ==, hash
 
 export AbstractParser
@@ -22,24 +23,26 @@ export result_type
 @inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
 
 """
-    AbstractParser{T} <: TextParse.AbstractToken{T}
+    AbstractParser{T} <: AbstractToken{T}
 
 Abstract parser type for parsers returning matches transformed to `::T`.
 """
-abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
+abstract type AbstractParser{T} <: AbstractToken{T} end
 
-"Julia types that can convert(TextParse.AbstractToken,x). TODO: remove"
-ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex,
-                    Pair{<:Union{TextParse.AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
+"Julia types that can convert(AbstractToken,x). TODO: remove"
+ParserTypes = Union{AbstractToken, AbstractString, Char, Regex,
+                    Pair{<:Union{AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
 
 export parser
 import Base: convert
 """
     parser(x)
 
-calls convert(TextParse.AbstractToken,x).
+calls convert(AbstractToken,x).
 """
-parser(x) = Base.convert(TextParse.AbstractToken, x)
+parser(x) = Base.convert(AbstractToken, x)
+parser(x::Regex) = x
+
 export regex_string
 """
     regex_string(x::AbstractParser)
@@ -53,20 +56,20 @@ regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
 
 Prefix printed in parser tree node.
 """
-regex_prefix(x::TextParse.AbstractToken) = ""
+regex_prefix(x::AbstractToken) = ""
 """
     regex_suffix(x)
 
 Suffix printed in parser tree node.
 """
-regex_suffix(x::TextParse.AbstractToken) = ""
+regex_suffix(x::AbstractToken) = ""
 """
-    regex_inner(x::TextParse.AbstractToken)
+    regex_inner(x::AbstractToken)
 
 Regex representation of `x`.
 See [`regex_string`](@ref)
 """
-regex_inner(x::TextParse.AbstractToken) = "$(typeof(x))"
+regex_inner(x::AbstractToken) = "$(typeof(x))"
 
 regex_prefix(x::AbstractParser) = ""
 regex_suffix(x::AbstractParser) = ""
@@ -80,11 +83,11 @@ print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 
 ############################################################
-## Parsing with TextParse.AbstractToken, operators
+## Parsing with AbstractToken
 
-state_type(p::Type{<:TextParse.AbstractToken}) = Tuple{Int,result_type(p)}
+state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
 
-function _iterate(parser::TextParse.AbstractToken, sequence, till, i, state)
+function _iterate(parser::AbstractToken, sequence, till, i, state)
     parser isa AbstractParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, i, state)"
     ##@show parser typeof(parser)
     if state === nothing
@@ -98,24 +101,24 @@ function _iterate(parser::TextParse.AbstractToken, sequence, till, i, state)
         nothing
     end
 end
-function Base.get(parser::TextParse.AbstractToken, sequence, till, after, i, state)
+function Base.get(parser::AbstractToken, sequence, till, after, i, state)
     parser isa AbstractParser && @warn "define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)"
     state[2]
     ## === missing ? missing : get(Parsing(x.parser.parser,x.sequence), after, (i, till, state))
 end
 
-@inline function nextind(str,i::Int,parser::TextParse.AbstractToken,x)
+@inline function nextind(str,i::Int,parser::AbstractToken,x)
     parser isa AbstractParser && @warn "define nextind(str,i::Int,parser::$(typeof(parser)),x)"
     i+x[1]
 end
-@inline function prevind(str,i::Int,parser::TextParse.AbstractToken,x)
+@inline function prevind(str,i::Int,parser::AbstractToken,x)
     parser isa AbstractParser && @warn "define prevind(str,i::Int,parser::$(typeof(parser)),x)"
     i-x[1]
 end
 
 result_type(x::ParserTypes) = result_type(typeof(x))
 result_type(T::Type{<:Union{Char,AbstractString}}) = T
-result_type(::Type{<:TextParse.AbstractToken{T}}) where T = T
+result_type(::Type{<:AbstractToken{T}}) where T = T
 
 struct MatchState end
 Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state) =
@@ -155,14 +158,14 @@ _iterate(parser::WrappedParser, sequence, till, i, state) =
 export JoinSubstring
 """
     JoinSubstring(x)
-    (!)(x::TextParse.AbstractToken)
+    (!)(x::AbstractToken)
 
 Parser Transformation getting the matched SubString.
 """
 struct JoinSubstring{P} <: WrappedParser{P,SubString}
     parser::P
 end
-Base.map(f::Type{<:JoinSubstring}, p::TextParse.AbstractToken) = JoinSubstring(p)
+Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
 
 """
     (!)(x::AbstractToken)
@@ -176,7 +179,7 @@ julia> parse(!Repeat(CharIn(:L)),"abc123")
 ```
 
 """
-(!)(x::TextParse.AbstractToken) = JoinSubstring(x)
+(!)(x::AbstractToken) = JoinSubstring(x)
 map_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
     get!(mem,x) do
         JoinSubstring(
@@ -204,15 +207,15 @@ regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
 """
-    `convert(::Type{TextParse.AbstractToken},x::Union{AbstractString,Char})`
+    `convert(::Type{AbstractToken},x::Union{AbstractString,Char})`
 
 A ConstantParser matching x.
 """
-Base.convert(::Type{TextParse.AbstractToken},x::Char) =
+Base.convert(::Type{AbstractToken},x::Char) =
     ConstantParser{Base.ncodeunits(x),Char}(x)
-Base.convert(::Type{TextParse.AbstractToken},x::StepRange{Char,<:Integer}) =
+Base.convert(::Type{AbstractToken},x::StepRange{Char,<:Integer}) =
     CharIn(x)
-Base.convert(::Type{TextParse.AbstractToken},x::AbstractString) =
+Base.convert(::Type{AbstractToken},x::AbstractString) =
     ConstantParser{Base.ncodeunits(x),SubString}(x)
 
 @inline nextind(str,i::Int,parser::ConstantParser{L},x) where L =
@@ -513,7 +516,7 @@ struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
     parser::P
     args::A
     effect::Function
-    SideeffectParser(f::Function, p::TextParse.AbstractToken,a...) =
+    SideeffectParser(f::Function, p::AbstractToken,a...) =
         new{typeof(p),result_type(p),typeof(a)}(p,a,f)
 end
 children(x::SideeffectParser) = children(x.parser)
@@ -623,14 +626,14 @@ function print_constructor(io::IO,x::NamedParser)
 end
 
 """
-    convert(::Type{TextParse.AbstractToken},x::Pair{Symbol, P}) where P
+    convert(::Type{AbstractToken},x::Pair{Symbol, P}) where P
 
 A parser labelled with name `x.first`.
 Labels are useful in printing and logging.
 
 See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
-Base.convert(::Type{TextParse.AbstractToken},x::Pair{Symbol, P}) where P =
+Base.convert(::Type{AbstractToken},x::Pair{Symbol, P}) where P =
     NamedParser(x.first, parser(x.second))
 
 """
@@ -760,13 +763,13 @@ map_parser(f::Function,mem::AbstractDict,x::Transformation,a...) =
 
 
 """
-    convert(::Type{TextParse.AbstractToken},constant::Pair{<:ParserTypes})
+    convert(::Type{AbstractToken},constant::Pair{<:ParserTypes})
 
 A parser mapping matches of `x.first` to constant `x.second`.
 
 See also: [`@map`](@ref), [`map_at`](@ref)
 """
-Base.convert(::Type{TextParse.AbstractToken},constant::Pair{<:ParserTypes}) =
+Base.convert(::Type{AbstractToken},constant::Pair{<:ParserTypes}) =
     Transformation{typeof(constant.second)}(
         (v,i) -> constant.second,
         parser(constant.first))
@@ -826,7 +829,7 @@ Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)
 
 See also: [`map_at`](@ref)
 """
-function Base.map(f::Function, p::TextParse.AbstractToken, a...)
+function Base.map(f::Function, p::AbstractToken, a...)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
     Transformation{T}((v,i) -> (f(v, a...)), p)
 end
@@ -837,14 +840,14 @@ Parser matching `p`, transforming parsing results (`x`) with constructor `T(x,a.
 
 See also: [`map_at`](@ref)
 """
-function Base.map(Tc::Type, p::TextParse.AbstractToken, a...)
+function Base.map(Tc::Type, p::AbstractToken, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
-function Base.map(i::Integer, p::TextParse.AbstractToken)
+function Base.map(i::Integer, p::AbstractToken)
     T=result_type(p)
     Transformation{fieldtype(T,i)}((v,_) -> getindex(v,i), p)
 end
-function Base.map(is::Union{UnitRange,NTuple{N,<:Integer} where N}, p::TextParse.AbstractToken)
+function Base.map(is::Union{UnitRange,NTuple{N,<:Integer} where N}, p::AbstractToken)
     T=result_type(p)
     Transformation{Tuple{(fieldtype(T,i) for i in is)...}}((v,_) -> getindex(v,is), p)
 end
@@ -854,14 +857,14 @@ end
 function instance(Tc::Type, p::ParserTypes)
     Transformation{Tc}((v,i) -> convert(Tc,v), p)
 end
-function Base.map(f::Function, Tc::Type, p::TextParse.AbstractToken, a...)
+function Base.map(f::Function, Tc::Type, p::AbstractToken, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
     Transformation{Tc}((v,i) -> (f(v, a...)), p)
 end
-Base.map(f::typeof(identity), p::TextParse.AbstractToken) = p
+Base.map(f::typeof(identity), p::AbstractToken) = p
 
 
-@deprecate map(T::Type, f::Function, p::TextParse.AbstractToken, a...) map(f,T,p,a...)
+@deprecate map(T::Type, f::Function, p::AbstractToken, a...) map(f,T,p,a...)
 @deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
 
 
@@ -1136,10 +1139,10 @@ function print_constructor(io::IO,x::FlatMap)
     print_constructor(io,x.left)
     print(io, "FlatMap(",x.right,")" )
 end
-after(right::Function,left::TextParse.AbstractToken,T::Type) =
+after(right::Function,left::AbstractToken,T::Type) =
     FlatMap{T}(left,right)
 
-function after(right::Function,left::TextParse.AbstractToken)
+function after(right::Function,left::AbstractToken)
     result_type(left)
     RT = infer_result_type(right,Any,left,"")
     T=result_type(RT)
@@ -1518,12 +1521,11 @@ end
     R
 end
 
+(*)(x::Any, y::AbstractToken) = sSequence(parser(x),y)
+(*)(x::AbstractToken, y::Any) = sSequence(x,parser(y))
+(*)(x::AbstractToken, y::AbstractToken) = sSequence(x,y)
 
-(!)(x::TextParse.AbstractToken) = JoinSubstring(x)
 
-(*)(x::Any, y::TextParse.AbstractToken) = sSequence(parser(x),y)
-(*)(x::TextParse.AbstractToken, y::Any) = sSequence(x,parser(y))
-(*)(x::TextParse.AbstractToken, y::TextParse.AbstractToken) = sSequence(x,y)
 
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
@@ -2420,7 +2422,7 @@ end
 
 
 export Repeat_delim
-Repeat_delim(x::TextParse.AbstractToken{T}, delim::TextParse.AbstractToken{S}; kw...) where {T,S} =
+Repeat_delim(x::AbstractToken{T}, delim::AbstractToken{S}; kw...) where {T,S} =
     Repeat_delim(promote_type(S,T), x, delim; kw...)
 function Repeat_delim(
     T::Type, x, delim;
@@ -2561,7 +2563,7 @@ julia> parse(p,"Number: 42")
 ```
 
 """
-function Base.parse(p::TextParse.AbstractToken, s)
+function Base.parse(p::AbstractToken, s)
     i = tryparse(p,s)
     i === nothing && throw(ArgumentError("no successfull parsing."))
     i
@@ -2572,7 +2574,7 @@ end
 
 Parse a string with a CombinedParser as an instance of `result_type(parser)`.
 """
-function Base.tryparse(p::TextParse.AbstractToken, s)
+function Base.tryparse(p::AbstractToken, s)
     i = _iterate(p,s)
     i === nothing && return nothing
     get(p,s,lastindex(s),i[1],1,i[2])
