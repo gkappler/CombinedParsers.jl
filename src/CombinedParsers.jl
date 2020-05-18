@@ -165,9 +165,16 @@ end
 Base.map(f::Type{<:JoinSubstring}, p::TextParse.AbstractToken) = JoinSubstring(p)
 
 """
-    (!)(x::TextParse.AbstractToken)
+    (!)(x::AbstractToken)
 
 Parser Transformation getting the matched SubString.
+
+```jldoctest
+julia> parse(!Repeat(CharIn(:L)),"abc123")
+"abc"
+
+```
+
 """
 (!)(x::TextParse.AbstractToken) = JoinSubstring(x)
 map_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
@@ -317,7 +324,9 @@ end
 end
 
 
-"Parsers that do not consume any input can inherit this type"
+"""
+Parsers that do not consume any input can inherit this type.
+"""
 abstract type LookAround{T} <: NIndexParser{0,T} end
 children(x::LookAround) = (x.parser,)
 
@@ -811,7 +820,7 @@ end
 
 import Base: map
 """
-    map(f::Function, p::TextParse.AbstractToken, a...)
+    map(f::Function, p::AbstractToken, a...)
 
 Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
 
@@ -822,7 +831,7 @@ function Base.map(f::Function, p::TextParse.AbstractToken, a...)
     Transformation{T}((v,i) -> (f(v, a...)), p)
 end
 """
-    map(T::Type, p::TextParse.AbstractToken, a...)
+    map(T::Type, p::AbstractToken, a...)
 
 Parser matching `p`, transforming parsing results (`x`) with constructor `T(x,a...)`.
 
@@ -968,8 +977,8 @@ re"[^a-z]"
 julia> parse(a_z, "a")
 ERROR: ArgumentError: no successfull parsing.
 Stacktrace:
- [1] parse(::CharNotIn{Tuple{StepRange{Char,Int64}}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2583
- [2] top-level scope at REPL[24]:1
+ [1] parse(::CharNotIn{Tuple{StepRange{Char,Int64}}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2649
+ [2] top-level scope at REPL[19]:1
 
 julia> ac = CharNotIn("ac")
 re"[^ac]"
@@ -978,8 +987,8 @@ re"[^ac]"
 julia> parse(ac, "c")
 ERROR: ArgumentError: no successfull parsing.
 Stacktrace:
- [1] parse(::CharNotIn{Array{Char,1}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2583
- [2] top-level scope at REPL[24]:1
+ [1] parse(::CharNotIn{Array{Char,1}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2649
+ [2] top-level scope at REPL[19]:1
 
 ```
 """
@@ -1017,7 +1026,8 @@ for T in [:CharIn,:CharNotIn]
 end
          
 
-
+get_first(v)=v[1]
+get_second(v)=v[2]
 export Repeat_stop, Repeat_until
 """
     Repeat_stop(p,stop)
@@ -1029,7 +1039,7 @@ Returns results of `p`.
 ```jldoctest
 julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄* Sequence |> map(#41) |> Repeat
+├─ 🗄* Sequence |> map(#27) |> Repeat
 │  ├─ (?!🗄)
 │  │  └─ b
 │  └─ .
@@ -1043,7 +1053,7 @@ julia> parse(p,"acbX")
 See also [`NegativeLookahead`](@ref)
 """
 Repeat_stop(p,stop) =
-    Repeat(Sequence(2,NegativeLookahead(parser(stop)),parser(p)))
+    Repeat(Sequence(get_second,NegativeLookahead(parser(stop)),parser(p)))
 
 @deprecate rep_stop(a...;kw...) Repeat_stop(a...;kw...)
 
@@ -1059,8 +1069,8 @@ To transform the `Repeat_stop(p)` parser head, provide a function(::Vector{resul
 ```jldoctest
 julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄 Sequence |> map(#41)
-│  ├─ 🗄* Sequence |> map(#41) |> Repeat
+├─ 🗄 Sequence |> map(#27)
+│  ├─ 🗄* Sequence |> map(#27) |> Repeat
 │  │  ├─ (?!🗄)
 │  │  │  └─ b
 │  │  └─ .
@@ -1081,7 +1091,7 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
     if with_until
         Sequence(map(wrap,Repeat_stop(p,until)), until)
     else
-        Sequence(1, map(wrap,Repeat_stop(p,until)), until)
+        Sequence(get_first, map(wrap,Repeat_stop(p,until)), until)
     end
 
 @deprecate rep_until(p,until) Repeat_until(p,until)
@@ -2089,23 +2099,44 @@ end
 
 
 
-"""
-  (|)(x::TextParse.AbstractToken, y)
-  (|)(x, y::TextParse.AbstractToken)
-  (|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken)
-
-Operator syntax for parser `sEither(x, y)`.
-"""
 (|)(x, y::ParserTypes) = sEither(parser(x),y)
 (|)(x::ParserTypes, y) = sEither(x,parser(y))
+"""
+    (|)(x::AbstractToken, y)
+    (|)(x, y::AbstractToken)
+    (|)(x::AbstractToken, y::AbstractToken)
+
+Operator syntax for `sEither(x, y)`.
+
+```jldoctest
+julia> 'a' | CharIn("AB") | "bc"
+|🗄... Either
+├─ a
+├─ [AB]
+└─ bc
+::Union{Char, SubString}
+
+```
+
+"""
 (|)(x::ParserTypes, y::ParserTypes) = sEither(x,y)
 
 """
-  (|)(x::TextParse.AbstractToken{T}, default::Union{T,Missing})
+    (|)(x::AbstractToken{T}, default::Union{T,Missing})
 
-Operator syntax for parser `Optional(x, default=default)`.
+Operator syntax for `Optional(x, default=default)`.
+
+```jldoctest
+julia> parser("abc") | "nothing"
+|🗄... Either
+├─ abc
+└─ nothing
+::SubString
+
+```
+
 """
-function (|)(x::TextParse.AbstractToken{T}, default::Union{T,Missing}) where { T }
+function (|)(x::AbstractToken{T}, default::Union{T,Missing}) where { T }
     Optional(x,default=default)
 end
 function (|)(x::Char, y::Char)
@@ -2497,6 +2528,22 @@ import Base: tryparse, parse
     parse(parser::ParserTypes, str::AbstractString)
 
 Parse a string with a CombinedParser as an instance of `result_type(parser)`.
+
+```jldoctest
+julia> using TextParse
+
+julia> p = ("Number: "*TextParse.Numeric(Int))[2]
+🗄 Sequence |> map(#31)
+├─ Number\\:\\
+└─ <Int64>
+::Int64
+
+
+julia> parse(p,"Number: 42")
+42
+
+```
+
 """
 function Base.parse(p::TextParse.AbstractToken, s)
     i = tryparse(p,s)

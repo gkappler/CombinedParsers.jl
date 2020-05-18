@@ -38,9 +38,11 @@ Base.prevind(x::Reverse,i::Integer,n::Integer) = reverse_index(x,nextind(x.x,rev
 
 export PositiveLookbehind
 """
-wraps a `parser::P`, succeeds if and only if `parser` succeeds, but consumes no input.
+    PositiveLookbehind(parser)
+
+Parser that succeeds if and only if `parser` succeeds **before cursor**. Consumes no input.
 The match is returned.
-Useful for checks like "must be followed by `parser`, but don't consume its match".
+Useful for checks like "must be preceded by `parser`, don't consume its match".
 """
 struct PositiveLookbehind{T,P} <: LookAround{T}
     parser::P
@@ -54,9 +56,11 @@ regex_prefix(x::PositiveLookbehind) = "(?<="
 
 export NegativeLookbehind
 """
-wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but consumes no input.
+    NegativeLookbehind(parser)
+
+Parser that succeeds if and only if `parser` does not succeed **before cursor**.  Consumes no input.
 `nothing` is returned as match.
-Useful for checks like "must not be followed by `parser`, don't consume its match".
+Useful for checks like "must not be preceded by `parser`, don't consume its match".
 """
 struct NegativeLookbehind{T,P} <: LookAround{T}
     parser::P

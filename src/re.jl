@@ -583,7 +583,11 @@ function ==(pcre_m::RegexMatch,pc_m::ParseMatch)
 end
 
 
+"""
+    Base.match(parser::ParserTypes,sequence::AbstractString; log=false)
 
+Plug-in replacement for match(::Regex,sequence).
+"""
 Base.match(parser::ParserTypes,sequence::AbstractString; kw...) =
     match(indexed_captures(parser),sequence; kw...)
 

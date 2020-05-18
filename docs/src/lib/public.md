@@ -20,12 +20,15 @@ CombinedParsers.Regexp
 CombinedParsers.Regexp.@re_str
 CombinedParsers.Regexp.match
 regex_escape
+CombinedParsers.Regexp.Conditional
+CombinedParsers.Regexp.Conditional
 ```
 
 ## Parsing, Logging and Side-Effects
 ```@docs
 parse
 with_name
+@with_names
 log_names
 with_log
 instrument
@@ -37,6 +40,7 @@ with_effect
 Base.map
 map_at
 JoinSubstring
+(!)(::CombinedParsers.AbstractToken)
 ```
 
 ## Parser Constructors
@@ -50,20 +54,17 @@ CharNotIn
 ### Combining Parser
 ```@docs
 Either
-Base.(|)
-Base.:| :: Tuple{Either,Type}
+(|)(::CombinedParsers.ParserTypes, ::CombinedParsers.ParserTypes)
 sEither
 Sequence
 sSequence
-FlatMap
-after
 Atomic
 ```
 
 ### Repeating
 ```@docs
 Optional
-Base.(|)(x::TextParse.AbstractToken{T}, default::Union{T,Missing}) where { T }
+(|)(::CombinedParsers.AbstractToken{T}, ::Union{T,Missing}) where { T }
 Repeat
 Repeat1
 Repeat_stop
@@ -94,6 +95,7 @@ CombinedParsers.regex_suffix
 
 # Internals
 ```@docs
+CombinedParsers.ParserTypes
 CombinedParsers.AbstractParser
 CombinedParsers.ConstantParser
 CombinedParsers.NIndexParser

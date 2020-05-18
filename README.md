@@ -1,11 +1,10 @@
-Linux and macOS: [![Build Status](https://travis-ci.org/gkappler/CombinedParsers.jl.svg?branch=master)](https://travis-ci.org/gkappler/CombinedParsers.jl)
-Windows: [![Build Status](https://ci.appveyor.com/api/projects/status/github/gkappler/CombinedParsers.jl?branch=master&svg=true)](https://ci.appveyor.com/project/tkelman/example-jl/branch/master)
-Tests [![Coverage Status](https://coveralls.io/repos/gkappler/CombinedParsers.jl/badge.svg?branch=master)](https://coveralls.io/r/gkappler/CombinedParsers.jl?branch=master)
-[![codecov.io](http://codecov.io/github/gkappler/CombinedParsers.jl/coverage.svg?branch=master)](http://codecov.io/github/gkappler/CombinedParsers.jl?branch=master)
 
 # CombinedParsers in pure Julia
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://gkappler.github.io/CombinedParsers.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://gkappler.github.io/CombinedParsers.jl/dev)
+<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://gkappler.github.io/CombinedParsers.jl/stable) -->
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://gkappler.github.io/CombinedParsers.jl/dev)
+[![Build Status](https://travis-ci.org/gkappler/CombinedParsers.jl.svg?branch=master)](https://travis-ci.com/github/gkappler/CombinedParsers.jl)
+[![Codecov](https://codecov.io/gh/gkappler/CombinedParsers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gkappler/CombinedParsers.jl)
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
 CombinedParsers is a package for parsing into julia types.
 Parsimoneously compose parsers with the functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
