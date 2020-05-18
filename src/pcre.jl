@@ -18,8 +18,8 @@ pcre_option =
         'B' => UInt32(0)
     );
 
-pcre_options = Repeat1(UInt32, Sequence(1,pcre_option,Optional(','))) do v
-    |(v...)
+pcre_options = Repeat1(Sequence(1,pcre_option,Optional(','))) do v
+    (|(v...))::UInt32
 end
 
 pcre_options_parser=Sequence(2,AtStart(),Optional(pcre_options,default=UInt32(0)),AtEnd())

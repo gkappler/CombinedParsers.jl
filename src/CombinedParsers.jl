@@ -1079,11 +1079,12 @@ See also [`NegativeLookahead`](@ref)
 """
 Repeat_until(p,until, with_until=false;wrap=identity) =
     if with_until
-        Sequence(wrap(Repeat_stop(p,until)), until)
+        Sequence(map(wrap,Repeat_stop(p,until)), until)
     else
-        Sequence(1, wrap(Repeat_stop(p,until)), until)
+        Sequence(1, map(wrap,Repeat_stop(p,until)), until)
     end
 
+@deprecate rep_until(p,until) Repeat_until(p,until)
 
 map_parser(f::Function,mem::AbstractDict,x::Union{ConstantParser,AtStart,AtEnd},a...) =
     get!(mem,x) do
