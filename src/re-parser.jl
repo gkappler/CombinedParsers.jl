@@ -652,6 +652,50 @@ function Regcomb(x::AbstractString,flags::AbstractString)
     Regcomb(with_options(o...,x))
 end
 
+"""
+    @re_str(x,flags)
+
+Plug-in replacement for PCRE string macro @r_str.
+Constructs a CombinedParser equivalent to the PCRE regular expression.
+Supported `flags` are parsed 
+- xx Base.PCRE.EXTENDED_MORE
+- i Base.PCRE.CASELESS
+- m Base.PCRE.MULTILINE
+- n Base.PCRE.NO_AUTO_CAPTURE
+- U Base.PCRE.UNGREEDY
+- J Base.PCRE.DUPNAMES
+- s Base.PCRE.DOTALL
+- x Base.PCRE.EXTENDED
+
+Unsupported
+- g UInt32(0),
+- B UInt32(0)
+
+
+```jldoctest
+julia> re"a|b|c"i
+|🗄... Either |> regular expression combinator
+├─ [aA]
+├─ [bB]
+└─ [cC]
+::Char
+
+julia> re"(a|b)+c"
+🗄 Sequence |> regular expression combinator with 1 capturing groups
+├─ (|🗄...)+ Either |> Capture |> Repeat
+│  ├─ a
+│  └─ b
+└─ c
+::Tuple{Array{Char,1},Char}
+
+julia> re"([ab]+c)*"
+(🗄)* Sequence |> Capture |> Repeat |> regular expression combinator with 1 capturing groups
+├─ [ab]+  |> Repeat
+└─ c
+::Array{Tuple{Array{Char,1},Char},1}
+```
+
+"""
 macro re_str(x)
     esc(quote
         Regcomb($x)

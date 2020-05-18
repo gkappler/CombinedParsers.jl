@@ -1,3 +1,6 @@
+"""
+A regular expression parser transforming a PCRE string to a CombinedParser equivalent to the regular expression.
+"""
 module Regexp
 using ..CombinedParsers
 

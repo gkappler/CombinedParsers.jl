@@ -1,3 +1,11 @@
+
+"""
+A package for combining parsers and transforming strings into julia types.
+
+Compose parsers with the functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
+utilize Julia's type inferrence for transformations,
+log conveniently for debugging, and let Julia compile your parser for good performance.
+"""
 module CombinedParsers
 import Base: (^), (*), (~), (/), (|), (!), cat, get, prevind, nextind
 using Nullables
@@ -14,7 +22,9 @@ export result_type
 @inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
 
 """
-Abstract parser type.
+    AbstractParser{T} <: TextParse.AbstractToken{T}
+
+Abstract parser type for parsers returning matches transformed to `::T`.
 """
 abstract type AbstractParser{T} <: TextParse.AbstractToken{T} end
 
@@ -24,21 +34,48 @@ ParserTypes = Union{TextParse.AbstractToken, AbstractString, Char, Regex,
 
 export parser
 import Base: convert
-"calls convert(TextParse.AbstractToken,x)."
+"""
+    parser(x)
+
+calls convert(TextParse.AbstractToken,x).
+"""
 parser(x) = Base.convert(TextParse.AbstractToken, x)
 export regex_string
 """
-    regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
+    regex_string(x::AbstractParser)
+
+`regex_prefix(x)*regex_inner(x)*regex_suffix(x)`
 """
 regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
 
-"Prefix printed in parser tree node."
+"""
+    regex_prefix(x)
+
+Prefix printed in parser tree node.
+"""
+regex_prefix(x::TextParse.AbstractToken) = ""
+"""
+    regex_suffix(x)
+
+Suffix printed in parser tree node.
+"""
+regex_suffix(x::TextParse.AbstractToken) = ""
+"""
+    regex_inner(x::TextParse.AbstractToken)
+
+Regex representation of `x`.
+See [`regex_string`](@ref)
+"""
+regex_inner(x::TextParse.AbstractToken) = "$(typeof(x))"
+
 regex_prefix(x::AbstractParser) = ""
-"Suffix printed in parser tree node."
 regex_suffix(x::AbstractParser) = ""
-"See [`regex_string`](@ref)"
 regex_inner(x::AbstractParser) = ""
-"Print constructor pipeline in parser tree node."
+"""
+    print_constructor(io::IO,x)
+
+Print constructor pipeline in parser tree node.
+"""
 print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 
@@ -117,16 +154,29 @@ _iterate(parser::WrappedParser, sequence, till, i, state) =
 
 export JoinSubstring
 """
-Wrapped parser, getting the matched SubString.
+    JoinSubstring(x)
+    (!)(x::TextParse.AbstractToken)
+
+Parser Transformation getting the matched SubString.
 """
 struct JoinSubstring{P} <: WrappedParser{P,SubString}
     parser::P
 end
+Base.map(f::Type{<:JoinSubstring}, p::TextParse.AbstractToken) = JoinSubstring(p)
+
+"""
+    (!)(x::TextParse.AbstractToken)
+
+Parser Transformation getting the matched SubString.
+"""
+(!)(x::TextParse.AbstractToken) = JoinSubstring(x)
 map_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
     get!(mem,x) do
         JoinSubstring(
             map_parser(f,mem,x.parser,a...))
     end
+map_parser(f::Function,x::AbstractParser,a...) =
+    map_parser(f,IdDict(),x,a...)
 
 export map_match
 map_match(f::Function,p_) =
@@ -223,6 +273,16 @@ Base.get(x::NIndexParser{1,Char}, sequence, till, after, i, state) =
     sequence[i]
 
 export AnyChar, any
+"""
+    AnyChar()
+
+Parser matching exactly one `Char`, returning the character.
+```jldoctest
+julia> AnyChar()
+re"."
+```
+
+"""
 struct AnyChar <: NIndexParser{1,Char} end
 any() = AnyChar()
 regex_inner(x::AnyChar) = "."
@@ -286,9 +346,14 @@ Base.show(io::IO, x::Union{AtStart,AtEnd}) =
 
 export Never
 """
-wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but consumes no input.
-`nothing` is returned as match.
-Useful for checks like "must not be followed by `parser`, don't consume its match".
+    Never()
+
+Assertion parser matching never and not consuming any input.
+
+```jldoctest
+julia> Never()
+re"(*FAIL)"
+```
 """
 struct Never <: LookAround{Never} end
 regex_prefix(x::Never) = "(*"
@@ -300,10 +365,20 @@ _iterate(x::Never,str,i,till,state) =
 
 
 export Always
-"Parser matching always and not consuming any input"
+"""
+    Always()
+
+Assertion parser matching always and not consuming any input.
+Returns `Always()`.
+
+```jldoctest
+julia> Always()
+re""
+```
+"""
 struct Always <: LookAround{Always}
 end
-Base.show(io::IO,x::Always) = print(io,"")
+Base.show(io::IO,x::Always) = print(io,"re\"\"")
 children(x::Union{Never,Always}) = tuple()
 regex_prefix(x::Always) = ""
 regex_inner(x::Always) = ""
@@ -315,9 +390,21 @@ _iterate(parser::Always, str, till, i, s::Nothing) =
 
 export PositiveLookahead
 """
-wraps a `parser::P`, succeeds if and only if `parser` succeeds, but consumes no input.
+    PositiveLookahead(parser)
+
+Parser that succeeds if and only if `parser` succeeds, but consumes no input.
 The match is returned.
 Useful for checks like "must be followed by `parser`, but don't consume its match".
+
+```jldoctest
+julia> la=PositiveLookahead("peek")
+re"(?=peek)"
+
+
+julia> parse(la*AnyChar(),"peek")
+(re"(?=peek)", 'p')
+
+```
 """
 struct PositiveLookahead{T,P} <: LookAround{T}
     parser::P
@@ -341,9 +428,23 @@ end
 
 export NegativeLookahead
 """
-wraps a `parser::P`, succeeds if and only if `parser` does not succeed, but consumes no input.
-`nothing` is returned as match.
+    NegativeLookahead(parser)
+
+Parser that succeeds if and only if `parser` does not succeed, but consumes no input.
+`parser` is returned as match.
 Useful for checks like "must not be followed by `parser`, don't consume its match".
+
+```jldoctest
+julia> la = NegativeLookahead("peek")
+re"(?!peek)"
+
+julia> parse(la*AnyChar(),"peek")
+ERROR: ArgumentError: no successfull parsing.
+Stacktrace:
+ [1] parse(::Sequence{Tuple{SubString,Char},Tuple{NegativeLookahead{SubString,CombinedParsers.ConstantParser{4,SubString}},AnyChar}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2583
+ [2] top-level scope at REPL[24]:1
+
+```
 """
 struct NegativeLookahead{T,P} <: LookAround{T}
     parser::P
@@ -558,6 +659,13 @@ map_parser(f::Function,mem::AbstractDict,x::NamedParser,a...) =
 
 
 export log_names
+"""
+    log_names(x,names=nothing; exclude=nothing)
+
+Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
+
+See also: [`with_log`](@ref)
+"""
 function log_names(x,names=nothing; exclude=nothing)
     message = if names === nothing
         if exclude === nothing
@@ -588,8 +696,17 @@ end
 Sets names of parsers within begin/end block to match the variables they are asigned to.
 
 so, for example
-  foo = AnyChar() 
-will set the name field of AnyChar() to :foo.
+```jldoctest
+julia> @with_names foo = AnyChar()
+.  |> with_name(:foo)
+::Char
+
+julia> parse(log_names(foo),"ab")
+   match foo: ab
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+```
+
+See also (`log_names(parser)`)[@ref]
 """
 macro with_names(block)
     esc(with_names(block))
@@ -675,6 +792,13 @@ function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::Abstract
 end
 
 export map,map_at 
+"""
+    map_at(f::Function, p, a...)
+    map_at(f::Function, Tc::Type, p, a...)
+
+Parser transforming result of a wrapped parser. 
+`a...` is passed as additional arguments to `f`.
+"""
 function map_at(f::Function, Tc::Type, p, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
     Transformation{Tc}((v,i) -> (f((v), i, a...)), p)
@@ -686,6 +810,24 @@ end
 @deprecate instance_at(a...) map_at(a...)
 
 import Base: map
+"""
+    map(f::Function, p::TextParse.AbstractToken, a...)
+
+Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
+
+See also: [`map_at`](@ref)
+"""
+function Base.map(f::Function, p::TextParse.AbstractToken, a...)
+    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
+    Transformation{T}((v,i) -> (f(v, a...)), p)
+end
+"""
+    map(T::Type, p::TextParse.AbstractToken, a...)
+
+Parser matching `p`, transforming parsing results (`x`) with constructor `T(x,a...)`.
+
+See also: [`map_at`](@ref)
+"""
 function Base.map(Tc::Type, p::TextParse.AbstractToken, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
@@ -707,10 +849,8 @@ function Base.map(f::Function, Tc::Type, p::TextParse.AbstractToken, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
     Transformation{Tc}((v,i) -> (f(v, a...)), p)
 end
-function Base.map(f::Function, p::TextParse.AbstractToken, a...)
-    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{T}((v,i) -> (f(v, a...)), p)
-end
+Base.map(f::typeof(identity), p::TextParse.AbstractToken) = p
+
 
 @deprecate map(T::Type, f::Function, p::TextParse.AbstractToken, a...) map(f,T,p,a...)
 @deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
@@ -721,6 +861,27 @@ import Base: in
 include("unicode.jl")
 
 export CharIn
+"""
+    CharIn(x)
+
+Parser matching exactly one character in `x`.
+
+```jldoctest
+julia> a_z = CharIn('a':'z')
+re"[a-z]"
+
+julia> parse(a_z, "a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+julia> ac = CharIn("ac")
+re"[ac]"
+
+
+julia> parse(ac, "c")
+'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
+
+```
+"""
 struct CharIn{S} <: NIndexParser{1,Char}
     sets::S
     CharIn(x) = new{typeof(x)}(x)
@@ -795,7 +956,33 @@ regex_inner(x::CharIn{Char}) =
 end
 
 export CharNotIn
-"TODO: replace with CharIn{false,S}, xor logic"
+"""
+    CharNotIn(x)
+
+Parser matching exactly one character in `x`.
+
+```jldoctest
+julia> a_z = CharNotIn('a':'z')
+re"[^a-z]"
+
+julia> parse(a_z, "a")
+ERROR: ArgumentError: no successfull parsing.
+Stacktrace:
+ [1] parse(::CharNotIn{Tuple{StepRange{Char,Int64}}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2583
+ [2] top-level scope at REPL[24]:1
+
+julia> ac = CharNotIn("ac")
+re"[^ac]"
+
+
+julia> parse(ac, "c")
+ERROR: ArgumentError: no successfull parsing.
+Stacktrace:
+ [1] parse(::CharNotIn{Array{Char,1}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2583
+ [2] top-level scope at REPL[24]:1
+
+```
+"""
 struct CharNotIn{S} <: NIndexParser{1,Char}
     sets::S
 end
@@ -833,29 +1020,62 @@ end
 
 export Repeat_stop, Repeat_until
 """
-Repeat_stop(p,stop)
+    Repeat_stop(p,stop)
 
 Repeat `p` until `stop` (`NegativeLookahead`), not matching `stop`.
-Map results of `p` only.
+Sets cursor **before** `stop`.
+Returns results of `p`.
+
+```jldoctest
+julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
+🗄 Sequence
+├─ 🗄* Sequence |> map(#41) |> Repeat
+│  ├─ (?!🗄)
+│  │  └─ b
+│  └─ .
+└─ .
+::Tuple{Array{Char,1},Char}
+
+julia> parse(p,"acbX")
+(['a', 'c'], 'b')
+```
+
+See also [`NegativeLookahead`](@ref)
 """
 Repeat_stop(p,stop) =
     Repeat(Sequence(2,NegativeLookahead(parser(stop)),parser(p)))
 
+@deprecate rep_stop(a...;kw...) Repeat_stop(a...;kw...)
+
 """
-Repeat\\_until(p,until, with_until=false;wrap=identity)
+    Repeat\\_until(p,until, with_until=false;wrap=identity)
 
-Repeat `p` until `stop` (see `Repeat_stop`), 
-followed by `stop` (returned iif `wrap_until==true`).
+Repeat `p` until `stop` (with [`Repeat_stop`](@ref)).
+and set point **after** `stop`.
 
-To map repeats of `p`, the `Repeat_stop` is `wrap`ped by keyword argument, e.g.
+Return a `Vector{result_type(p)}` if `wrap_until==false`, otherwise a `Tuple{Vector{result_type(p)},result_type(until)}`.
 
-parse(Repeat_until(AnyChar(),'b'),"acb")
+To transform the `Repeat_stop(p)` parser head, provide a function(::Vector{result_type(p)}) in `wrap` keyword argument, e.g.
+```jldoctest
+julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
+🗄 Sequence
+├─ 🗄 Sequence |> map(#41)
+│  ├─ 🗄* Sequence |> map(#41) |> Repeat
+│  │  ├─ (?!🗄)
+│  │  │  └─ b
+│  │  └─ .
+│  └─ b
+└─ .
+::Tuple{Array{Char,1},Char}
 
-[ 'a', 'c' ]
+julia> parse(p,"acbX")
+(['a', 'c'], 'X')
 
-parse(Repeat_until(AnyChar(),'b';wrap=JoinSubstring),"acb")
-
+julia> parse(Repeat_until(AnyChar(),'b';wrap=JoinSubstring),"acbX")
 "ac"
+```
+
+See also [`NegativeLookahead`](@ref)
 """
 Repeat_until(p,until, with_until=false;wrap=identity) =
     if with_until
@@ -1079,7 +1299,26 @@ sSequence_(x1,x...) = Iterators.flatten( Any[ sSequence_(x1), ( sSequence_(e) fo
 """
     sSequence(x...)
 
-Simplifying seq, flatten Sequences, remove Always lookarounds.
+Simplifying `Sequence`, flatten `Sequence`s, remove `Always` lookarounds.
+
+```jldoctest
+julia> Sequence('a',CharIn("AB")*'b')
+🗄 Sequence
+├─ a
+└─ 🗄 Sequence
+   ├─ [AB]
+   └─ b
+::Tuple{Char,Tuple{Char,Char}}
+
+
+julia> sSequence('a',CharIn("AB")*'b')
+🗄 Sequence
+├─ a
+├─ [AB]
+└─ b
+::Tuple{Char,Char,Char}
+```
+See also [`Sequence`](@ref)
 """
 function sSequence(x...)
     opts = collect(sSequence_(x...))
@@ -1142,7 +1381,7 @@ end
 
 state_type(p::Type{<:Sequence}) = Vector{Any}
 """
-_iterate(parser, sequence, till, i, states)
+    _iterate(parser, sequence, till, i, states)
 
 Note: `i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
 such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
@@ -1284,6 +1523,14 @@ function print_constructor(io::IO, x::Lazy)
 end
 
 export Repeat1, Repeat
+"""
+    Repeat(x)
+    Repeat(x; min=0,max=typemax(Int))
+    Repeat(min::Integer, x)
+    Repeat(min::Integer,max::Integer, x)
+
+Parser repeating pattern `x` `min:max` times.
+"""
 struct Repeat{P,T} <: WrappedParser{P,T}
     range::UnitRange{Int}
     parser::P
@@ -1298,10 +1545,57 @@ Repeat(parser;min::Integer=0,max::Integer=typemax(Int)) =
     Repeat((min:max),parser)
 Repeat(min::Integer,parser) =
     Repeat((min:typemax(Int)),parser)
+Repeat(x::ParserTypes,y::Vararg{ParserTypes}) =
+    Repeat(Sequence(x,y...) )
+"""
+    Repeat(f::Function,a...)
 
+Abbreviation for `map(f,Repeat(a...))`.
+"""
+Repeat(f::Function,a...) =
+    map(f,Repeat(a...))
+
+"""
+    Repeat1(x)
+
+Parser repeating pattern `x` one time or more.
+"""
+Repeat1(x) =
+    Repeat(1,x)
+"""
+    Repeat1(f::Function,a...)
+
+Abbreviation for `map(f,Repeat1(a...))`.
+"""
+Repeat1(f::Function,a...) =
+    map(f,Repeat1(a...))
+
+Repeat(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) = Repeat(minmax...,x)
+
+@deprecate Repeat(minmax::Tuple{<:Integer,<:Integer},x::ParserTypes,y::Vararg{ParserTypes}) Repeat(minmax...,Sequence(x,y...))
+
+@deprecate Repeat(transform::Function, T::Type, a...) map(transform, T, Repeat(a...))
+
+@deprecate Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
+
+@deprecate Repeat(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) map(transform,T, Repeat(minmax...,parser(x)))
+
+@deprecate rep(a...;kw...) Repeat(a...;kw...)
 
 import Base.join
 
+"""
+    Base.join(x::Repeat,delim)
+
+Parser matching repeated `x.parser` separated by `delim`.
+```jldoctest
+julia> parse(join(Repeat(AnyChar()),','),"a,b,c")
+3-element Array{Char,1}:
+ 'a'
+ 'b'
+ 'c'
+```
+"""
 function Base.join(x::Repeat,delim_)
     delim = parser(delim_)
     ## todo: the get function could be optimized
@@ -1346,46 +1640,10 @@ regex_suffix(x::Repeat) =
     end
 
 
-Repeat1(x) =
-    Repeat(1,x)
-Repeat1(T::Type, x;  transform) =
-    Repeat1(transform,T, x)
-Repeat1(transform::Function, T::Type, x) =
-    map(transform, T, Repeat(1,typemax(Int),parser(x)))
-
-
-Repeat1(T::Type, x,y::Vararg; transform, kw...) =
-    Repeat1(T, seq(x,y...; transform=transform, kw...), transform=(v,i) -> v)
-
-
-Repeat(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) =
-    Repeat(minmax...,x)
-
-Repeat(minmax::Tuple{<:Integer,<:Integer},x::ParserTypes,y::Vararg{ParserTypes}) =
-    Repeat(seq(x,y...),minmax)
-
-Repeat(x::ParserTypes,y::Vararg{ParserTypes}) =
-    Repeat(seq(x,y...) )
-
-Repeat(transform::Function, a...) =
-    map(transform, Repeat(a...))
-
-Repeat(transform::Function, T::Type, a...) =
-    map(transform, T, Repeat(a...))
-
-Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) =
-    map(transform, Repeat(minmax, a...))
-
-Repeat(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) =
-    map(transform,T,
-             Repeat(minmax...,parser(x)))
-
-@deprecate rep(a...;kw...) Repeat(a...;kw...)
-
 map_parser(f::Function,mem::AbstractDict,x::Repeat,a...) =
     get!(mem,x) do
-        Repeat(x.range,
-               map_parser(f,mem,x.parser,a...))
+        f(Repeat(x.range,
+                 map_parser(f,mem,x.parser,a...)),a...)
     end
 
 
@@ -1610,6 +1868,21 @@ end
 
 export Optional
 struct None end
+"""
+    Optional(parser;default=defaultvalue(result_type(parser)))
+    
+Parser that always succeeds. 
+If parser succeeds, return result of `parser` with curser behind match.
+If parser does not succeed, return `default` with curser unchanged.
+
+```jldoctest
+julia> match(r"a?","b")
+RegexMatch("")
+
+julia> parse(Optional("a"),"b")
+""
+```
+"""
 struct Optional{P,T} <: WrappedParser{P,T}
     parser::P
     default::T
@@ -1706,6 +1979,23 @@ defaultvalue(V::Type{<:AbstractParser}) = Always()
 
 
 export alt, Either
+"""
+    Either(parsers...)
+    
+Parser that tries matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
+
+```jldoctest
+julia> match(r"a|bc","bc")
+RegexMatch("bc")
+
+julia> parse(Either("a","bc"),"bc")
+"bc"
+
+julia> parse("a" | "bc","bc")
+"bc"
+
+```
+"""
 struct Either{T,Ps} <: AbstractParser{T}
     options::Ps
     Either{T}(p::P) where {T,P<:Union{Tuple,Vector}} =
@@ -1733,14 +2023,15 @@ function Either(x::ParserTypes...)
     Either{T}(parts)
 end
 
+"""
+    Either(transform::Function, x::Vararg)
+
+abbreviation for `map(transform, Either(x...))`.
+"""
 function Either(transform::Function, x::Vararg)
     map(transform, Either(x...))
 end
 
-
-function Either(T::Type, x::Vararg; transform::Function)
-    map(transform, T, Either(x...))
-end
 
 @deprecate alt(a...) Either(a...)
 
@@ -1767,7 +2058,28 @@ sEither_(x1,x...) = Iterators.flatten( Any[ sEither_(x1), ( sEither_(e) for e in
 """
     sEither(x...)
 
-Simplifying alt, flattens nested Eithers, remove Never parsers.
+Simplifying `Either`, flattens nested `Either`s, remove `Never` parsers.
+
+```jldoctest
+julia> Either('a',CharIn("AB")|"bc")
+|🗄... Either
+├─ a
+└─ |🗄... Either
+   ├─ [AB]
+   └─ bc
+::Union{Char, SubString}
+
+
+julia> sEither('a',CharIn("AB")|"bc")
+|🗄... Either
+├─ a
+├─ [AB]
+└─ bc
+::Union{Char, SubString}
+
+```
+
+See also [`Either`](@ref)
 """
 function sEither(x...)
     opts = collect(sEither_(x...))
@@ -1777,11 +2089,9 @@ end
 
 
 """
-  `(|)(x::TextParse.AbstractToken, y)`
-
-  `(|)(x, y::TextParse.AbstractToken)`
-
-  `(|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken)`
+  (|)(x::TextParse.AbstractToken, y)
+  (|)(x, y::TextParse.AbstractToken)
+  (|)(x::TextParse.AbstractToken, y::TextParse.AbstractToken)
 
 Operator syntax for parser `sEither(x, y)`.
 """
@@ -1790,7 +2100,7 @@ Operator syntax for parser `sEither(x, y)`.
 (|)(x::ParserTypes, y::ParserTypes) = sEither(x,y)
 
 """
-  `(|)(x::TextParse.AbstractToken{T}, default::Union{T,Missing})`
+  (|)(x::TextParse.AbstractToken{T}, default::Union{T,Missing})
 
 Operator syntax for parser `Optional(x, default=default)`.
 """
@@ -1804,8 +2114,6 @@ function (|)(x::CharIn, y::Char)
     CharIn(tuple(x.sets...,y))
 end
 
-(|)(x::TextParse.AbstractToken{<:AbstractString}, default::String) =
-    error("ambiguous | operator:  disambiguate as `x | parser(\"$(escape_string(default))\")` or `Optional(x,default=\"$(escape_string(default))\")`.")
 
 """
     `(|)(x::Either, T::Type)`
@@ -2112,22 +2420,27 @@ end
 
 
 export Atomic
-struct AtomicGroup{P,T} <: WrappedParser{P,T}
+"""
+    Atomic(x)
+
+A parser matching `p`, and failing when required to backtrack
+(behaving like an atomic group in regular expressions).
+"""
+struct Atomic{P,T} <: WrappedParser{P,T}
     parser::P
-    AtomicGroup(parser) =
-        new{typeof(parser),result_type(parser)}(parser)
+    Atomic(x) =
+        let p=parser(x)
+            new{typeof(p),result_type(p)}(p)
+        end
 end
 
-map_parser(f::Function,mem::AbstractDict,x::AtomicGroup,a...) =
+map_parser(f::Function,mem::AbstractDict,x::Atomic,a...) =
     get!(mem,x) do
-        AtomicGroup(
+        Atomic(
             map_parser(f,mem,x.parser,a...))
     end
 
-Atomic(x) =
-    AtomicGroup(parser(x))
-
-@inline function _iterate(parser::AtomicGroup, sequence, till, i, state)
+@inline function _iterate(parser::Atomic, sequence, till, i, state)
     if state !== nothing
         nothing
     else
@@ -2135,17 +2448,17 @@ Atomic(x) =
     end
 end
 
-Base.get(x::AtomicGroup, a...) =
+Base.get(x::Atomic, a...) =
     get(x.parser,a...)
 
-function print_constructor(io::IO,x::AtomicGroup)
+function print_constructor(io::IO,x::Atomic)
     print_constructor(io,x.parser)
     print(io, " |> Atomic" )
 end
 
-regex_prefix(x::AtomicGroup) = "(?>"*regex_prefix(x.parser)
-regex_suffix(x::AtomicGroup) = regex_suffix(x.parser)*")"
-regex_inner(x::AtomicGroup) = regex_inner(x.parser)
+regex_prefix(x::Atomic) = "(?>"*regex_prefix(x.parser)
+regex_suffix(x::Atomic) = regex_suffix(x.parser)*")"
+regex_inner(x::Atomic) = regex_inner(x.parser)
 
 
 
@@ -2178,13 +2491,24 @@ end
 
 
 
-import Base: parse
+import Base: tryparse, parse
 """
-```parse(parser::ParserTypes, str::AbstractString)```
+    parse(parser::ParserTypes, str::AbstractString)
 
 Parse a string with a CombinedParser as an instance of `result_type(parser)`.
 """
 function Base.parse(p::TextParse.AbstractToken, s)
+    i = tryparse(p,s)
+    i === nothing && throw(ArgumentError("no successfull parsing."))
+    i
+end
+
+"""
+    tryparse(parser::ParserTypes, str::AbstractString)
+
+Parse a string with a CombinedParser as an instance of `result_type(parser)`.
+"""
+function Base.tryparse(p::TextParse.AbstractToken, s)
     i = _iterate(p,s)
     i === nothing && return nothing
     get(p,s,lastindex(s),i[1],1,i[2])

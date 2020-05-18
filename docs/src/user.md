@@ -1,105 +1,5 @@
-## Getting Started
 
-Install with
-```julia
-] add https://github.com/gkappler/CombinedParsers.jl
-```
-
-## Writing Parsers
-### Regular expression syntax
-CombinedParsers provides the ```@re_str``` macro as a plug-in replacement for the base Julia ```@r_str``` macro.
-
-```julia
-# Base Julia PCRE regular expressions
-mr = match(r"reg(ular )?ex(?<a>p(ression)?)?\??"i,"regexp")
-```
-RegexMatch("regexp", 1=nothing, 2="p", 3=nothing)
-
-```julia
-using CombinedParsers
-using CombinedParsers.Regexp
-mre = match(re"reg(ular )?ex(?<a>p(ression)?)?\??"i,"regexp")
-```
-ParseMatch("Regular Expression?", 1="ular ", 2="pression", 3="ression")
-
-The ParseMatch type has `getproperty` and `getindex` methods for handling like `RegexMatch`.
-```julia
-mre.match == mr.match
-mre.captures == mr.captures
-mre[2] == mr[2]
-mre[:a] == mr[:a]
-```
-
-The `@re_str` supports the following PCRE features
-- [X] fundamentals: sequences, alternations, repetitions optional, matches
-    (`*`,`+`,`{n}`, `{min,}`, `{min,max}`, `?`)
-- [X] escaped characters and generic character types
-- [X] character ranges (`[]`)
-- [X] non-capturing groups,
-- [X] capturing groups, backreferences, subroutines (all by index, relative index and name)
-- [X] atomic groups
-- [X] lazy repetitions
-- [X] conditional expressions
-- [X] internal and pattern options setting
-- [X] simple assertions (`\A`, `\z`, `\Z`, `\b`, `\B`, `^`, `$`), 
-- [X] lookaheads and lookbehinds
-- [X] comments
-
-CombinedParsers.jl is tested against the PCRE C library testset.
-
-PCRE functionality that is currently not supported:
-- [ ] capture groups in lookbehinds.
-- [ ] ACCEPT, SKIP, COMMIT, THEN, PRUNE, \K
-
-
-### Parsing
-
-```match``` searches for the first match of the Regex in the String and return a `RegexMatch`/`Parsematch` object containing the match and captures, or nothing if the match failed.
-```Base.parse``` methods parse a String into a Julia type.
-A CombinedParser `p` will parse into an instance of `result_type(p)`.
-For parsers defined with the `@re_str` the `result_type`s are nested Tuples and Vectors of SubString, Chars and Missing.
-
-
-```julia
-p = re"(a)*bc?"
-parse(p,"aaab")
-```
-(['a','a','a'],'b',missing)
-
-
-
-## Iterating matches
-```julia
-# Backtracking and listing all matches
-collect(parse_all(re"^(a|ab|b)+$","abab"))
-```
-
-
-```
-4-element Array{Tuple{AtStart,Array{Union{Char, Tuple{Char,Char}},1},AtEnd},1}:
- (^, ['a', 'b', 'a', 'b'], $)    
- (^, ['a', 'b', ('a', 'b')], $)  
- (^, [('a', 'b'), 'a', 'b'], $)  
- (^, [('a', 'b'), ('a', 'b')], $)
-```
-
-
-
-### Transformations
-Transform the result of a parsing with `map`.
-```julia
-parse(map(length,re"(ab)*"),"abababab") == 4
-```
-`map` uses julia type inference to infer the `result_type` automatically.
-A supertype `T >: result_type(map(f,p))` can be set as `result_type` with `map(f, T, p)`.
-
-Calling `map(::Integer,::AbstractParser)` or `getindex(::AbstractParser)` creates a transforming parser selecting from the result of the parsing.
-```julia
-parse(map(2,re"abc"),"abc") == 'b'
-parse(re"abc"[2],"abc") == 'b'
-```
-
-### Basics
+# Basics
 The simplest parser matches a `String` or `Char` iterator.
 ```julia
 parse_a = parser("aa")
@@ -113,7 +13,7 @@ parse(parse_a,"ab")
 
 
 
-#### Character Sets
+## Character Sets
 ```julia
 parse(CharIn('a':'z'),"c") =='c'
 parse(CharIn(isuppercase),"A") =='A'
@@ -121,7 +21,7 @@ parse(CharNotIn('a':'z'),"A") =='A'
 parse(CharNotIn(isuppercase),"c") =='c'
 ```
 
-#### Sequence
+## Sequence
 Several parsers can be combined with the `Sequence` constructor and the `*` operator.
 The `result_type` of a `Sequence` is the Tuple of the `result_type`s of its parts.
 ```julia
@@ -145,7 +45,7 @@ parse(Sequence(CharIn(isuppercase), :second => CharIn(islowercase)),"Ab") ==
 
 
 
-#### Either
+## Either
 The `|` operator and constructor `Either` try matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
 
 ```julia
@@ -155,9 +55,9 @@ parse(("a"|"ab"),"ab")
 
 Feedback inquiry:
 
-#### Assertions
+## Assertions
 Parsers that do not advance the parsing position can be used to assert conditions during parsing.
-##### AtStart() and AtEnd()
+## AtStart() and AtEnd()
 The `AtStart()` only succeeds if at the start of the input, and similarly the `AtEnd()` succeeds only at the end of the input.
 By default, `parse` does not need to consume the full input but succeeds with the first match.
 With `AtEnd()` the parser can be forced to consume the full input or fail otherwise.
@@ -166,7 +66,7 @@ parse(("a"|"ab")*AtEnd(),"ab")
 # "ab"
 ```
 
-##### Looking around
+## Looking around
 A `Lookaround` parser wraps a parser `p`, succeeds if `p` matches without advancing the position, and fails if `p` fails.
 
 
@@ -182,7 +82,7 @@ The `@re_str` macro has a regex parser for lookahead and lookbehind expressions 
     ")");
 ```
 
-#### Repeat
+## Repeat
 The `Repeat(p)` constructor creates a new parser repeating its argument zero or more times, and by default transforming to
 `Vector{result_type(p)}`.
 Repeating a specified number of times can be achieved with `Repeat(p,min=1,max=2)`, or `Repeat(1,p)` or `Repeat(1,2,p)`.
@@ -194,7 +94,7 @@ parse(join(parser('a')^(*)," "),"a a") ==
 	['a','a']
 ```
 
-#### Optional
+## Optional
 Similar to Repeat, `Optional(p)` creates a parser, repeating 0 or 1 times. 
 The `result_type(Optional(p, default=d))` is `promote_type` (or `Union` type is type promotion results in Any).
 
@@ -209,39 +109,39 @@ option = ( CharIn('a':'z') | missing ) * join(Repeat('b'),"-")
 ```
 
 
-#### Lazy repetitions and optional parsers
+## Lazy repetitions and optional parsers
 Repetition and optional parsers are greedy by default, and can be switched to lazy matching by wrapping in `Lazy(Repeat(p))`.
 
 
 
 
-#### Atomic groups
+## Atomic groups
 Backtracking of a parser `p` can be prevented by wrapping in `Atomic(Repeat(p))`.
 An atomic parser fails if `p` fails or if the first successfull parsing with `p` leads to a failing later in the parsing process.
 
 
 ```julia
 parse(Either("a","ab","ac")*AtEnd(),"ab") == ("ab", AtEnd())
-parse(Atomic(Either("a","ab","ac"))*AtEnd(),"ab") ## fails
+parse(Atomic(Either("a","ab","ac"))*AtEnd(),"ab") # fails
 ```
 
 
 
-## Acknowledgements
+# Acknowledgements
 
 The work was inspired by Scala FastParse package and the Julia parsing packages
-##### Parsers.jl
+## Parsers.jl
 For date and primitive types.
-##### TextParse
+## TextParse
 - used in CSV.jl
 - uses Nullables
 - CombinedParsers.AbstractParser <: TextParse.AbstractToken
 
-##### Automa.jl
+## Automa.jl
 - grammar based state machine compiler
 - no UTF8 support
 
-##### ParserCombinator.jl
+## ParserCombinator.jl
 - old source base (pre 2016, fixed for Julia 1.0 in 2018)
     - using Nullables
 - no iterator API
@@ -253,7 +153,7 @@ For date and primitive types.
 
 
 
-## Regular expressions: Either, Characters, and logging
+# Regular expressions: Either, Characters, and logging
 
 Lets build the major scaffold of the parser for regular expressions from scratch now!
 
@@ -290,7 +190,7 @@ char_matcher =  Either(
 @show match(char,"\\["; log=true)
 ```
 
-### Transforming a Parsing
+# Transforming a Parsing
 The Julia ```map``` method for `CombinedParsers.AbstractParser` creates a transforming parser.
 The parser for escaped and not escaped regular expression characters ```char``` can be transformed to emit not the `Char` but an `CharIn<:AbstractParser` matching the unescaped character.
 
@@ -333,7 +233,7 @@ parse(parsed_obracket_parser,"[")
 
 
 
-### Repeat, Transformation, and Sequence
+# Repeat, Transformation, and Sequence
 A basic feature of regular expression is whether a repeatable pattern (e.g. a char) is optional `?`, or should be repeated at least once `+`, any times `*`, or `{min,max}` times.
 
 The CombinedParser to parse the `(min, max)` tuple from PCRE syntax:
@@ -374,7 +274,7 @@ import CombinedParsers.Regexp: integer
     parse(repetition, "{1}") = (1, 1)
 
 
-### Repeatable patterns, Optional, Lazy and Atomic
+# Repeatable patterns, Optional, Lazy and Atomic
 The character matcher is the simplest repeatable pattern.
 
 The CombinedParser to parse a repeated matcher from PCRE syntax
@@ -383,7 +283,7 @@ The CombinedParser to parse a repeated matcher from PCRE syntax
 ```julia
 repeatable = Either{AbstractParser}(
     Any[char_parser_parser])
-## we will add groups to repeatable later
+# we will add groups to repeatable later
 
 @with_names quantified=Sequence(
         repeatable,
@@ -415,7 +315,7 @@ parse(log_names(quantified), raw"\++?")
 
 
 
-### Sequences and Alternations
+# Sequences and Alternations
 Regular expression patterns can be written in sequence, delimited by `|` for matching either one of several alternatives.
 
 
@@ -433,7 +333,7 @@ end;
 
 ```
 
-### Captures
+# Captures
 Parentheses allow groupings that are repeatable.
 
 
@@ -454,7 +354,7 @@ push!(repeatable,noncapture_group);
 
 ```julia
 alternation
-## is a parser
+# is a parser
 ```
 
 
@@ -478,7 +378,7 @@ ab_parser = parse(log_names(alternation),"(?:a|b)+")
 
 
 ```julia
-## the ab_parser
+# the ab_parser
 match(ab_parser,"aab")
 
 ```
@@ -508,7 +408,7 @@ parse(re"reg(ular )?ex(p(ression)?)?\??", "regex")
 
 
 
-### Looking around
+# Looking around
 
 
 

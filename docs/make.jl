@@ -1,7 +1,15 @@
-push!(LOAD_PATH,"../src/")
-using Documenter: Documenter, makedocs, deploydocs
-using CombinedParsers: CombinedParsers
+push!(LOAD_PATH,"../src")
+using Documenter: Documenter, makedocs, deploydocs, doctest, DocMeta
+using CombinedParsers
+using CombinedParsers.Regexp
+using Test
 
+DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
+    using CombinedParsers
+    using CombinedParsers.Regexp
+end; recursive=true)
+
+doctest(CombinedParsers; fix=true)
 makedocs(;
     modules=[CombinedParsers],
     authors="Gregor Kappler",
