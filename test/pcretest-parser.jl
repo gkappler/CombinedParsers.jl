@@ -71,7 +71,7 @@ macro pcre_testset(tt,log=false)
             catch
                 nothing
             end
-            ## pc  =ParserAlchemy.indexed_captures(set_options(ts.pattern.flags,parse(alternation,ts.pattern)))
+            ## pc  =CombinedParsers.indexed_captures(set_options(ts.pattern.flags,parse(alternation,ts.pattern)))
             pc  =Regcomb(p)
             @test pc !== nothing
             ## println(pc)

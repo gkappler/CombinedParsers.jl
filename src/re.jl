@@ -12,7 +12,7 @@ import ..CombinedParsers: revert, reverse_index, state_type
 
 import Base: prevind, nextind
 
-indexed_captures(x::Union{ConstantParser,AtStart,AtEnd,Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,LookAround},context,reset_number) = x
+indexed_captures_(x,context,reset_number) = x
 
 include("pcre.jl")
 
@@ -107,10 +107,10 @@ function map_parser(f::Function,mem::AbstractDict,x::Capture,a...)
     end
 end
 
-function map_parser(f::typeof(indexed_captures),mem::AbstractDict,x::Capture,context,a...)
+function map_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
     get!(mem,x) do
         index=nextind(context,x)
-        context.subroutines[index]=Capture(x.name,map_parser(indexed_captures,mem,x.parser,context,a...),index)
+        context.subroutines[index]=Capture(x.name,map_parser(indexed_captures_,mem,x.parser,context,a...),index)
     end
 end
 
@@ -207,7 +207,7 @@ function map_parser(::typeof(log_names),mem::AbstractDict,x::Backreference,a...)
     end
 end
 
-function map_parser(::typeof(indexed_captures),mem::AbstractDict,x::Backreference,context,a...)
+function map_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Backreference,context,a...)
     get!(mem,x) do
         idx = capture_index(x.name,Symbol(""),x.index,context)
         if idx < 1 || idx>lastindex(context.subroutines)
@@ -297,7 +297,7 @@ function _iterate_condition(cond::Subroutine, sequence, till, i, state)
     end
 end
 
-function map_parser(::typeof(indexed_captures),mem::AbstractDict,x::Subroutine,context,a...)
+function map_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Subroutine,context,a...)
     get!(mem,x) do
         index = capture_index(x.name,x.delta,x.index, context)
         if index <= 0 || index>length(context.subroutines)
@@ -338,13 +338,13 @@ struct DupSubpatternNumbers{P,T} <: WrappedParser{P,T}
         new{typeof(parser),result_type(parser)}(parser)
 end
 
-function map_parser(f::typeof(indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
+function map_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
     get!(mem,x) do
-        DupSubpatternNumbers(map_parser(indexed_captures,mem,x.parser,context,true))
+        DupSubpatternNumbers(map_parser(indexed_captures_,mem,x.parser,context,true))
     end
 end
 
-function map_parser(::typeof(indexed_captures),mem::AbstractDict,x::Either,context,reset_index)
+function map_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Either,context,reset_index)
     if reset_index
         idx = lastindex(context.subroutines)
         branches = Any[]
@@ -352,12 +352,12 @@ function map_parser(::typeof(indexed_captures),mem::AbstractDict,x::Either,conte
             while lastindex(context.subroutines)>idx
                 pop!(context.subroutines)
             end
-            push!(branches,map_parser(indexed_captures,mem,p,context,false))
+            push!(branches,map_parser(indexed_captures_,mem,p,context,false))
         end
         Either{result_type(x)}(tuple( branches... ))
     else
         Either{result_type(x)}(
-            tuple( (map_parser(indexed_captures,mem,p,context,false) for p in x.options )...))
+            tuple( (map_parser(indexed_captures_,mem,p,context,false) for p in x.options )...))
     end
 end
 
@@ -396,11 +396,11 @@ function map_parser(::typeof(log_names),mem::AbstractDict,x::Conditional,a...)
     end
 end
 
-function map_parser(::typeof(indexed_captures),mem::AbstractDict,x::Conditional,context,a...)
+function map_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Conditional,context,a...)
     get!(mem,x) do
-        Conditional(map_parser(indexed_captures,mem,x.condition,context,a...),
-                    map_parser(indexed_captures,mem,x.yes,context,a...),
-                    map_parser(indexed_captures,mem,x.no,context,a...))
+        Conditional(map_parser(indexed_captures_,mem,x.condition,context,a...),
+                    map_parser(indexed_captures_,mem,x.yes,context,a...),
+                    map_parser(indexed_captures_,mem,x.no,context,a...))
     end
 end
 
@@ -502,8 +502,8 @@ Base.get!(f::Function,d::NoDict,k) = f()
 
 indexed_captures(x) =
     let cs = ParserWithCaptures(x)
-        pass1 = ParserWithCaptures(map_parser(indexed_captures,NoDict(),x,cs,false),cs.subroutines,cs.names)
-        ParserWithCaptures(map_parser(indexed_captures,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
+        pass1 = ParserWithCaptures(map_parser(indexed_captures_,NoDict(),x,cs,false),cs.subroutines,cs.names)
+        ParserWithCaptures(map_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
     end
 
 
