@@ -902,6 +902,14 @@ struct CharIn{S} <: NIndexParser{1,Char}
         end
 end
 
+"""
+    CharIn(unicode_class::Symbol...)
+
+succeeds if char at cursor is in one of the unicode classes.
+"""
+CharIn(unicode_classes::Symbol...) =
+    CharIn(UnicodeClass(unicode_classes...))
+
 ==(x::CharIn,y::CharIn) =
     x.sets==y.sets
 hash(x::CharIn, h::UInt) = hash(x.sets,h)
@@ -999,6 +1007,14 @@ result_type(::Type{<:CharNotIn}) = Char
 regex_inner(x::CharNotIn) =
     "[^"*join([regex_string_(s) for s in x.sets])*"]"
 _ismatch(c,p::CharNotIn) = !_ismatch(c,p.sets)
+
+"""
+    CharIn(unicode_classes::Symbol...)
+
+succeeds if char at cursor is not in any of the `unicode_classes`.
+"""
+CharNotIn(unicode_classes::Symbol...) =
+    CharNotIn(UnicodeClass(unicode_classes...))
 
 @inline function _iterate(parser::CharNotIn, sequence, till, i, state::Nothing)
     i>till && return(nothing)

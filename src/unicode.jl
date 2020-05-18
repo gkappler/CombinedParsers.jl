@@ -115,44 +115,44 @@ unicode_blocks = [
 unicode_classes = Dict(
     x[1] => x[2:4] for x in
     [
-        ("L", "Letter", "any kind of letter from any language.", Base.Unicode.UTF8PROC_CATEGORY_LU:Base.Unicode.UTF8PROC_CATEGORY_LO),
-        ("Ll", "Lowercase_Letter", "a lowercase letter that has an uppercase variant.", Base.Unicode.UTF8PROC_CATEGORY_LL),
-        ("Lu", "Uppercase_Letter", "an uppercase letter that has a lowercase variant.", Base.Unicode.UTF8PROC_CATEGORY_LU),
-        ("Lt", "Titlecase_Letter", "a letter that appears at the start of a word when only the first letter of the word is capitalized.", Base.Unicode.UTF8PROC_CATEGORY_LT),
-        ("L&", "Cased_Letter", "a letter that exists in lowercase and uppercase variants (combination of Ll, Lu and Lt).", Base.Unicode.UTF8PROC_CATEGORY_LL:Base.Unicode.UTF8PROC_CATEGORY_LT),
-        ("Lm", "Modifier_Letter", "a special character that is used like a letter.", Base.Unicode.UTF8PROC_CATEGORY_LM),
-        ("Lo", "Other_Letter", "a letter or ideograph that does not have lowercase and uppercase variants.", Base.Unicode.UTF8PROC_CATEGORY_LO),
-        ("M", "Mark", "a character intended to be combined with another character (e.g. accents, umlauts, enclosing boxes, etc.).", Base.Unicode.UTF8PROC_CATEGORY_MN:Base.Unicode.UTF8PROC_CATEGORY_ME),
-        ("Mn", "Non_Spacing_Mark", "a character intended to be combined with another character without taking up extra space (e.g. accents, umlauts, etc.).", Base.Unicode.UTF8PROC_CATEGORY_MN),
-        ("Mc", "Spacing_Combining_Mark", "a character intended to be combined with another character that takes up extra space (vowel signs in many Eastern languages).", Base.Unicode.UTF8PROC_CATEGORY_MC),
-        ("Me", "Enclosing_Mark", "a character that encloses the character it is combined with (circle, square, keycap, etc.).", Base.Unicode.UTF8PROC_CATEGORY_ME),
-        ("Z", "Separator", "any kind of whitespace or invisible separator.", Base.Unicode.UTF8PROC_CATEGORY_ZS:Base.Unicode.UTF8PROC_CATEGORY_ZP),
-        ("Zs", "Space_Separator", "a whitespace character that is invisible, but does take up space.", Base.Unicode.UTF8PROC_CATEGORY_ZS),
-        ("Zl", "Line_Separator", "line separator character U+2028.", Base.Unicode.UTF8PROC_CATEGORY_ZL),
-        ("Zp", "Paragraph_Separator", "paragraph separator character U+2029.", Base.Unicode.UTF8PROC_CATEGORY_ZP),
-        ("S", "Symbol", "math symbols, currency signs, dingbats, box-drawing characters, etc.", Base.Unicode.UTF8PROC_CATEGORY_SM:Base.Unicode.UTF8PROC_CATEGORY_SO),
-        ("Sm", "Math_Symbol", "any mathematical symbol.", Base.Unicode.UTF8PROC_CATEGORY_SM),
-        ("Sc", "Currency_Symbol", "any currency sign.", Base.Unicode.UTF8PROC_CATEGORY_SC),
-        ("Sk", "Modifier_Symbol", "a combining character (mark) as a full character on its own.", Base.Unicode.UTF8PROC_CATEGORY_SK),
-        ("So", "Other_Symbol", "various symbols that are not math symbols, currency signs, or combining characters.", Base.Unicode.UTF8PROC_CATEGORY_SO),
-        ("N", "Number", "any kind of numeric character in any script.", Base.Unicode.UTF8PROC_CATEGORY_ND:Base.Unicode.UTF8PROC_CATEGORY_NO),
-        ("Nd", "Decimal_Digit_Number", "a digit zero through nine in any script except ideographic scripts.", Base.Unicode.UTF8PROC_CATEGORY_ND),
-        ("Nl", "Letter_Number", "a number that looks like a letter, such as a Roman numeral.", Base.Unicode.UTF8PROC_CATEGORY_NL),
-        ("No", "Other_Number", "a superscript or subscript digit, or a number that is not a digit 0–9 (excluding numbers from ideographic scripts).", Base.Unicode.UTF8PROC_CATEGORY_NO),
-        ("P", "Punctuation", "any kind of punctuation character.", Base.Unicode.UTF8PROC_CATEGORY_PC:Base.Unicode.UTF8PROC_CATEGORY_PO),
-        ("Pc", "Connector_Punctuation", "a punctuation character such as an underscore that connects words.", Base.Unicode.UTF8PROC_CATEGORY_PC),
-        ("Pd", "Dash_Punctuation", "any kind of hyphen or dash.", Base.Unicode.UTF8PROC_CATEGORY_PD),
-        ("Ps", "Open_Punctuation", "any kind of opening bracket.", Base.Unicode.UTF8PROC_CATEGORY_PS),
-        ("Pe", "Close_Punctuation", "any kind of closing bracket.", Base.Unicode.UTF8PROC_CATEGORY_PE),
-        ("Pi", "Initial_Punctuation", "any kind of opening quote.", Base.Unicode.UTF8PROC_CATEGORY_PI),
-        ("Pf", "Final_Punctuation", "any kind of closing quote.", Base.Unicode.UTF8PROC_CATEGORY_PF),
-        ("Po", "Other_Punctuation", "any kind of punctuation character that is not a dash, bracket, quote or connector.", Base.Unicode.UTF8PROC_CATEGORY_PO),
-        ("C", "Other", "invisible control characters and unused code points.", Base.Unicode.UTF8PROC_CATEGORY_CC:Base.Unicode.UTF8PROC_CATEGORY_CO),
-        ("Cc", "Control", "an ASCII or Latin-1 control character: 0x00–0x1F and 0x7F–0x9F.", Base.Unicode.UTF8PROC_CATEGORY_CC),
-        ("Cf", "Format", "invisible formatting indicator.", Base.Unicode.UTF8PROC_CATEGORY_CF),
-        ("Cs", "Surrogate", "one half of a surrogate pair in UTF-16 encoding.", Base.Unicode.UTF8PROC_CATEGORY_CS),
-        ("Co", "Private_Use", "any code point reserved for private use.", Base.Unicode.UTF8PROC_CATEGORY_CO),
-        ("Cn", "Unassigned", "any code point to which no character has been assigned.", Base.Unicode.UTF8PROC_CATEGORY_CN)
+        (:L, "Letter", "any kind of letter from any language.", Base.Unicode.UTF8PROC_CATEGORY_LU:Base.Unicode.UTF8PROC_CATEGORY_LO),
+        (:Ll, "Lowercase_Letter", "a lowercase letter that has an uppercase variant.", Base.Unicode.UTF8PROC_CATEGORY_LL),
+        (:Lu, "Uppercase_Letter", "an uppercase letter that has a lowercase variant.", Base.Unicode.UTF8PROC_CATEGORY_LU),
+        (:Lt, "Titlecase_Letter", "a letter that appears at the start of a word when only the first letter of the word is capitalized.", Base.Unicode.UTF8PROC_CATEGORY_LT),
+        (Symbol("L&"), "Cased_Letter", "a letter that exists in lowercase and uppercase variants (combination of Ll, Lu and Lt).", Base.Unicode.UTF8PROC_CATEGORY_LL:Base.Unicode.UTF8PROC_CATEGORY_LT),
+        (:Lm, "Modifier_Letter", "a special character that is used like a letter.", Base.Unicode.UTF8PROC_CATEGORY_LM),
+        (:Lo, "Other_Letter", "a letter or ideograph that does not have lowercase and uppercase variants.", Base.Unicode.UTF8PROC_CATEGORY_LO),
+        (:M, "Mark", "a character intended to be combined with another character (e.g. accents, umlauts, enclosing boxes, etc.).", Base.Unicode.UTF8PROC_CATEGORY_MN:Base.Unicode.UTF8PROC_CATEGORY_ME),
+        (:Mn, "Non_Spacing_Mark", "a character intended to be combined with another character without taking up extra space (e.g. accents, umlauts, etc.).", Base.Unicode.UTF8PROC_CATEGORY_MN),
+        (:Mc, "Spacing_Combining_Mark", "a character intended to be combined with another character that takes up extra space (vowel signs in many Eastern languages).", Base.Unicode.UTF8PROC_CATEGORY_MC),
+        (:Me, "Enclosing_Mark", "a character that encloses the character it is combined with (circle, square, keycap, etc.).", Base.Unicode.UTF8PROC_CATEGORY_ME),
+        (:Z, "Separator", "any kind of whitespace or invisible separator.", Base.Unicode.UTF8PROC_CATEGORY_ZS:Base.Unicode.UTF8PROC_CATEGORY_ZP),
+        (:Zs, "Space_Separator", "a whitespace character that is invisible, but does take up space.", Base.Unicode.UTF8PROC_CATEGORY_ZS),
+        (:Zl, "Line_Separator", "line separator character U+2028.", Base.Unicode.UTF8PROC_CATEGORY_ZL),
+        (:Zp, "Paragraph_Separator", "paragraph separator character U+2029.", Base.Unicode.UTF8PROC_CATEGORY_ZP),
+        (:S, "Symbol", "math symbols, currency signs, dingbats, box-drawing characters, etc.", Base.Unicode.UTF8PROC_CATEGORY_SM:Base.Unicode.UTF8PROC_CATEGORY_SO),
+        (:Sm, "Math_Symbol", "any mathematical symbol.", Base.Unicode.UTF8PROC_CATEGORY_SM),
+        (:Sc, "Currency_Symbol", "any currency sign.", Base.Unicode.UTF8PROC_CATEGORY_SC),
+        (:Sk, "Modifier_Symbol", "a combining character (mark) as a full character on its own.", Base.Unicode.UTF8PROC_CATEGORY_SK),
+        (:So, "Other_Symbol", "various symbols that are not math symbols, currency signs, or combining characters.", Base.Unicode.UTF8PROC_CATEGORY_SO),
+        (:N, "Number", "any kind of numeric character in any script.", Base.Unicode.UTF8PROC_CATEGORY_ND:Base.Unicode.UTF8PROC_CATEGORY_NO),
+        (:Nd, "Decimal_Digit_Number", "a digit zero through nine in any script except ideographic scripts.", Base.Unicode.UTF8PROC_CATEGORY_ND),
+        (:Nl, "Letter_Number", "a number that looks like a letter, such as a Roman numeral.", Base.Unicode.UTF8PROC_CATEGORY_NL),
+        (:No, "Other_Number", "a superscript or subscript digit, or a number that is not a digit 0–9 (excluding numbers from ideographic scripts).", Base.Unicode.UTF8PROC_CATEGORY_NO),
+        (:P, "Punctuation", "any kind of punctuation character.", Base.Unicode.UTF8PROC_CATEGORY_PC:Base.Unicode.UTF8PROC_CATEGORY_PO),
+        (:Pc, "Connector_Punctuation", "a punctuation character such as an underscore that connects words.", Base.Unicode.UTF8PROC_CATEGORY_PC),
+        (:Pd, "Dash_Punctuation", "any kind of hyphen or dash.", Base.Unicode.UTF8PROC_CATEGORY_PD),
+        (:Ps, "Open_Punctuation", "any kind of opening bracket.", Base.Unicode.UTF8PROC_CATEGORY_PS),
+        (:Pe, "Close_Punctuation", "any kind of closing bracket.", Base.Unicode.UTF8PROC_CATEGORY_PE),
+        (:Pi, "Initial_Punctuation", "any kind of opening quote.", Base.Unicode.UTF8PROC_CATEGORY_PI),
+        (:Pf, "Final_Punctuation", "any kind of closing quote.", Base.Unicode.UTF8PROC_CATEGORY_PF),
+        (:Po, "Other_Punctuation", "any kind of punctuation character that is not a dash, bracket, quote or connector.", Base.Unicode.UTF8PROC_CATEGORY_PO),
+        (:C, "Other", "invisible control characters and unused code points.", Base.Unicode.UTF8PROC_CATEGORY_CC:Base.Unicode.UTF8PROC_CATEGORY_CO),
+        (:Cc, "Control", "an ASCII or Latin-1 control character: 0x00–0x1F and 0x7F–0x9F.", Base.Unicode.UTF8PROC_CATEGORY_CC),
+        (:Cf, "Format", "invisible formatting indicator.", Base.Unicode.UTF8PROC_CATEGORY_CF),
+        (:Cs, "Surrogate", "one half of a surrogate pair in UTF-16 encoding.", Base.Unicode.UTF8PROC_CATEGORY_CS),
+        (:Co, "Private_Use", "any code point reserved for private use.", Base.Unicode.UTF8PROC_CATEGORY_CO),
+        (:Cn, "Unassigned", "any code point to which no character has been assigned.", Base.Unicode.UTF8PROC_CATEGORY_CN)
     ]
 )
 
@@ -168,8 +168,10 @@ export UnicodeClass
 struct UnicodeClass{I}
     class::I
 end
-UnicodeClass(abbrev::String...) =
+UnicodeClass(abbrev::Symbol...) =
     UnicodeClass(tuple((unicode_classes[a][3] for a in abbrev)...))
+UnicodeClass(abbrev::String...) =
+    UnicodeClass((Symbol(a) for a in abbrev)...)
 ismatch(x::Char, set::UnicodeClass{<:Tuple}) =
     in_any(Base.Unicode.category_code(x),set.class)
 
