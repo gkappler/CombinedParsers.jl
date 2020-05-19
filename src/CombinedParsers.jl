@@ -180,13 +180,13 @@ julia> parse(!Repeat(CharIn(:L)),"abc123")
 
 """
 (!)(x::AbstractToken) = JoinSubstring(x)
-map_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
     get!(mem,x) do
         JoinSubstring(
-            map_parser(f,mem,x.parser,a...))
+            deepmap_parser(f,mem,x.parser,a...))
     end
-map_parser(f::Function,x::AbstractParser,a...) =
-    map_parser(f,IdDict(),x,a...)
+deepmap_parser(f::Function,x::AbstractParser,a...) =
+    deepmap_parser(f,IdDict(),x,a...)
 
 export map_match
 map_match(f::Function,p_) =
@@ -554,6 +554,13 @@ with_effect(f::Function,p,a...) =
     r
 end
 
+export deepmap_parser
+deepmap_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
+    SideeffectParser(x.effect,
+                     deepmap_parser(f,mem,x.parser,a...),
+                     x.args...)
+
+
 """
     with_log(s::AbstractString,p, delta=5;nomatch=false)
 
@@ -567,12 +574,6 @@ with_log(s::AbstractString,p_, delta=5;nomatch=false) =
     let p = parser(p_), log=s*": "
         SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta)
     end
-
-export map_parser
-map_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
-    SideeffectParser(x.effect,
-                     map_parser(f,mem,x.parser,a...),
-                     x.args...)
 
 function log_effect(s,start,after,state,log,delta=5)
     if state === nothing
@@ -651,9 +652,9 @@ with_name(name::AbstractString,x; doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),x,doc)
 
 log_names_(x::AbstractParser,a...) = x
-function map_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function)
+function deepmap_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function)
     get!(mem,x) do
-        r = NamedParser(x.name,map_parser(f,mem,x.parser,message))
+        r = NamedParser(x.name,deepmap_parser(f,mem,x.parser,message))
         log=message(x)
         if log!==nothing
             with_log("$(log)",r)
@@ -663,9 +664,9 @@ function map_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,messa
     end
 end
 
-map_parser(f::Function,mem::AbstractDict,x::NamedParser,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::NamedParser,a...) =
     get!(mem,x) do
-        NamedParser(x.name,map_parser(f,mem,x.parser,a...))
+        NamedParser(x.name,deepmap_parser(f,mem,x.parser,a...))
     end
 
 
@@ -688,7 +689,7 @@ function log_names(x,names=nothing; exclude=nothing)
     else
         x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
     end
-    map_parser(log_names_,Dict(),x, message)
+    deepmap_parser(log_names_,Dict(),x, message)
 end
 
 export @with_names
@@ -756,9 +757,9 @@ struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
             with_name(p_.name,tp)
         end
 end
-map_parser(f::Function,mem::AbstractDict,x::Transformation,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...) =
     get!(mem,x) do
-        Transformation{result_type(x)}(x.transform,map_parser(f,mem,x.parser,a...))
+        Transformation{result_type(x)}(x.transform,deepmap_parser(f,mem,x.parser,a...))
     end
 
 
@@ -1115,11 +1116,11 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
 
 @deprecate rep_until(p,until) Repeat_until(p,until)
 
-map_parser(f::Function,mem::AbstractDict,x::Union{ConstantParser,AtStart,AtEnd},a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Union{ConstantParser,AtStart,AtEnd},a...) =
     get!(mem,x) do
         f(x,a...)
     end
-map_parser(f::Function,mem::AbstractDict,x::Union{Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never},a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Union{Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never},a...) =
     get!(mem,x) do
         f(x,a...)
     end
@@ -1149,10 +1150,10 @@ function after(right::Function,left::AbstractToken)
     FlatMap{T}(left,right)
 end
 
-map_parser(f::Function,mem::AbstractDict,x::FlatMap,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...) =
     get!(mem,x) do
-        FlatMap{result_type(x)}(map_parser(f,mem,x.left),
-                                v -> map_parser(f,mem,x.right(v),a...))
+        FlatMap{result_type(x)}(deepmap_parser(f,mem,x.left),
+                                v -> deepmap_parser(f,mem,x.right(v),a...))
     end
 regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
@@ -1313,9 +1314,9 @@ children(x::Sequence) = x.parts
 
 Base.getindex(x::AbstractParser, i) = map(i,x)
 
-map_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
     get!(mem,x) do
-        Sequence( ( map_parser(f,mem,p,a...)
+        Sequence( ( deepmap_parser(f,mem,p,a...)
                     for p in x.parts)... )
     end
 
@@ -1538,9 +1539,9 @@ struct Lazy{P,T} <: WrappedParser{P,T}
         end
 end
 
-map_parser(f::Function,mem::AbstractDict,x::Lazy,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Lazy,a...) =
     get!(mem,x) do
-        Lazy(map_parser(f,mem,x.parser,a...))
+        Lazy(deepmap_parser(f,mem,x.parser,a...))
     end
 
 regex_inner(x::Lazy) = regex_inner(x.parser)
@@ -1669,10 +1670,10 @@ regex_suffix(x::Repeat) =
     end
 
 
-map_parser(f::Function,mem::AbstractDict,x::Repeat,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...) =
     get!(mem,x) do
         f(Repeat(x.range,
-                 map_parser(f,mem,x.parser,a...)),a...)
+                 deepmap_parser(f,mem,x.parser,a...)),a...)
     end
 
 
@@ -1953,9 +1954,9 @@ function print_constructor(io::IO, x::Optional)
     print_constructor(io,x.parser)
     print(io, " |> Optional(default=$(x.default))")
 end
-map_parser(f::Function,mem::AbstractDict,x::Optional,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...) =
     get!(mem,x) do
-        Optional(map_parser(f,mem,x.parser,a...);
+        Optional(deepmap_parser(f,mem,x.parser,a...);
                  default=x.default)
     end
 
@@ -2065,13 +2066,14 @@ end
 @deprecate alt(a...) Either(a...)
 
 
-function map_parser(f::Function,mem::AbstractDict,x::Either,a...)
+function deepmap_parser(f::Function,mem::AbstractDict,x::Either,a...)
     if haskey(mem,x)
         mem[x]
     else
         mem[x] = r = Either{result_type(x)}(Any[])
+        ## f(x,a...)
         for p in x.options
-            push!(r,map_parser(f,mem,p,a...))
+            push!(r,deepmap_parser(f,mem,p,a...))
         end
         r
     end
@@ -2484,10 +2486,10 @@ struct Atomic{P,T} <: WrappedParser{P,T}
         end
 end
 
-map_parser(f::Function,mem::AbstractDict,x::Atomic,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...) =
     get!(mem,x) do
         Atomic(
-            map_parser(f,mem,x.parser,a...))
+            deepmap_parser(f,mem,x.parser,a...))
     end
 
 @inline function _iterate(parser::Atomic, sequence, till, i, state)
@@ -2593,11 +2595,12 @@ export _iterate
 export Numeric
 Numeric = TextParse.Numeric
 
-map_parser(f::Function,mem::AbstractDict,x::Numeric,a...) = x
+deepmap_parser(f::Function,mem::AbstractDict,x::Numeric,a...) = x
 
 include("reverse.jl")
 include("textparse.jl")
 include("re.jl")
+
 
 include("show.jl")
 
