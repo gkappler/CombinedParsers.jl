@@ -9,11 +9,7 @@ log conveniently for debugging, and let Julia compile your parser for good perfo
 
 !!! note
 
-    Please read through the
-    [Documentation](https://docs.julialang.org/en/v1/manual/documentation/) section
-    of the main Julia manual if this is your first time using Julia's documentation system.
-    Once you've read through how to write documentation for your code then come back here.
-
+	`CombinedParsers.jl` is still an α release.	The first official released is prepared for JuliaCon2020.
 ## Package Features
 
 - Clear syntax integrates grammar and transformations with Julia type inference.
@@ -33,11 +29,13 @@ Some examples of packages using Documenter can be found on the [Examples](@ref) 
 
 See the [Index](@ref main-index) for the complete list of documented functions and types.
 
-## Manual Outline
+## Package Guide
 
 ```@contents
 Pages = [
     "man/guide.md",
+    "man/user.md",
+    "man/pcre.md",
     "man/examples.md",
     "man/syntax.md",
     "man/doctests.md",
@@ -51,8 +49,47 @@ Depth = 1
 ## Library Outline
 
 ```@contents
-Pages = ["lib/public.md", "lib/internals/types.md", "lib/internals/iterate.md"]
+Pages = [ "lib/public.md" ]
+Depth = 5
 ```
+
+### Internals
+```@contents
+Pages = ["lib/internals/types.md", "lib/internals/iterate.md"]
+```
+
+# Acknowledgements
+
+The work was inspired by Scala [fastparse](https://github.com/lihaoyi/fastparse) package and the Julia parsing packages
+## [Parsers.jl](https://github.com/JuliaData/Parsers.jl)
+A collection of parsers for date and primitive types.
+
+### [TextParse.jl](https://github.com/queryverse/TextParse.jl)
+A bunch of fast text parsing tools.
+- used in CSV.jl
+- Nullables.jl
+
+TextParse.jl integrates with CombinedParsers.jl both ways 
+by type `CombinedParsers.AbstractParser <: TextParse.AbstractToken`
+and providing a method for `TextParse.tryparsenext`.
+
+```@docs
+CombinedParsers.tryparsenext
+```
+
+### [Automa.jl](https://github.com/BioJulia/Automa.jl)
+A Julia package for text validation, parsing, and tokenizing based on state machine compiler.
+The package compiles a parser deterministic finite automaton.
+Processing of parsed tokens is done with actions.
+No UTF8 support.
+
+### [ParserCombinator.jl](https://github.com/andrewcooke/ParserCombinator.jl)
+- old source base (pre 2016, fixed for Julia 1.0 in 2018)
+    - using Nullables
+- no iterator API
+- performance 
+    - mutable matcher types
+    - matcher types not parametric
 
 ### [Index](@id main-index)
 
@@ -60,36 +97,3 @@ Pages = ["lib/public.md", "lib/internals/types.md", "lib/internals/iterate.md"]
 Pages = ["lib/public.md"]
 ```
 
-
-```@contents
-```
-
-```@docs
-parse(parser, str)
-```
-
-## Index
-```@index
-```
-
-# Acknowledgements
-
-The work was inspired by Scala FastParse package and the Julia parsing packages
-## Parsers.jl
-For date and primitive types.
-### TextParse
-- used in CSV.jl
-- uses Nullables
-- CombinedParsers.AbstractParser <: TextParse.AbstractToken
-
-### Automa.jl
-- grammar based state machine compiler
-- no UTF8 support
-
-### ParserCombinator.jl
-- old source base (pre 2016, fixed for Julia 1.0 in 2018)
-    - using Nullables
-- no iterator API
-- performance 
-    - mutable matcher types
-    - matcher types not parametric

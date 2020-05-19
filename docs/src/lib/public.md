@@ -11,6 +11,8 @@ See the Internals section of the manual for internal package docs covering all s
 
 ```@docs
 CombinedParsers
+parser
+convert
 ```
 
 ## CombinedParsers.Regexp
@@ -20,13 +22,12 @@ CombinedParsers.Regexp
 CombinedParsers.Regexp.@re_str
 CombinedParsers.Regexp.match
 regex_escape
-CombinedParsers.Regexp.Conditional
-CombinedParsers.Regexp.Conditional
 ```
 
 ## Parsing, Logging and Side-Effects
 ```@docs
 parse
+tryparse
 with_name
 @with_names
 log_names
@@ -70,6 +71,7 @@ Repeat1
 Repeat_stop
 Repeat_until
 Base.join
+alternate
 ```
 
 
@@ -89,17 +91,7 @@ regex_string
 CombinedParsers.regex_prefix
 CombinedParsers.regex_inner
 CombinedParsers.regex_suffix
+CombinedParsers.print_constructor
+CombinedParsers.MemoTreeChildren
 ```
 
-
-
-# Internals
-```@docs
-CombinedParsers.ParserTypes
-CombinedParsers.AbstractParser
-CombinedParsers.ConstantParser
-CombinedParsers.NIndexParser
-CombinedParsers.WrappedParser
-CombinedParsers.LookAround
-CombinedParsers._iterate
-```

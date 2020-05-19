@@ -1,11 +1,12 @@
 # Getting Started
 
+## Installation
 Install with
 ```julia
 ] add https://github.com/gkappler/CombinedParsers.jl
 ```
 
-# Writing Parsers
+## Writing Parsers
 CombinedParsers provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
 
 ```julia
@@ -40,7 +41,7 @@ parse(log_names(expr), "1/((1+2)*4+3*(5*2))")
 
 Combinator constructors are discussed in the [user manual](user.html).
 
-# Regular expression syntax
+## Regular expression syntax
 CombinedParsers provides the ```@re_str``` macro as a plug-in replacement for the base Julia ```@r_str``` macro.
 
 Base Julia PCRE regular expressions:
@@ -94,7 +95,7 @@ PCRE functionality that is currently not supported:
 - [ ] ACCEPT, SKIP, COMMIT, THEN, PRUNE, \K
 
 
-# Parsing 
+## Parsing 
 
 ```match``` searches for the first match of the Regex in the String and return a `RegexMatch`/`Parsematch` object containing the match and captures, or nothing if the match failed.
 ```Base.parse``` methods parse a String into a Julia type.
@@ -111,7 +112,7 @@ parse(p,"aaab")
 ```
 
 
-# Iterating
+## Iterating
 If a parsing is not uniquely defined different parsings can be lazily iterated.
 ```julia
 # Backtracking and listing all matches
@@ -127,7 +128,7 @@ collect(parse_all(re"^(a|ab|b)+$","abab"))
 
 
 
-# Transformations
+## Transformations
 Transform the result of a parsing with `map`.
 ```julia
 parse(map(length,re"(ab)*"),"abababab") == 4

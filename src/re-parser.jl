@@ -629,7 +629,7 @@ push!(pattern,map(Either("\\K")) do v throw(UnsupportedError(v)); end);
 
 export pcre_parser, @re_str, Regcomb
 pcre_parser = Sequence(AtStart(),alternation,AtEnd()) do v
-    indexed_captures(v[2])
+    ParserWithCaptures(v[2])
 end
 
 function Regcomb(x)
@@ -655,44 +655,36 @@ end
 """
     @re_str(x,flags)
 
+Construct a `ParserWithCaptures` from PCRE regex syntax, such as `re"^[a-z]*\$"`, without interpolation and unescaping (except for
+quotation mark `"` which still has to be escaped). 
 Plug-in replacement for PCRE string macro @r_str.
-Constructs a CombinedParser equivalent to the PCRE regular expression.
-Supported `flags` are parsed 
-- xx Base.PCRE.EXTENDED_MORE
-- i Base.PCRE.CASELESS
-- m Base.PCRE.MULTILINE
-- n Base.PCRE.NO_AUTO_CAPTURE
-- U Base.PCRE.UNGREEDY
-- J Base.PCRE.DUPNAMES
-- s Base.PCRE.DOTALL
-- x Base.PCRE.EXTENDED
 
-Unsupported
-- g UInt32(0),
-- B UInt32(0)
+The regex also accepts one or more flags, listed after the ending quote, to change its behaviour:
+
+- `i` enables case-insensitive matching
+- `m` treats the `^` and `\$` tokens as matching the start and end of individual lines, as
+  opposed to the whole string.
+- `s` allows the `.` modifier to match newlines.
+- `x` enables "comment mode": whitespace is ignored except when escaped with `\\`, and `#`
+  is treated as starting a comment.
+- `a` disables `UCP` mode (enables ASCII mode). By default `\\B`, `\\b`, `\\D`, `\\d`, `\\S`,
+  `\\s`, `\\W`, `\\w`, etc. match based on Unicode character properties. With this option,
+  these sequences only match ASCII characters.
+- `xx` enables "extended comment mode": whitespace in bracket character matchers are ignored.
 
 
 ```jldoctest
-julia> re"a|b|c"i
+julia> re"a|c"i
 |🗄... Either |> regular expression combinator
 ├─ [aA]
-├─ [bB]
 └─ [cC]
 ::Char
 
-julia> re"(a|b)+c"
-🗄 Sequence |> regular expression combinator with 1 capturing groups
-├─ (|🗄...)+ Either |> Capture |> Repeat
-│  ├─ a
-│  └─ b
+julia> re"a+c"
+🗄 Sequence |> regular expression combinator
+├─ a+  |> Repeat
 └─ c
 ::Tuple{Array{Char,1},Char}
-
-julia> re"([ab]+c)*"
-(🗄)* Sequence |> Capture |> Repeat |> regular expression combinator with 1 capturing groups
-├─ [ab]+  |> Repeat
-└─ c
-::Array{Tuple{Array{Char,1},Char},1}
 ```
 
 """

@@ -5,6 +5,7 @@ using CombinedParsers.Regexp
 using Test
 
 DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
+    using TextParse
     using CombinedParsers
     using CombinedParsers.Regexp
 end; recursive=true)
@@ -24,7 +25,7 @@ makedocs(;
         "Home" => "index.md",
         "Manual" => [
             "Overview" => "man/guide.md",
-            "User Guide" => "user.md",
+            "User Guide" => "man/user.md",
             "Regular Expressions" => "man/pcre.md",
         ],
         "Library" => Any[

@@ -29,6 +29,30 @@ Abstract parser type for parsers returning matches transformed to `::T`.
 """
 abstract type AbstractParser{T} <: AbstractToken{T} end
 
+
+"""
+    LeafParser{T} <: AbstractToken{T}
+
+Abstract parser type for parsers that have no sub-parser.
+Used for dispatch in [`deepmap_parser`](@ref)
+"""
+abstract type LeafParser{T} <: AbstractParser{T} end
+
+
+"""
+    deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...)
+
+return 
+```julia
+    get!(mem,x) do
+        f(x,a...)
+    end
+```
+"""
+deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...) =
+    get!(mem,x) do
+        f(x,a...)
+    end
 "Julia types that can convert(AbstractToken,x). TODO: remove"
 ParserTypes = Union{AbstractToken, AbstractString, Char, Regex,
                     Pair{<:Union{AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
@@ -36,9 +60,7 @@ ParserTypes = Union{AbstractToken, AbstractString, Char, Regex,
 export parser
 import Base: convert
 """
-    parser(x)
-
-calls convert(AbstractToken,x).
+calls `convert(AbstractToken,x)`.
 """
 parser(x) = Base.convert(AbstractToken, x)
 parser(x::Regex) = x
@@ -173,6 +195,12 @@ Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
 Parser Transformation getting the matched SubString.
 
 ```jldoctest
+julia> parse(Repeat(CharIn(:L)),"abc123")
+3-element Array{Char,1}:
+ 'a'
+ 'b'
+ 'c'
+
 julia> parse(!Repeat(CharIn(:L)),"abc123")
 "abc"
 
@@ -180,11 +208,37 @@ julia> parse(!Repeat(CharIn(:L)),"abc123")
 
 """
 (!)(x::AbstractToken) = JoinSubstring(x)
+
+
+"""
+    deepmap_parser(f::Function,mem::AbstractDict,x,a...)
+
+Perform a deep transformation of a CombinedParser.
+
+!!! note
+    For a custom parser `P<:AbstractParser` with sub-parsers, provide a method
+    ```julia
+    deepmap_parser(f::Function,mem::AbstractDict,x::P,a...) =
+        get!(mem,x) do
+            ## construct replacement, e.g. if P <: WrappedParser
+            P(deepmap_parser(f,mem,x.parser,a...))
+        end
+    ```
+"""
 deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
     get!(mem,x) do
         JoinSubstring(
             deepmap_parser(f,mem,x.parser,a...))
     end
+
+"""
+    deepmap_parser(f::Function,x::AbstractParser,a...)
+
+Perform a deep transformation of a CombinedParser.
+Used for [`log_names`](@ref).
+
+Calls `deepmap_parser(f,IdDict(),x,a...)`.
+"""
 deepmap_parser(f::Function,x::AbstractParser,a...) =
     deepmap_parser(f,IdDict(),x,a...)
 
@@ -207,12 +261,17 @@ regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
 """
-    `convert(::Type{AbstractToken},x::Union{AbstractString,Char})`
+    convert(::Type{AbstractToken},x::Union{AbstractString,Char})
 
-A ConstantParser matching x.
+A [`ConstantParser`](@ref) matching `x`.
 """
 Base.convert(::Type{AbstractToken},x::Char) =
     ConstantParser{Base.ncodeunits(x),Char}(x)
+"""
+    convert(::Type{AbstractToken},x::StepRange{Char,<:Integer})
+
+[`CharIn`](@ref) matching x.
+"""
 Base.convert(::Type{AbstractToken},x::StepRange{Char,<:Integer}) =
     CharIn(x)
 Base.convert(::Type{AbstractToken},x::AbstractString) =
@@ -364,10 +423,11 @@ Assertion parser matching never and not consuming any input.
 
 ```jldoctest
 julia> Never()
-re"(*FAIL)"
+(*FAIL) Never
+::Never
 ```
 """
-struct Never <: LookAround{Never} end
+struct Never <: LeafParser{Never} end
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
@@ -388,7 +448,7 @@ julia> Always()
 re""
 ```
 """
-struct Always <: LookAround{Always}
+struct Always <: LeafParser{Always}
 end
 Base.show(io::IO,x::Always) = print(io,"re\"\"")
 children(x::Union{Never,Always}) = tuple()
@@ -677,7 +737,7 @@ export log_names
 
 Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
 
-See also: [`with_log`](@ref)
+See also: [`with_log`](@ref), [`deepmap_parser`](@ref)
 """
 function log_names(x,names=nothing; exclude=nothing)
     message = if names === nothing
@@ -719,7 +779,7 @@ julia> parse(log_names(foo),"ab")
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 ```
 
-See also (`log_names(parser)`)[@ref]
+See also [`log_names(parser)`](@ref)
 """
 macro with_names(block)
     esc(with_names(block))
@@ -1116,14 +1176,6 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
 
 @deprecate rep_until(p,until) Repeat_until(p,until)
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Union{ConstantParser,AtStart,AtEnd},a...) =
-    get!(mem,x) do
-        f(x,a...)
-    end
-deepmap_parser(f::Function,mem::AbstractDict,x::Union{Char,AbstractString,AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never},a...) =
-    get!(mem,x) do
-        f(x,a...)
-    end
 
 
 export FlatMap,after

@@ -42,6 +42,28 @@ function tokenize(x, str; partial=:error)
 end
 
 
+"""
+    TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.default_opts)
+
+TextParse.jl integrates with CombinedParsers.jl both ways.
+
+```jldoctest
+
+julia> p = ("Number:" * Repeat(' ') * TextParse.Numeric(Int))[3]
+🗄 Sequence |> map(#37)
+├─ Number\\:
+├─ \\ *  |> Repeat
+└─ <Int64>
+::Int64
+
+julia> parse(p, "Number:    42")
+42
+
+julia> TextParse.tryparsenext(p, "Number:    42")
+(Nullable{Int64}(42), 14)
+```
+
+"""
 function TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.default_opts)
     s = _iterate(x,str,till,i,nothing)
     if s === nothing

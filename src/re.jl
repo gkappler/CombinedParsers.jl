@@ -17,30 +17,30 @@ indexed_captures_(x,context,reset_number) = x
 include("pcre.jl")
 
 
-
 import Base: SubString, ==
 
 """
-WithCaptures ensapsulates a sequence to be parsed, `Captures` parser subroutines with names,
-and parsed captures.
+SequenceWithCaptures ensapsulates a sequence to be parsed, and parsed captures.
+
+See also [`ParserWithCaptures`](@ref)
 """
-struct WithCaptures{S,T}
+struct SequenceWithCaptures{S,T}
     match::S
     subroutines::Vector{ParserTypes}
     captures::Vector{Vector{UnitRange{Int}}}
     names::Dict{Symbol,Int}
     state::T
-    WithCaptures(match,subroutines, captures, names, state) =
+    SequenceWithCaptures(match,subroutines, captures, names, state) =
             new{typeof(match),typeof(state)}(match,subroutines, captures, names, state)
-    WithCaptures(x,cs::WithCaptures,state) =
+    SequenceWithCaptures(x,cs::SequenceWithCaptures,state) =
         let S=typeof(x)
             new{S,typeof(state)}(x,cs.subroutines,cs.captures,cs.names,state)
         end
-    WithCaptures(x,cs::WithCaptures) =
+    SequenceWithCaptures(x,cs::SequenceWithCaptures) =
         let S=typeof(x)
             new{S,typeof(cs.state)}(x,cs.subroutines,cs.captures,cs.names,cs.state)
         end
-    function WithCaptures(cs::WithCaptures,start::Integer,stop::Integer,state)
+    function SequenceWithCaptures(cs::SequenceWithCaptures,start::Integer,stop::Integer,state)
         m = (cs.match,start:stop)
         caps = [ [ (c.start-start+1):(c.stop-start+1) for c in caps
                    if c.stop<=stop # c.start>=start && 
@@ -49,33 +49,35 @@ struct WithCaptures{S,T}
         new{typeof(m),typeof(state)}(m,cs.subroutines,caps,cs.names,state)
     end
 end
-copy_captures(x::WithCaptures,state) =
-    WithCaptures(x.match,x.subroutines, [ copy(c) for c in x.captures ],x.names,state)
-revert(x::WithCaptures) = WithCaptures(revert(x.match),x)
-reverse_index(x::WithCaptures,a...) = reverse_index(x.match,a...)
-with_options(flags::UInt32,x::WithCaptures) =
-    WithCaptures(with_options(flags,x.match),x)
-Base.lastindex(x::WithCaptures) =
+copy_captures(x::SequenceWithCaptures,state) =
+    SequenceWithCaptures(x.match,x.subroutines, [ copy(c) for c in x.captures ],x.names,state)
+revert(x::SequenceWithCaptures) = SequenceWithCaptures(revert(x.match),x)
+reverse_index(x::SequenceWithCaptures,a...) = reverse_index(x.match,a...)
+with_options(flags::UInt32,x::SequenceWithCaptures) =
+    SequenceWithCaptures(with_options(flags,x.match),x)
+Base.lastindex(x::SequenceWithCaptures) =
     lastindex(x.match)
-Base.prevind(x::WithCaptures,i::Integer,n::Integer) =
+Base.prevind(x::SequenceWithCaptures,i::Integer,n::Integer) =
     prevind(x.match,i,n)
-Base.nextind(x::WithCaptures,i::Integer,n::Integer) =
+Base.nextind(x::SequenceWithCaptures,i::Integer,n::Integer) =
     nextind(x.match,i,n)
-Base.prevind(x::WithCaptures,i::Integer) =
+Base.prevind(x::SequenceWithCaptures,i::Integer) =
     prevind(x.match,i)
-Base.nextind(x::WithCaptures,i::Integer) =
+Base.nextind(x::SequenceWithCaptures,i::Integer) =
     nextind(x.match,i)
-Base.getindex(x::WithCaptures,i...) =
+Base.getindex(x::SequenceWithCaptures,i...) =
     getindex(x.match,i...)
 
-Base.SubString(x::WithCaptures,a...) =
+Base.SubString(x::SequenceWithCaptures,a...) =
     SubString(x.match,a...)
 
 
 export Capture
 """
 Capture a parser result, optionally with a name.
-`index` field is recursively set when calling 'indexed_captures` on the parser.
+`index` field is initialized when calling `ParserWithCaptures` on the parser.
+
+[`ParserWithCaptures`](@ref)
 """
 struct Capture{P,T} <: WrappedParser{P,T}
     parser::P
@@ -95,10 +97,13 @@ function print_constructor(io::IO,x::Capture)
     print(io, " |> Capture" )
 end
 
-regex_prefix(x::Capture) =
+regex_string(x::Capture) = regex_prefix_(x)*regex_string(x.parser)*")"
+regex_prefix_(x::Capture) =
     let name = (x.name===nothing ? "" : "?<$(x.name)>")
         "($name"
-    end*regex_prefix(x.parser)
+    end
+regex_prefix(x::Capture) =
+    regex_prefix_(x::Capture)*regex_prefix(x.parser)
 regex_suffix(x::Capture) = regex_suffix(x.parser)*")"
 
 function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...)
@@ -129,19 +134,18 @@ Base.get(x::Capture, sequence, till, after, i, state) =
     r
 end
 
-set_capture(sequence::AbstractString, index::Int, start, stop) =
-    @warn "not setting capture $index=$(sequence[start:stop])"
+set_capture(sequence::AbstractString, index::Int, start, stop) = nothing
 set_capture(sequence::WithOptions, index::Int, start,stop) =
     set_capture(sequence.x,index,start,stop)
-set_capture(sequence::WithCaptures, index::Int, start,stop) =
+set_capture(sequence::SequenceWithCaptures, index::Int, start,stop) =
     push!(sequence.captures[index], start:stop)
-set_capture(sequence::WithCaptures{<:Reverse}, index::Int, start,stop) =
+set_capture(sequence::SequenceWithCaptures{<:Reverse}, index::Int, start,stop) =
     push!(sequence.captures[index],
           reverse_index(sequence.match,
                         stop):reverse_index(sequence.match,
                                             start))
 
-function prune_captures(sequence::WithCaptures,after_i)
+function prune_captures(sequence::SequenceWithCaptures,after_i)
     for i in 1:length(sequence.captures)
         cv = sequence.captures[i]
         while !isempty(cv) && ( cv[end].stop >= after_i)
@@ -162,7 +166,7 @@ export Backreference
     Backreference(f::Function,name::AbstractString)
 
 Parser matching previously captured sequence, optionally with a name.
-`index` field is recursively set when calling 'indexed_captures` on the parser.
+`index` field is recursively set when calling 'ParserWithCaptures` on the parser.
 """
 struct Backreference <: AbstractParser{AbstractString}
     name::Union{Nothing,Symbol}
@@ -232,11 +236,11 @@ end
 
 
 state_type(::Type{<:Backreference}) = Int
-@inline function _iterate(p::Backreference, sequence::WithCaptures, till, i, state)
+@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, i, state)
     return nothing
 end
 
-@inline function _iterate(p::Backreference, sequence::WithCaptures, till, i, state::Nothing)
+@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, i, state::Nothing)
     isempty(sequence.captures[p.index]) && return nothing
     r = _iterate(
         parser(SubString(sequence.match, sequence.captures[p.index][end])),
@@ -253,7 +257,7 @@ _iterate_condition(cond::Backreference, sequence, till, i, state) =
 export Subroutine
 """
 Parser matching preceding capture, optionally with a name.
-`index` field is recursively set when calling 'indexed_captures` on the parser.
+`index` field is recursively set when calling 'ParserWithCaptures` on the parser.
 """
 struct Subroutine{T} <: AbstractParser{T}
     name::Union{Nothing,Symbol}
@@ -319,7 +323,7 @@ end
 
 index(parser::Subroutine,sequence) = parser.index <= 0 ? sequence.names[parser.name] : parser.index
 
-@inline function _iterate(parser::Subroutine, sequence::WithCaptures, till, i, state)
+@inline function _iterate(parser::Subroutine, sequence::SequenceWithCaptures, till, i, state)
     _iterate(
         with_log("$(parser.name)",sequence.subroutines[index(parser,sequence)].parser),
         copy_captures(sequence,parser), till, i, state)
@@ -439,21 +443,66 @@ end
 
 
 """
-Regular expression top level parser with fields `subroutines::Vector`, and a `names::Dict`.
+Top level parser supporting regular expression features
+captures, backreferences and subroutines.
+Collects subroutines in field `subroutines::Vector` and 
+indices of named capture groups in field `names::Dict`.
+
+!!! note
+    implicitly called in `match`
+See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
 """
 struct ParserWithCaptures{P,T} <: WrappedParser{P,T}
     parser::P
     subroutines::Vector{ParserTypes} ## todo: rename subroutines
     names::Dict{Symbol,Int}
-    ParserWithCaptures(parser) =
-        new{typeof(parser),result_type(parser)}(parser,ParserTypes[],Dict{Symbol,Int}())
     ParserWithCaptures(parser,captures,names) =
         new{typeof(parser),result_type(parser)}(parser,captures,names)
 end
+ParserWithCaptures(x) =
+    let cs = ParserWithCaptures(x,ParserTypes[],Dict{Symbol,Int}())
+        pass1 = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),x,cs,false),cs.subroutines,cs.names)
+        ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
+    end
 
-WithCaptures(x,cs::ParserWithCaptures) =
+function Base.match(parser::ParserTypes,sequence::AbstractString; kw...)
+    @warn "For better performance create `ParserWithCaptures(parser)` before calling `match`."
+    match(ParserWithCaptures(parser),sequence; kw...)
+end
+
+"""
+    Base.match(parser::ParserTypes,sequence::AbstractString; log=false)
+
+Plug-in replacement for match(::Regex,sequence).
+"""
+function Base.match(parser::ParserWithCaptures,sequence::AbstractString; log=false)
+    log && ( parser=log_names(parser) )
+    s = SequenceWithCaptures(sequence,parser)
+    start,till=1, lastindex(s)
+    i = nothing
+    while i===nothing && start <= till+1
+        i = _iterate(parser,s,till,start,nothing)
+        i === nothing && (start = start <= till ? nextind(sequence,start) : start+1)
+    end
+    ##@show start
+    i === nothing ? nothing : ParseMatch(s,start,prevind(s,i[1]),i[2])
+end
+
+"""
+    _iterate(p::ParserWithCaptures, sequence::AbstractString)
+
+
+"""
+function _iterate(p::ParserWithCaptures, sequence::AbstractString)
+    s = SequenceWithCaptures(sequence,p)
+    i = _iterate(p,s)
+end
+
+##Base.getindex(x::ParserWithCaptures, i) = ParserWithCaptures(getindex(i,x)
+
+SequenceWithCaptures(x,cs::ParserWithCaptures) =
     let S=typeof(x)
-        WithCaptures(x,cs.subroutines,
+        SequenceWithCaptures(x,cs.subroutines,
                      Vector{S}[ S[] for c in cs.subroutines ],cs.names,
                      nothing)
     end
@@ -500,23 +549,35 @@ NoDict() = NoDict{Any,Any}()
 import Base: get!
 Base.get!(f::Function,d::NoDict,k) = f()
 
-ParserWithCaptures(x) =
-    let cs = ParserWithCaptures(x)
-        pass1 = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),x,cs,false),cs.subroutines,cs.names)
-        ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
-    end
 
 
 
+"""
+Wrapper type for [`SequenceWithCaptures`](@ref), providing
+`getindex` and `getproperty` behavior like `RegexMatch`.
 
-struct ParseMatch{C<:WithCaptures}
+```jldoctest
+julia> m = match(re"(?<a>so)+ (or)", "soso or")
+ParseMatch("soso or", a="so", 2="or")
+
+julia> m[:a]
+"so"
+
+julia> m[2]
+"or"
+
+julia> m.match, m.captures
+("soso or", SubString{String}["so", "or"])
+```
+"""
+struct ParseMatch{C<:SequenceWithCaptures}
     m::C
-    ParseMatch(x,cs::WithCaptures,state) =
-        let wc=WithCaptures(x,cs,state)
+    ParseMatch(x,cs::SequenceWithCaptures,state) =
+        let wc=SequenceWithCaptures(x,cs,state)
             new{typeof(wc)}(wc)
         end
-    function ParseMatch(cs::WithCaptures,start::Integer,stop::Integer,state)
-        wc=WithCaptures(cs,start,stop,state)
+    function ParseMatch(cs::SequenceWithCaptures,start::Integer,stop::Integer,state)
+        wc=SequenceWithCaptures(cs,start,stop,state)
         new{typeof(wc)}(wc)
     end
 end
@@ -583,37 +644,9 @@ function ==(pcre_m::RegexMatch,pc_m::ParseMatch)
 end
 
 
-"""
-    Base.match(parser::ParserTypes,sequence::AbstractString; log=false)
-
-Plug-in replacement for match(::Regex,sequence).
-"""
-Base.match(parser::ParserTypes,sequence::AbstractString; kw...) =
-    match(indexed_captures(parser),sequence; kw...)
-
-function Base.match(parser::ParserWithCaptures,sequence::AbstractString; log=false)
-    log && ( parser=log_names(parser) )
-    s = WithCaptures(sequence,parser)
-    start,till=1, lastindex(s)
-    i = nothing
-    while i===nothing && start <= till+1
-        i = _iterate(parser,s,till,start,nothing)
-        i === nothing && (start = start <= till ? nextind(sequence,start) : start+1)
-    end
-    ##@show start
-    i === nothing ? nothing : ParseMatch(s,start,prevind(s,i[1]),i[2])
-end
-
-"""
-parse(p::ParserTypes, s::AbstractString)
-
-parse `s` with parser `p`.
-"""
-function _iterate(p::ParserWithCaptures, sequence::AbstractString)
-    s = WithCaptures(sequence,p)
-    i = _iterate(p,s)
-end
-
 include("re-parser.jl")
+
+
+
 
 end

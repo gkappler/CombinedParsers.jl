@@ -8,6 +8,7 @@ CombinedParsers.ConstantParser
 CombinedParsers.NIndexParser
 CombinedParsers.WrappedParser
 CombinedParsers.LookAround
+CombinedParsers.Transformation
 ```
 
 
@@ -16,3 +17,14 @@ CombinedParsers.LookAround
 CombinedParsers.deepmap_parser
 ```
 
+## Regular Expression Types
+```@docs
+CombinedParsers.Regexp.ParseMatch
+CombinedParsers.Regexp.Capture
+CombinedParsers.Regexp.Backreference
+CombinedParsers.Regexp.Subroutine
+CombinedParsers.Regexp.Conditional
+CombinedParsers.Regexp.DupSubpatternNumbers
+CombinedParsers.Regexp.ParserWithCaptures
+CombinedParsers.Regexp.SequenceWithCaptures
+```
