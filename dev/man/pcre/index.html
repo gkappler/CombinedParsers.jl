@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Regular Expressions · CombinedParsers.jl</title><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/pcre/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">CombinedParsers.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li class="is-active"><a class="tocitem" href>Regular Expressions</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#Transforming-a-Parsing-1"><span>Transforming a Parsing</span></a></li><li class="toplevel"><a class="tocitem" href="#Repeat,-Transformation,-and-Sequence-1"><span>Repeat, Transformation, and Sequence</span></a></li><li class="toplevel"><a class="tocitem" href="#Repeatable-patterns,-Optional,-Lazy-and-Atomic-1"><span>Repeatable patterns, Optional, Lazy and Atomic</span></a></li><li class="toplevel"><a class="tocitem" href="#Sequences-and-Alternations-1"><span>Sequences and Alternations</span></a></li><li class="toplevel"><a class="tocitem" href="#Captures-1"><span>Captures</span></a></li><li class="toplevel"><a class="tocitem" href="#Looking-around-1"><span>Looking around</span></a></li></ul></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Public</a></li><li><input class="collapse-toggle" id="menuitem-3-2" type="checkbox"/><label class="tocitem" for="menuitem-3-2"><span class="docs-label">Internals</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../lib/internals/iterate/">Iterating Parsings</a></li><li><a class="tocitem" href="../../lib/internals/options/">Parsing Options</a></li><li><a class="tocitem" href="../../lib/internals/types/">Parser Types</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Regular Expressions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Regular Expressions</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/blob/master/docs/src/man/pcre.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Regular-expressions:-Either,-Characters,-and-logging-1"><a class="docs-heading-anchor" href="#Regular-expressions:-Either,-Characters,-and-logging-1">Regular expressions: Either, Characters, and logging</a><a class="docs-heading-anchor-permalink" href="#Regular-expressions:-Either,-Characters,-and-logging-1" title="Permalink"></a></h1><p>Lets build the major scaffold of the parser for regular expressions from scratch now!</p><pre><code class="language-julia">import CombinedParsers.Regexp: meta_chars
+
+char_matcher =  Either(
+    
+    with_name(&quot;character&quot;, 
+        CharNotIn([ c for c in meta_chars])),
+    
+    with_name(&quot;escaped meta&quot;, 
+        Sequence(2, # emit unescaped
+            &#39;\\&#39;, CharIn(meta_chars)))
+    
+)</code></pre><pre><code class="language-julia">@show pcre = Regex(regex_string(char))
+
+@show match(pcre,&quot;a&quot;)
+@show match(pcre,&quot;\\[&quot;)
+
+@show match(log_names(char),&quot;a&quot;)
+@show match(char,&quot;\\[&quot;; log=true)</code></pre><h1 id="Transforming-a-Parsing-1"><a class="docs-heading-anchor" href="#Transforming-a-Parsing-1">Transforming a Parsing</a><a class="docs-heading-anchor-permalink" href="#Transforming-a-Parsing-1" title="Permalink"></a></h1><p>The Julia <code>map</code> method for <code>CombinedParsers.AbstractParser</code> creates a transforming parser. The parser for escaped and not escaped regular expression characters <code>char</code> can be transformed to emit not the <code>Char</code> but an <code>CharIn&lt;:AbstractParser</code> matching the unescaped character.</p><pre><code class="language-julia">@show result_type(char_matcher)
+
+@show parsed_obracket = parse(char_matcher,&quot;\\[&quot;)</code></pre><pre><code class="language-none">result_type(char_matcher) = Char
+parsed_obracket = parse(char_matcher, &quot;\\[&quot;) = &#39;[&#39;
+
+
+
+
+
+&#39;[&#39;: ASCII/Unicode U+005b (category Ps: Punctuation, open)</code></pre><pre><code class="language-julia">char_parser_parser = map(CharIn,char_matcher)
+@show result_type(char_parser_parser)
+
+@show parsed_obracket_parser = parse(char_parser_parser,&quot;\\[&quot;)
+
+parse(parsed_obracket_parser,&quot;[&quot;)</code></pre><pre><code class="language-none">result_type(char_parser_parser) = CharIn
+parsed_obracket_parser = parse(char_parser_parser, &quot;\\[&quot;) = re&quot;\[&quot;
+
+
+
+
+
+&#39;[&#39;: ASCII/Unicode U+005b (category Ps: Punctuation, open)</code></pre><h1 id="Repeat,-Transformation,-and-Sequence-1"><a class="docs-heading-anchor" href="#Repeat,-Transformation,-and-Sequence-1">Repeat, Transformation, and Sequence</a><a class="docs-heading-anchor-permalink" href="#Repeat,-Transformation,-and-Sequence-1" title="Permalink"></a></h1><p>A basic feature of regular expression is whether a repeatable pattern (e.g. a char) is optional <code>?</code>, or should be repeated at least once <code>+</code>, any times <code>*</code>, or <code>{min,max}</code> times.</p><p>The CombinedParser to parse the <code>(min, max)</code> tuple from PCRE syntax:</p><pre><code class="language-julia">import CombinedParsers.Regexp: integer
+
+# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
+@with_names repetition = Either(
+    &quot;?&quot; =&gt; (0,1), #  `Pair` syntax to map a match to a constant
+    
+    &quot;+&quot; =&gt; (1,typemax(Int)),
+    &quot;*&quot; =&gt; (0,typemax(Int)),
+    Sequence(
+        &quot;{&quot;, 
+        
+        integer,
+        Optional( Sequence(2,&quot;,&quot;,
+            Optional(integer, default=typemax(Int)))),
+        
+        &quot;}&quot;) do v  # the do syntax implicitly calling map on the sequence
+            if v[3] isa Missing
+                (v[2],v[2])
+            else
+                (v[2],v[3])
+            end::Tuple{Int,Int}
+    end
+)
+
+@show result_type(repetition)
+@show parse(repetition, &quot;?&quot;)
+@show parse(repetition, &quot;{1}&quot;);</code></pre><pre><code class="language-none">result_type(repetition) = Tuple{Int64,Int64}
+parse(repetition, &quot;?&quot;) = (0, 1)
+parse(repetition, &quot;{1}&quot;) = (1, 1)</code></pre><h1 id="Repeatable-patterns,-Optional,-Lazy-and-Atomic-1"><a class="docs-heading-anchor" href="#Repeatable-patterns,-Optional,-Lazy-and-Atomic-1">Repeatable patterns, Optional, Lazy and Atomic</a><a class="docs-heading-anchor-permalink" href="#Repeatable-patterns,-Optional,-Lazy-and-Atomic-1" title="Permalink"></a></h1><p>The character matcher is the simplest repeatable pattern.</p><p>The CombinedParser to parse a repeated matcher from PCRE syntax</p><pre><code class="language-julia">repeatable = Either{AbstractParser}(
+    Any[char_parser_parser])
+# we will add groups to repeatable later
+
+@with_names quantified=Sequence(
+        repeatable,
+        Optional(repetition, default=(1,1)),
+        Optional(map(v-&gt;convert(Char,v),CharIn(&#39;+&#39;,&#39;?&#39;))) # possessive quantifier
+    ) do v
+        pat = v[1]
+        result = if v[2]==(1,1)
+            pat
+        elseif v[2]==(0,1)
+            Optional(pat)
+        else
+            Repeat(pat,v[2])
+        end
+        if v[3] === missing
+            result
+        elseif v[3]==&#39;+&#39;
+            Atomic(result)
+        elseif v[3]==&#39;?&#39;
+            Lazy(result)
+        else
+            result
+        end
+    end
+
+
+parse(log_names(quantified), raw&quot;\++?&quot;)</code></pre><h1 id="Sequences-and-Alternations-1"><a class="docs-heading-anchor" href="#Sequences-and-Alternations-1">Sequences and Alternations</a><a class="docs-heading-anchor-permalink" href="#Sequences-and-Alternations-1" title="Permalink"></a></h1><p>Regular expression patterns can be written in sequence, delimited by <code>|</code> for matching either one of several alternatives.</p><pre><code class="language-julia">@with_names begin
+    sequence = map( v-&gt;sSequence(v...),
+        Repeat( quantified ))
+
+    alternation = Sequence(
+        sequence, 
+        Repeat(Sequence(2, &#39;|&#39;,sequence))) do v
+            sEither(v[1],v[2]...)::AbstractParser
+        end
+end;
+</code></pre><h1 id="Captures-1"><a class="docs-heading-anchor" href="#Captures-1">Captures</a><a class="docs-heading-anchor-permalink" href="#Captures-1" title="Permalink"></a></h1><p>Parentheses allow groupings that are repeatable.</p><pre><code class="language-julia">import CombinedParsers.Regexp: name
+
+@with_names begin
+    noncapture_group=Sequence( 2, &quot;(?:&quot;,alternation,&quot;)&quot;)
+
+    capture_group=Sequence(&quot;(&quot;,alternation,&quot;)&quot;) do v
+                Capture(v[2])
+    end;
+end
+push!(repeatable,capture_group);
+push!(repeatable,noncapture_group);</code></pre><pre><code class="language-julia">alternation
+# is a parser</code></pre><pre><code class="language-julia"># the alternation parser transforms a regex string into a parser
+
+@show result_type(alternation)
+
+ab_parser = parse(log_names(alternation),&quot;(?:a|b)+&quot;)</code></pre><pre><code class="language-julia"># the ab_parser
+match(ab_parser,&quot;aab&quot;)
+</code></pre><pre><code class="language-none">ParseMatch(&quot;aab&quot;)</code></pre><pre><code class="language-julia"># We quickly wrote a parser for regular expressions that generates a PCRE equivalent CombinedParser.
+
+@show parse(parse(alternation,raw&quot;reg(ular )?ex(p(ression)?)?\??&quot;), &quot;regex&quot;)
+parse(re&quot;reg(ular )?ex(p(ression)?)?\??&quot;, &quot;regex&quot;)</code></pre><pre><code class="language-none">parse(parse(alternation, #= In[32]:3 =# @raw_str(&quot;reg(ular )?ex(p(ression)?)?\\??&quot;)), &quot;regex&quot;) = (&#39;r&#39;, &#39;e&#39;, &#39;g&#39;, missing, &#39;e&#39;, &#39;x&#39;, missing, missing)
+
+
+
+
+
+(&#39;r&#39;, &#39;e&#39;, &#39;g&#39;, missing, &#39;e&#39;, &#39;x&#39;, missing, missing)</code></pre><h1 id="Looking-around-1"><a class="docs-heading-anchor" href="#Looking-around-1">Looking around</a><a class="docs-heading-anchor-permalink" href="#Looking-around-1" title="Permalink"></a></h1><pre><code class="language-julia">
+@with_names lookahead=Sequence(
+    2,
+    &quot;(&quot;,
+    Either(Sequence(
+            v -&gt; look_ahead(true,v[2]),
+            Either(&quot;?=&quot;,&quot;*positive_lookahead:&quot;,&quot;*pla:&quot;),
+            alternation),
+        Sequence(
+            v -&gt; look_ahead(false,v[2]),
+            Either(&quot;?!&quot;,&quot;*negative_lookahead:&quot;,&quot;*nla:&quot;),
+            alternation)),
+    &quot;)&quot;);
+push_first!(repeatable,lookahead);
+
+
+
+@with_names lookbehind=Sequence(
+    2,
+    &quot;(&quot;,
+    Either(Sequence(v -&gt; look_behind(true,v[2]),
+            Either(&quot;?&lt;=&quot;,&quot;*positive_lookbehind:&quot;,&quot;*plb:&quot;),alternation),
+        Sequence(v -&gt; look_behind(false,v[2]),
+            Either(&quot;?&lt;!&quot;,&quot;*negative_lookbehind:&quot;,&quot;*nlb:&quot;),alternation)),
+    &quot;)&quot;);
+push_first!(repeatable,lookbehind);
+
+</code></pre><pre><code class="language-julia">import CombinedParsers.Regexp: bracket
+push!(repeatable,bracket);
+bracket</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../user/">« User Guide</a><a class="docs-footer-nextpage" href="../../lib/public/">Public »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 19 May 2020 13:30">Tuesday 19 May 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
