@@ -22,7 +22,19 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "User Guide" => "user.md",
+        "Manual" => [
+            "Overview" => "man/guide.md",
+            "User Guide" => "user.md",
+            "Regular Expressions" => "man/pcre.md",
+        ],
+        "Library" => Any[
+            "Public" => "lib/public.md",
+            "Internals" => [
+                "lib/internals/$(s)"
+                for s in sort(readdir(joinpath(@__DIR__, "src/lib/internals")))
+                if endswith(s,".md")
+            ]
+        ],
         # "Developer Guide" => "developer.md"
     ],
 )
