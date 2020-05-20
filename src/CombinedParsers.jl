@@ -806,17 +806,11 @@ end
 export Transformation
 """
     Transformation{T}(transform::Function, p_) where {T}
-
     map_at(f::Function, p, a...)
-
     map_at(f::Function, Tc::Type, p, a...)
-
     instance(Tc::Type, p::ParserTypes, a...)
-
     instance(Tc::Type, p::ParserTypes)
-
     Base.map(f::Function, Tc::Type, p::ParserTypes, a...)
-
     Base.map(f::Function, p::ParserTypes, a...)
 
 Parser transforming result of a wrapped parser. 
