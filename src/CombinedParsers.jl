@@ -260,6 +260,11 @@ print_constructor(io::IO,x::ConstantParser) = print(io,"")
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
+deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...) =
+    get!(mem,x) do
+        f(x,a...)
+    end
+
 """
     convert(::Type{AbstractToken},x::Union{AbstractString,Char})
 
@@ -321,7 +326,7 @@ end
 
 
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
-abstract type NIndexParser{N,T} <: AbstractParser{T} end
+abstract type NIndexParser{N,T} <: LeafParser{T} end
 state_type(p::Type{<:NIndexParser}) = MatchState
 @inline prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i
@@ -616,10 +621,11 @@ end
 
 export deepmap_parser
 deepmap_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
-    SideeffectParser(x.effect,
-                     deepmap_parser(f,mem,x.parser,a...),
-                     x.args...)
-
+    get!(mem,x) do
+        SideeffectParser(x.effect,
+                         deepmap_parser(f,mem,x.parser,a...),
+                         x.args...)
+    end
 
 """
     with_log(s::AbstractString,p, delta=5;nomatch=false)
