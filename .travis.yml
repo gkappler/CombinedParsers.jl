@@ -12,8 +12,20 @@ julia:
 branches:
   only:
     - master
+    - /^release-.*/
+    - /^v[0-9]+\.[0-9]+\.[0-9]+$/ # version tags
 
 codecov: true
+coveralls: true
+
+stages:
+  - name: test
+  - name: docs
+
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia --project -e 'using UUIDs; write("Project.toml", replace(read("Project.toml", String), r"uuid = .*?\n" =>"uuid = \"$(uuid4())\"\n"));'
+  - julia --project --check-bounds=yes -e 'import Pkg; Pkg.build(); Pkg.test(; coverage=true)'
 
 jobs:
   include:
