@@ -1700,7 +1700,8 @@ function Base.join(x::Repeat,delim_)
     delim = parser(delim_)
     ## todo: the get function could be optimized
     ##@show x.range
-    map(x.parser * ( ( delim_ * x.parser )[2] )^(x.range.start-1, x.range.stop-1)) do (f,r)
+    map(x.parser * ( ( delim_ * x.parser )[2] )^(max(0,x.range.start-1),
+                                                 x.range.stop == typemax(Int) ? typemax(Int) : x.range.stop-1)) do (f,r)
         pushfirst!(r,f)
         r
     end
