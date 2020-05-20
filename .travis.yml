@@ -44,3 +44,5 @@ jobs:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                                Pkg.instantiate()'
         - julia -e 'using Pkg; Pkg.test()'
+      after_success:
+        - julia -e 'cd(Pkg.dir("CombinedParsers")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
