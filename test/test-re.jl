@@ -1,11 +1,5 @@
-cd("/home/gregor/dev/julia")
-using Pkg
-Pkg.activate("CombinedParsers")
-using CombinedParsers
 import CombinedParsers: ParserTypes
 using CombinedParsers.Regexp
-using BenchmarkTools
-using Test
 
 @testset "comments" begin
     ##@test parse(comment_par,"(?# comment)") == with_log("comment",Always())
