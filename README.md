@@ -4,7 +4,6 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://gkappler.github.io/CombinedParsers.jl/dev)
 [![Build Status](https://travis-ci.org/gkappler/CombinedParsers.jl.svg?branch=master)](https://travis-ci.com/github/gkappler/CombinedParsers.jl)
 [![Codecov](https://codecov.io/gh/gkappler/CombinedParsers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gkappler/CombinedParsers.jl)
-[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
 CombinedParsers is a package for parsing into julia types.
 Parsimoneously compose parsers with the functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
@@ -85,14 +84,15 @@ Preliminary performance tests were even more encouraging, in trivial example abo
 
 
 ### Next Steps
+- [-] Documentation
+- [ ] test coverage
 - [ ] Performance optimizations
     - generated functions
     - parsing memoization
     - backtracking optimization with multiple dispatch on parser and state type.
-- [ ] Documentation
+- [ ] [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 - [ ] Publishing packages for parsing wikitext and orgmode markup
 - [ ] error backtracking, stepping & debugging
-- [ ] test coverage
 
 
 <!-- Implementation Notes: -->
