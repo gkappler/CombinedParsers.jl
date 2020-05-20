@@ -5,7 +5,6 @@ using CombinedParsers.Regexp
 using Test
 
 DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
-    using TextParse
     using CombinedParsers
     using CombinedParsers.Regexp
 end; recursive=true)
