@@ -94,7 +94,7 @@ Capture(x,index=-1) =
     Capture(nothing,x,index)
 function print_constructor(io::IO,x::Capture)
     print_constructor(io,x.parser)
-    print(io, " |> Capture" )
+    print(io, " |> Capture ", x.index )
 end
 
 regex_string(x::Capture) = regex_prefix_(x)*regex_string(x.parser)*")"
