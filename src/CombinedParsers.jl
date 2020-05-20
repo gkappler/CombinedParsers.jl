@@ -1320,7 +1320,7 @@ end
 Sequence keyword argument constructors transform the parsing into a named tuple.
 """
 Sequence(;kw...) =
-    Sequence(kw...)
+    isempty(kw) ? Always() : Sequence(kw...)
 
 
 Sequence(transform::Function, T::Type, a...) =
