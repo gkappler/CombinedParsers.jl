@@ -644,11 +644,15 @@ function log_effect(s,start,after,state,log,delta=5)
                     bold=true,color=:green)
     end
     print(log)
-    if prevind(s,start)<start
-        printstyled(escape_string(s[max(1,start-delta):(prevind(s,start))]))
-        printstyled(escape_string(s[start:prevind(s,after)]);
-                    bold=true,color=:green)
+    firsti = prevind(s,start,delta)
+    lasti = (prevind(s,start))
+    before, matched = if prevind(s,start)<start
+        escape_string(s[max(1,firsti):lasti]), escape_string(s[start:prevind(s,after)])
+    else
+        "",""
     end
+    printstyled(before)
+    printstyled(matched; bold=true,color=:green)
     if state === nothing 
         printstyled(escape_string(s[after:min(end,after+delta)]),
                     bold=true,color=:underline)
@@ -657,6 +661,13 @@ function log_effect(s,start,after,state,log,delta=5)
                     color=:yellow)
     end
     println()
+    if !get(stdout,:color,false)
+        print(" "^(9+length(log)+length(before)),"^")
+        if length(matched)>1
+            print("_"^(length(matched)-2),"^")
+        end
+        println()
+    end
 end
 
 function log_effect_match(s,start,after,state,log,delta=5)
