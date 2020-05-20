@@ -2,8 +2,46 @@ using CombinedParsers.Regexp
 import CombinedParsers.Regexp: word, non_word
 import CombinedParsers.Regexp: newline, inline, whitespace
 
-@test parse(Sequence("(", Repeat_until(!Either(Repeat(word),!Repeat(non_word)), ")")), "(balanced parenthesis)") ==
-    ("(",["balanced", " ", "parenthesis"])
+@testset "CharIn" begin
+    @test parse(CharIn(isuppercase),"A") =='A'
+    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
+end
+
+@testset "map" begin
+    @test parse(re"abc"[2:3],"abc")==('b','c')
+    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
+    @test parse(re"^abc$"[2],"abc") == 'a'
+end
+
+
+@testset "NamedTuple" begin
+    @test parse(Sequence(first = CharIn(isuppercase), second = CharIn(islowercase)),"Ab") == (first='A', second='b')
+    @test parse(Sequence(CharIn(isuppercase), :second => CharIn(islowercase)),"Ab") == (second='b',)
+end
+
+@testset "Repeat" begin
+    @test parse(join(parser('a')^(*),","),"a,a") == ['a','a']
+end
+
+@testset "parse_all" begin
+    @test collect(parse_all(Repeat("a"|"ab"),"aabab")) ==
+        [ ["a","a"], ["a","ab","a"], ["a","ab","ab"], ["a","ab"], ["a"],[] ]
+    @test collect(parse_all(re"^(a|ab|b)+$"[2],"abab")) ==
+        [ ['a','b','a','b'], ['a','b', ('a','b')], [('a','b'),'a','b'], [('a','b'),('a','b')]]
+end
+
+
+
+@testset "Either" begin
+    @test parse(Either("a","ab","ac")*AtEnd(),"ab") == ("ab", AtEnd())
+    @test_throws ArgumentError parse(Atomic(Either("a","ab","ac"))*AtEnd(),"ab")
+end
+
+@testset "Repeat_until" begin
+    @test parse(Sequence("(", Repeat_until(!Either(Repeat(word),!Repeat(non_word)), ")")),
+                "(balanced parenthesis)") ==
+        ("(",["balanced", " ", "parenthesis"])
+end
 
 @testset "demo data parsing" begin
     @test 1:3 == [1,2,3]

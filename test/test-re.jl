@@ -13,7 +13,7 @@ using Test
     ## match(re"(?# comment)a","a").match == "a"
 end
 
-import CombinedParsers.Regexp: char, character_base, escape_sequence
+import CombinedParsers.Regexp: char, character_base, escape_sequence, escaped_character
 @testset "char" begin
     ##@test match(parse(char,with_options(Base.PCRE.CASELESS,"A")) =='a'
     @test parse(char,"A") == CharIn('A')
@@ -48,7 +48,7 @@ import CombinedParsers.Regexp: @test_pcre
     @test_pcre "\\W" " "
 end
 
-import CombinedParsers.Regexp: bracket_char, bracket
+import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
 @testset "brackets" begin
     @test parse(bracket_char,"a")=='a'
     @test parse(bracket,"[a-z]")==CharIn('a':'z')
@@ -111,7 +111,6 @@ import CombinedParsers.Regexp: alternation
     ## push!(pattern,alternation) ## stackoverflow
 end
 
-parse(subroutine,"(?-1)") |> dump
 import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference, subroutine
 @testset "sequences, captures" begin
     match(parse(captured,"(ab)"),"ab")
