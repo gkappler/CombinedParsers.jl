@@ -43,6 +43,6 @@ jobs:
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                                Pkg.instantiate()'
-        - julia -e 'using Pkg; Pkg.test()'
+        - julia -e 'using Pkg; Pkg.test(coverage=true)'
       after_success: |
         julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
