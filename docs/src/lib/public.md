@@ -41,6 +41,7 @@ with_effect
 Base.map
 map_at
 JoinSubstring
+Transformation
 (!)(::CombinedParsers.AbstractToken)
 ```
 
