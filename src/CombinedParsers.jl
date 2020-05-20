@@ -744,14 +744,15 @@ deepmap_parser(f::Function,mem::AbstractDict,x::NamedParser,a...) =
 
 export log_names
 """
-    log_names(x,names=nothing; exclude=nothing)
+    log_names(x,names=true; exclude=nothing)
 
 Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
+Log all `NamedParser` instanses if `names==true` or `name in names` and not `name in exclude`.
 
 See also: [`with_log`](@ref), [`deepmap_parser`](@ref)
 """
-function log_names(x,names=nothing; exclude=nothing)
-    message = if names === nothing
+function log_names(x,names=true; exclude=nothing)
+    message = if names === true
         if exclude === nothing
             x -> x isa NamedParser ? x.name : nothing
         else
@@ -2608,9 +2609,12 @@ end
 
 import Base: tryparse, parse
 """
-    parse(parser::ParserTypes, str::AbstractString)
+    parse(parser::ParserTypes, str::AbstractString; log=nothing)
 
 Parse a string with a CombinedParser as an instance of `result_type(parser)`.
+
+If `log` is a `Vector{Symbol}`, parser is transformed with `log_names(p, log)`.
+See also [`log_names`](@ref).
 
 ```jldoctest
 julia> using TextParse
@@ -2628,8 +2632,8 @@ julia> parse(p,"Number: 42")
 ```
 
 """
-function Base.parse(p::AbstractToken, s)
-    i = tryparse(p,s)
+function Base.parse(p::AbstractToken, s; log=nothing)
+    i = tryparse(log !== nothing ? log_names(p,log) : p,s)
     i === nothing && throw(ArgumentError("no successfull parsing."))
     i
 end
