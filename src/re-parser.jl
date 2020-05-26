@@ -12,7 +12,7 @@ import ..CombinedParsers: Repeat_max
 #(*LIMIT_MATCH=d)
 #(*LIMIT_RECURSION=d)
 whitespace_string = " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B"
-whitespace = CharIn(whitespace_string)
+whitespace_char = CharIn(whitespace_string)
 meta_chars = raw"\^$.[|()?*+{"
 
 # The horizontal space characters are:
@@ -102,10 +102,10 @@ skip_whitespace_and_comments =
             Base.PCRE.EXTENDED,
             with_name(
                 :comment,
-                Sequence('#',Repeat(whitespace),
+                Sequence('#',Repeat(whitespace_char),
                     Repeat_until(
                         AnyChar(),
-                        Sequence(Repeat(whitespace),Either(bsr,AtEnd())),
+                        Sequence(Repeat(whitespace_char),Either(bsr,AtEnd())),
                         wrap = JoinSubstring
                     )) do v
                 with_log(v[3],Always())
@@ -114,10 +114,10 @@ skip_whitespace_and_comments =
         with_name(
             :comment,
             Sequence(
-                "(?#",Repeat(whitespace),
+                "(?#",Repeat(whitespace_char),
                 Repeat_until(
                     AnyChar(),
-                    Sequence(Repeat(whitespace),')'),
+                    Sequence(Repeat(whitespace_char),')'),
                     wrap = JoinSubstring
                 )) do v
         with_log(v[3],Always())
@@ -515,10 +515,10 @@ push!(repeatable,subpattern);
 @with_names lookahead=Sequence(
     2,
     "(",
-    Either(Sequence(v -> look_ahead(true,v[2]),
-            Either("?=","*positive_lookahead:","*pla:"),alternation),
-        Sequence(v -> look_ahead(false,v[2]),
-            Either("?!","*negative_lookahead:","*nla:"),alternation)),
+    Either(Sequence(v -> Lookahead(true,v[2]),
+                    Either("?=","*positive_lookahead:","*pla:"),alternation),
+           Sequence(v -> Lookahead(false,v[2]),
+                    Either("?!","*negative_lookahead:","*nla:"),alternation)),
     ")");
 push!(pattern,lookahead);
 
@@ -527,9 +527,9 @@ push!(pattern,lookahead);
 @with_names lookbehind=Sequence(
     2,
     "(",
-    Either(Sequence(v -> look_behind(true,v[2]),
+    Either(Sequence(v -> Lookbehind(true,v[2]),
             Either("?<=","*positive_lookbehind:","*plb:"),alternation),
-        Sequence(v -> look_behind(false,v[2]),
+        Sequence(v -> Lookbehind(false,v[2]),
             Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
     ")");
 push!(pattern,lookbehind);
@@ -632,6 +632,7 @@ pcre_parser = Sequence(AtStart(),alternation,AtEnd()) do v
     ParserWithCaptures(v[2])
 end
 
+export Regcomb
 function Regcomb(x)
     try 
         r=parse(pcre_parser,x)
