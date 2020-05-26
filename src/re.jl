@@ -470,6 +470,10 @@ ParserWithCaptures(x) =
         ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
     end
 
+import ..CombinedParsers: JoinSubstring
+JoinSubstring(x::ParserWithCaptures) =
+    ParserWithCaptures(JoinSubstring(x.parser),x.subroutines,x.names)
+
 function Base.match(parser::ParserTypes,sequence::AbstractString; kw...)
     @warn "For better performance create `ParserWithCaptures(parser)` before calling `match`."
     match(ParserWithCaptures(parser),sequence; kw...)
