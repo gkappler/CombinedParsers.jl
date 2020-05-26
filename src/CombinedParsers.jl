@@ -1885,12 +1885,12 @@ end
 end
 
 
-function fill_rep(t::Repeat, sequence, till, j,state_::S) where S
-    j_ = -1
+@inline function fill_rep(t::Repeat, sequence, till::Int, j::Int,state_::S) where S
+    j_::Int = -1
     while state_length(t,state_) < t.range.stop && ( x = _iterate(t.parser,sequence, till,j,nothing) )!==nothing
         ##@info "rep fill..." x state_
         ## e.g. match(re"(?:a|(?=b)|.)*\z","abc")
-        j_==x[1] && state_length(t,state_)>t.range.start && break
+        state_length(t,state_)>t.range.start && j_==x[1] && break
         state_=pushstate!(state_,t.parser, x[2])
         j_=j
         j = x[1]
@@ -1900,7 +1900,7 @@ end
 
 
 function _iterate(t::Repeat, sequence, till, i, state)
-    i_,state_,goback = if state === nothing
+    i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
         es = emptystate(state_type(typeof(t)))
         fill_rep(t,sequence,till,i, es)
     else
@@ -1945,7 +1945,7 @@ function _iterate(t::Repeat, sequence, till, i, state)
         end
     end
     if state_length(t,state_) in t.range
-        return i_, state_
+        i_, state_
     else
         nothing
     end
