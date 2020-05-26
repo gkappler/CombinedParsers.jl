@@ -1523,7 +1523,11 @@ function prune_captures(sequence,after_i)
 end
 
 
-state_type(p::Type{<:Sequence}) = Vector{Any}
+function state_type(parser::Type{<:Sequence})
+    pts = parser_types(parser)
+    all(t->state_type(t)<:MatchState, fieldtypes(pts)) ? MatchState : Vector{Any}
+end
+
 """
     _iterate(parser, sequence, till, i, states)
 
@@ -1531,7 +1535,7 @@ Note: `i` is the index in `sequence` after `parser` match according to `state` (
 such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
 and sequence[start_index(sequence,after,parser,state):prevind(sequence,i)] is the matched subsequence.
 """
-function _iterate(parser::Sequence, sequence, till, i, states)
+function _iterate_(parser::Sequence, sequence, till, i, states)
     i_ = i
     parts=parser.parts
     nexti,states = if states === nothing
@@ -1571,62 +1575,67 @@ function _iterate(parser::Sequence, sequence, till, i, states)
     error("?")
 end
 
-    ## error()
-@generated function _iterate_(parser::Sequence, sequence, till, i, states)
+@generated function _iterate(parser::Sequence, sequence, till, i, states)
     pts = parser_types(parser)
-    subsearch = Symbol[ gensym(:subsearch) for i in fieldtypes(pts) ]
-    subresult = Symbol[ gensym(:r) for i in fieldtypes(pts) ]
-    substate = Symbol[ gensym(:s) for i in fieldtypes(pts) ]
+    fpts = fieldtypes(pts)
+    subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
+    subresult = Symbol[ gensym(:r) for p in fpts ]
+    part = Symbol[ gensym(:part) for p in fpts ]
+    afteri = Symbol[ gensym(:after) for p in fpts ]
+    substate = Symbol[ gensym(:s) for p in fpts ]
     init = if states===Nothing
         [
-        quote
-        $(substate[i]) = nothing
-        end
-        for (i,t) in enumerate(fieldtypes(pts))
+            quote
+            $(substate[p]) = nothing
+            @inbounds $(part[p]) = parser.parts[$p]
+            end
+            for (p,t) in enumerate(fpts)
         ]
     elseif states===MatchState
         [
-        quote
-        $(substate[i]) = MatchState()
-        end
-        for (i,t) in enumerate(fieldtypes(pts))
+            quote
+            $(substate[p]) = MatchState()
+            @inbounds $(part[p]) = parser.parts[$p]
+            end
+            for (p,t) in enumerate(fpts)
         ]
     else
         [
-        quote
-        $(substate[i]) = states[$i]
-        end
-        for (i,t) in enumerate(fieldtypes(pts))
+            quote
+            $(substate[p]) = states[$p]
+            @inbounds $(part[p]) = parser.parts[$p]
+            end
+            for (p,t) in enumerate(fpts)
         ]
     end
-        
+
+    ret_state = if state_type(parser) <: MatchState
+        :(R::MatchState = MatchState())
+    else
+        :(R::$(state_type(parser)) = Any[ $([ :(($(s))) for s in substate ]...) ] )
+    end
     parseparts = [
         quote
-        @label $(subsearch[i])
-        @inbounds before_i = start_index(sequence, i_, parts[$i], $(substate[i]))
-        $(subresult[i]) = @inbounds _iterate(parts[$i], sequence, till, i_, $(substate[i]))
-        if $(subresult[i]) === nothing
+        @label $(subsearch[p])
+        before_i = start_index(sequence, i_, $(part[p]), $(substate[p]))
+        $(subresult[p]) = _iterate($(part[p]), sequence, till, i_, $(substate[p]))
+        if $(subresult[p]) === nothing
         i_ = before_i
         prune_captures(sequence,i_)
-        @goto $(i == 1 ? :theend : subsearch[i-1])
+        @goto $(p == 1 ? :theend : subsearch[p-1])
         else
-        i_, $(substate[i]) = $(subresult[i])
+        i_, $(substate[p]) = $(subresult[p])
+        $(if p < length(fpts); (:($((substate[p+1]))=nothing)); end )
         end
         end
-        for (i,t) in enumerate(fieldtypes(pts))
+        for (p,t) in enumerate(fpts)
     ]
     R = quote
-        i_ = i
-        parts=parser.parts
+        i_::Int = i
         $(init...)
         states !== nothing && @goto $(subsearch[end])
         $(parseparts...)
-        
-        R = if (&)($(( :(($(s) isa MatchState)) for s in substate )...) )
-            MatchState()
-        else
-            tuple( $([ :(($(s))) for s in substate ]...) )
-        end
+        $ret_state
         return i_, R
         @label theend
         return nothing
