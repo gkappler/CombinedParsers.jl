@@ -474,9 +474,15 @@ children(x::Union{Never,Always}) = tuple()
 regex_prefix(x::Always) = ""
 regex_inner(x::Always) = ""
 regex_suffix(x::Always) = ""
+state_type(::Type{Always}) = MatchState
+Base.get(parser::LeafParser{Always}, sequence, till, after, i, state) =
+    Always()
 _iterate(parser::Always, str, till, i, s::Nothing) =
     i, MatchState()
-
+_iterate(parser::Always, str, till, i, s::MatchState) =
+    nothing
+prevind(str,i::Int,p::Always,x) = i
+nextind(str,i::Int,p::Always,x) = i
 ##_iterate(parser::Never, str, till, i, s) = nothing
 
 export PositiveLookahead
