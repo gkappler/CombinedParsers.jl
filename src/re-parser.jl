@@ -381,27 +381,25 @@ push!(repeatable,bracket);
 
 @with_names quantified=Sequence(
     AbstractParser,
-    skip_whitespace_and_comments,
     repeatable,
     skip_whitespace_and_comments, ## for test 1130, preserve in map?
     Optional(repetition, default=(1,1)),
     skip_whitespace_and_comments,
     Optional(map(v->convert(Char,v),CharIn('+','?'))), # possessive quantifier, strip option
-    skip_whitespace_and_comments
 ) do v
-    pat = sSequence(v[2],v[3]...)
-    result = if v[4]==(1,1)
+    pat = sSequence(v[1],v[2]...)
+    result = if v[3]==(1,1)
         parser(pat)
-    elseif v[4]==(0,1)
+    elseif v[3]==(0,1)
         Optional(pat)
     else
-        Repeat(pat,v[4])
+        Repeat(pat,v[3])
     end
-    if v[6] === missing
+    if v[5] === missing
         result
-    elseif v[6]=='+'
+    elseif v[5]=='+'
         Atomic(result)
-    elseif v[6]=='?'
+    elseif v[5]=='?'
         Lazy(result)
     else
         result
@@ -411,9 +409,13 @@ push!(pattern, quantified)
 
 
 # Sequences and Alternation
-@with_names sequence = Repeat(pattern) do v
-    length(v) ==1 ? v[1] : Sequence(v...)
-end;
+@with_names sequence = Repeat(Sequence(
+    2,
+    skip_whitespace_and_comments,
+    pattern,
+    skip_whitespace_and_comments)) do v
+        length(v) ==1 ? v[1] : Sequence(v...)
+    end;
 
 
 
