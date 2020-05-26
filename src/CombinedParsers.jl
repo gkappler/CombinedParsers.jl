@@ -264,8 +264,14 @@ Base.get(x::JoinSubstring, sequence, till, after, i, state) =
 
 
 "wrapper for stepping with ncodeunit length."
-struct ConstantParser{N,T} <: WrappedParser{T,T}
-    parser::T
+@auto_hash_equals struct ConstantParser{N,P,T} <: WrappedParser{T,T}
+    parser::P
+    function ConstantParser{N}(x::Char) where N
+        new{N,Char,Char}(x)
+    end
+    function ConstantParser{N}(x::AbstractString) where N
+        new{N,typeof(x),SubString}(x)
+    end
 end
 state_type(p::Type{<:ConstantParser}) = MatchState
 children(x::ConstantParser) = ()
@@ -279,13 +285,15 @@ deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
         f(x,a...;kw...)
     end
 
+
 """
     convert(::Type{AbstractToken},x::Union{AbstractString,Char})
 
 A [`ConstantParser`](@ref) matching `x`.
 """
 Base.convert(::Type{AbstractToken},x::Char) =
-    ConstantParser{Base.ncodeunits(x),Char}(x)
+    ConstantParser{Base.ncodeunits(x)}(x)
+
 """
     convert(::Type{AbstractToken},x::StepRange{Char,<:Integer})
 
@@ -294,7 +302,7 @@ Base.convert(::Type{AbstractToken},x::Char) =
 Base.convert(::Type{AbstractToken},x::StepRange{Char,<:Integer}) =
     CharIn(x)
 Base.convert(::Type{AbstractToken},x::AbstractString) =
-    ConstantParser{Base.ncodeunits(x),SubString}(x)
+    ConstantParser{Base.ncodeunits(x)}(x)
 
 @inline nextind(str,i::Int,parser::ConstantParser{L},x) where L =
     i+L
@@ -306,7 +314,7 @@ Base.convert(::Type{AbstractToken},x::AbstractString) =
 Base.get(parser::ConstantParser{1,Char}, sequence, till, after, i, state) where L =
     sequence[i]
 
-Base.get(parser::ConstantParser{L,SubString}, sequence, till, after, i, state) where L =
+Base.get(parser::ConstantParser{L,<:AbstractString}, sequence, till, after, i, state) where L =
     parser=="" ? "" : SubString(sequence,i,prevind(sequence,i+L))
 
 
