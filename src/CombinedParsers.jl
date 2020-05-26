@@ -1472,8 +1472,8 @@ end
 
 
 @inline function prevind(str,i::Int,parser::Sequence,x::MatchState)
-    for p in lastindex(x):-1:1
-        i=prevind(str,i,parser.parts[p],MatchState())
+    for p in length(parser.parts):-1:1
+        i=prevind(str,i,parser.parts[p],x)
     end
     i
 end
