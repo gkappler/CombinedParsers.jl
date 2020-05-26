@@ -294,6 +294,9 @@ print_constructor(io::IO,x::ConstantParser) = print(io,"")
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
+revert(x::ConstantParser{N,<:AbstractString}) where N =
+    ConstantParser{N}(reverse(x.parser))
+
 deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
     get!(mem,x) do
         f(x,a...;kw...)
@@ -541,7 +544,7 @@ julia> parse(la*AnyChar(),"peek")
 """
 @auto_hash_equals struct PositiveLookahead{T,P} <: LookAround{T}
     parser::P
-    PositiveLookahead(p_) =
+    PositiveLookahead(p_,revert=true) =
         let p = parser(p_)
             new{result_type(p),typeof(p)}(p)
         end
@@ -584,9 +587,9 @@ Stacktrace:
 """
 @auto_hash_equals struct NegativeLookahead{P} <: LookAround{NegativeLookahead{P}}
     parser::P
-    NegativeLookahead(p_) =
+    NegativeLookahead(p_,revert=true) =
         let p = parser(p_)
-            new{result_type(p),typeof(p)}(p)
+            new{typeof(p)}(p)
         end
 end
 regex_prefix(x::NegativeLookahead) = "(?!"*regex_prefix(x.parser)
@@ -1794,6 +1797,7 @@ regex_suffix(x::Repeat) =
     end
 
 
+revert(x::Repeat) = x
 deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...;kw...) =
     get!(mem,x) do
         f(Repeat(x.range,

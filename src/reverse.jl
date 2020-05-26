@@ -1,6 +1,7 @@
 export revert
 
-revert(x::String) = Reverse(x)
+revert(x::Tuple) = reverse(x)
+revert(x::String) = Revert(x)
 
 export Reverse
 @auto_hash_equals struct Reverse{V}
@@ -35,6 +36,8 @@ Base.nextind(x::Reverse,i::Integer) = reverse_index(x,prevind(x.x,reverse_index(
 Base.prevind(x::Reverse,i::Integer) = reverse_index(x,nextind(x.x,reverse_index(x,i)))
 Base.nextind(x::Reverse,i::Integer,n::Integer) = reverse_index(x,prevind(x.x,reverse_index(x,i),n))
 Base.prevind(x::Reverse,i::Integer,n::Integer) = reverse_index(x,nextind(x.x,reverse_index(x,i),n))
+Base.iterate(x::Revert,i) =
+    x[i], nextind(x,i)
 
 export PositiveLookbehind
 """
@@ -46,10 +49,10 @@ Useful for checks like "must be preceded by `parser`, don't consume its match".
 """
 @auto_hash_equals struct PositiveLookbehind{T,P} <: LookAround{T}
     parser::P
-    PositiveLookbehind(p_) =
-        let p = parser(p_)
-            new{result_type(p),typeof(p)}(p)
-        end
+    function PositiveLookbehind(p_,revert_parser=true)
+        p = revert_parser ? deepmap_parser(revert,IdDict(),parser(p_)) : parser(p_)
+        new{result_type(p),typeof(p)}(p)
+    end
 end
 # result_type(p::Type{PositiveLookbehind{T}}) where T = T
 regex_prefix(x::PositiveLookbehind) = "(?<="
@@ -72,16 +75,15 @@ julia> parse("peek"*la,"peek")
 """
 @auto_hash_equals struct NegativeLookbehind{P} <: LookAround{NegativeLookbehind{P}}
     parser::P
-    NegativeLookbehind(p_) =
-        let p = parser(p_)
-        end
+    function NegativeLookbehind(p_,revert_parser=true)
+        p = revert_parser ? deepmap_parser(revert,IdDict(),parser(p_)) : parser(p_)
         new{typeof(p)}(p)
+    end
 end
 regex_prefix(x::NegativeLookbehind) = "(?<!"
 
 export Lookbehind
-function Lookbehind(does_match::Bool, p_)
-    p = deepmap_parser(revert,IdDict(),parser(p_))
+function Lookbehind(does_match::Bool, p)
     if does_match
         PositiveLookbehind(p)
     else
@@ -132,11 +134,18 @@ function Base.get(t::PositiveLookbehind, str, till, after, i, state)
     rseq = revert(str)
     get(t.parser, rseq, till, after, reverse_index(rseq,prevind(rseq,i)), state)
 end
+
+regex_inner(x::Union{PositiveLookbehind,NegativeLookbehind}) =
+    regex_inner(revert(x.parser))
+
+children(x::Union{PositiveLookbehind,NegativeLookbehind}) =
+    reverse(children(x.parser))
+
 for T in [PositiveLookahead,NegativeLookahead,PositiveLookbehind,NegativeLookbehind]
     eval(quote
          deepmap_parser(f::Function,mem::AbstractDict,x_::$T,a...; kw...) =
          let x = deepmap_parser(f,mem,x_.parser,a...; kw...)
-         $T(x)
+         $T(x,false)
          end
          end)
 end
