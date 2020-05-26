@@ -152,10 +152,10 @@ struct ParserOptions{P,T} <: WrappedParser{P,T}
     ParserOptions(parser,set::UInt32,unset::UInt32) =
         new{typeof(parser),result_type(parser)}(parser,set,unset)
 end
-deepmap_parser(f::Function,mem::AbstractDict,x::ParserOptions,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::ParserOptions,a...; kw...) =
     get!(mem,x) do
         ParserOptions(
-            deepmap_parser(f,mem,x.parser,a...),
+            deepmap_parser(f,mem,x.parser,a...; kw...),
             x.set_flags,x.unset_flags)
     end
 
@@ -283,10 +283,10 @@ function print_constructor(io::IO, x::OnOptionsParser)
     print(io," |> on_options(\"$(options_string(x.flags))\")")
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::OnOptionsParser,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::OnOptionsParser,a...; kw...) =
     get!(mem,x) do
         OnOptionsParser(
-            deepmap_parser(f,mem,x.parser,a...),
+            deepmap_parser(f,mem,x.parser,a...; kw...),
             x.flags)
     end
         

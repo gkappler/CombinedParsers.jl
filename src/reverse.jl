@@ -118,8 +118,8 @@ end
 
 for T in [PositiveLookahead,NegativeLookahead,PositiveLookbehind,NegativeLookbehind]
     eval(quote
-         deepmap_parser(f::Function,mem::AbstractDict,x_::$T,a...) =
-         let x = deepmap_parser(f,mem,x_.parser,a...)
+         deepmap_parser(f::Function,mem::AbstractDict,x_::$T,a...; kw...) =
+         let x = deepmap_parser(f,mem,x_.parser,a...; kw...)
          $T(x)
          end
          end)

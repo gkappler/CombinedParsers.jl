@@ -108,9 +108,11 @@ regex_prefix(x::Capture) =
     regex_prefix_(x::Capture)*regex_prefix(x.parser)
 regex_suffix(x::Capture) = regex_suffix(x.parser)*")"
 
-function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...)
+function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
     get!(mem,x) do
-        Capture(x.name,deepmap_parser(f,mem,x.parser,a...),x.index)
+        Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
+    end
+end
     end
 end
 
@@ -519,9 +521,9 @@ set_options(set::UInt32,unset::UInt32,parser::ParserWithCaptures) =
                        ParserTypes[ set_options(set,unset,p) for p in parser.subroutines],
                        parser.names)
 
-function deepmap_parser(f::Function,mem::AbstractDict,x::ParserWithCaptures,a...)
-    ParserWithCaptures(deepmap_parser(f,mem,x.parser,a...),
-                       [ deepmap_parser(f,mem,p,a...) for p in x.subroutines ],
+function deepmap_parser(f::Function,mem::AbstractDict,x::ParserWithCaptures,a...;kw...)
+    ParserWithCaptures(deepmap_parser(f,mem,x.parser,a...;kw...),
+                       [ deepmap_parser(f,mem,p,a...;kw...) for p in x.subroutines ],
                        x.names)
 end
 

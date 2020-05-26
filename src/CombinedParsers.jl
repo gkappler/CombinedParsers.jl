@@ -42,18 +42,56 @@ abstract type LeafParser{T} <: AbstractParser{T} end
 
 
 """
-    deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...)
+    deepmap_parser(f::Function,x::AbstractParser,a...;kw...)
+
+Perform a deep transformation of a CombinedParser.
+Used for [`log_names`](@ref).
+
+Calls `deepmap_parser(f,IdDict(),x,a...)`.
+"""
+deepmap_parser(f::Function,x::AbstractParser,a...;kw...) =
+    deepmap_parser(f,IdDict(),x,a...;kw...)
+
+"""
+    deepmap_parser(f::Function,mem::AbstractDict,x,a...;kw...)
+
+Perform a deep transformation of a CombinedParser.
+
+!!! note
+    For a custom parser `P<:AbstractParser` with sub-parsers, provide a method
+    ```julia
+    deepmap_parser(f::Function,mem::AbstractDict,x::P,a...;kw...) =
+        get!(mem,x) do
+            ## construct replacement, e.g. if P <: WrappedParser
+            P(deepmap_parser(f,mem,x.parser,a...;kw...))
+        end
+    ```
+"""
+deepmap_parser(f::Function,mem::AbstractDict,x,a...;kw...) =
+    error("""
+    For a custom parser `typeof(x)` with sub-parsers, provide a method
+    ```julia
+    deepmap_parser(f::Function,mem::AbstractDict,x::$(typeof(x)),a...;kw...) =
+        get!(mem,x) do
+            ## construct replacement, e.g. if P <: WrappedParser
+            P(deepmap_parser(f,mem,x.parser,a...;kw...))
+        end
+    ```
+""")
+
+"""
+    deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...;kw...)
 
 return 
 ```julia
     get!(mem,x) do
-        f(x,a...)
+        f(x,a...;kw...)
     end
 ```
 """
-deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...;kw...) =
     get!(mem,x) do
-        f(x,a...)
+        f(x,a...;kw...)
     end
 "Julia types that can convert(AbstractToken,x). TODO: remove"
 ParserTypes = Union{AbstractToken, AbstractString, Char, Regex,
@@ -212,37 +250,11 @@ julia> parse(!Repeat(CharIn(:L)),"abc123")
 (!)(x::AbstractToken) = JoinSubstring(x)
 
 
-"""
-    deepmap_parser(f::Function,mem::AbstractDict,x,a...)
-
-Perform a deep transformation of a CombinedParser.
-
-!!! note
-    For a custom parser `P<:AbstractParser` with sub-parsers, provide a method
-    ```julia
-    deepmap_parser(f::Function,mem::AbstractDict,x::P,a...) =
-        get!(mem,x) do
-            ## construct replacement, e.g. if P <: WrappedParser
-            P(deepmap_parser(f,mem,x.parser,a...))
-        end
-    ```
-"""
-deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
     get!(mem,x) do
         JoinSubstring(
-            deepmap_parser(f,mem,x.parser,a...))
+            deepmap_parser(f,mem,x.parser,a...;kw...))
     end
-
-"""
-    deepmap_parser(f::Function,x::AbstractParser,a...)
-
-Perform a deep transformation of a CombinedParser.
-Used for [`log_names`](@ref).
-
-Calls `deepmap_parser(f,IdDict(),x,a...)`.
-"""
-deepmap_parser(f::Function,x::AbstractParser,a...) =
-    deepmap_parser(f,IdDict(),x,a...)
 
 export map_match
 map_match(f::Function,p_) =
@@ -262,9 +274,9 @@ print_constructor(io::IO,x::ConstantParser) = print(io,"")
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
-deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
     get!(mem,x) do
-        f(x,a...)
+        f(x,a...;kw...)
     end
 
 """
@@ -622,10 +634,10 @@ with_effect(f::Function,p,a...) =
 end
 
 export deepmap_parser
-deepmap_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...;kw...) =
     get!(mem,x) do
         SideeffectParser(x.effect,
-                         deepmap_parser(f,mem,x.parser,a...),
+                         deepmap_parser(f,mem,x.parser,a...;kw...),
                          x.args...)
     end
 
@@ -730,10 +742,10 @@ with_name(name::Symbol,x; doc="") =
 with_name(name::AbstractString,x; doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),x,doc)
 
-log_names_(x::AbstractParser,a...) = x
-function deepmap_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function)
+log_names_(x::AbstractParser,a...;kw...) = x
+function deepmap_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function;kw...)
     get!(mem,x) do
-        r = NamedParser(x.name,deepmap_parser(f,mem,x.parser,message))
+        r = NamedParser(x.name,deepmap_parser(f,mem,x.parser,message;kw...))
         log=message(x)
         if log!==nothing
             with_log("$(log)",r)
@@ -743,9 +755,9 @@ function deepmap_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,m
     end
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::NamedParser,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::NamedParser,a...;kw...) =
     get!(mem,x) do
-        NamedParser(x.name,deepmap_parser(f,mem,x.parser,a...))
+        NamedParser(x.name,deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
 
@@ -759,7 +771,7 @@ Log all `NamedParser` instanses if `names==true` or `name in names` and not `nam
 
 See also: [`with_log`](@ref), [`deepmap_parser`](@ref)
 """
-function log_names(x,names=true; exclude=nothing)
+function log_names(x,names=true; exclude=nothing, kw...)
     message = if names === true
         if exclude === nothing
             x -> x isa NamedParser ? x.name : nothing
@@ -769,7 +781,7 @@ function log_names(x,names=true; exclude=nothing)
     else
         x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
     end
-    deepmap_parser(log_names_,Dict(),x, message)
+    deepmap_parser(log_names_,Dict(),x, message;kw...)
 end
 
 export @with_names
@@ -831,9 +843,11 @@ Parser transforming result of a wrapped parser.
             with_name(p_.name,tp)
         end
 end
-deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
     get!(mem,x) do
-        Transformation{result_type(x)}(x.transform,deepmap_parser(f,mem,x.parser,a...))
+        Transformation{result_type(x)}(
+            x.transform,
+            deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
 
@@ -1213,10 +1227,10 @@ function after(right::Function,left::AbstractToken)
     FlatMap{T}(left,right)
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...;kw...) =
     get!(mem,x) do
-        FlatMap{result_type(x)}(deepmap_parser(f,mem,x.left),
-                                v -> deepmap_parser(f,mem,x.right(v),a...))
+        FlatMap{result_type(x)}(deepmap_parser(f,mem,x.left,a...;kw...),
+                                v -> deepmap_parser(f,mem,x.right(v),a...;kw...))
     end
 regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
@@ -1377,9 +1391,9 @@ children(x::Sequence) = x.parts
 
 Base.getindex(x::AbstractParser, i) = map(i,x)
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Sequence,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Sequence,a...;kw...) =
     get!(mem,x) do
-        Sequence( ( deepmap_parser(f,mem,p,a...)
+        Sequence( ( deepmap_parser(f,mem,p,a...;kw...)
                     for p in x.parts)... )
     end
 
@@ -1602,9 +1616,9 @@ export Lazy
         end
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Lazy,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Lazy,a...;kw...) =
     get!(mem,x) do
-        Lazy(deepmap_parser(f,mem,x.parser,a...))
+        Lazy(deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
 regex_inner(x::Lazy) = regex_inner(x.parser)
@@ -1734,10 +1748,10 @@ regex_suffix(x::Repeat) =
     end
 
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...;kw...) =
     get!(mem,x) do
         f(Repeat(x.range,
-                 deepmap_parser(f,mem,x.parser,a...)),a...)
+                 deepmap_parser(f,mem,x.parser,a...)),a...;kw...)
     end
 
 
@@ -2018,9 +2032,9 @@ function print_constructor(io::IO, x::Optional)
     print_constructor(io,x.parser)
     print(io, " |> Optional(default=$(x.default))")
 end
-deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
     get!(mem,x) do
-        Optional(deepmap_parser(f,mem,x.parser,a...);
+        Optional(deepmap_parser(f,mem,x.parser,a...;kw...);
                  default=x.default)
     end
 
@@ -2127,14 +2141,14 @@ end
 @deprecate alt(a...) Either(a...)
 
 
-function deepmap_parser(f::Function,mem::AbstractDict,x::Either,a...)
+function deepmap_parser(f::Function,mem::AbstractDict,x::Either,a...;kw...)
     if haskey(mem,x)
         mem[x]
     else
         mem[x] = r = Either{result_type(x)}(Any[])
         ## f(x,a...)
         for p in x.options
-            push!(r,deepmap_parser(f,mem,p,a...))
+            push!(r,deepmap_parser(f,mem,p,a...;kw...))
         end
         r
     end
@@ -2547,10 +2561,10 @@ A parser matching `p`, and failing when required to backtrack
         end
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...;kw...) =
     get!(mem,x) do
         Atomic(
-            deepmap_parser(f,mem,x.parser,a...))
+            deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
 @inline function _iterate(parser::Atomic, sequence, till, i, state)
@@ -2659,7 +2673,7 @@ export _iterate
 export Numeric
 Numeric = TextParse.Numeric
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Numeric,a...) = x
+deepmap_parser(f::Function,mem::AbstractDict,x::Numeric,a...; kw...) = x
 
 include("reverse.jl")
 include("textparse.jl")
