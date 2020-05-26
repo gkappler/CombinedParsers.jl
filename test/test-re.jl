@@ -67,13 +67,14 @@ import CombinedParsers.Regexp: option_sequences
     @test parse(parse(option_sequences,"a|b(?i)a"),"bA")==('b','A')
 end
 
+import CombinedParsers: Repeat_max
 import CombinedParsers.Regexp: quantified, repetition, sequence
 @testset "repetitions and optional" begin
     @test parse(Optional('a'),"b")===missing
     @test parse(Optional('a'),"a")==='a'
-    @test parse(repetition,"{1,}") == (1,typemax(Int))
-    @test parse(repetition,"*") == (0,typemax(Int))
-    @test parse(repetition,"+") == (1,typemax(Int))
+    @test parse(repetition,"{1,}") == (1,Repeat_max)
+    @test parse(repetition,"*") == (0,Repeat_max)
+    @test parse(repetition,"+") == (1,Repeat_max)
     @test parse(repetition,"{3}") == (3,3)
     @test parse(repetition,"?") == (0,1)
     @test match(parse(quantified,"a*"),"aaab").match=="aaa"

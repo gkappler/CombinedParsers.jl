@@ -1,4 +1,4 @@
-
+import ..CombinedParsers: Repeat_max
 ## TODO:
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC2
 # affect . ^ $
@@ -72,7 +72,7 @@ bracket_range(start) =
             end
         end)
 
-function character_base(base,mind=0,maxd=typemax(Int))
+function character_base(base,mind=0,maxd=Repeat_max)
     dig = if base == 16
         hex_digit
     elseif base == 8
@@ -365,12 +365,12 @@ push!(repeatable,bracket);
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
 @with_names repetition = Either(
-    "+"=>(1,typemax(Int)),
-    "*"=>(0,typemax(Int)),
+    "+"=>(1,Repeat_max),
+    "*"=>(0,Repeat_max),
     "?"=>(0,1),
     Sequence(Tuple{Int,Int},
         "{",integer,
-        Optional(Sequence(2,",",Optional(integer, default=typemax(Int)))),"}") do v
+        Optional(Sequence(2,",",Optional(integer, default=Repeat_max))),"}") do v
     if v[3] isa Missing
     (v[2],v[2])
     else

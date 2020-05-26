@@ -1629,10 +1629,11 @@ function print_constructor(io::IO, x::Lazy)
     print(io, " |> Lazy" )
 end
 
+Repeat_max = 10^6
 export Repeat1, Repeat
 """
     Repeat(x)
-    Repeat(x; min=0,max=typemax(Int))
+    Repeat(x; min=0,max=Repeat_max)
     Repeat(min::Integer, x)
     Repeat(min::Integer,max::Integer, x)
 
@@ -1648,10 +1649,10 @@ Parser repeating pattern `x` `min:max` times.
 end
 Repeat(min::Integer,max::Integer,parser) =
     Repeat((min:max),parser)
-Repeat(parser;min::Integer=0,max::Integer=typemax(Int)) =
+Repeat(parser;min::Integer=0,max::Integer=Repeat_max) =
     Repeat((min:max),parser)
 Repeat(min::Integer,parser) =
-    Repeat((min:typemax(Int)),parser)
+    Repeat((min:Repeat_max),parser)
 Repeat(x::ParserTypes,y::Vararg{ParserTypes}) =
     Repeat(Sequence(x,y...) )
 """
@@ -1677,7 +1678,7 @@ Abbreviation for `map(f,Repeat1(a...))`.
 Repeat1(f::Function,a...) =
     map(f,Repeat1(a...))
 
-Repeat(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) = Repeat(minmax...,x)
+Repeat(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,Repeat_max)) = Repeat(minmax...,x)
 
 @deprecate Repeat(minmax::Tuple{<:Integer,<:Integer},x::ParserTypes,y::Vararg{ParserTypes}) Repeat(minmax...,Sequence(x,y...))
 
@@ -1685,7 +1686,7 @@ Repeat(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int))) = Re
 
 @deprecate Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
 
-@deprecate Repeat(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,typemax(Int)); transform) map(transform,T, Repeat(minmax...,parser(x)))
+@deprecate Repeat(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,Repeat_max); transform) map(transform,T, Repeat(minmax...,parser(x)))
 
 @deprecate rep(a...;kw...) Repeat(a...;kw...)
 
@@ -1708,7 +1709,7 @@ function Base.join(x::Repeat,delim_)
     ## todo: the get function could be optimized
     ##@show x.range
     map(x.parser * ( ( delim_ * x.parser )[2] )^(max(0,x.range.start-1),
-                                                 x.range.stop == typemax(Int) ? typemax(Int) : x.range.stop-1)) do (f,r)
+                                                 x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1)) do (f,r)
         pushfirst!(r,f)
         r
     end
@@ -1728,13 +1729,13 @@ end
 regex_inner(x::Repeat) = regex_inner(x.parser)
 regex_suffix(x::Repeat) = 
     regex_suffix(x.parser)*if x.range.start == 0
-        if x.range.stop == typemax(Int)
+        if x.range.stop == Repeat_max
             "*"
         else            
             "{,$(x.range.stop)}"
         end
     else
-        if x.range.stop == typemax(Int)
+        if x.range.stop == Repeat_max
             if x.range.start == 1
                 "+"
             else
