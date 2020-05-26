@@ -67,6 +67,10 @@ Base.show(io::IO, x::WithOptions) =
 
 Base.getindex(x::WithOptions,i...) =
     with_options(x.flags,(getindex(x.x,i...)))
+Base.iterate(x::WithOptions{<:AbstractString},a...) =
+    let n = iterate(x.x,a...)
+        n===nothing ? nothing : with_options(x.flags,n[1]),n[2]
+    end
 
 with_options(flags::UInt32,x::WithOptions) =
     with_options(flags,x.x)
@@ -100,10 +104,6 @@ Base.nextind(x::WithOptions,i::Integer) =
     nextind(x.x,i)
 Base.ncodeunits(x::WithOptions) =
     ncodeunits(x.x)
-Base.iterate(x::WithOptions{<:AbstractString},a...) =
-    let n = iterate(x.x,a...)
-        n===nothing ? nothing : convert(Char,WithOptions(n[1],x.flags)),n[2]
-    end
 
 import ..CombinedParsers: ismatch, _ismatch
 function ismatch(c::WithOptions{Char},p)
@@ -239,9 +239,9 @@ Base.nextind(x::FilterOptions,i::Integer) =
     nextind(x.x,i)
 Base.ncodeunits(x::FilterOptions) =
     ncodeunits(x.x)
-Base.iterate(x::FilterOptions{<:AbstractString},a...) =
+Base.iterate(x::FilterOptions,a...) =
     let n = iterate(x.x,a...)
-        n===nothing ? nothing : convert(Char,FilterOptions(n[1],x.flags)),n[2]
+        n===nothing ? nothing : if_options(x.flags,n[1]),n[2]
     end
 
 Base.convert(::Type{Union{Char,CharIn}},x::FilterOptions{Char}) = x.x

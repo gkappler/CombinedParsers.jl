@@ -213,7 +213,7 @@ Base.get(x::WrappedParser, a...) =
     get(x.parser,a...)
 Base.get(parser::WrappedParser, sequence, till, after, i, state) = 
     get(parser.parser, sequence, till, after, i, state)
-_iterate(parser::WrappedParser, sequence, till, i, state) =
+@inline _iterate(parser::WrappedParser, sequence, till, i, state) =
     _iterate(parser.parser, sequence, till, i, state)
 
 
@@ -319,17 +319,16 @@ Base.get(parser::ConstantParser{L,SubString}, sequence, till, after, i, state) w
     end
 end
 
-@inline function _iterate(parser::ConstantParser{L,<:AbstractString}, sequence, till, i, state::Nothing) where L
-    state !==nothing && return(nothing)
-    j = i
-    k = 1
+
+@inline function _iterate(parser::ConstantParser{L,<:AbstractString}, sequence, till, i, state::Nothing) where {L}
+    j::Int = i
+    k::Int = 1
+    p = parser.parser
     while k<=L
         (j > till) && return(nothing)
-        pc=parser.parser[k] # @inbounds
-        sc=sequence[j] # @inbounds
+        @inbounds pc,k=iterate(p,k)
+        @inbounds sc,j=iterate(sequence,j)
         !ismatch(sc,pc) && return(nothing)
-        j = j + ncodeunits(sc)
-        k = k + ncodeunits(pc)
     end
     return j, MatchState()
 end
@@ -376,32 +375,31 @@ any() = AnyChar()
 regex_inner(x::AnyChar) = "."
 
 struct MatchingNever{T} end
-ismatch(c::MatchingNever,p) = false
-ismatch(c::MatchingNever,p::AnyChar) = false
-_ismatch(c,p::Function) = p(c)
-_ismatch(c,p::AnyChar) = true
-_ismatch(c::Char,p::Union{StepRange,Set}) = c in p
+ismatch(c::MatchingNever,p)::Bool = false
+ismatch(c::MatchingNever,p::AnyChar)::Bool = false
+_ismatch(c,p::Function)::Bool = p(c)::Bool
+_ismatch(c,p::AnyChar)::Bool = true
+_ismatch(c::Char,p::Union{StepRange,Set})::Bool = c in p
 
-function _ismatch(x::Char, set::Union{Tuple,Vector})
+function _ismatch(x::Char, set::Union{Tuple,Vector})::Bool
     for s in set
         ismatch(x,s) && return true
     end
     return false
 end
-function _ismatch(c::Char,p::Char)
+function _ismatch(c::Char,p::Char)::Bool
     c==p
 end
-function ismatch(c::Char,p)
+function ismatch(c::Char,p)::Bool
     _ismatch(c, p)
 end
 
 
 @inline function _iterate(parser::AnyChar, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    c = sequence[i] # @inbounds
+    @inbounds c,ni = iterate(sequence,i)
     !ismatch(c,parser) && return nothing
-    nc = Base.ncodeunits(c)
-    return i+nc, MatchState()
+    return ni, MatchState()
 end
 
 
@@ -1008,7 +1006,7 @@ succeeds if char at cursor is in one of the unicode classes.
 CharIn(unicode_classes::Symbol...) =
     CharIn(UnicodeClass(unicode_classes...))
 
-_ismatch(c,p::CharIn) = _ismatch(c,p.sets)
+_ismatch(c,p::CharIn)::Bool = _ismatch(c,p.sets)
 
 export regex_escape
 ## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
@@ -1055,18 +1053,6 @@ regex_inner(x::CharIn{Char}) =
 
 
 
-
-@inline function _iterate(parser::CharIn, sequence, till, i, state::Nothing)
-    i>till && return(nothing)
-    c = sequence[i] # @inbounds
-    c isa MatchingNever && return nothing
-    if ismatch(c,parser.sets)
-        nc = Base.ncodeunits(c)
-        return i+nc, MatchState()
-    end
-    return nothing
-end
-
 export CharNotIn
 """
     CharNotIn(x)
@@ -1101,7 +1087,7 @@ end
 result_type(::Type{<:CharNotIn}) = Char
 regex_inner(x::CharNotIn) =
     "[^"*join([regex_string_(s) for s in x.sets])*"]"
-_ismatch(c,p::CharNotIn) = !_ismatch(c,p.sets)
+_ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
 
 """
     CharIn(unicode_classes::Symbol...)
@@ -1113,11 +1099,16 @@ CharNotIn(unicode_classes::Symbol...) =
 
 @inline function _iterate(parser::CharNotIn, sequence, till, i, state::Nothing)
     i>till && return(nothing)
-    c = sequence[i] # @inbounds
-    c isa MatchingNever && return nothing
+    @inbounds c,ni = iterate(sequence,i)
     ismatch(c,parser.sets) && return nothing 
-    nc = Base.ncodeunits(c)
-    return i+nc, MatchState()
+    return ni, MatchState()
+end
+
+@inline function _iterate(parser::CharIn, sequence, till, i, state::Nothing)
+    i>till && return(nothing)
+    @inbounds c,ni = iterate(sequence,i)
+    !ismatch(c,parser.sets) && return nothing
+    return ni, MatchState()
 end
 
 

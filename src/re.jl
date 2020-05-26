@@ -67,8 +67,10 @@ Base.prevind(x::SequenceWithCaptures,i::Integer) =
     prevind(x.match,i)
 Base.nextind(x::SequenceWithCaptures,i::Integer) =
     nextind(x.match,i)
-Base.getindex(x::SequenceWithCaptures,i...) =
+@inline Base.@propagate_inbounds Base.getindex(x::SequenceWithCaptures,i...) =
     getindex(x.match,i...)
+@inline Base.@propagate_inbounds Base.iterate(x::SequenceWithCaptures,i...) =
+    iterate(x.match,i...)
 
 Base.SubString(x::SequenceWithCaptures,a...) =
     SubString(x.match,a...)
