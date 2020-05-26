@@ -9,6 +9,8 @@ log conveniently for debugging, and let Julia compile your parser for good perfo
 module CombinedParsers
 import Base: (^), (*), (~), (/), (|), (!), cat, get, prevind, nextind
 using Nullables
+using AutoHashEquals
+
 
 using TextParse
 import TextParse: AbstractToken
@@ -184,7 +186,7 @@ export JoinSubstring
 
 Parser Transformation getting the matched SubString.
 """
-struct JoinSubstring{P} <: WrappedParser{P,SubString}
+@auto_hash_equals struct JoinSubstring{P} <: WrappedParser{P,SubString}
     parser::P
 end
 Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
@@ -483,7 +485,7 @@ julia> parse(la*AnyChar(),"peek")
 
 ```
 """
-struct PositiveLookahead{T,P} <: LookAround{T}
+@auto_hash_equals struct PositiveLookahead{T,P} <: LookAround{T}
     parser::P
     PositiveLookahead(p_) =
         let p = parser(p_)
@@ -523,7 +525,7 @@ Stacktrace:
 
 ```
 """
-struct NegativeLookahead{T,P} <: LookAround{T}
+@auto_hash_equals struct NegativeLookahead{T,P} <: LookAround{T}
     parser::P
     NegativeLookahead(p_) =
         let p = parser(p_)
@@ -556,7 +558,7 @@ end
 
 
 
-struct PartialMatchException{S,P} <: Exception
+@auto_hash_equals struct PartialMatchException{S,P} <: Exception
     index::Int
     str::S
     delta::Int
@@ -577,7 +579,7 @@ function Base.showerror(io::IO, x::PartialMatchException)
     ##println(io, x.pattern)
 end
 
-struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
+@auto_hash_equals struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
     parser::P
     args::A
     effect::Function
@@ -686,7 +688,7 @@ end
 
 
 export NamedParser, with_name
-struct NamedParser{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct NamedParser{P,T} <: WrappedParser{P,T}
     name::Symbol
     parser::P
     doc::String
@@ -816,7 +818,7 @@ export Transformation
 Parser transforming result of a wrapped parser. 
 `a...` is passed as additional arguments to `f` (at front .
 """
-struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
+@auto_hash_equals struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
     transform::F
     parser::P
     Transformation{T}(transform::Function, p_) where {T} =
@@ -967,7 +969,7 @@ julia> parse(ac, "c")
 
 ```
 """
-struct CharIn{S} <: NIndexParser{1,Char}
+@auto_hash_equals struct CharIn{S} <: NIndexParser{1,Char}
     sets::S
     CharIn(x) = new{typeof(x)}(x)
     CharIn(x::Vector) =
@@ -986,9 +988,6 @@ succeeds if char at cursor is in one of the unicode classes.
 CharIn(unicode_classes::Symbol...) =
     CharIn(UnicodeClass(unicode_classes...))
 
-==(x::CharIn,y::CharIn) =
-    x.sets==y.sets
-hash(x::CharIn, h::UInt) = hash(x.sets,h)
 _ismatch(c,p::CharIn) = _ismatch(c,p.sets)
 
 export regex_escape
@@ -1076,7 +1075,7 @@ Stacktrace:
 
 ```
 """
-struct CharNotIn{S} <: NIndexParser{1,Char}
+@auto_hash_equals struct CharNotIn{S} <: NIndexParser{1,Char}
     sets::S
 end
 result_type(::Type{<:CharNotIn}) = Char
@@ -1191,7 +1190,7 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
 
 
 export FlatMap,after
-struct FlatMap{T,P,Q<:Function} <: AbstractParser{T}
+@auto_hash_equals struct FlatMap{T,P,Q<:Function} <: AbstractParser{T}
     left::P
     right::Q
     function FlatMap{T}(left::P, right::Q) where {T, P, Q<:Function}
@@ -1292,7 +1291,7 @@ end
 
 
 export Sequence
-struct Sequence{T,P<:Tuple} <: AbstractParser{T}
+@auto_hash_equals struct Sequence{T,P<:Tuple} <: AbstractParser{T}
     parts::P
     function Sequence(p...)
         parts = tuple( ( parser(x) for x = p )... )
@@ -1595,7 +1594,7 @@ end
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
 export Lazy
-struct Lazy{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Lazy{P,T} <: WrappedParser{P,T}
     parser::P
     Lazy(p_) =
         let p = parser(p_)
@@ -1625,7 +1624,7 @@ export Repeat1, Repeat
 
 Parser repeating pattern `x` `min:max` times.
 """
-struct Repeat{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Repeat{P,T} <: WrappedParser{P,T}
     range::UnitRange{Int}
     parser::P
     Repeat(range::UnitRange{Int},p) =
@@ -1978,7 +1977,7 @@ julia> parse(Optional("a"),"b")
 ""
 ```
 """
-struct Optional{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Optional{P,T} <: WrappedParser{P,T}
     parser::P
     default::T
     function Optional(p_;default=defaultvalue(result_type(p_)))
@@ -2091,16 +2090,13 @@ julia> parse("a" | "bc","bc")
 
 ```
 """
-struct Either{T,Ps} <: AbstractParser{T}
+@auto_hash_equals struct Either{T,Ps} <: AbstractParser{T}
     options::Ps
     Either{T}(p::P) where {T,P<:Union{Tuple,Vector}} =
         new{T,P}(p::P)
     Either{T}(p::AbstractParser...) where {T} =
         new{T,Vector{Any}}(Any[p...])
 end
-==(x::Either,y::Either) =
-    x.options==y.options
-hash(x::Either, h::UInt) = hash(x.options)
 state_type(::Type{<:Either}) = Pair{Int,<:Any}##Tuple{Int, promote_type( state_type.(t.options)...) }
 children(x::Either) = x.options
 regex_string(x::WrappedParser{<:Either}) = regex_inner(x)
@@ -2346,7 +2342,7 @@ end
 #     isnull(x.second) ? Nullable{Pair{Symbol, T}}() :
 #     Nullable(x.first => convert(T, x.second.value))
 
-struct Greedy{Ps,A,F<:Function} <: AbstractParser{Any}
+@auto_hash_equals struct Greedy{Ps,A,F<:Function} <: AbstractParser{Any}
     pairs::Ps
     alt::A
     transform::F
@@ -2543,7 +2539,7 @@ export Atomic
 A parser matching `p`, and failing when required to backtrack
 (behaving like an atomic group in regular expressions).
 """
-struct Atomic{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Atomic{P,T} <: WrappedParser{P,T}
     parser::P
     Atomic(x) =
         let p=parser(x)
@@ -2581,7 +2577,7 @@ regex_inner(x::Atomic) = regex_inner(x.parser)
 
 
 export Parsings
-struct Parsings{P,S}
+@auto_hash_equals struct Parsings{P,S}
     parser::P
     sequence::S
     till::Int

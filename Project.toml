@@ -1,10 +1,11 @@
-uuid = "5ae71ed2-6f8a-4ed1-b94f-e14e8158f19e"
 name = "CombinedParsers"
+uuid = "5ae71ed2-6f8a-4ed1-b94f-e14e8158f19e"
 authors = ["Gregor Kappler"]
 version = "0.1.0"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+AutoHashEquals = "15f4f7f2-30c1-5605-9d31-71845cf9641f"
 InternedStrings = "7d512f48-7fb1-5a58-b986-67e6dc259f01"
 Nullables = "4d1e1d77-625e-5b40-9113-a560ec7a8ecd"
 TextParse = "e0df1984-e451-5cb5-8b61-797a481e67e3"

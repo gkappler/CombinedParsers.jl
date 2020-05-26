@@ -3,7 +3,7 @@ export revert
 revert(x::String) = Reverse(x)
 
 export Reverse
-struct Reverse{V}
+@auto_hash_equals struct Reverse{V}
     x::V
     lastindex::Int
     Reverse(x) =
@@ -44,7 +44,7 @@ Parser that succeeds if and only if `parser` succeeds **before cursor**. Consume
 The match is returned.
 Useful for checks like "must be preceded by `parser`, don't consume its match".
 """
-struct PositiveLookbehind{T,P} <: LookAround{T}
+@auto_hash_equals struct PositiveLookbehind{T,P} <: LookAround{T}
     parser::P
     PositiveLookbehind(p_) =
         let p = parser(p_)
@@ -62,7 +62,7 @@ Parser that succeeds if and only if `parser` does not succeed **before cursor**.
 `nothing` is returned as match.
 Useful for checks like "must not be preceded by `parser`, don't consume its match".
 """
-struct NegativeLookbehind{T,P} <: LookAround{T}
+@auto_hash_equals struct NegativeLookbehind{T,P} <: LookAround{T}
     parser::P
     NegativeLookbehind(p_) =
         let p = parser(p_)

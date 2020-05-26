@@ -5,6 +5,8 @@ module Regexp
 using ..CombinedParsers
 using TextParse
 import TextParse: AbstractToken
+using AutoHashEquals
+
 import ..CombinedParsers: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, _iterate, print_constructor
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string
@@ -24,7 +26,7 @@ SequenceWithCaptures ensapsulates a sequence to be parsed, and parsed captures.
 
 See also [`ParserWithCaptures`](@ref)
 """
-struct SequenceWithCaptures{S,T}
+@auto_hash_equals struct SequenceWithCaptures{S,T}
     match::S
     subroutines::Vector{ParserTypes}
     captures::Vector{Vector{UnitRange{Int}}}
@@ -79,7 +81,7 @@ Capture a parser result, optionally with a name.
 
 [`ParserWithCaptures`](@ref)
 """
-struct Capture{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Capture{P,T} <: WrappedParser{P,T}
     parser::P
     name::Union{Nothing,Symbol}
     index::Int
@@ -168,7 +170,7 @@ export Backreference
 Parser matching previously captured sequence, optionally with a name.
 `index` field is recursively set when calling 'ParserWithCaptures` on the parser.
 """
-struct Backreference <: AbstractParser{AbstractString}
+@auto_hash_equals struct Backreference <: AbstractParser{AbstractString}
     name::Union{Nothing,Symbol}
     index::Int
     fallback::Function
@@ -248,18 +250,17 @@ end
     r === nothing && return nothing
     r[1], r[1]-i
 end
+
 _iterate_condition(cond::Backreference, sequence, till, i, state) =
     !isempty(sequence.captures[cond.index])
-
-
 
 
 export Subroutine
 """
 Parser matching preceding capture, optionally with a name.
-`index` field is recursively set when calling 'ParserWithCaptures` on the parser.
+`index` field is recursively set when calling `ParserWithCaptures` on the parser.
 """
-struct Subroutine{T} <: AbstractParser{T}
+@auto_hash_equals struct Subroutine{T} <: AbstractParser{T}
     name::Union{Nothing,Symbol}
     delta::Symbol
     index::Int
@@ -336,7 +337,7 @@ export DupSubpatternNumbers
 """
 Parser wrapper for `ParserWithCaptures`, setting reset_index=true in `deepmap_parser(::typeof(indexed_captures_),...)`.
 """
-struct DupSubpatternNumbers{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct DupSubpatternNumbers{P,T} <: WrappedParser{P,T}
     parser::P
     DupSubpatternNumbers(parser) =
         new{typeof(parser),result_type(parser)}(parser)
@@ -373,7 +374,7 @@ export Conditional
 """
 Conditional parser, `_iterate` cycles conditionally on `_iterate_condition` through matches in field `yes` and `no` respectively.
 """
-struct Conditional{C,Y,N,T} <: AbstractParser{T}
+@auto_hash_equals struct Conditional{C,Y,N,T} <: AbstractParser{T}
     condition::C
     yes::Y
     no::N
@@ -452,7 +453,7 @@ indices of named capture groups in field `names::Dict`.
     implicitly called in `match`
 See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
 """
-struct ParserWithCaptures{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct ParserWithCaptures{P,T} <: WrappedParser{P,T}
     parser::P
     subroutines::Vector{ParserTypes} ## todo: rename subroutines
     names::Dict{Symbol,Int}
@@ -570,7 +571,7 @@ julia> m.match, m.captures
 ("soso or", SubString{String}["so", "or"])
 ```
 """
-struct ParseMatch{C<:SequenceWithCaptures}
+@auto_hash_equals struct ParseMatch{C<:SequenceWithCaptures}
     m::C
     ParseMatch(x,cs::SequenceWithCaptures,state) =
         let wc=SequenceWithCaptures(x,cs,state)
