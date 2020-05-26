@@ -406,7 +406,7 @@ push!(repeatable,bracket);
     end
 end;
 push!(pattern, quantified)
-
+pushfirst!(pattern,map(parser("\\K")) do v throw(UnsupportedError(v)); end);
 
 # Sequences and Alternation
 @with_names sequence = Repeat(Sequence(
@@ -626,8 +626,6 @@ push!(repeatable,sequence_with_options);
         ),
     ")");
 push!(pattern,backtrack_control);
-
-push!(pattern,map(Either("\\K")) do v throw(UnsupportedError(v)); end);
 
 export pcre_parser, @re_str, Regcomb
 pcre_parser = Sequence(AtStart(),alternation,AtEnd()) do v
