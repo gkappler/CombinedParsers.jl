@@ -430,6 +430,16 @@ abstract type LookAround{T} <: NIndexParser{0,T} end
 children(x::LookAround) = (x.parser,)
 
 export AtStart, AtEnd
+"""
+    AtStart()
+
+Parser succeding if and only if at index 1 with `result_type` `AtStart`.
+
+```jldoctest
+julia> AtStart()
+re"^"
+```
+"""
 struct AtStart <: NIndexParser{0,AtStart} end
 regex_prefix(x::AtStart) = "^"
 _iterate(parser::AtStart, sequence, till, i, state::Nothing) =
@@ -437,15 +447,21 @@ _iterate(parser::AtStart, sequence, till, i, state::Nothing) =
 
 print_constructor(io::IO, x::AtStart) = print(io,"AtStart")
 
+"""
+    AtEnd()
+
+Parser succeding if and only if at last index with `result_type` `AtEnd`.
+
+```jldoctest
+julia> AtEnd()
+re"\$"
+```
+"""
 struct AtEnd <: NIndexParser{0,AtEnd} end
 regex_suffix(x::AtEnd) = "\$"
 _iterate(parser::AtEnd, sequence, till, i, state::Nothing) =
     i > till ? (i, MatchState()) : nothing
-
 print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
-
-Base.show(io::IO, x::Union{AtStart,AtEnd}) =
-    print(io,regex_string(x))
 
 Base.get(parser::Union{AtStart,AtEnd}, sequence, till, after, i, state) =
     parser
@@ -458,12 +474,11 @@ export Never
 """
     Never()
 
-Assertion parser matching never and not consuming any input.
+Assertion parser matching never.
 
 ```jldoctest
 julia> Never()
-(*FAIL) Never
-::Never
+re"(*FAIL)"
 ```
 """
 struct Never <: LeafParser{Never} end
@@ -472,7 +487,6 @@ regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
 _iterate(x::Never,str,i,till,state) =
     nothing
-
 
 
 export Always
@@ -504,6 +518,10 @@ _iterate(parser::Always, str, till, i, s::MatchState) =
 prevind(str,i::Int,p::Always,x) = i
 nextind(str,i::Int,p::Always,x) = i
 ##_iterate(parser::Never, str, till, i, s) = nothing
+
+
+Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
+    print(io,"re\"",regex_string(x),"\"")
 
 export PositiveLookahead
 """
