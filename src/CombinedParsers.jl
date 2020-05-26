@@ -163,10 +163,9 @@ function _iterate(parser::AbstractToken, sequence, till, i, state)
         nothing
     end
 end
+
 function Base.get(parser::AbstractToken, sequence, till, after, i, state)
-    parser isa AbstractParser && @warn "define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)"
     state[2]
-    ## === missing ? missing : get(Parsing(x.parser.parser,x.sequence), after, (i, till, state))
 end
 
 @inline function nextind(str,i::Int,parser::AbstractToken,x)
@@ -178,11 +177,26 @@ end
     i-x[1]
 end
 
+function Base.get(parser::AbstractParser, sequence, till, after, i, state)
+    error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
+end
+function nextind(str,i::Int,parser::AbstractParser,x)
+    error("define nextind(str,i::Int,parser::$(typeof(parser)),x)")
+end
+function prevind(str,i::Int,parser::AbstractParser,x)
+    error("define prevind(str,i::Int,parser::$(typeof(parser)),x)")
+end
+
 result_type(x::ParserTypes) = result_type(typeof(x))
 result_type(T::Type{<:Union{Char,AbstractString}}) = T
 result_type(::Type{<:AbstractToken{T}}) where T = T
 
 struct MatchState end
+"""
+    Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state)
+
+Default method for parser types returning nothing
+"""
 Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state) =
     nothing
 state_type(p::Type{<:AbstractParser}) =  error("implement state_type(::Type{$(p)})")
@@ -362,8 +376,6 @@ _iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, i, state::M
 
 print_constructor(io::IO,x::NIndexParser) = nothing
 
-Base.get(parser::NIndexParser{0}, sequence, till, after, i, state) =
-    parser
 Base.get(x::NIndexParser{1,Char}, sequence, till, after, i, state) =
     sequence[i]
 
@@ -435,6 +447,8 @@ print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
 Base.show(io::IO, x::Union{AtStart,AtEnd}) =
     print(io,regex_string(x))
 
+Base.get(parser::Union{AtStart,AtEnd}, sequence, till, after, i, state) =
+    parser
 
 
 
@@ -503,10 +517,8 @@ Useful for checks like "must be followed by `parser`, but don't consume its matc
 julia> la=PositiveLookahead("peek")
 re"(?=peek)"
 
-
 julia> parse(la*AnyChar(),"peek")
-(re"(?=peek)", 'p')
-
+("peek", 'p')
 ```
 """
 @auto_hash_equals struct PositiveLookahead{T,P} <: LookAround{T}
@@ -528,6 +540,9 @@ function _iterate(t::PositiveLookahead, str, till, i, state::Nothing)
     end
 end
 
+function Base.get(t::PositiveLookahead, str, till, after, i, state)
+    get(t.parser, str, till, after, i, state)
+end
 
 export NegativeLookahead
 """
@@ -549,7 +564,7 @@ Stacktrace:
 
 ```
 """
-@auto_hash_equals struct NegativeLookahead{T,P} <: LookAround{T}
+@auto_hash_equals struct NegativeLookahead{P} <: LookAround{NegativeLookahead{P}}
     parser::P
     NegativeLookahead(p_) =
         let p = parser(p_)
@@ -564,6 +579,9 @@ function _iterate(t::NegativeLookahead, str, till, i, state::Nothing)
     else
         nothing
     end
+end
+function Base.get(parser::NegativeLookahead, sequence, till, after, i, state)
+    parser
 end
 
 export Lookahead
@@ -1254,12 +1272,7 @@ regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
 
 function Base.get(parser::FlatMap, sequence, till, after, i, state)
-    # @show state[2]
-    # @show till, after, i, state[1]
-    # @show state[3]
     li = nextind(sequence,i,parser.left,state[1])
-    ## @show sequence[li:till]
-    ## @show typeof(state[2])
     get(state[2],sequence, till, after,
               li,
               state[3])

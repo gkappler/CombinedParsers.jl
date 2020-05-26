@@ -61,13 +61,21 @@ export NegativeLookbehind
 Parser that succeeds if and only if `parser` does not succeed **before cursor**.  Consumes no input.
 `nothing` is returned as match.
 Useful for checks like "must not be preceded by `parser`, don't consume its match".
+
+```jldoctest
+julia> la=NegativeLookbehind("keep")
+re"(?<!peek)"
+
+julia> parse("peek"*la,"peek")
+("peek", 'p')
+```
 """
-@auto_hash_equals struct NegativeLookbehind{T,P} <: LookAround{T}
+@auto_hash_equals struct NegativeLookbehind{P} <: LookAround{NegativeLookbehind{P}}
     parser::P
     NegativeLookbehind(p_) =
         let p = parser(p_)
-            new{result_type(p),typeof(p)}(p)
         end
+        new{typeof(p)}(p)
 end
 regex_prefix(x::NegativeLookbehind) = "(?<!"
 
@@ -100,6 +108,10 @@ function _iterate(t::NegativeLookbehind, str, till, i, state)
     end
 end
 
+function Base.get(parser::NegativeLookbehind, sequence, till, after, i, state)
+    parser
+end
+
 function _iterate(t::PositiveLookbehind, str, till, i, state)
     if state === nothing
         rseq=revert(str)
@@ -116,6 +128,10 @@ function _iterate(t::PositiveLookbehind, str, till, i, state)
     end
 end
 
+function Base.get(t::PositiveLookbehind, str, till, after, i, state)
+    rseq = revert(str)
+    get(t.parser, rseq, till, after, reverse_index(rseq,prevind(rseq,i)), state)
+end
 for T in [PositiveLookahead,NegativeLookahead,PositiveLookbehind,NegativeLookbehind]
     eval(quote
          deepmap_parser(f::Function,mem::AbstractDict,x_::$T,a...; kw...) =
