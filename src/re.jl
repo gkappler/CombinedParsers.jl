@@ -290,15 +290,17 @@ Parser matching preceding capture, optionally with a name.
         new{Any}(nothing,Symbol(""),-1)
 end
 children(x::Subroutine) = tuple()
-regex_prefix(x::Subroutine) = "(?" *
-if x.name !== nothing
-    "&$(x.name),$(x.index)"
-else
-    if x.delta == Symbol("")
-        string(x.delta)
-    else
-        ""
-    end*string(x.index)
+function regex_prefix(x::Subroutine)
+    "(?" *
+        if x.name !== nothing
+            "&$(x.name),$(x.index)"
+        else
+            if x.delta == Symbol("")
+                string(x.delta)
+            else
+                ""
+            end*string(x.index)
+        end
 end
 regex_suffix(x::Subroutine) = ")"
 regex_inner(x::Subroutine) = ""
@@ -349,7 +351,7 @@ index(parser::Subroutine,sequence) =
 
 @inline function _iterate(parser::Subroutine, sequence::SequenceWithCaptures, till, i, state)
     _iterate(
-        with_log("$(parser.name)",sequence.subroutines[index(parser,sequence)].parser),
+        with_log("$(parser.name)", sequence.subroutines[index(parser,sequence)].parser),
         copy_captures(sequence,parser), till, i, state)
 end
 state_type(::Type{<:Subroutine}) = Any
