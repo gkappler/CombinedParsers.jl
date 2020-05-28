@@ -1,21 +1,22 @@
 pcre_option = 
     Either(
-        "mark" => UInt32(0),
-        "aftertext" => UInt32(0),
-        "dupnames" => UInt32(0),
-        "no_start_optimize" => UInt32(0),
-        "subject_literal" => UInt32(0),
-        "jitstack=256" => UInt32(0),
-        "xx" => Base.PCRE.EXTENDED_MORE,
-        'i' => Base.PCRE.CASELESS,
-        'm' => Base.PCRE.MULTILINE,
-        'n' => Base.PCRE.NO_AUTO_CAPTURE,
-        'U' => Base.PCRE.UNGREEDY,
-        'J' => Base.PCRE.DUPNAMES,
-        's' => Base.PCRE.DOTALL,
-        'x' => Base.PCRE.EXTENDED,
-        'g' => UInt32(0),
-        'B' => UInt32(0)
+        # with_name(:MARK, "mark" => UInt32(0)),
+        # with_name(:aftertext, "aftertext" => UInt32(0)),
+        with_name(:DUPNAMES, "dupnames" => Base.PCRE.DUPNAMES),
+        # with_name(:no_start_optimize, "no_start_optimize" => UInt32(0)),
+        # with_name(:subject_literal, "subject_literal" => UInt32(0)),
+        # "jitstack=256" => UInt32(0),
+        with_name(:EXTENDED_MORE, "xx" => Base.PCRE.EXTENDED_MORE),
+        with_name(:CASELESS, 'i' => Base.PCRE.CASELESS),
+        with_name(:MULTILINE, 'm' => Base.PCRE.MULTILINE),
+        with_name(:NO_AUTO_CAPTURE, 'n' => Base.PCRE.NO_AUTO_CAPTURE),
+        with_name(:UNGREEDY, 'U' => Base.PCRE.UNGREEDY),
+        with_name(:DUPNAMES, 'J' => Base.PCRE.DUPNAMES),
+        with_name(:DOTALL, 's' => Base.PCRE.DOTALL),
+        with_name(:EXTENDED, 'x' => Base.PCRE.EXTENDED),
+        # 'g' => UInt32(0),
+        with_name(:BINCODE, 'B' => UInt32(0)), # bincode
+        with_name(:INFO, 'I' => UInt32(0)) # info
     );
 
 pcre_options = Repeat1(Sequence(1,pcre_option,Optional(','))) do v
