@@ -2712,7 +2712,7 @@ end
 """
     tryparse(parser::ParserTypes, str::AbstractString)
 
-Parse a string with a CombinedParser as an instance of `result_type(parser)`.
+Like `parse`, but returns either a value of `result_type(parser)` or `nothing` if string does not start with with a match.
 """
 function Base.tryparse(p::AbstractToken, s)
     i = _iterate(p,s)
@@ -2720,7 +2720,17 @@ function Base.tryparse(p::AbstractToken, s)
     get(p,s,lastindex(s),i[1],1,i[2])
 end
 
-    
+export tryparse_pos
+"""
+    tryparse_pos(parser::ParserTypes, str::AbstractString)
+
+Like `parse`, but returns either a tuple of `result_type(parser)` and the position after the match, or `nothing` if string does not start with with a match.
+"""
+function tryparse_pos(p,s)
+    i = _iterate(p,s)
+    i === nothing && return nothing
+    get(p,s,lastindex(s),i[1],1,i[2]),i[1]
+end
 
 _iterate(parser,sequence) =
     _iterate(parser, sequence, lastindex(sequence),1,nothing)
