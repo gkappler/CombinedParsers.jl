@@ -920,9 +920,7 @@ A parser mapping matches of `x.first` to constant `x.second`.
 See also: [`@map`](@ref), [`map_at`](@ref)
 """
 Base.convert(::Type{AbstractToken},constant::Pair{<:ParserTypes}) =
-    Transformation{typeof(constant.second)}(
-        (v,i) -> constant.second,
-        parser(constant.first))
+    Transformation{typeof(constant.second)}(constant.second, parser(constant.first))
 
 children(x::Transformation) = children(x.parser)
 function print_constructor(io::IO,x::Transformation)
@@ -931,6 +929,14 @@ function print_constructor(io::IO,x::Transformation)
 end
 
 
+"""
+    Base.get(parser::Transformation, a...)
+
+Constant value `parser.transform` fallback method.
+"""
+function Base.get(parser::Transformation, sequence, till, after, i, state)
+    parser.transform
+end
 
 """
     Base.get(parser::Transformation{<:Function}, a...)
@@ -941,6 +947,22 @@ function Base.get(parser::Transformation{<:Function}, sequence, till, after, i, 
     parser.transform(get(parser.parser, sequence, till, after, i, state),i)
 end
 
+struct IndexAt{I}
+    i::I
+end
+# @inline Base.getindex(x,i::IndexAt) = getindex(x,i.i...)
+
+"""
+    Base.get(parser::Transformation{<:IndexAt}, a...)
+
+`getindex(get(parser.parser,a...).parser.transform)`
+"""
+function Base.get(parser::Transformation{IndexAt{<:Integer}}, sequence, till, after, i, state)
+    get(parser.parser,sequence, till, after, i, state)[parser.transform.i]
+end
+function Base.get(parser::Transformation{IndexAt{<:UnitRange}}, sequence, till, after, i, state)
+    tuple(get(parser.parser,sequence, till, after, i, state)[parser.transform.i]...)
+end
 
 function _iterate(parser::Transformation, sequence, till, i, state)
     r = _iterate(parser.parser, sequence, till, i, state )
@@ -977,6 +999,9 @@ function map_at(f::Function, p, a...)
 end
 @deprecate instance_at(a...) map_at(a...)
 
+export Index
+Index = map_at((v,i) -> i, Always())
+
 import Base: map
 """
     map(f::Function, p::AbstractToken, a...)
@@ -989,6 +1014,7 @@ function Base.map(f::Function, p::AbstractToken, a...)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
     Transformation{T}((v,i) -> (f(v, a...)), p)
 end
+
 """
     map(T::Type, p::AbstractToken, a...)
 
@@ -999,13 +1025,27 @@ See also: [`map_at`](@ref) [`get`](@ref)
 function Base.map(Tc::Type, p::AbstractToken, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
 end
-function Base.map(i::Integer, p::AbstractToken)
-    T=result_type(p)
-    Transformation{fieldtype(T,i)}((v,_) -> getindex(v,i), p)
+
+"""
+    map(index::IndexAt, p::AbstractToken, a...)
+    map(constant, p::AbstractToken, a...)
+
+Parser matching `p`, transforming `p`s parsing results to `getindex(x,index)` or `constant`.
+
+See also: [`map_at`](@ref) [`get`](@ref)
+
+"""
+function Base.map(index::IndexAt{<:Integer}, p::AbstractToken)
+    T=result_type(p)    
+    Transformation{fieldtype(T,index.i)}(index, p)
 end
-function Base.map(is::Union{UnitRange,NTuple{N,<:Integer} where N}, p::AbstractToken)
-    T=result_type(p)
-    Transformation{Tuple{(fieldtype(T,i) for i in is)...}}((v,_) -> getindex(v,is), p)
+function Base.map(index::IndexAt{<:UnitRange}, p::AbstractToken)
+    T=Tuple{fieldtypes(result_type(p))[index.i]...}
+    Transformation{T}(index, p)
+end
+function Base.map(transform, p::AbstractToken)
+    T=typeof(transform)
+    Transformation{T}(transform, p)
 end
 function instance(Tc::Type, p::ParserTypes, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
@@ -1444,7 +1484,7 @@ parser_types(::Type{Sequence{T, P}}) where {T, P} =
 print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
 children(x::Sequence) = x.parts
 
-Base.getindex(x::AbstractParser, i) = map(i,x)
+Base.getindex(x::AbstractParser, i) = map(IndexAt(i),x)
 
 deepmap_parser(f::Function,mem::AbstractDict,x::Sequence,a...;kw...) =
     get!(mem,x) do

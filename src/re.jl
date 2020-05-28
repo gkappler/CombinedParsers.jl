@@ -116,12 +116,7 @@ function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
     end
 end
 
-function deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
-    get!(mem,x) do
-        index=nextind(context,x)
-        context.subroutines[index]=Capture(x.name,deepmap_parser(indexed_captures_,mem,x.parser,context,a...),index)
-    end
-end
+
 
 Base.get(x::Capture, sequence, till, after, i, state) =
     get(x.parser, sequence, till, after, i, state)
