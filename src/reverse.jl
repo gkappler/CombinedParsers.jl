@@ -114,19 +114,18 @@ function Base.get(parser::NegativeLookbehind, sequence, till, after, i, state)
     parser
 end
 
-function _iterate(t::PositiveLookbehind, str, till, i, state)
-    if state === nothing
-        rseq=revert(str)
-        i < 1 && return nothing
-        r = _iterate(t.parser, rseq, till,
-                     reverse_index(rseq,prevind(rseq,i)), nothing)
-        if r === nothing
-            nothing
-        else
-            i,tuple()
-        end
-    else
+_iterate(t::PositiveLookbehind, str, till, i, state::MatchState) =
+    nothing
+
+function _iterate(t::PositiveLookbehind, str, till, i, state::Nothing)
+    rseq=revert(str)
+    i < 1 && return nothing
+    r = _iterate(t.parser, rseq, till,
+                 reverse_index(rseq,prevind(rseq,i)), nothing)
+    if r === nothing
         nothing
+    else
+        i,MatchState()
     end
 end
 
