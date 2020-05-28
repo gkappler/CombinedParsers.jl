@@ -499,6 +499,7 @@ regex_suffix(x::Never) = ")"
 _iterate(x::Never,str,i,till,state) =
     nothing
 
+state_type(::Type{Never}) = MatchState
 
 export Always
 """
