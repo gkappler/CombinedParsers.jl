@@ -217,7 +217,7 @@ function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Backref
     get!(mem,x) do
         idx = capture_index(x.name,Symbol(""),x.index,context)
         if idx < 1 || idx>lastindex(context.subroutines)
-            x.fallback()
+            x.name === nothing ? x.fallback() : x
         else
             Backreference(x.fallback,x.name, idx)
         end
