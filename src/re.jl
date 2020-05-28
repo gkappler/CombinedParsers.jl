@@ -30,7 +30,7 @@ See also [`ParserWithCaptures`](@ref)
     match::S
     subroutines::Vector{ParserTypes}
     captures::Vector{Vector{UnitRange{Int}}}
-    names::Dict{Symbol,Int}
+    names::Dict{Symbol,Vector{Int}}
     state::T
     SequenceWithCaptures(match,subroutines, captures, names, state) =
             new{typeof(match),typeof(state)}(match,subroutines, captures, names, state)
@@ -197,9 +197,7 @@ regex_inner(x::Backreference) =
     "\\g{"*regex_string_(x) *"}"
 
 capture_index(name,delta,index,context) =
-    if haskey(context.names,name)
-        context.names[name]
-    elseif ( index<0 || delta!=Symbol("") )
+    if ( index<0 || delta!=Symbol("") )
         if name !== nothing
             index
         else
@@ -244,17 +242,31 @@ state_type(::Type{<:Backreference}) = Int
     return nothing
 end
 
+function resolve_index(p::Backreference, sequence::SequenceWithCaptures)
+    index = p.index
+    if index < 0 && p.name !== nothing
+        for i in sequence.names[p.name]
+            if !isempty(sequence.captures[i])
+                return i
+            end
+        end        
+    end
+    ( index<0 || isempty(sequence.captures[index]) ) ? -1 : index
+end
+
 @inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, i, state::Nothing)
-    isempty(sequence.captures[p.index]) && return nothing
+    index = resolve_index(p, sequence)
+    index<0 && return nothing
+    sequence.captures[index]
     r = _iterate(
-        parser(SubString(sequence.match, sequence.captures[p.index][end])),
+        parser(SubString(sequence.match, sequence.captures[index][end])),
         sequence, till, i, state)
     r === nothing && return nothing
     r[1], r[1]-i
 end
 
-_iterate_condition(cond::Backreference, sequence, till, i, state) =
-    !isempty(sequence.captures[cond.index])
+_iterate_condition(p::Backreference, sequence, till, i, state) =
+    resolve_index(p, sequence)>0
 
 
 export Subroutine
@@ -324,7 +336,16 @@ end
     nextind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
 end
 
-index(parser::Subroutine,sequence) = parser.index <= 0 ? sequence.names[parser.name] : parser.index
+
+"""
+    index(parser::Subroutine,sequence)
+
+Index of a subroutine.
+["If you make a subroutine call to a non-unique named subpattern, the one that corresponds to the first occurrence of the name is used."](https://www.pcre.org/original/doc/html/pcrepattern.html#SEC16)
+(what about "In the absence of duplicate numbers (see the previous section) this is the one with the lowest number."?)
+"""
+index(parser::Subroutine,sequence) =
+    parser.index <= 0 ? first(sequence.names[parser.name]) : parser.index
 
 @inline function _iterate(parser::Subroutine, sequence::SequenceWithCaptures, till, i, state)
     _iterate(
@@ -355,9 +376,17 @@ See also [pcre doc](https://www.pcre.org/original/doc/html/pcrepattern.html#dups
         new{typeof(parser),result_type(parser)}(parser)
 end
 
+deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw...) =
+    get!(mem,x) do
+        DupSubpatternNumbers(deepmap_parser(f,mem,x.parser,a...;kw...))
+    end
+
 function deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
     get!(mem,x) do
-        DupSubpatternNumbers(deepmap_parser(indexed_captures_,mem,x.parser,context,true))
+        DupSubpatternNumbers(deepmap_parser(
+            indexed_captures_,mem,
+            x.parser,context,
+            true))
     end
 end
 
@@ -369,7 +398,10 @@ function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Either,
             while lastindex(context.subroutines)>idx
                 pop!(context.subroutines)
             end
-            push!(branches,deepmap_parser(indexed_captures_,mem,p,context,false))
+            push!(branches,deepmap_parser(
+                indexed_captures_,
+                mem,
+                p,context,false))
         end
         Either{result_type(x)}(tuple( branches... ))
     else
@@ -468,7 +500,7 @@ See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
 @auto_hash_equals struct ParserWithCaptures{P,T} <: WrappedParser{P,T}
     parser::P
     subroutines::Vector{ParserTypes} ## todo: rename subroutines
-    names::Dict{Symbol,Int}
+    names::Dict{Symbol,Vector{Int}}
     ParserWithCaptures(parser,captures,names) =
         new{typeof(parser),result_type(parser)}(parser,captures,names)
 end
@@ -477,6 +509,47 @@ ParserWithCaptures(x) =
         pass1 = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),x,cs,false),cs.subroutines,cs.names)
         ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
     end
+
+
+"""
+    deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
+
+Map the capture my setting `index` to  `nextind(context,x)`.
+
+Registers result in `context.subroutines` if no previous subroutine with the same index exists
+(see also [`DupSubpatternNumbers`](@ref)).
+"""
+function deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
+    get!(mem,x) do
+        index,reset=subroutine_index_reset(context,x)
+        r = Capture(
+            x.name,
+            deepmap_parser(indexed_captures_,mem,x.parser,context,a...),
+            index
+        )
+        reset && ( context.subroutines[index] = r )
+        r
+    end
+end
+
+"""
+https://www.pcre.org/original/doc/html/pcrepattern.html#SEC16
+"""
+function subroutine_index_reset(context::ParserWithCaptures,x::Capture)
+    if x.index<0
+        index = length(context.subroutines)+1
+        push!(context.subroutines,Capture(x,index))
+        if x.name !== nothing
+            push!(get!(context.names,x.name) do
+                  Int[]
+                  end,
+                  index)
+        end
+        index, true
+    else
+        x.index, false
+    end
+end
 
 import ..CombinedParsers: JoinSubstring
 JoinSubstring(x::ParserWithCaptures) =
@@ -517,12 +590,12 @@ end
 
 ##Base.getindex(x::ParserWithCaptures, i) = ParserWithCaptures(getindex(i,x)
 
-SequenceWithCaptures(x,cs::ParserWithCaptures) =
-    let S=typeof(x)
-        SequenceWithCaptures(x,cs.subroutines,
-                     Vector{S}[ S[] for c in cs.subroutines ],cs.names,
-                     nothing)
-    end
+function SequenceWithCaptures(x,cs::ParserWithCaptures)
+    SequenceWithCaptures(
+        x,cs.subroutines,
+        Vector{String}[ String[] for c in cs.subroutines ],cs.names,
+        nothing)
+end
 
 function print_constructor(io::IO, x::ParserWithCaptures)
     print_constructor(io,x.parser)
@@ -539,22 +612,6 @@ function deepmap_parser(f::Function,mem::AbstractDict,x::ParserWithCaptures,a...
     ParserWithCaptures(deepmap_parser(f,mem,x.parser,a...;kw...),
                        [ deepmap_parser(f,mem,p,a...;kw...) for p in x.subroutines ],
                        x.names)
-end
-
-function Base.nextind(context::ParserWithCaptures,x::Capture)
-    if x.name!==nothing
-        if haskey(context.names,x.name)
-            return context.names[x.name]
-        end
-    end
-    if x.index<0
-        index = length(context.subroutines)+1
-        push!(context.subroutines,Capture(x,index))
-        x.name !== nothing && (context.names[x.name]=length(context.subroutines))
-        index
-    else
-        x.index
-    end
 end
 
 ParserWithCaptures(x::ParserWithCaptures) = x
@@ -632,7 +689,7 @@ end
 function Base.show(io::IO,m::ParseMatch)
     x=getfield(m,1)
     print(io,"ParseMatch(\"",escape_string(m.match),"\"")
-    indnames=Dict( ( k.second=>k.first for k in pairs(x.names) )... )
+    indnames=Dict( ( i=>k.first for k in pairs(x.names) for i in k.second )... )
     for i in 1:length(x.captures)
         print(io, ", ",get(indnames,i,i),"=")
         if isempty(x.captures[i])
