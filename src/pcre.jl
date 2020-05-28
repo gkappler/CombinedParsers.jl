@@ -24,6 +24,24 @@ end
 
 pcre_options_parser=Sequence(2,AtStart(),Optional(pcre_options,default=UInt32(0)),AtEnd())
 
+"""
+    parse_options(options::AbstractString)
+
+Return PCRE option mask parsed from `options`.
+
+```jldoctest
+julia> CombinedParsers.Regexp.pcre_options_parser
+```
+"""
+function parse_options(options::AbstractString)
+    @show flags = tryparse(pcre_options_parser,options)
+    if flags === nothing
+        throw(UnsupportedError("options $options"))
+    else
+        flags
+    end
+end
+
 function print_opts(io,opts)
     if (opts & Base.PCRE.CASELESS ) != 0; print(io, 'i'); end
     if (opts & Base.PCRE.MULTILINE) != 0; print(io, 'm'); end
@@ -59,6 +77,36 @@ export flags
 flags(x::WithOptions) = x.flags
 flags(x) = UInt32(0)
 
+
+"""
+    with_options(options::AbstractString,str::AbstractString)
+
+
+
+"""
+with_options(flags::UInt32,x::WithOptions) =
+    with_options(flags|x.flags,x.x)
+with_options(flags::UInt32,x) =
+    flags == 0 ? x : WithOptions(x,flags)
+with_options(options::AbstractString,str::AbstractString) = 
+    with_options(parse_options(options),str)
+with_options(set_flags::UInt32, unset_flags::UInt32,x::AbstractString) =
+    with_options(set_flags,x)
+with_options(set_flags::UInt32, unset_flags::UInt32,x::WithOptions) =
+    with_options(set_flags | ( x.flags & ~unset_flags ),x.x)
+
+"""
+    convert(::Type{AbstractToken},x::Union{AbstractString,Char})
+
+A [`ConstantParser`](@ref) matching `x`.
+"""
+Base.convert(::Type{AbstractToken},x::WithOptions{Char}) =
+    if !iszero(x.flags & Base.PCRE.CASELESS)
+        CharIn(lowercase(x.x),uppercase(x.x))
+    else
+        convert(AbstractToken,x.x)
+    end
+
 import Base: Regex
 Base.Regex(x::WithOptions) =
     Regex(x.x, options_string(x.flags))
@@ -71,23 +119,8 @@ Base.iterate(x::WithOptions{<:AbstractString},a...) =
     let n = iterate(x.x,a...)
         n===nothing ? nothing : with_options(x.flags,n[1]),n[2]
     end
-
-with_options(flags::UInt32,x::WithOptions) =
-    with_options(flags,x.x)
-with_options(flags::UInt32,x) =
-    flags == 0 ? x : WithOptions(x,flags)
-with_options(options::AbstractString,str::AbstractString) =
-    with_options(parse(pcre_options,options),str)
-
-
-
-with_options(set_flags::UInt32, unset_flags::UInt32,x::AbstractString) =
-    with_options(set_flags,x)
-with_options(set_flags::UInt32, unset_flags::UInt32,x::WithOptions) =
-    with_options(set_flags | ( x.flags & ~unset_flags ),x.x)
 Base.SubString(x::WithOptions,a...) =
     SubString(x.x,a...)
-
 Base.length(x::WithOptions) =
     length(x.x)
 Base.lastindex(x::WithOptions) =

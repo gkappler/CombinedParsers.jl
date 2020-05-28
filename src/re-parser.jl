@@ -649,7 +649,7 @@ function Regcomb(x)
 end
 
 function Regcomb(x::AbstractString,flags::AbstractString)
-    o = parse(pcre_options_parser,flags)
+    o = parse_options(flags)
     Regcomb(with_options(o...,x))
 end
 
