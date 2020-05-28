@@ -1,4 +1,7 @@
-
+# TODO:
+# - remove after from get (nextind with state and i)
+# - Base.get(parser, sequence, till, after, i, state) to
+#   Base.get(parser, sequence, i, after, till, state) 
 """
 A package for combining parsers and transforming strings into julia types.
 
@@ -69,9 +72,9 @@ Perform a deep transformation of a CombinedParser.
 """
 deepmap_parser(f::Function,mem::AbstractDict,x,a...;kw...) =
     error("""
-    For a custom parser `typeof(x)` with sub-parsers, provide a method
+    For a custom parser `$(typeof(x))` with sub-parsers, provide a method
     ```julia
-    deepmap_parser(f::Function,mem::AbstractDict,x::$(typeof(x)),a...;kw...) =
+    deepmap_parser(f::$(typeof(f)),mem::AbstractDict,x::$(typeof(x)),a...;kw...) =
         get!(mem,x) do
             ## construct replacement, e.g. if P <: WrappedParser
             P(deepmap_parser(f,mem,x.parser,a...;kw...))
@@ -377,7 +380,6 @@ state_type(p::Type{<:NIndexParser}) = MatchState
 _iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, i, state::MatchState)  =
     nothing
 
-print_constructor(io::IO,x::NIndexParser) = nothing
 
 Base.get(x::NIndexParser{1,Char}, sequence, till, after, i, state) =
     sequence[i]
@@ -398,6 +400,12 @@ any() = AnyChar()
 regex_inner(x::AnyChar) = "."
 
 struct MatchingNever{T} end
+""""
+    ismatch(c::Char,p::Union{Function,Steprange,Set,UnicodeClass})::Bool
+
+checks is a character matches a pattern.
+
+"""
 ismatch(c::MatchingNever,p)::Bool = false
 ismatch(c::MatchingNever,p::AnyChar)::Bool = false
 _ismatch(c,p::Function)::Bool = p(c)::Bool
@@ -859,6 +867,7 @@ julia> @with_names foo = AnyChar()
 
 julia> parse(log_names(foo),"ab")
    match foo: ab
+              ^
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 ```
 
@@ -920,6 +929,12 @@ function print_constructor(io::IO,x::Transformation)
     print(io," |> map(",x.transform,")")
 end
 
+
+"""
+    Base.get(parser::Transformation, a...)
+
+Constant value `parser.transform` fallback method.
+"""
 function Base.get(parser::Transformation, sequence, till, after, i, state)
     parser.transform(
         get(parser.parser,sequence, till, after, i, state)
@@ -976,9 +991,9 @@ end
 """
     map(T::Type, p::AbstractToken, a...)
 
-Parser matching `p`, transforming parsing results (`x`) with constructor `T(x,a...)`.
+Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...)`.
 
-See also: [`map_at`](@ref)
+See also: [`map_at`](@ref) [`get`](@ref)
 """
 function Base.map(Tc::Type, p::AbstractToken, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
@@ -1469,7 +1484,7 @@ See also [`Sequence`](@ref)
 """
 function sSequence(x...)
     opts = collect(sSequence_(x...))
-    length(opts)==1 ? opts[1] : seq(opts...)
+    length(opts)==1 ? opts[1] : Sequence(opts...)
 end
 
 
@@ -1762,12 +1777,6 @@ function Base.join(x::Repeat,delim_)
         r
     end
 end
-
-(^)(x::AbstractParser, ::typeof(+)) = Repeat1(x)
-(^)(x::AbstractParser, ::typeof(*)) = Repeat(x)
-(^)(x::AbstractParser, reps::Integer) = Repeat(x,(reps,reps))
-(^)(x::AbstractParser, reps::Tuple{<:Integer,<:Integer}) = Repeat(x,reps)
-(^)(x::AbstractParser, reps::UnitRange{<:Integer}) = Repeat(reps,x)
 
 function print_constructor(io::IO,x::Repeat)
     print_constructor(io,x.parser)

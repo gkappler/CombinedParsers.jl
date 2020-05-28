@@ -340,6 +340,16 @@ state_type(::Type{<:Subroutine}) = Any
 export DupSubpatternNumbers
 """
 Parser wrapper for `ParserWithCaptures`, setting reset_index=true in `deepmap_parser(::typeof(indexed_captures_),...)`.
+
+```jldoctest
+julia> p = re"(?|(aaa)|(b))\1"
+
+julia> match(p, "aaaaaa")
+
+julia> match(p, "bb")
+```
+
+See also [pcre doc](https://www.pcre.org/original/doc/html/pcrepattern.html#dupsubpatternnumber)
 """
 @auto_hash_equals struct DupSubpatternNumbers{P,T} <: WrappedParser{P,T}
     parser::P
