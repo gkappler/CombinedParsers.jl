@@ -226,8 +226,6 @@ state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
     prevind(str,i,parser.parser,x)
 @inline nextind(str,i::Int,parser::WrappedParser,x) =
     nextind(str,i,parser.parser,x)
-Base.get(x::WrappedParser, a...) =
-    get(x.parser,a...)
 Base.get(parser::WrappedParser, sequence, till, after, i, state) = 
     get(parser.parser, sequence, till, after, i, state)
 @inline _iterate(parser::WrappedParser, sequence, till, i, state) =
@@ -710,12 +708,12 @@ If `nomatch==true`, also log when parser does not match.
 
 See also: [`log_names`](@ref), [`with_effect`](@ref)
 """
-with_log(s::AbstractString,p_, delta=5;nomatch=false) =
+with_log(s::AbstractString,p_, delta_char::Integer=5;nomatch=false) =
     let p = parser(p_), log=s*": "
-        SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta)
+        SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta_char)
     end
 
-function log_effect(s,start,after,state,log,delta=5)
+function log_effect(s,start,after,state,log,delta)
     if state === nothing
         printstyled("no match ",
                     bold=true,color=:underline)
@@ -750,7 +748,7 @@ function log_effect(s,start,after,state,log,delta=5)
     end
 end
 
-function log_effect_match(s,start,after,state,log,delta=5)
+function log_effect_match(s,start,after,state,log,delta)
     if state!==nothing
         log_effect(s,start,after,state,log,delta)
     end
@@ -934,7 +932,7 @@ end
 
 Constant value `parser.transform` fallback method.
 """
-function Base.get(parser::Transformation, sequence, till, after, i, state)
+function Base.get(parser::Transformation{<:Union{Number,AbstractString}}, sequence, till, after, i, state)
     parser.transform
 end
 
@@ -1043,7 +1041,7 @@ function Base.map(index::IndexAt{<:UnitRange}, p::AbstractToken)
     T=Tuple{fieldtypes(result_type(p))[index.i]...}
     Transformation{T}(index, p)
 end
-function Base.map(transform, p::AbstractToken)
+function map_constant(transform, p::AbstractToken)
     T=typeof(transform)
     Transformation{T}(transform, p)
 end

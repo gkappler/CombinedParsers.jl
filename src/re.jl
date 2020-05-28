@@ -9,7 +9,7 @@ using AutoHashEquals
 
 import ..CombinedParsers: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, _iterate, print_constructor
-import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string
+import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
 import ..CombinedParsers: revert, reverse_index, state_type
 
 import Base: prevind, nextind
@@ -202,9 +202,9 @@ capture_index(name,delta,index,context) =
         index
     end
 
-function deepmap_parser(::typeof(log_names),mem::AbstractDict,x::Backreference,a...)
+function deepmap_parser(::typeof(log_names_),mem::AbstractDict,x::Backreference,a...;kw...)
     get!(mem,x) do
-        with_log("backreference $x",x)
+        with_log(regex_string(x),x;kw...)
     end
 end
 
@@ -548,10 +548,14 @@ function subroutine_index_reset(context::ParserWithCaptures,x::Capture)
     end
 end
 
-import ..CombinedParsers: JoinSubstring
+import ..CombinedParsers: JoinSubstring, IndexAt
 JoinSubstring(x::ParserWithCaptures) =
     ParserWithCaptures(JoinSubstring(x.parser),x.subroutines,x.names)
-
+Base.map(f::IndexAt,x::ParserWithCaptures) =
+    ParserWithCaptures(map(f,x.parser),x.subroutines,x.names)
+Base.map(f::Function,x::ParserWithCaptures) =
+    ParserWithCaptures(map(f,x.parser),x.subroutines,x.names)
+ 
 function Base.match(parser::ParserTypes,sequence::AbstractString; kw...)
     @warn "For better performance create `ParserWithCaptures(parser)` before calling `match`."
     match(ParserWithCaptures(parser),sequence; kw...)
