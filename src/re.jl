@@ -674,7 +674,7 @@ match_string(x::SubString,y::UnitRange{<:Integer}) =
 
 match_string(x::Tuple{<:AbstractString,UnitRange{<:Integer}},y::UnitRange{<:Integer}) =
     let rel = min(x[2].start,x[2].stop)-1
-        SubString(x[1],rel+y.start,rel+y.stop)
+        SubString(x[1],y.start,y.stop)
     end
 
 import Base: getproperty
