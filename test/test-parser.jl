@@ -20,7 +20,7 @@ end
 end
 
 @testset "Repeat" begin
-    @test parse(join(parser('a')^(*),","),"a,a") == ['a','a']
+    @test parse(join(Repeat('a'),","),"a,a") == ['a','a']
 end
 
 @testset "parse_all" begin

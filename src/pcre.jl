@@ -35,7 +35,7 @@ julia> CombinedParsers.Regexp.pcre_options_parser
 ```
 """
 function parse_options(options::AbstractString)
-    @show flags = tryparse(pcre_options_parser,options)
+    flags = tryparse(pcre_options_parser,options)
     if flags === nothing
         throw(UnsupportedError("options $options"))
     else
