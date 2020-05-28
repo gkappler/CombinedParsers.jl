@@ -1,7 +1,7 @@
 export revert
 
 revert(x::Tuple) = reverse(x)
-revert(x::String) = Revert(x)
+revert(x::String) = Reverse(x)
 
 export Reverse
 @auto_hash_equals struct Reverse{V}
@@ -36,7 +36,7 @@ Base.nextind(x::Reverse,i::Integer) = reverse_index(x,prevind(x.x,reverse_index(
 Base.prevind(x::Reverse,i::Integer) = reverse_index(x,nextind(x.x,reverse_index(x,i)))
 Base.nextind(x::Reverse,i::Integer,n::Integer) = reverse_index(x,prevind(x.x,reverse_index(x,i),n))
 Base.prevind(x::Reverse,i::Integer,n::Integer) = reverse_index(x,nextind(x.x,reverse_index(x,i),n))
-Base.iterate(x::Revert,i) =
+Base.iterate(x::Reverse,i) =
     x[i], nextind(x,i)
 
 export PositiveLookbehind

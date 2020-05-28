@@ -115,8 +115,6 @@ function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
         Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
     end
 end
-    end
-end
 
 function deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
     get!(mem,x) do
