@@ -891,16 +891,16 @@ export Transformation
 Parser transforming result of a wrapped parser. 
 `a...` is passed as additional arguments to `f` (at front .
 """
-@auto_hash_equals struct Transformation{P,T, F<:Function} <: WrappedParser{P,T}
+@auto_hash_equals struct Transformation{F,P,T} <: WrappedParser{P,T}
     transform::F
     parser::P
-    Transformation{T}(transform::Function, p_) where {T} =
+    Transformation{T}(transform, p_) where {T} =
         let p = parser(p_)
-            new{typeof(p),T,typeof(transform)}(transform, p)
+            new{typeof(transform),typeof(p),T}(transform, p)
         end
-    Transformation{T}(transform::Function, p_::NamedParser) where {T} =
+    Transformation{T}(transform, p_::NamedParser) where {T} =
         let p = p_.parser
-            tp = new{typeof(p),T,typeof(transform)}(transform, p)
+            tp = new{typeof(transform),typeof(p),T}(transform, p)
             with_name(p_.name,tp)
         end
 end
@@ -931,16 +931,16 @@ function print_constructor(io::IO,x::Transformation)
 end
 
 
-"""
-    Base.get(parser::Transformation, a...)
 
-Constant value `parser.transform` fallback method.
 """
-function Base.get(parser::Transformation, sequence, till, after, i, state)
-    parser.transform(
-        get(parser.parser,sequence, till, after, i, state)
-        ,i)
+    Base.get(parser::Transformation{<:Function}, a...)
+
+Function call `parser.transform(get(parser.parser,a...),i)`.
+"""
+function Base.get(parser::Transformation{<:Function}, sequence, till, after, i, state)
+    parser.transform(get(parser.parser, sequence, till, after, i, state),i)
 end
+
 
 function _iterate(parser::Transformation, sequence, till, i, state)
     r = _iterate(parser.parser, sequence, till, i, state )
