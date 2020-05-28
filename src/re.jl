@@ -225,7 +225,7 @@ function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Backref
 end
 
 function Base.get(x::Backreference, sequence, till, after, i, state)
-    sequence[i:_prevind(sequence,i+state)]
+    sequence[i:prevind(sequence,i+state)]
 end
 
 @inline function prevind(str,i::Int,parser::Backreference,x)
