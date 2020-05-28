@@ -563,7 +563,9 @@ push!(repeatable,resetting_capture_numbers);
 @with_names condition = Either(
     Sequence(2,'(',Either(integer,
                   "DEFINE",
-                  Sequence('R',Either(integer,Sequence(2,'&',name))),
+                          Sequence('R',Either(integer,Sequence(2,'&',name),Always())) do v
+                          throw(UnsupportedError("checking for pattern recursion"))
+                          end,
                   Sequence(2,'\'',name,'\''),
                   Sequence(2,'<',name,'>'),
                   name),
