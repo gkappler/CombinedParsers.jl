@@ -522,7 +522,7 @@ push!(repeatable,subpattern);
            Sequence(v -> Lookahead(false,v[2]),
                     Either("?!","*negative_lookahead:","*nla:"),alternation)),
     ")");
-push!(pattern,lookahead);
+push!(repeatable,lookahead);
 
 
 
@@ -534,7 +534,7 @@ push!(pattern,lookahead);
         Sequence(v -> Lookbehind(false,v[2]),
             Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
     ")");
-push!(pattern,lookbehind);
+push!(repeatable,lookbehind);
 
 
 
