@@ -89,7 +89,7 @@ parse(p,"abababab")
 
 <!-- A supertype `T >: result_type(map(f,p))` can be set as `result_type` with `map(f, T, p)`. -->
 
-Conveniently, calling `getindex(::AbstractParser,::Integer)` and `map(::Integer,::AbstractParser)` create a transforming parser selecting from the result of the parsing.
+Conveniently, calling `getindex(::CombinedParser,::Integer)` and `map(::Integer,::CombinedParser)` create a transforming parser selecting from the result of the parsing.
 ```@repl session
 parse(map(2,re"abc"),"abc")
 parse(re"abc"[2],"abc")

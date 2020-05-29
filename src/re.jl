@@ -167,7 +167,7 @@ export Backreference
 Parser matching previously captured sequence, optionally with a name.
 `index` field is recursively set when calling 'ParserWithCaptures` on the parser.
 """
-@auto_hash_equals struct Backreference <: AbstractParser{AbstractString}
+@auto_hash_equals struct Backreference <: CombinedParser{AbstractString}
     name::Union{Nothing,Symbol}
     index::Int
     fallback::Function
@@ -269,7 +269,7 @@ export Subroutine
 Parser matching preceding capture, optionally with a name.
 `index` field is recursively set when calling `ParserWithCaptures` on the parser.
 """
-@auto_hash_equals struct Subroutine{T} <: AbstractParser{T}
+@auto_hash_equals struct Subroutine{T} <: CombinedParser{T}
     name::Union{Nothing,Symbol}
     delta::Symbol
     index::Int
@@ -415,7 +415,7 @@ export Conditional
 """
 Conditional parser, `_iterate` cycles conditionally on `_iterate_condition` through matches in field `yes` and `no` respectively.
 """
-@auto_hash_equals struct Conditional{C,Y,N,T} <: AbstractParser{T}
+@auto_hash_equals struct Conditional{C,Y,N,T} <: CombinedParser{T}
     condition::C
     yes::Y
     no::N

@@ -1,4 +1,4 @@
-# Parsing Regular Expressions and constructing an equivalent [`AbstractParser`](@ref)
+# Parsing Regular Expressions and constructing an equivalent [`CombinedParser`](@ref)
 This guide demonstrates constructing a recursive parser with the 
 **[`push!`](@ref) to [`Either`](@ref)** technique by means of a similified parser for regular expressions. 
 
@@ -33,7 +33,7 @@ The parser for escaped and not escaped regular expression characters `char_match
 result_type(char_matcher)
 ```
 
-The Julia [`map`](@ref) method for [`AbstractParser`](@ref) creates a [`Transformation`](@ref) parser.
+The Julia [`map`](@ref) method for [`CombinedParser`](@ref) creates a [`Transformation`](@ref) parser.
 The `char_matcher` is transformed to emit an [`CharIn`](@ref) matching the unescaped character:
 ```@repl session
 char_matcher_parser = map(CharIn,char_matcher);
@@ -87,7 +87,7 @@ parse(repetition, "{5,}")
 ## [`Either`](@ref)
 Regular expressions can repeat character matchers and other sub-patterns when appending the `repetition` suffix.
 ```@example session
-repeatable = Either{AbstractParser}(char_matcher_parser)
+repeatable = Either{CombinedParser}(char_matcher_parser)
 nothing # hide
 ```
 We will add capture groups and othe sub-patterns to `repeatable` later.
@@ -144,7 +144,7 @@ Regular expression patterns can be written in sequence, delimited by `|` for mat
     alternation = Sequence(
         sequence, 
         Repeat(Sequence(2, '|',sequence))) do v
-            sEither(v[1],v[2]...)::AbstractParser
+            sEither(v[1],v[2]...)::CombinedParser
         end
 end
 nothing # hide

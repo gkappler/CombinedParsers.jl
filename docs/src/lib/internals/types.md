@@ -2,7 +2,7 @@
 ## Abstract Types
 ```@docs
 CombinedParsers.ParserTypes
-CombinedParsers.AbstractParser
+CombinedParsers.CombinedParser
 CombinedParsers.LeafParser
 CombinedParsers.ConstantParser
 CombinedParsers.NIndexParser

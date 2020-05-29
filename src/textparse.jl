@@ -43,7 +43,7 @@ end
 
 
 """
-    TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.default_opts)
+    TextParse.tryparsenext(x::CombinedParser,str,i,till,opts=TextParse.default_opts)
 
 TextParse.jl integrates with CombinedParsers.jl both ways.
 
@@ -64,7 +64,7 @@ julia> TextParse.tryparsenext(p, "Number:    42")
 ```
 
 """
-function TextParse.tryparsenext(x::AbstractParser,str,i,till,opts=TextParse.default_opts)
+function TextParse.tryparsenext(x::CombinedParser,str,i,till,opts=TextParse.default_opts)
     s = _iterate(x,str,till,i,nothing)
     if s === nothing
         Nullable{result_type(x)}(),i

@@ -144,7 +144,7 @@ function ismatch(c::WithOptions{Char},p)
     _ismatch(c.x,p)
 end
 
-function Base.convert(::Type{AbstractParser},x::Char)
+function Base.convert(::Type{CombinedParser},x::Char)
     CharIn(x)
 end
 
@@ -156,7 +156,7 @@ function Base.convert(::Type{Char},y::WithOptions{Char})
         y.x
     end
 end
-function Base.convert(::Type{AbstractParser},x::WithOptions{Char})
+function Base.convert(::Type{CombinedParser},x::WithOptions{Char})
     if x.flags & Base.PCRE.CASELESS > 0
         CharIn(unique([lowercase(x.x),uppercase(x.x)])...)
     else

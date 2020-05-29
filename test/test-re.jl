@@ -58,6 +58,7 @@ import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
     @test tryparse(re"[a- z]","b")==nothing
     @test parse(re"[a- z]"xx,"b")=='b'
     ##@test match(r" [a-z]"xxx,"b")==match(re" [a-z]"xxx,"b")
+    @test result_type(bracket) == CombinedParser
 end
 
 import CombinedParsers.Regexp: option_sequences

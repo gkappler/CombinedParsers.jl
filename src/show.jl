@@ -23,8 +23,8 @@ children(x::Union{Regex,AbstractString}) = ()
 function Base.show(io::IO, x::Union{ConstantParser,NIndexParser})
     print(io, "re\"",regex_string(x),"\"") ##!!
 end
-function Base.show(io::IO, x::AbstractParser)
-    if false && !compact
+function Base.show(io::IO, x::CombinedParser)
+    if get(io,:compact,false)
         print(io, regex_string(x)) ##!!
     else
         print_tree(io, MemoTreeChildren(Dict(),x, true))
@@ -33,10 +33,10 @@ function Base.show(io::IO, x::AbstractParser)
 end
 
 
-printnode(io::IO, x::AbstractParser) =
+printnode(io::IO, x::CombinedParser) =
     printnode_(io, x)
 
-function printnode_(io::IO, x::AbstractParser)
+function printnode_(io::IO, x::CombinedParser)
     printstyled(io, regex_prefix(x), bold=true, color=:cyan)
     if isempty(children(x))
         printstyled(io, regex_inner(x), bold=true, color=:cyan)

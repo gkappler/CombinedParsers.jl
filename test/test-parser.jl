@@ -145,13 +145,13 @@ parse(attributes,"a = 1 b=6% font=\"+1asd\"")
     @test parse(attributes, " size=10% class=1") == [ "size"=>"10%", "class"=>"1" ]
 end
 
-function html(tags::AbstractParser, inner::AbstractParser, attrs=attributes)
+function html(tags::CombinedParser, inner::CombinedParser, attrs=attributes)
     html(result_type(inner), tags, attrs) do until
         Repeat_until(inner, until)
     end
 end
 
-function html(inner::Function, T::Type, tags::AbstractParser, attrs_parser=attributes)
+function html(inner::Function, T::Type, tags::CombinedParser, attrs_parser=attributes)
     A = eltype(result_type(attrs_parser))
     function nested_html(x,)
         (tag,attrs) = x

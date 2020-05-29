@@ -15,7 +15,7 @@ log conveniently for debugging, and let Julia compile your parser for good perfo
 - Clear syntax integrates grammar and transformations with Julia type inference.
 - Higher-order parsers depending on the parsing state allow for not context-free parsers.
 - All valid parsings can be iterated lazily.
-- Interoperable with [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParsers.AbstractParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
+- Interoperable with [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
 - Parametric parser and state types enable Julia compiler optimizations.
 - Compiled regular expression parsers in pure julia are provided with the `re_str` macro.
   CombinedParsers.jl is tested against the PCRE C library testset.
@@ -105,7 +105,7 @@ A bunch of fast text parsing tools.
 - Nullables.jl
 
 TextParse.jl integrates with CombinedParsers.jl both ways 
-by type `CombinedParsers.AbstractParser <: TextParse.AbstractToken`
+by type `CombinedParser <: TextParse.AbstractToken`
 and providing a method for `TextParse.tryparsenext`.
 
 ```@docs

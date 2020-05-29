@@ -19,7 +19,7 @@ using TextParse
 import TextParse: AbstractToken
 import Base: ==, hash
 
-export AbstractParser
+export CombinedParser
 export result_type
 
 @inline _prevind(str,i,parser,x::Nothing) = i
@@ -28,11 +28,11 @@ export result_type
 @inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
 
 """
-    AbstractParser{T} <: AbstractToken{T}
+    CombinedParser{T} <: AbstractToken{T}
 
 Abstract parser type for parsers returning matches transformed to `::T`.
 """
-abstract type AbstractParser{T} <: AbstractToken{T} end
+abstract type CombinedParser{T} <: AbstractToken{T} end
 
 
 """
@@ -41,18 +41,18 @@ abstract type AbstractParser{T} <: AbstractToken{T} end
 Abstract parser type for parsers that have no sub-parser.
 Used for dispatch in [`deepmap_parser`](@ref)
 """
-abstract type LeafParser{T} <: AbstractParser{T} end
+abstract type LeafParser{T} <: CombinedParser{T} end
 
 
 """
-    deepmap_parser(f::Function,x::AbstractParser,a...;kw...)
+    deepmap_parser(f::Function,x::CombinedParser,a...;kw...)
 
 Perform a deep transformation of a CombinedParser.
 Used for [`log_names`](@ref).
 
 Calls `deepmap_parser(f,IdDict(),x,a...)`.
 """
-deepmap_parser(f::Function,x::AbstractParser,a...;kw...) =
+deepmap_parser(f::Function,x::CombinedParser,a...;kw...) =
     deepmap_parser(f,IdDict(),x,a...;kw...)
 
 """
@@ -61,7 +61,7 @@ deepmap_parser(f::Function,x::AbstractParser,a...;kw...) =
 Perform a deep transformation of a CombinedParser.
 
 !!! note
-    For a custom parser `P<:AbstractParser` with sub-parsers, provide a method
+    For a custom parser `P<:CombinedParser` with sub-parsers, provide a method
     ```julia
     deepmap_parser(f::Function,mem::AbstractDict,x::P,a...;kw...) =
         get!(mem,x) do
@@ -110,11 +110,11 @@ parser(x::Regex) = x
 
 export regex_string
 """
-    regex_string(x::AbstractParser)
+    regex_string(x::CombinedParser)
 
 `regex_prefix(x)*regex_inner(x)*regex_suffix(x)`
 """
-regex_string(x::AbstractParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
+regex_string(x::CombinedParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
 
 """
     regex_prefix(x)
@@ -136,9 +136,9 @@ See [`regex_string`](@ref)
 """
 regex_inner(x::AbstractToken) = "$(typeof(x))"
 
-regex_prefix(x::AbstractParser) = ""
-regex_suffix(x::AbstractParser) = ""
-regex_inner(x::AbstractParser) = ""
+regex_prefix(x::CombinedParser) = ""
+regex_suffix(x::CombinedParser) = ""
+regex_inner(x::CombinedParser) = ""
 """
     print_constructor(io::IO,x)
 
@@ -153,7 +153,7 @@ print_constructor(io::IO,x) = print(io, typeof(x).name)
 state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
 
 function _iterate(parser::AbstractToken, sequence, till, i, state)
-    parser isa AbstractParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, i, state)"
+    parser isa CombinedParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, i, state)"
     ##@show parser typeof(parser)
     if state === nothing
         r,i_ = tryparsenext(parser, sequence, i, till)
@@ -172,21 +172,21 @@ function Base.get(parser::AbstractToken, sequence, till, after, i, state)
 end
 
 @inline function nextind(str,i::Int,parser::AbstractToken,x)
-    parser isa AbstractParser && @warn "define nextind(str,i::Int,parser::$(typeof(parser)),x)"
+    parser isa CombinedParser && @warn "define nextind(str,i::Int,parser::$(typeof(parser)),x)"
     i+x[1]
 end
 @inline function prevind(str,i::Int,parser::AbstractToken,x)
-    parser isa AbstractParser && @warn "define prevind(str,i::Int,parser::$(typeof(parser)),x)"
+    parser isa CombinedParser && @warn "define prevind(str,i::Int,parser::$(typeof(parser)),x)"
     i-x[1]
 end
 
-function Base.get(parser::AbstractParser, sequence, till, after, i, state)
+function Base.get(parser::CombinedParser, sequence, till, after, i, state)
     error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
 end
-function nextind(str,i::Int,parser::AbstractParser,x)
+function nextind(str,i::Int,parser::CombinedParser,x)
     error("define nextind(str,i::Int,parser::$(typeof(parser)),x)")
 end
-function prevind(str,i::Int,parser::AbstractParser,x)
+function prevind(str,i::Int,parser::CombinedParser,x)
     error("define prevind(str,i::Int,parser::$(typeof(parser)),x)")
 end
 
@@ -196,18 +196,18 @@ result_type(::Type{<:AbstractToken{T}}) where T = T
 
 struct MatchState end
 """
-    Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state)
+    Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state)
 
 Default method for parser types returning nothing
 """
-Base.get(parser::AbstractParser{Nothing}, sequence, till, after, i, state) =
+Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state) =
     nothing
-state_type(p::Type{<:AbstractParser}) =  error("implement state_type(::Type{$(p)})")
-_iterate(x::AbstractParser,str,i,till,state) =
+state_type(p::Type{<:CombinedParser}) =  error("implement state_type(::Type{$(p)})")
+_iterate(x::CombinedParser,str,i,till,state) =
     error("implement _iterate(x::$(typeof(x)),str::$(typeof(str)),i,till,state::$(typeof(state)))")
 
 "Abstract type for parser wrappers, providing default methods"
-abstract type WrappedParser{P,T} <: AbstractParser{T} end
+abstract type WrappedParser{P,T} <: CombinedParser{T} end
 
 import AbstractTrees: children
 children(x::WrappedParser) = children(x.parser)
@@ -800,7 +800,7 @@ with_name(name::Symbol,x; doc="") =
 with_name(name::AbstractString,x; doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),x,doc)
 
-log_names_(x::AbstractParser,a...;kw...) = x
+log_names_(x::CombinedParser,a...;kw...) = x
 function deepmap_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function;kw...)
     get!(mem,x) do
         r = NamedParser(x.name,deepmap_parser(f,mem,x.parser,message;kw...))
@@ -1302,7 +1302,7 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
 
 
 export FlatMap,after
-@auto_hash_equals struct FlatMap{T,P,Q<:Function} <: AbstractParser{T}
+@auto_hash_equals struct FlatMap{T,P,Q<:Function} <: CombinedParser{T}
     left::P
     right::Q
     function FlatMap{T}(left::P, right::Q) where {T, P, Q<:Function}
@@ -1398,7 +1398,7 @@ end
 
 
 export Sequence
-@auto_hash_equals struct Sequence{T,P<:Tuple} <: AbstractParser{T}
+@auto_hash_equals struct Sequence{T,P<:Tuple} <: CombinedParser{T}
     parts::P
     function Sequence(p...)
         parts = tuple( ( parser(x) for x = p )... )
@@ -1482,7 +1482,7 @@ parser_types(::Type{Sequence{T, P}}) where {T, P} =
 print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
 children(x::Sequence) = x.parts
 
-Base.getindex(x::AbstractParser, i) = map(IndexAt(i),x)
+Base.getindex(x::CombinedParser, i) = map(IndexAt(i),x)
 
 deepmap_parser(f::Function,mem::AbstractDict,x::Sequence,a...;kw...) =
     get!(mem,x) do
@@ -2177,7 +2177,7 @@ end
 defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
 defaultvalue(V::Type) = missing
-defaultvalue(V::Type{<:AbstractParser}) = Always()
+defaultvalue(V::Type{<:CombinedParser}) = Always()
 
 
 
@@ -2202,17 +2202,16 @@ julia> parse("a" | "bc","bc")
 
 ```
 """
-@auto_hash_equals struct Either{T,Ps} <: AbstractParser{T}
+struct Either{T,Ps} <: CombinedParser{T}
     options::Ps
     Either{T}(p::P) where {T,P<:Union{Tuple,Vector}} =
         new{T,P}(p::P)
-    Either{T}(p::AbstractParser...) where {T} =
+    Either{T}(p::CombinedParser...) where {T} =
         new{T,Vector{Any}}(Any[p...])
 end
 state_type(::Type{<:Either}) = Pair{Int,<:Any}##Tuple{Int, promote_type( state_type.(t.options)...) }
 children(x::Either) = x.options
-regex_string(x::WrappedParser{<:Either}) = regex_inner(x)
-regex_string(x::Either) = regex_inner(x)
+regex_string(x::Either) = join(regex_string.(x.options),"|")
 regex_prefix(x::Either) = "|"
 regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
 regex_suffix(x::Either) = "..."
@@ -2466,7 +2465,7 @@ end
 #     isnull(x.second) ? Nullable{Pair{Symbol, T}}() :
 #     Nullable(x.first => convert(T, x.second.value))
 
-@auto_hash_equals struct Greedy{Ps,A,F<:Function} <: AbstractParser{Any}
+@auto_hash_equals struct Greedy{Ps,A,F<:Function} <: CombinedParser{Any}
     pairs::Ps
     alt::A
     transform::F

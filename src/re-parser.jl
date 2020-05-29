@@ -174,9 +174,9 @@ pattern = Either(
 char =  Either(
     CharNotIn([ c for c in meta_chars]),
     Sequence(2,'\\', CharIn(meta_chars))) do v
-        convert(AbstractParser,v)
+        convert(CombinedParser,v)
     end
-@with_names repeatable = Either{AbstractParser}(Any[char])
+@with_names repeatable = Either{CombinedParser}(Any[char])
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC5
 escape_sequence(stop=AtEnd()) =
@@ -317,7 +317,7 @@ end;
 
 
 @with_names bracket=Sequence(
-    AbstractParser,
+    CombinedParser,
     '[',Optional('^')
     , Repeat(Either(
         bracket_range(']'),
@@ -348,7 +348,7 @@ end;
         with_name(:escape_sequence,map(v->CharIn(v),escape_sequence())),
         generic_character_type,
         bracket_range(bracket_char),
-        map(v->convert(AbstractParser,v),bracket_char),
+        map(v->convert(CombinedParser,v),bracket_char),
         '^'=>'^',
         '-'=>'-'))
     , ']') do v
@@ -380,7 +380,7 @@ push!(repeatable,bracket);
 )
 
 @with_names quantified=Sequence(
-    AbstractParser,
+    CombinedParser,
     repeatable,
     skip_whitespace_and_comments, ## for test 1130, preserve in map?
     Optional(repetition, default=(1,1)),
@@ -421,7 +421,7 @@ pushfirst!(pattern,map(parser("\\K")) do v throw(UnsupportedError(v)); end);
 
 alternations = Sequence(
     sequence, Repeat(Sequence(2, '|',sequence))) do v
-        AbstractParser[v[1],v[2]...]
+        CombinedParser[v[1],v[2]...]
     end;
 
 #  Options apply to subpattern, 
@@ -464,23 +464,23 @@ alternations = Sequence(
 
 options_alternations = after(
     Sequence(pcre_option_start,Optional(')')),
-    Vector{AbstractParser}) do l
+    Vector{CombinedParser}) do l
         set_options(l[1]..., l[2] === missing ?  Sequence(1, alternations,')') : alternations)
     end;
 
 option_sequences = map(
-    AbstractParser,
+    CombinedParser,
     Sequence(
         alternations,
         Repeat(options_alternations))) do v
-            r = Any[ AbstractParser[e] for e in v[1] ]
+            r = Any[ CombinedParser[e] for e in v[1] ]
             ro = v[2]
             for i in 1:length(ro)
                 length(ro[i])>0 && push!(r[end],popfirst!(ro[i]))
                 for x in ro[i]
                     ## if length(ro[i])>0
                     ## @show r[end],x
-                    push!(r,AbstractParser[ x ])
+                    push!(r,CombinedParser[ x ])
                 end
             end
             sEither( ( sSequence(x...) for x in r)... )
@@ -587,7 +587,7 @@ push!(repeatable,resetting_capture_numbers);
                             c isa Integer ? Backreference(()->error("?"),nothing, c) : error("no capture group $c")
                             end,
                             v[3],v[4])
-                                      elseif c isa AbstractParser
+                                      elseif c isa CombinedParser
                 Conditional(c,v[3],v[4])
             else
                 Conditional(Subroutine(c[2]),v[3],v[4])
@@ -609,7 +609,7 @@ push!(repeatable,map(parser,escaped_character));
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC13
 @with_names sequence_with_options = after(
-    Sequence(1,pcre_option_start,':'),AbstractParser) do v
+    Sequence(1,pcre_option_start,':'),CombinedParser) do v
         Sequence(1,set_options(v..., alternation),')')
     end
 push!(repeatable,sequence_with_options);
