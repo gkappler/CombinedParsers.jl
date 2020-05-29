@@ -584,11 +584,8 @@ Useful for checks like "must not be followed by `parser`, don't consume its matc
 julia> la = NegativeLookahead("peek")
 re"(?!peek)"
 
-julia> parse(la*AnyChar(),"peek")
-ERROR: ArgumentError: no successfull parsing.
-Stacktrace:
- [1] parse(::Sequence{Tuple{SubString,Char},Tuple{NegativeLookahead{SubString,CombinedParsers.ConstantParser{4,SubString}},AnyChar}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2583
- [2] top-level scope at REPL[24]:1
+julia> parse(la*AnyChar(),"seek")
+(re"(?!peek)", 's')
 
 ```
 """
@@ -613,6 +610,13 @@ function Base.get(parser::NegativeLookahead, sequence, till, after, i, state)
 end
 
 export Lookahead
+
+"""
+    Lookahead(does_match::Bool, p)
+
+[`PositiveLookahead`](@ref) if `does_match==true`, 
+[`NegativeLookahead`](@ref) otherwise.
+"""
 function Lookahead(does_match::Bool, p_)
     p = parser(p_)
     if does_match
@@ -861,7 +865,7 @@ Sets names of parsers within begin/end block to match the variables they are asi
 so, for example
 ```jldoctest
 julia> @with_names foo = AnyChar()
-.  |> with_name(:foo)
+. AnyChar |> with_name(:foo)
 ::Char
 
 julia> parse(log_names(foo),"ab")
@@ -915,7 +919,7 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
 
 A parser mapping matches of `x.first` to constant `x.second`.
 
-See also: [`@map`](@ref), [`map_at`](@ref)
+See also: [`map`](@ref), [`map_at`](@ref)
 """
 Base.convert(::Type{AbstractToken},constant::Pair{<:ParserTypes}) =
     Transformation{typeof(constant.second)}(constant.second, parser(constant.first))
@@ -986,6 +990,8 @@ export map,map_at
 
 Parser transforming result of a wrapped parser. 
 `a...` is passed as additional arguments to `f`.
+
+See also: [`map`](@ref), [`Transformation`](@ref)
 """
 function map_at(f::Function, Tc::Type, p, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
@@ -1006,7 +1012,7 @@ import Base: map
 
 Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
 
-See also: [`map_at`](@ref)
+See also: [`map_at`](@ref), [`Transformation`](@ref)
 """
 function Base.map(f::Function, p::AbstractToken, a...)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
@@ -1018,7 +1024,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...)`.
 
-See also: [`map_at`](@ref) [`get`](@ref)
+See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
 """
 function Base.map(Tc::Type, p::AbstractToken, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
@@ -1030,7 +1036,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing results to `getindex(x,index)` or `constant`.
 
-See also: [`map_at`](@ref) [`get`](@ref)
+See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
 
 """
 function Base.map(index::IndexAt{<:Integer}, p::AbstractToken)
@@ -1229,8 +1235,6 @@ for T in [:CharIn,:CharNotIn]
 end
          
 
-get_first(v)=v[1]
-get_second(v)=v[2]
 export Repeat_stop, Repeat_until
 """
     Repeat_stop(p,stop)
@@ -1242,11 +1246,11 @@ Returns results of `p`.
 ```jldoctest
 julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄* Sequence |> map(#27) |> Repeat
-│  ├─ (?!🗄)
+├─ 🗄* Sequence |> map(IndexAt(2)) |> Repeat
+│  ├─ (?!🗄) NegativeLookahead
 │  │  └─ b
-│  └─ .
-└─ .
+│  └─ . AnyChar
+└─ . AnyChar
 ::Tuple{Array{Char,1},Char}
 
 julia> parse(p,"acbX")
@@ -1256,7 +1260,7 @@ julia> parse(p,"acbX")
 See also [`NegativeLookahead`](@ref)
 """
 Repeat_stop(p,stop) =
-    Repeat(Sequence(get_second,NegativeLookahead(parser(stop)),parser(p)))
+    Repeat(Sequence(2,NegativeLookahead(parser(stop)),parser(p)))
 
 @deprecate rep_stop(a...;kw...) Repeat_stop(a...;kw...)
 
@@ -1272,13 +1276,13 @@ To transform the `Repeat_stop(p)` parser head, provide a function(::Vector{resul
 ```jldoctest
 julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄 Sequence |> map(#27)
-│  ├─ 🗄* Sequence |> map(#27) |> Repeat
-│  │  ├─ (?!🗄)
+├─ 🗄 Sequence |> map(IndexAt(1))
+│  ├─ 🗄* Sequence |> map(IndexAt(2)) |> Repeat
+│  │  ├─ (?!🗄) NegativeLookahead
 │  │  │  └─ b
-│  │  └─ .
+│  │  └─ . AnyChar
 │  └─ b
-└─ .
+└─ . AnyChar
 ::Tuple{Array{Char,1},Char}
 
 julia> parse(p,"acbX")
@@ -1294,7 +1298,7 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
     if with_until
         Sequence(map(wrap,Repeat_stop(p,until)), until)
     else
-        Sequence(get_first, map(wrap,Repeat_stop(p,until)), until)
+        Sequence(1, map(wrap,Repeat_stop(p,until)), until)
     end
 
 @deprecate rep_until(p,until) Repeat_until(p,until)
@@ -1446,19 +1450,15 @@ function seq(tokens::Vararg{ParserTypes};
     end
 end
 
-Sequence(transform::Integer,tokens::Vararg{ParserTypes}) =
-    Sequence(Val{transform}(),tokens...)
 
-function Sequence(::Val{transform},tokens::Vararg{ParserTypes}) where {transform}
-    s = Sequence(tokens...)
-    map(v -> v[transform], fieldtype(result_type(s),transform), s)
-end
+Sequence(i::Integer,parts::Vararg{ParserTypes}) =
+     map(IndexAt(i),Sequence(parts...))
 
 
-function Sequence(T::Type, tokens::Vararg;
+function Sequence(T::Type, parts::Vararg;
              ## log=false,
              transform=:instance)
-    parts = tuple( ( parser(x) for x = tokens )... )
+    parts = tuple( ( parser(x) for x = parts )... )
     if T==NamedTuple
         fnames = tuple( [ x.name for x in parts if x isa NamedParser ]... )
         ftypes = [ result_type(typeof(x.parser)) for x in parts if x isa NamedParser ]
@@ -1507,7 +1507,7 @@ julia> Sequence('a',CharIn("AB")*'b')
 🗄 Sequence
 ├─ a
 └─ 🗄 Sequence
-   ├─ [AB]
+   ├─ [AB] CharIn
    └─ b
 ::Tuple{Char,Tuple{Char,Char}}
 
@@ -1515,7 +1515,7 @@ julia> Sequence('a',CharIn("AB")*'b')
 julia> sSequence('a',CharIn("AB")*'b')
 🗄 Sequence
 ├─ a
-├─ [AB]
+├─ [AB] CharIn
 └─ b
 ::Tuple{Char,Char,Char}
 ```
@@ -1710,6 +1710,22 @@ end
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
 export Lazy
+"""
+    Lazy(x::Repeat)
+    Lazy(x::Optional)
+
+Lazy `x` repetition matching from greedy to lazy.
+
+```jldoctest
+julia> re"a+?"
+a+?  |> Repeat |> Lazy |> regular expression combinator
+::Array{Char,1}
+
+julia> re"a??"
+a??  |> Optional(default=missing) |> Lazy |> regular expression combinator
+::Union{Missing, Char}
+```
+"""
 @auto_hash_equals struct Lazy{P,T} <: WrappedParser{P,T}
     parser::P
     Lazy(p_) =
