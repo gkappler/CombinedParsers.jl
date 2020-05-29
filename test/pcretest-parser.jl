@@ -1,20 +1,22 @@
 using Test
 using CombinedParsers.Regexp
-import CombinedParsers.Regexp: at_linestart, whitespace, integer, escaped_character, pcre_options, with_options, @test_pcre, parse_options
-unescaped=map(Repeat_until(AnyChar(), Sequence(Repeat(' '),'\n');
-                        wrap=JoinSubstring)) do v
-                            join(parse(Repeat(
-                                Either(
-                                    ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
-                                    Sequence('\\',character_base(8,3,3)) do v
-                                    Char(v[2])
-                                    end,
-                                    escaped_character,
-                                    AnyChar())),v))
-                        end;
+import CombinedParsers.Regexp: at_linestart, whitespace, integer, character_base, escaped_character
+import CombinedParsers.Regexp: pcre_options, with_options, parse_options, @test_pcre
+unescaped=map(Repeat_until(
+    AnyChar(), Sequence(Repeat(' '),'\n');
+    wrap=JoinSubstring)) do v
+        join(parse(Repeat(
+            Either(
+                ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
+                Sequence('\\',character_base(8,3,3)) do v
+                Char(v[2])
+                end,
+                escaped_character,
+                AnyChar())),v))
+    end;
 comment_or_empty = Repeat(
     JoinSubstring(Either(Sequence(at_linestart,'#',Repeat_until(AnyChar(),'\n')),
-                      Sequence(at_linestart,Repeat_until(whitespace,'\n')))));
+                         Sequence(at_linestart,Repeat_until(whitespace,'\n')))));
 
 
 @test parse(unescaped,"A\\123B\n") == "ASB"
