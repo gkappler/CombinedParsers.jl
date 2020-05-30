@@ -1,4 +1,8 @@
-# Getting Started
+# Overview
+```@setup session
+using CombinedParsers
+using CombinedParsers.Regexp
+```
 
 ## Installation
 Install with
@@ -11,46 +15,23 @@ CombinedParsers.jl provides the `@re_str` macro as a plug-in replacement for the
 
 Base Julia PCRE regular expressions:
 ```@repl
-pattern = r"reg(ular )?ex(?<a>p(ression)?)?\??"i
-mr = match(pattern,"regexp")
+pattern = r"(?<a>a|B)+c"
+mr = match(pattern,"aBc")
 ```
 
 CombinedParsers.Regexp regular expression:
-```@setup session
-using CombinedParsers
-using CombinedParsers.Regexp
-```
-
 ```@repl session
-pattern = re"reg(ular )?ex(?<a>p(ression)?)?\??"i
-mre = match(pattern,"regexp")
+pattern = re"(?<a>a|B)+c"
+mre = match(pattern,"aBc")
 
 # The ParseMatch type has `getproperty` and `getindex` methods for handling like `RegexMatch`.
 mre.match
 mre.captures
-mre[2]
+mre[1]
 mre[:a]
 ```
 
-!!! note 
-    The `@re_str` supports the following PCRE features
-    - ☑ fundamentals: sequences, alternations, repetitions optional, matches (`*`,`+`,`{n}`, `{min,}`, `{min,max}`, `?`)
-    - ☑ escaped characters and generic character types
-    - ☑ character ranges (`[]`)
-    - ☑ non-capturing groups,
-    - ☑ capturing groups, backreferences, subroutines (all by index, relative index and name)
-    - ☑ atomic groups
-    - ☑ lazy repetitions
-    - ☑ conditional expressions
-    - ☑ internal and pattern options setting
-    - ☑ simple assertions (`\A`, `\z`, `\Z`, `\b`, `\B`, `^`, `$`), 
-    - ☑ lookaheads and lookbehinds
-    - ☑ comments
-    
-    PCRE functionality that is currently not supported:
-    - ☐ capture groups in lookbehinds.
-    - ☐ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \K
-
+CombinedParsers.jl is tested and benchmarked against the PCRE C library testset, see [compliance report](man/pcre-compliance.html).
 
 ## Parsing 
 
@@ -61,15 +42,13 @@ For parsers defined with the `@re_str` the `result_type`s are nested Tuples and 
 
 
 ```@repl session
-p = re"(a)*bc?"
-parse(p,"aaab")
+parse(pattern,"aBBac")
 ```
 
 
 ## Iterating
 If a parsing is not uniquely defined different parsings can be lazily iterated, conforming to Julia's `iterate` interface.
-```@repl session
-collect(parse_all(re"^(a|ab|b)+$","abab"))
+```@example session
 for p in parse_all(re"^(a|ab|b)+$","abab")
 	println(p)
 end
@@ -91,6 +70,6 @@ parse(p,"abababab")
 
 Conveniently, calling `getindex(::CombinedParser,::Integer)` and `map(::Integer,::CombinedParser)` create a transforming parser selecting from the result of the parsing.
 ```@repl session
-parse(map(2,re"abc"),"abc")
+parse(map(IndexAt(2),re"abc"),"abc")
 parse(re"abc"[2],"abc")
 ```

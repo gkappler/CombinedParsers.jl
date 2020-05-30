@@ -390,6 +390,7 @@ Parser matching exactly one `Char`, returning the character.
 ```jldoctest
 julia> AnyChar()
 re"."
+
 ```
 
 """
@@ -447,6 +448,7 @@ Parser succeding if and only if at index 1 with `result_type` `AtStart`.
 ```jldoctest
 julia> AtStart()
 re"^"
+
 ```
 """
 struct AtStart <: NIndexParser{0,AtStart} end
@@ -464,6 +466,7 @@ Parser succeding if and only if at last index with `result_type` `AtEnd`.
 ```jldoctest
 julia> AtEnd()
 re"\$"
+
 ```
 """
 struct AtEnd <: NIndexParser{0,AtEnd} end
@@ -488,6 +491,7 @@ Assertion parser matching never.
 ```jldoctest
 julia> Never()
 re"(*FAIL)"
+
 ```
 """
 struct Never <: LeafParser{Never} end
@@ -509,6 +513,7 @@ Returns `Always()`.
 ```jldoctest
 julia> Always()
 re""
+
 ```
 """
 struct Always <: LeafParser{Always}
@@ -547,6 +552,7 @@ re"(?=peek)"
 
 julia> parse(la*AnyChar(),"peek")
 ("peek", 'p')
+
 ```
 """
 @auto_hash_equals struct PositiveLookahead{T,P} <: LookAround{T}
@@ -584,11 +590,8 @@ Useful for checks like "must not be followed by `parser`, don't consume its matc
 julia> la = NegativeLookahead("peek")
 re"(?!peek)"
 
-julia> parse(la*AnyChar(),"peek")
-ERROR: ArgumentError: no successfull parsing.
-Stacktrace:
- [1] parse(::Sequence{Tuple{SubString,Char},Tuple{NegativeLookahead{SubString,CombinedParsers.ConstantParser{4,SubString}},AnyChar}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2583
- [2] top-level scope at REPL[24]:1
+julia> parse(la*AnyChar(),"seek")
+(re"(?!peek)", 's')
 
 ```
 """
@@ -613,6 +616,13 @@ function Base.get(parser::NegativeLookahead, sequence, till, after, i, state)
 end
 
 export Lookahead
+
+"""
+    Lookahead(does_match::Bool, p)
+
+[`PositiveLookahead`](@ref) if `does_match==true`, 
+[`NegativeLookahead`](@ref) otherwise.
+"""
 function Lookahead(does_match::Bool, p_)
     p = parser(p_)
     if does_match
@@ -861,7 +871,7 @@ Sets names of parsers within begin/end block to match the variables they are asi
 so, for example
 ```jldoctest
 julia> @with_names foo = AnyChar()
-.  |> with_name(:foo)
+. AnyChar |> with_name(:foo)
 ::Char
 
 julia> parse(log_names(foo),"ab")
@@ -915,7 +925,7 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
 
 A parser mapping matches of `x.first` to constant `x.second`.
 
-See also: [`@map`](@ref), [`map_at`](@ref)
+See also: [`map`](@ref), [`map_at`](@ref)
 """
 Base.convert(::Type{AbstractToken},constant::Pair{<:ParserTypes}) =
     Transformation{typeof(constant.second)}(constant.second, parser(constant.first))
@@ -986,6 +996,8 @@ export map,map_at
 
 Parser transforming result of a wrapped parser. 
 `a...` is passed as additional arguments to `f`.
+
+See also: [`map`](@ref), [`Transformation`](@ref)
 """
 function map_at(f::Function, Tc::Type, p, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
@@ -1006,7 +1018,7 @@ import Base: map
 
 Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
 
-See also: [`map_at`](@ref)
+See also: [`map_at`](@ref), [`Transformation`](@ref)
 """
 function Base.map(f::Function, p::AbstractToken, a...)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
@@ -1018,7 +1030,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...)`.
 
-See also: [`map_at`](@ref) [`get`](@ref)
+See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
 """
 function Base.map(Tc::Type, p::AbstractToken, a...)
     Transformation{Tc}((v,i) -> Tc(a..., v), p)
@@ -1030,7 +1042,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing results to `getindex(x,index)` or `constant`.
 
-See also: [`map_at`](@ref) [`get`](@ref)
+See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
 
 """
 function Base.map(index::IndexAt{<:Integer}, p::AbstractToken)
@@ -1501,7 +1513,7 @@ julia> Sequence('a',CharIn("AB")*'b')
 🗄 Sequence
 ├─ a
 └─ 🗄 Sequence
-   ├─ [AB]
+   ├─ [AB] CharIn
    └─ b
 ::Tuple{Char,Tuple{Char,Char}}
 
@@ -1509,7 +1521,7 @@ julia> Sequence('a',CharIn("AB")*'b')
 julia> sSequence('a',CharIn("AB")*'b')
 🗄 Sequence
 ├─ a
-├─ [AB]
+├─ [AB] CharIn
 └─ b
 ::Tuple{Char,Char,Char}
 ```
@@ -1704,6 +1716,22 @@ end
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
 export Lazy
+"""
+    Lazy(x::Repeat)
+    Lazy(x::Optional)
+
+Lazy `x` repetition matching from greedy to lazy.
+
+```jldoctest
+julia> re"a+?"
+a+?  |> Repeat |> Lazy |> regular expression combinator
+::Array{Char,1}
+
+julia> re"a??"
+a??  |> Optional(default=missing) |> Lazy |> regular expression combinator
+::Union{Missing, Char}
+```
+"""
 @auto_hash_equals struct Lazy{P,T} <: WrappedParser{P,T}
     parser::P
     Lazy(p_) =
@@ -2079,8 +2107,8 @@ If parser does not succeed, return `default` with curser unchanged.
 julia> match(r"a?","b")
 RegexMatch("")
 
-julia> parse(Optional("a"),"b")
-""
+julia> parse(Optional("a", default=42),"b")
+42
 ```
 """
 @auto_hash_equals struct Optional{P,T} <: WrappedParser{P,T}
@@ -2183,6 +2211,8 @@ export alt, Either
     Either(parsers...)
     
 Parser that tries matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
+
+This parser has no custom `==` and `hash` methods because it can recurse.
 
 ```jldoctest
 julia> match(r"a|bc","bc")
@@ -2298,7 +2328,7 @@ Operator syntax for `sEither(x, y)`.
 julia> 'a' | CharIn("AB") | "bc"
 |🗄... Either
 ├─ a
-├─ [AB]
+├─ [AB] CharIn
 └─ bc
 ::Union{Char, SubString}
 
@@ -2342,17 +2372,13 @@ todo: Note that the options array is kept. As a consequence `push!`on result wil
 (|)(x::Either, T::Type) =
     Either{Union{result_type(x),T}}(x.options)
 
-
-Base.push!(x::Repeat{<:Either}, y) = push!(x.parser,y)
-Base.pushfirst!(x::Repeat{<:Either}, y) = pushfirst!(x.parser,y)
-
 """
     Base.push!(x::Either, option)
 
-Push `option` to `x.options` as parser tried first before `x` .
-Recursive parsers can be built with the `push!` to `Either`.
+Push `option` to `x.options` as parser tried next if `x` fails.
+Recursive parsers can be built with `push!` to `Either`.
 
-See also [`push!`](@ref).
+See also [`pushfirst!`](@ref).
 """
 function Base.push!(x::Either, y)
     result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
@@ -2360,11 +2386,22 @@ function Base.push!(x::Either, y)
     x
 end
 
+"""
+    Base.pushfirst!(x::Either, option)
+
+Push `option` to `x.options` as parser tried first, and trying `x` if option fails.
+Recursive parsers can be built with `pushfirst!` to `Either`.
+
+See also [`push!`](@ref).
+"""
 function Base.pushfirst!(x::Either, y)
     result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     pushfirst!(x.options,y)
     x
 end
+
+Base.push!(x::Repeat{<:Either}, y) = push!(x.parser,y)
+Base.pushfirst!(x::Repeat{<:Either}, y) = pushfirst!(x.parser,y)
 
 function Base.push!(x::NamedParser{<:Either}, y)
     push!(x.parser,y)

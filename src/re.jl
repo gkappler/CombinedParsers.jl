@@ -358,11 +358,20 @@ export DupSubpatternNumbers
 Parser wrapper for `ParserWithCaptures`, setting reset_index=true in `deepmap_parser(::typeof(indexed_captures_),...)`.
 
 ```jldoctest
-julia> p = re"(?|(aaa)|(b))\1"
+julia> p = re"(?|(a)|(b))\\1"
+🗄 Sequence |> regular expression combinator with 1 capturing groups
+├─ |🗄... Either |> DupSubpatternNumbers
+│  ├─ (a)  |> Capture 1
+│  └─ (b)  |> Capture 1
+└─ \\g{1} Backreference
+::Tuple{Char,AbstractString}
 
-julia> match(p, "aaaaaa")
+julia> match(p, "aa")
+ParseMatch("aa", 1="a")
 
 julia> match(p, "bb")
+ParseMatch("bb", 1="b")
+
 ```
 
 See also [pcre doc](https://www.pcre.org/original/doc/html/pcrepattern.html#dupsubpatternnumber)

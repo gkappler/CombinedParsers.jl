@@ -1,5 +1,5 @@
-
-# Basics
+# User Guide
+## Basics
 The simplest parser matches a `String` or `Char` iterator.
 ```@setup session
 using CombinedParsers
@@ -15,7 +15,7 @@ parse(parse_a,"ab")
 
 
 
-# Character Sets
+## Character Sets
 ```@repl session
 parse(CharIn('a':'z'),"c")
 parse(CharIn(isuppercase),"A")
@@ -23,7 +23,7 @@ parse(CharNotIn('a':'z'),"A")
 parse(CharNotIn(isuppercase),"c")
 ```
 
-# Sequence
+## Sequence
 Several parsers can be combined with the `Sequence` constructor and the `*` operator.
 The `result_type` of a `Sequence` is the Tuple of the `result_type`s of its parts.
 ```@repl session
@@ -50,14 +50,14 @@ parse(Sequence(CharIn(isuppercase), :second => CharIn(islowercase)),"Ab")
 
 
 
-# Either
+## Either
 The `|` operator and constructor `Either` try matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
 
 ```@repl session
 parse(("a"|"ab"),"ab")
 ```
 
-# Repeat
+## Repeat
 The `Repeat(p)` constructor creates a new parser repeating its argument zero or more times, and by default transforming to
 `Vector{result_type(p)}`.
 Repeating a specified number of times can be achieved with `Repeat(p,min=1,max=2)`, or `Repeat(1,p)` or `Repeat(1,2,p)`.
@@ -88,7 +88,7 @@ Repetition and optional parsers are greedy by default, and can be switched to la
 
 
 
-# Assertions
+## Assertions
 Parsers that do not advance the parsing position can be used to assert conditions during parsing.
 ## AtStart() and AtEnd()
 The `AtStart()` only succeeds if at the start of the input, and similarly the `AtEnd()` succeeds only at the end of the input.
@@ -98,7 +98,7 @@ With `AtEnd()` the parser can be forced to consume the full input or fail otherw
 parse(("a"|"ab")*AtEnd(),"ab")
 ```
 
-## Looking around
+### Looking around
 A `Lookaround` parser wraps a parser `p`, succeeds if `p` matches without advancing the position, and fails if `p` fails.
 
 
@@ -117,7 +117,7 @@ The `@re_str` macro has a regex parser for lookahead and lookbehind expressions 
 ```
 
 
-# Atomic groups
+## Atomic groups
 Backtracking of a parser `p` can be prevented by wrapping in `Atomic(Repeat(p))`.
 An atomic parser fails if `p` fails or if the first successfull parsing with `p` leads to a failing later in the parsing process.
 

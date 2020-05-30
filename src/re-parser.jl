@@ -264,7 +264,7 @@ push!(repeatable,backreference);
                  #   \0dd      character with octal code 0dd
                  Sequence('0',character_base(8,0,2)) do v; Char(v[2]); end,
                  #   \ddd      character with octal code ddd, or back reference
-                 ## Sequence(Char,character_base(8,3,3), transform=v->(Char(v[1]))),
+                 ## Sequence(character_base(8,3,3), transform=v->(Char(v[1]))),
                  ## see backreference, if a capture with number (in decimal) is defined
                  #   \o{ddd..} character with octal code ddd..
                  Sequence('o','{',character_base(8),'}') do v; Char(v[3]); end,
@@ -679,8 +679,8 @@ The regex also accepts one or more flags, listed after the ending quote, to chan
 ```jldoctest
 julia> re"a|c"i
 |🗄... Either |> regular expression combinator
-├─ [aA]
-└─ [cC]
+├─ [aA] CharIn
+└─ [cC] CharIn
 ::Char
 
 julia> re"a+c"

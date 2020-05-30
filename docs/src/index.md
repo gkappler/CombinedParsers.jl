@@ -9,7 +9,13 @@ log conveniently for debugging, and let Julia compile your parser for good perfo
 
 !!! note
     `CombinedParsers.jl` is currently an α release.	The first official released is prepared for JuliaCon2020.
-	
+
+
+The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
+The [User guide](@ref) provides a summary of CombinedParsers types.
+Some examples of packages using CombinedParsers can be found on the [Examples](@ref) page.
+See the [Index](@ref main-index) for the complete list of documented functions and types.
+
 ## Package Features
 
 - Clear syntax integrates grammar and transformations with Julia type inference.
@@ -18,10 +24,19 @@ log conveniently for debugging, and let Julia compile your parser for good perfo
 - Interoperable with [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
 - Parametric parser and state types enable Julia compiler optimizations.
 - Compiled regular expression parsers in pure julia are provided with the `re_str` macro.
-  CombinedParsers.jl is tested against the PCRE C library testset.
 - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides colored and clearly layed out printing in the REPL.
 - Convenient logging of the parsing process with `NamedParser`s and `SideeffectParser`s.
 - CombinedParsers generalize from strings to parsing any type supporting `getindex`, `nextind`, `prevind` methods.
+
+
+CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
+```@contents
+Pages = [
+    "man/pcre-compliance.md",
+]
+Depth = 5
+```
+
 
 ## Writing Parsers
 CombinedParsers provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
@@ -41,62 +56,45 @@ using CombinedParsers
 using TextParse
 
 @with_names begin
-    number = map(Rational{Int}, TextParse.Numeric(Int))
-    factor = Either(number)  # or expression in parenthesis, see push! below
-    divMul = map(eval_ops,
-                 Sequence( factor, Repeat( CharIn("*/"), factor ) ) )
-    addSub = map(eval_ops,
-		 divMul * Repeat( CharIn("+-") * divMul ) )
-    parens = Sequence(2, "(",addSub,")" )
-    push!(factor, parens)
-    expr = (addSub * AtEnd())[1]
-end;
+	number = map(Rational{Int}, TextParse.Numeric(Int))
+	factor = Either(number)  # or expression in parenthesis, see push! below
+	divMul = map(eval_ops, Sequence( factor, Repeat( CharIn("*/"), factor ) ) )
+	addSub = map(eval_ops, divMul * Repeat( CharIn("+-") * divMul ) )
+	parens = Sequence(2, "(",addSub,")" )
+	push!(factor, parens)
+	expr = (addSub * AtEnd())[1]
+end
 
-parse(log_names(expr), "1/((1+2)*4+3*(5*2))")
+parse(expr, "1/((1+2)*4+3*(5*2))", log=[:parens])
 ```
 
 [Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
 
+Parsing has been a painpoint in all of my work as a developer and a researcher with a focus on text.
 
-## Package Guide
 
-The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
-
-Some examples of packages using Documenter can be found on the [Examples](@ref) page.
-
-See the [Index](@ref main-index) for the complete list of documented functions and types.
-
+## Examples
 ```@contents
 Pages = [
-    "man/guide.md",
-    "man/user.md",
+    "man/json.md",
     "man/pcre.md",
-    "man/examples.md",
-    "man/syntax.md",
-    "man/doctests.md",
-    "man/hosting.md",
-    "man/latex.md",
-    "man/contributing.md",
 ]
-Depth = 1
+Depth = 5
 ```
+
 
 ## Library Outline
 
 ```@contents
-Pages = [ "lib/public.md" ]
+Pages = [ "lib/public.md", "lib/internals.md" ]
 Depth = 5
 ```
 
-Internals
-```@contents
-Pages = ["lib/internals/types.md", "lib/internals/iterate.md"]
-```
 
 # Acknowledgements
 
 The work was inspired by Scala [fastparse](https://github.com/lihaoyi/fastparse) package and the Julia parsing packages
-## [Parsers.jl](https://github.com/JuliaData/Parsers.jl)
+### [Parsers.jl](https://github.com/JuliaData/Parsers.jl)
 A collection of parsers for date and primitive types.
 
 ### [TextParse.jl](https://github.com/queryverse/TextParse.jl)
@@ -130,5 +128,6 @@ No UTF8 support.
 
 ```@index
 Pages = ["lib/public.md"]
+Pages = ["lib/internals.md"]
 ```
 

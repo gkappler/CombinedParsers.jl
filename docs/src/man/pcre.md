@@ -2,6 +2,9 @@
 This guide demonstrates constructing a recursive parser with the 
 **[`push!`](@ref) to [`Either`](@ref)** technique by means of a similified parser for regular expressions. 
 
+This page outlines parts of the `CombinedParser` used in the `re_str` macro.
+`CombinedParsers.jl` is tested and benchmarked against the PCRE C library testset, see [compliance report](man/pcre-compliance.html).
+
 ## Characters and Escaped Characters
 The simplest regular expression pattern is a character matcher.
 ```@example session
@@ -90,12 +93,12 @@ Regular expressions can repeat character matchers and other sub-patterns when ap
 repeatable = Either{CombinedParser}(char_matcher_parser)
 nothing # hide
 ```
-We will add capture groups and othe sub-patterns to `repeatable` later.
+We will add capture groups and other sub-patterns to `repeatable` later.
 
 
 
 
-# Repeatable patterns, [`Optional`](@ref), [`Lazy`](@ref) and [`Atomic`](@ref)
+## Repeatable patterns, [`Optional`](@ref), [`Lazy`](@ref) and [`Atomic`](@ref)
 The CombinedParser to parse a repeated pattern from PCRE syntax
 ```@example session
 @with_names quantified=Sequence(
@@ -132,7 +135,7 @@ parse(p, "+++")
 
 
 
-# [`Sequence`](@ref)s and Alternations
+## [`Sequence`](@ref)s and Alternations
 Regular expression patterns can be written in sequence, delimited by `|` for matching either one of several alternatives.
 
 
@@ -157,7 +160,7 @@ p = parse(alternation, "ab|c", log=(:sequence, :alternation))
 parse(p, "c")
 ```
 
-# [`Capture`](@ref)s
+## [`Capture`](@ref)s
 Parentheses allow groupings that are repeatable.
 ```@example session
 import CombinedParsers.Regexp: name
@@ -186,7 +189,7 @@ parse(p, "cabcabab")
 ```
 
 
-# [`LookAround`](@ref)
+## [`Lookahead`](@ref) and [`Lookbehind`](@ref)
 
 
 ```@example session
@@ -194,25 +197,25 @@ parse(p, "cabcabab")
     2,
     "(",
     Either(Sequence(
-            v -> look_ahead(true,v[2]),
+            v -> LookAhead(true,v[2]),
             Either("?=","*positive_lookahead:","*pla:"),
             alternation),
         Sequence(
-            v -> look_ahead(false,v[2]),
+            v -> LookAhead(false,v[2]),
             Either("?!","*negative_lookahead:","*nla:"),
             alternation)),
     ")");
 @with_names lookbehind=Sequence(
     2,
     "(",
-    Either(Sequence(v -> look_behind(true,v[2]),
+    Either(Sequence(v -> LookBehind(true,v[2]),
             Either("?<=","*positive_lookbehind:","*plb:"),alternation),
-        Sequence(v -> look_behind(false,v[2]),
+        Sequence(v -> LookBehind(false,v[2]),
             Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
     ")");
 
-push_first!(repeatable,lookahead);
-push_first!(repeatable,lookbehind);
+pushfirst!(repeatable,lookahead);
+pushfirst!(repeatable,lookbehind);
 
 nothing # hide
 ```
@@ -223,4 +226,5 @@ import CombinedParsers.Regexp: bracket
 push!(repeatable,bracket);
 bracket
 ```
+
 

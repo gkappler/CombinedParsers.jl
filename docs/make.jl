@@ -25,7 +25,11 @@ makedocs(;
         "Manual" => [
             "Overview" => "man/guide.md",
             "User Guide" => "man/user.md",
+            "PCRE Compliance" => "man/pcre-compliance.md",
+        ],
+        "Examples" => [
             "Regular Expressions" => "man/pcre.md",
+            "JSON" => "man/json.md",
         ],
         "Library" => Any[
             "Public" => "lib/public.md",

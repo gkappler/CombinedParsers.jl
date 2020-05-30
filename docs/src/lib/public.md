@@ -4,10 +4,7 @@ Documentation for `CombinedParsers.jl`'s public interface.
 
 See the Internals section of the manual for internal package docs covering all submodules.
 
-# Public Interface
-
 ## CombinedParsers
-
 
 ```@docs
 CombinedParsers
@@ -21,6 +18,8 @@ convert
 CombinedParsers.Regexp
 CombinedParsers.Regexp.@re_str
 CombinedParsers.Regexp.match
+with_options
+CombinedParsers.Regexp.parse_options
 regex_escape
 ```
 
@@ -38,10 +37,9 @@ with_effect
 
 ## Transformations
 ```@docs
-Base.map
+map
 map_at
 JoinSubstring
-Transformation
 (!)(::CombinedParsers.AbstractToken)
 ```
 
@@ -57,6 +55,8 @@ CharNotIn
 ```@docs
 Either
 (|)(::CombinedParsers.ParserTypes, ::CombinedParsers.ParserTypes)
+push!
+pushfirst!
 sEither
 Sequence
 sSequence
@@ -68,6 +68,7 @@ Atomic
 Optional
 (|)(::CombinedParsers.AbstractToken{T}, ::Union{T,Missing}) where { T }
 Repeat
+Lazy
 Repeat1
 Repeat_stop
 Repeat_until
@@ -78,10 +79,14 @@ alternate
 
 ### Assertions
 ```@docs
+AtStart
+AtEnd
 Always
 Never
+Lookahead
 PositiveLookahead
 NegativeLookahead
+Lookbehind
 PositiveLookbehind
 NegativeLookbehind
 ```

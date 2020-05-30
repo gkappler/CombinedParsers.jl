@@ -32,6 +32,25 @@ Return PCRE option mask parsed from `options`.
 
 ```jldoctest
 julia> CombinedParsers.Regexp.pcre_options_parser
+🗄 Sequence |> map(#52)
+├─ ^ AtStart
+├─ 🗄+? Sequence |> map(#52) |> Repeat |> map(#44) |> Optional(default=0)
+│  ├─ |🗄... Either
+│  │  ├─ dupnames  |> map(Constant(0x00000040)) |> with_name(:DUPNAMES)
+│  │  ├─ xx  |> map(Constant(0x01000000)) |> with_name(:EXTENDED_MORE)
+│  │  ├─ i  |> map(Constant(0x00000008)) |> with_name(:CASELESS)
+│  │  ├─ m  |> map(Constant(0x00000400)) |> with_name(:MULTILINE)
+│  │  ├─ n  |> map(Constant(0x00002000)) |> with_name(:NO_AUTO_CAPTURE)
+│  │  ├─ U  |> map(Constant(0x00040000)) |> with_name(:UNGREEDY)
+│  │  ├─ J  |> map(Constant(0x00000040)) |> with_name(:DUPNAMES)
+│  │  ├─ s  |> map(Constant(0x00000020)) |> with_name(:DOTALL)
+│  │  ├─ x  |> map(Constant(0x00000080)) |> with_name(:EXTENDED)
+│  │  ├─ B  |> map(Constant(0x00000000)) |> with_name(:BINCODE)
+│  │  └─ I  |> map(Constant(0x00000000)) |> with_name(:INFO)
+│  └─ ,?  |> Optional(default=missing)
+└─ $ AtEnd
+::UInt32
+
 ```
 """
 function parse_options(options::AbstractString)

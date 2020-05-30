@@ -83,6 +83,12 @@ end
 regex_prefix(x::NegativeLookbehind) = "(?<!"
 
 export Lookbehind
+"""
+    Lookbehind(does_match::Bool, p)
+
+[`PositiveLookbehind`](@ref) if `does_match==true`, 
+[`NegativeLookbehind`](@ref) otherwise.
+"""
 function Lookbehind(does_match::Bool, p)
     if does_match
         PositiveLookbehind(p)
