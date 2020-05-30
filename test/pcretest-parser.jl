@@ -34,7 +34,8 @@ comment_or_empty = Repeat(
         :pattern => after(CharIn("/'\""),Any) do s
             Repeat_until(
                 AnyChar(),
-                Sequence(2,s, Repeat_until(AnyChar(),
+                Sequence(3, NegativeLookbehind('\\'),
+                         s, Repeat_until(AnyChar(),
                                          Sequence(Repeat(whitespace), '\n'),
                                          wrap=JoinSubstring)),
                 true; wrap=JoinSubstring)
@@ -205,6 +206,24 @@ import CombinedParsers.Regexp: skip_whitespace_and_comments
                >xyz<
             """
     @test_pcre "the quick brown fox" "What the quick brown fox"
+
+    ## test parsing of \/ in pattern (not ending pattern)
+    test_pcre"""
+    /<tr([\w\W\s\d][^<>]{0,})><TD([\w\W\s\d][^<>]{0,})>([\d]{0,}\.)(.*)((<BR>([\w\W\s\d][^<>]{0,})|[\s]{0,}))<\/a><\/TD><TD([\w\W\s\d][^<>]{0,})>([\w\W\s\d][^<>]{0,})<\/TD><TD([\w\W\s\d][^<>]{0,})>([\w\W\s\d][^<>]{0,})<\/TD><\/TR>/is
+      <TR BGCOLOR='#DBE9E9'><TD align=left valign=top>43.<a href='joblist.cfm?JobID=94 6735&Keyword='>Word Processor<BR>(N-1286)</a></TD><TD align=left valign=top>Lega lstaff.com</TD><TD align=left valign=top>CA - Statewide</TD></TR>
+     0: <TR BGCOLOR='#DBE9E9'><TD align=left valign=top>43.<a href='joblist.cfm?JobID=94 6735&Keyword='>Word Processor<BR>(N-1286)</a></TD><TD align=left valign=top>Lega lstaff.com</TD><TD align=left valign=top>CA - Statewide</TD></TR>
+     1:  BGCOLOR='#DBE9E9'
+     2:  align=left valign=top
+     3: 43.
+     4: <a href='joblist.cfm?JobID=94 6735&Keyword='>Word Processor<BR>(N-1286)
+     5: 
+     6: 
+     7: <unset>
+     8:  align=left valign=top
+     9: Lega lstaff.com
+    10:  align=left valign=top
+    11: CA - Statewide
+    """
 end
 
 @test_throws UnsupportedError test_pcre"""
