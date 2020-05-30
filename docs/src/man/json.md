@@ -26,19 +26,19 @@ strChars = CharNotIn("\"\\")
     unicodeEscape = "u" * hexDigit * hexDigit * hexDigit * hexDigit 
     escape        = "\\" * ( CharIn("\"/\\\\bfnrt") | unicodeEscape )
 
-    string = ( space * "\"" / !(strChars | escape)^(*) * "\"" )[3]
+    string = ( space * "\"" / !Repeat(strChars | escape) * "\"" )[3]
 
     data = string | parser("true"=>true) | ("false"=>false) | ("null"=>nothing) | number | NamedTuple | Vector
-    jsonExpr = ( space ~ data ~ space )[2]
+    jsonExpr = ( space * data * space )[2]
 
-    array = ( "[" / join(jsonExpr^(*),",") * "]" )[2] 
+    array = ( "[" / join(Repeat(jsonExpr),",") * "]" )[2] 
     push!(data, array)
 
     pair = map(string * space / ":" / jsonExpr ) do (k,s,d,v)
         Pair{Symbol,result_type(jsonExpr)}(Symbol(k),v)
     end;
 
-    obj = map(v->(;v...),( "{" / join(pair^(*),",") ~ space ~ "}")[2])
+    obj = map(v->(;v...),( "{" / join(Repeat(pair),",") * space * "}")[2])
     push!(data, obj)
 end
 nothing # hide

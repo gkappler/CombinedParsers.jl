@@ -61,11 +61,9 @@ parse(("a"|"ab"),"ab")
 The `Repeat(p)` constructor creates a new parser repeating its argument zero or more times, and by default transforming to
 `Vector{result_type(p)}`.
 Repeating a specified number of times can be achieved with `Repeat(p,min=1,max=2)`, or `Repeat(1,p)` or `Repeat(1,2,p)`.
-Equivalently the `^` operator can be used similar as for String, e.g. `p^2`, 
-and like in regular expressions `p^(+)`, `p^(*)`.
 
 ```@repl session
-parse(join(parser('a')^(*)," "),"a a")
+parse(join(Repeat('a')," "),"a a")
 ```
 
 ## Optional

@@ -2852,6 +2852,7 @@ include("re.jl")
 
 include("show.jl")
 
+include("operators.jl")
 end # module
 
 
