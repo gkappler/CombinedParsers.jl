@@ -9,7 +9,6 @@ DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
     using CombinedParsers.Regexp
 end; recursive=true)
 
-doctest(CombinedParsers; fix=true)
 makedocs(;
     modules=[CombinedParsers],
     authors="Gregor Kappler",
