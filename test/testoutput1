@@ -275,12 +275,12 @@ No match
     ething
 No match
 
-/^\пїЅ/
-    пїЅ
+/^\Ѓ/
+    Ѓ
  0: \x81
 
-/^пїЅ/
-    пїЅ
+/^я/
+    я
  0: \xff
 
 /^[0-9]+$/
@@ -2192,7 +2192,7 @@ No match
     abc
  0: c
 \= Expect no match
-    abk   
+    abk
 No match
    
 /[^k]{2,3}$/
@@ -5973,24 +5973,24 @@ No match
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
 No match
     
-/(?i)reg(?:ul(?:[aпїЅ]|ae)r|ex)/
+/(?i)reg(?:ul(?:[aд]|ae)r|ex)/
     REGular
  0: REGular
     regulaer
  0: regulaer
     Regex  
  0: Regex
-    regulпїЅr 
+    regulдr 
  0: regul\xe4r
 
-/пїЅпїЅпїЅпїЅ[пїЅ-пїЅпїЅ-пїЅ]+/
-    пїЅпїЅпїЅпїЅпїЅ
+/Ежед[а-яА-Я]+/
+    Ежеда
  0: \xc5\xe6\xe5\xe4\xe0
-    пїЅпїЅпїЅпїЅпїЅ
+    Ежедя
  0: \xc5\xe6\xe5\xe4\xff
-    пїЅпїЅпїЅпїЅпїЅ
+    ЕжедА
  0: \xc5\xe6\xe5\xe4\xc0
-    пїЅпїЅпїЅпїЅпїЅ
+    ЕжедЯ
  0: \xc5\xe6\xe5\xe4\xdf
 
 /(?<=Z)X./
@@ -6276,21 +6276,21 @@ No match
   abc
  0: abc
 \= Expect no match
-  abc\n  
+  abc\n
 No match
 
 /^(?![^\n]*\n\z)/
   abc
  0: 
 \= Expect no match
-  abc\n 
+  abc\n
 No match
   
 /\z(?<!\n)/
   abc
  0: 
 \= Expect no match
-  abc\n  
+  abc\n
 No match
 
 /(.*(.)?)*/
@@ -8388,7 +8388,7 @@ No match
     alphabetabcd
  0: 
  1: abcd
-    endingwxyz 
+    endingwxyz
  0: 
  1: <unset>
  2: wxyz
@@ -8397,7 +8397,7 @@ No match
     alphabetabcd
  0: alphabetabcd
  1: abcd
-    endingwxyz 
+    endingwxyz
  0: endingwxyz
  1: <unset>
  2: wxyz
@@ -9916,7 +9916,7 @@ No match, mark = X
 
 /(.COMMIT)(*COMMIT::::::::::interal error:::)/
 
-/(*COMMIT:пїЅпїЅ)/
+/(*COMMIT:яя)/
 
 /(*COMMIT:]w)/
 
