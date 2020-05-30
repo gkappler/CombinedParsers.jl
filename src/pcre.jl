@@ -48,7 +48,7 @@ julia> CombinedParsers.Regexp.pcre_options_parser
 │  │  ├─ B  |> map(Constant(0x00000000)) |> with_name(:BINCODE)
 │  │  └─ I  |> map(Constant(0x00000000)) |> with_name(:INFO)
 │  └─ ,?  |> Optional(default=missing)
-└─ $ AtEnd
+└─ \$ AtEnd
 ::UInt32
 
 ```
