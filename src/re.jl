@@ -557,13 +557,11 @@ function subroutine_index_reset(context::ParserWithCaptures,x::Capture)
     end
 end
 
-import ..CombinedParsers: JoinSubstring, IndexAt
+import ..CombinedParsers: JoinSubstring, Transformation
 JoinSubstring(x::ParserWithCaptures) =
     ParserWithCaptures(JoinSubstring(x.parser),x.subroutines,x.names)
-Base.map(f::IndexAt,x::ParserWithCaptures) =
-    ParserWithCaptures(map(f,x.parser),x.subroutines,x.names)
-Base.map(f::Function,x::ParserWithCaptures) =
-    ParserWithCaptures(map(f,x.parser),x.subroutines,x.names)
+Transformation{T}(t,x::ParserWithCaptures) where T =
+    ParserWithCaptures(Transformation{T}(t,x.parser),x.subroutines,x.names)
  
 function Base.match(parser::ParserTypes,sequence::AbstractString; kw...)
     @warn "For better performance create `ParserWithCaptures(parser)` before calling `match`."
