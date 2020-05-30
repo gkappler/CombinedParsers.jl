@@ -672,7 +672,10 @@ end
 
 function Base.getindex(m::ParseMatch,i::Symbol)
     x=getfield(m,1)
-    getindex(m,x.names[i])
+    for j in x.names[i]
+        c=getindex(m,j)
+        c !== nothing && return c
+    end
 end
 
 match_string(x::SubString,y::UnitRange{<:Integer}) =
