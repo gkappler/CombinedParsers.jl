@@ -1850,11 +1850,13 @@ function Base.join(x::Repeat,delim_)
     delim = parser(delim_)
     ## todo: the get function could be optimized
     ##@show x.range
-    map(x.parser * ( ( delim_ * x.parser )[2] )^(max(0,x.range.start-1),
-                                                 x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1)) do (f,r)
-        pushfirst!(r,f)
-        r
-    end
+    map(x.parser * Repeat(
+        max(0,x.range.start-1),
+        x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1,
+        ( delim_ * x.parser )[2])) do (f,r)
+            pushfirst!(r,f)
+            r
+        end
 end
 
 function print_constructor(io::IO,x::Repeat)
