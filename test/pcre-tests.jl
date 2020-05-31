@@ -9,8 +9,9 @@ tests = parse(tests_parser, tests_string)[1];
 tt=tests[14]
 @pcre_testset tt[2] true
 
+using DataStructures
 ignore_idx = SortedDict{Int,String}(
-    14 => "unicode escape in test parser needs to support \"\\u81\".",
+    ## 14 => "unicode escape in test parser needs to support \"\\u81\".",
     69 => "because of very long compile time. The complex pattern parses email adresses",
     70 => "because of very long compile time. The complex pattern parses email adresses",
     89 => "CombinedParsers brackets use unicode character ranges. Avoid such patterns for now, contributions very welcome.",
@@ -42,6 +43,8 @@ match(Regcomb(pattern),"xxx")
 )
 
 optimize_idx = []
+
+
 
 
 
@@ -95,7 +98,6 @@ testresults = @testset CustomTestSet "pcre testset 1" begin
             end
         end
         nfailed = sum([ !(t isa Pass) for t in tr.results ])
-
         if nfailed>0
             @warn "error in $i $(tt[2].pattern)"
             global err_idx,err_test=i,tt[2]
@@ -106,7 +108,9 @@ testresults = @testset CustomTestSet "pcre testset 1" begin
     end
 end
 
-using DataStructures
+unsupportednos = Set(
+    vcat([ first.(v) for v in values(unsupported) ]...)
+)
 successes = SortedDict()
 failures = SortedDict()
 for ts in testresults.results
@@ -114,32 +118,32 @@ for ts in testresults.results
     nsuccess = sum([ t isa Pass for t in ts.results ])
     nfailed = length(ts.results) - nsuccess
     if nfailed == 0
-        successes[i] = nsuccess
-    else
-        successes[i] = nsuccess
-        failures[i] = nfailed
+        if nsuccess > 0
+            successes[i] = (nsuccess, length(ts.results))
+        end
+    elseif !(i in unsupportednos)
+        failures[i] = (nfailed,length(ts.results))
     end
 end
 
-n_successes, n_failed = sum(values(successes)), sum(values(failures))
+n_successes, n_failed = sum(getindex.(values(successes),1)), sum(getindex.(values(failures),1))
 n_patterns = (
     success = length(successes),
     failed = length(failures),
     skipped = length(ignore_idx),
     unsupported = sum(length.(values(unsupported))))
-
 io=stdout
 
 
 function print_testset(io,prefix,t,testdef; pad="   ")
     pat,opt = t.pattern
     pat = replace(pad*"/"*pat, "\n" => "\n"*pad)*"/"*opt
-    println(io,"\n---\n$pad```\n$pat\n$pad```\n$pad$prefix")
+    println(io,"\n$pad```\n$pat\n$pad```\n$pad$prefix")
     testseqs = vcat([ "`"*s.sequence*"`" for s in t.test],"`".*t.tests_nomatch .* "` no match")
     for (j,tr) in enumerate(testdef.results)
         if (j>1)
-            s = replace.(testseqs[j-1], "\n" => "\\n")
-            result = tr isa Pass ? "☑" : "☐"
+            s = Base.escape_string(testseqs[j-1])
+            result = tr isa Pass ? "✓" : "✕"
             println(io,pad*"- $result $s")
         end
     end
@@ -149,33 +153,34 @@ open(joinpath(docdir,"man","pcre-compliance.md"),"w") do io
   println(io,"""
 # Compliance with the PCRE test set
 !!! note 
-    The `@re_str` supports the following PCRE features
-    - ☑ fundamentals: sequences, alternations, repetitions optional, matches (`*`,`+`,`{n}`, `{min,}`, `{min,max}`, `?`)
-    - ☑ escaped characters and generic character types
-    - ☑ character ranges (`[]`)
-    - ☑ non-capturing groups,
-    - ☑ capturing groups, backreferences, subroutines (all by index, relative index and name)
-    - ☑ atomic groups
-    - ☑ lazy repetitions
-    - ☑ conditional expressions
-    - ☑ internal and pattern options setting
-    - ☑ simple assertions (`\\A`, `\\z`, `\\Z`, `\\b`, `\\B`, `^`, `\$`), 
-    - ☑ lookaheads and lookbehinds
-    - ☑ comments
+    PCRE features supported by `@re_str` 
+    - ✓ sequences, alternations (`|`), repetitions (`*`,`+`,`{n}`, `{min,}`, `{min,max}`), optional matches (`?`)
+    - ✓ escaped characters and generic character types
+    - ✓ character ranges (`[]`)
+    - ✓ non-capturing groups
+    - ✓ capturing groups, backreferences, subroutines (all by index, relative index and name)
+    - ✓ simple assertions (`\\A`, `\\z`, `\\Z`, `\\b`, `\\B`, `^`, `\$`)
+    - ✓ lookaheads and lookbehinds
+    - ✓ atomic groups
+    - ✓ lazy repetitions
+    - ✓ conditional expressions
+    - ✓ internal and pattern options setting
+    - ✓ comments
+!!! warning 
     PCRE functionality that is currently not supported:
-    - ☐ capture groups in lookbehinds.
-    - ☐ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \\K
+    - ✕ capture groups in lookbehinds.
+    - ✕ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \\K
 ```@setup session
 using CombinedParsers
 using CombinedParsers.Regexp
 ```
-The test set is downloaded from [the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1).
-The PCRE test output is parsed with [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl).
+CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
+The PCRE test output is downloaded from [the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), parsed with [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
 ## Test Overview
 $n_successes successful tests on $(n_patterns.success) patterns
-(See [list of compliant patterns](pcre-compliance-succeeded.html)).\n
+(See [list of compliant patterns](../pcre-compliance-succeeded.html)).\n
 $n_failed failed tests on $(n_patterns.failed) patterns
-(See [list of failed patterns](pcre-compliance-failed.html)).
+(See [list of failed patterns](../pcre-compliance-failed.html)).
 ### Performance Overview:
 CombinedParsers is a very young package that will be optimized further, 
 but already `@re_str` pure Julia regular expression parsing is competitive with `@r_str` with the PCRE C backend which has arrived at a widely optimized codebase after decades of improvements.\n
@@ -196,6 +201,13 @@ $(n_patterns.unsupported) unsupported patterns were omitted for the following re
     for (n,r) in sort([ s.first => length(s.second) for s in unsupported ])
         println(io,"- `$n` failed on $r patterns.")
     end
+end
+
+open(joinpath(docdir,"man","pcre-compliance-failed.md"),"w") do io
+    println(io,"""\n
+    # Failed PCRE Tests
+    $n_failed failed tests on $(n_patterns.failed) patterns.
+    """)
     println(io,"""\n
 ## Skipped
 $(n_patterns.skipped) patterns were skipped for the following reasons:
@@ -204,38 +216,34 @@ $(n_patterns.skipped) patterns were skipped for the following reasons:
         t = tests[i][2]
         pat,opt = t.pattern
         @show lastindex(pat)
+        println(io,"\n---")
         if lastindex(pat)>100
-            print(io,"\n\n(#$i) skipped, $r\n")
+            print(io,"\n\n(no $i) skipped, $r\n")
         else
-            print_testset(io,"(#$i) skipped, $r\n",t,testresults.results[i], pad="")
+            print_testset(io,"\n(no $i) skipped, $r\n",t,testresults.results[i], pad="")
+        end
+    end
+    println(io,"""\n
+## Failed tests
+""")
+    for (i,(r,n)) in failures
+        if n>0
+            t = tests[i][2]
+            println(io,"\n---")
+            print_testset(io,r==0 ? "\n(no $i) failed to compile" : "(no $i) failed  $(r-1) of $(n-1) times:",t,testresults.results[i], pad="")
         end
     end
 end
 
-open(joinpath(docdir,"man","pcre-compliance-failed.md"),"w") do io
-    println(io,"""\n
-# Failed PCRE Tests
-$n_failed failed tests on $(n_patterns.failed) patterns.
-""")
-    for (i,r) in failures
-        t = tests[i][2]
-        print_testset(io,"(#$i) failed $r times:",t,testresults.results[i], pad="")
-    end
-end
-
 open(joinpath(docdir,"man","pcre-compliance-succeeded.md"),"w") do io
-
     println(io,"""
 # PCRE Compliance
-$n_successes successful tests on $n_patterns.success patterns.
-
+$n_successes successful tests on $(n_patterns.success) patterns.\n
 """)
-    
-    for (i,r) in successes
+    for (i,(r,n)) in successes
         t = tests[i][2]
-        print_testset(io,"(#$i) succeeded $(r-1) times:\n",t,testresults.results[i],pad="")
+        println(io,"\n---")
+        print_testset(io,"(no $i) succeeded $(r-1) of $(n-1) times:\n",t,testresults.results[i],pad="")
     end
-
 end
-
 

@@ -143,13 +143,15 @@ Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax 
 
  
 hex_digit = CharIn('A':'F','a':'f','0':'9')
-integer = Sequence(Optional('-'),character_base(10,1)) do v
-    if v[1]===missing
-        v[2]
-    else
-        -v[2]
+_integer(maxchar=3) =
+    Sequence(Optional('-'),character_base(10,1,maxchar)) do v
+        if v[1]===missing
+            v[2]
+        else
+            -v[2]
+        end
     end
-end
+integer = _integer(Repeat_max)
 
 at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
 lineend   = Either(AtEnd(),bsr)
@@ -223,9 +225,9 @@ name = JoinSubstring(
 @with_names backreference = map(
     Either(
         Sequence(2,'\\',Either(
-            integer, ## todo: maybe octal char
-            Sequence(2,'g',integer),
-            Sequence(2,"g{",integer,'}'),
+            _integer(3), ## todo: maybe octal char
+            Sequence(2,'g',_integer(3)),
+            Sequence(2,"g{",_integer(3),'}'),
             Sequence(2,"g{",name,'}'),
             Sequence(2,"k<",name,'>'),  # perl
             Sequence(2,"k'",name,'\''), # 
@@ -238,9 +240,9 @@ name = JoinSubstring(
                 ## todo: error on \g<ddd>
                 v isa Integer || error("capture group $v not found!")
                 parse(Sequence(character_base(8,1,3),
-                          Repeat(AnyChar())) do v
-                      Sequence(parser(Char(v[1])),
-                          v[2]...)
+                               Repeat(AnyChar())) do v
+                      sSequence(parser(Char(v[1])),
+                                v[2]...)
                       end,
                       "$v")
             end
@@ -311,6 +313,10 @@ push!(repeatable,generic_character_type);
 bracket_char = let bracket_meta_chars = raw"]\^-"
     Either(
         CharNotIn([ c for c in bracket_meta_chars]),
+        "\\b" => '\x08',
+        Sequence('\\',character_base(8,1,3)) do v
+        Char(v[2])
+        end,
         escaped_character
     )
 end;

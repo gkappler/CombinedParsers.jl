@@ -29,7 +29,7 @@ No match
 
 /abcd\t\n\r\f\a\e\071\x3b\$\\\?caxyz/
     abcd\t\n\r\f\a\e9;\$\\?caxyz
- 0: abcd\x09\x0a\x0d\x0c\x07\x1b9;$\?caxyz
+ 0: abcd\x09\x0a\x0d\x0c\x07\x1b9;$\\?caxyz
 
 /a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz/
     abxyzpqrrrabbxyyyypqAzz
@@ -275,12 +275,12 @@ No match
     ething
 No match
 
-/^\Å/
-    Å
+/^\201/
+    \201
  0: \x81
 
-/^ˇ/
-    ˇ
+/^\377/
+    \377
  0: \xff
 
 /^[0-9]+$/
@@ -537,7 +537,7 @@ No match
 No match
 
 /^$/
-    \
+    
  0: 
 \= Expect no match
     A non-empty line
@@ -2758,7 +2758,7 @@ No match
  0: "quick"
  1: quick
     \"the \\\"quick\\\" brown fox\" 
- 0: "the \"quick\" brown fox"
+ 0: "the \\"quick\\" brown fox"
  1:  brown fox
 
 /.*?/g,aftertext
@@ -2974,7 +2974,7 @@ No match
 \= Expect no match
     this is not a line with only words and spaces!
 No match
-    
+
 /(\d+)(\w)/
     12345a
  0: 12345a
@@ -4099,7 +4099,7 @@ No match
 No match
 
 /a*/
-    \
+    
  0: 
 
 /([abc])*d/
@@ -5262,7 +5262,7 @@ No match
  0: b
 
 /^(?:a?b?)*$/
-    \
+    
  0: 
     a
  0: a
@@ -5563,7 +5563,7 @@ No match
  0: 12-ab.1245
  1: 
 \= Expect no match
-    \
+    
 No match
     .a
 No match
@@ -5621,7 +5621,7 @@ No match
 \= Expect no match
     123abcfoo
 No match
-    
+
 /(?<=(?!...999)\d{3})foo/
     999foo
  0: foo
@@ -5973,24 +5973,24 @@ No match
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
 No match
     
-/(?i)reg(?:ul(?:[a‰]|ae)r|ex)/
+/(?i)reg(?:ul(?:[a\344]|ae)r|ex)/
     REGular
  0: REGular
     regulaer
  0: regulaer
     Regex  
  0: Regex
-    regul‰r 
+    regul\344r 
  0: regul\xe4r
 
-/≈ÊÂ‰[‡-ˇ¿-ﬂ]+/
-    ≈ÊÂ‰‡
+/\305\346\345\344[\340-\377\300-\337]+/
+    \305\346\345\344\340
  0: \xc5\xe6\xe5\xe4\xe0
-    ≈ÊÂ‰ˇ
+    \305\346\345\344\377
  0: \xc5\xe6\xe5\xe4\xff
-    ≈ÊÂ‰¿
+    \305\346\345\344\300
  0: \xc5\xe6\xe5\xe4\xc0
-    ≈ÊÂ‰ﬂ
+    \305\346\345\344\337
  0: \xc5\xe6\xe5\xe4\xdf
 
 /(?<=Z)X./
@@ -6285,7 +6285,7 @@ No match
 \= Expect no match
   abc\n
 No match
-  
+
 /\z(?<!\n)/
   abc
  0: 
@@ -9916,7 +9916,7 @@ No match, mark = X
 
 /(.COMMIT)(*COMMIT::::::::::interal error:::)/
 
-/(*COMMIT:ˇˇ)/
+/(*COMMIT:\377\377)/
 
 /(*COMMIT:]w)/
 
