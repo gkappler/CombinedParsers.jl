@@ -1,5 +1,7 @@
+##cd(joinpath(dirname(pathof(CombinedParsers)),"../docs/"))
+push!(LOAD_PATH,"../src")
 using Pkg
-Pkg.activate(joinpath(dirname(pathof(CombinedParsers)),"..","benchmark"))
+Pkg.activate(".")
 using CombinedParsers
 using CombinedParsers.Regexp
 using BenchmarkTools
@@ -15,22 +17,11 @@ tests_string=read(testfile,String);
 tests = parse(tests_parser, tests_string)[1];
 
 
-
-
-ignore_idx = optimize_idx = [14,    ## conditions
-                             69,70, ## DEFINE
-                             210,
-                             664, ## slooow
-                             706, ## slooow
-                             1173] 
-
-
 suite = BenchmarkGroup()
 i,tt=1,tests[59]
 p = tt[2].pattern
 s = tt[2].test[1].sequence
-for (i,tt) in Iterators.take(enumerate(tests),100)
-    if !in(i,ignore_idx) && !in(i,optimize_idx)
+for (i,tt) in enumerate(tests)
         ts = tt[2]
         name = string(ts.pattern)
         @info "setting up $i: $name"
@@ -72,7 +63,6 @@ for (i,tt) in Iterators.take(enumerate(tests),100)
                 @warn "ignore $i, $j" s
             end
         end
-    end
 end
 
 @info "tune!"
@@ -96,64 +86,5 @@ datetimenow = Dates.format(Dates.now(),"Y-mm-dd_HHhMM")
 resultfile = "benchmark-$datetimenow.json"
 BenchmarkTools.save(joinpath(dirname(pathof(CombinedParsers)),"..","benchmark",resultfile),results)
 
-
-
-
-
-
-suite = BenchmarkGroup()
-suite["1"] = @benchmarkable [ 1+i for i in 1:10]
-suite["2"] = @benchmarkable [0,2][3]
-
-BenchmarkTools.run(suite)
-
-
-
-
-p = parser("1234")
-dump(p)
-s = "1234"
-
-@btime _iterate(p,s)
-
-f(p,s,n=10000) = for i in 1:n; match(p,s); end
-f_iter(p,s,n=10000) = for i in 1:n; _iterate(p,s); 1; end
-pat = "a"^3
-r = Regex(pat)
-p = !Regcomb(pat)
-pp=optimize(p) 
-ppp=p.parser
-s = "a"^3
-
-using Profile
-Profile.clear()
-@profile f(p,s,1000000)
-@profile f_iter(p,s,100000000)
-@profile f_iter(ppp,s,10000000)
-
-
-
-pp
-optimize(p)
-
-
-@btime CombinedParsers.Regexp.SequenceWithCaptures(s,p)
-
-@btime match(r,s);
-@btime match(p,s)
-@btime _iterate(ppp,s)
-@btime match(ppp,s)
-
-using ProfileView
-ProfileView.view()
-
-c="aa"
-ss = SubString(s,10,100)
-@edit startswith(ss,c)
-
-using PProf
-
-pprof()
-PProf.kill()
 
 
