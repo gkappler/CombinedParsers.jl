@@ -6,7 +6,7 @@ using CombinedParsers
 using CombinedParsers.Regexp
 using BenchmarkTools
 
-testpath = joinpath(dirname(pathof(CombinedParsers)),"..","test")
+testpath = joinpath("..","test")
 
 @info "defining pcre testset parser"
 include(joinpath(testpath,"pcretest-parser.jl"))
