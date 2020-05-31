@@ -3,7 +3,7 @@ This guide demonstrates constructing a recursive parser with the
 **[`push!`](@ref) to [`Either`](@ref)** technique by means of a similified parser for regular expressions. 
 
 This page outlines parts of the `CombinedParser` used in the `re_str` macro.
-`CombinedParsers.jl` is tested and benchmarked against the PCRE C library testset, see [compliance report](man/pcre-compliance.html).
+`CombinedParsers.jl` is tested and benchmarked against the PCRE C library testset, see [compliance report](pcre-compliance.md).
 
 ## Characters and Escaped Characters
 The simplest regular expression pattern is a character matcher.

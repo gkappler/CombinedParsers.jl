@@ -12,7 +12,7 @@ log conveniently for debugging, and let Julia compile your parser for good perfo
 
 
 The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
-The [User guide](@ref) provides a summary of CombinedParsers types.
+The [User guide](man/user.md) provides a summary of CombinedParsers types.
 Some examples of packages using CombinedParsers can be found on the [Examples](@ref) page.
 See the [Index](@ref main-index) for the complete list of documented functions and types.
 
@@ -40,7 +40,7 @@ Depth = 5
 
 ## Writing Parsers
 CombinedParsers provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
-Combinator constructors are discussed in the [user manual](user.html).
+Combinator constructors are discussed in the [user manual](man/user.md).
 
 ```@repl
 

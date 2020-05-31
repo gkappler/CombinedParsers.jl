@@ -178,9 +178,9 @@ CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
 The PCRE test output is downloaded from [the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), parsed with [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
 ## Test Overview
 $n_successes successful tests on $(n_patterns.success) patterns
-(See [list of compliant patterns](../pcre-compliance-succeeded.html)).\n
+(See [list of compliant patterns](pcre-compliance-succeeded.md)).\n
 $n_failed failed tests on $(n_patterns.failed) patterns
-(See [list of failed patterns](../pcre-compliance-failed.html)).
+(See [list of failed patterns](pcre-compliance-failed.md)).
 ### Performance Overview:
 CombinedParsers is a very young package that will be optimized further, 
 but already `@re_str` pure Julia regular expression parsing is competitive with `@r_str` with the PCRE C backend which has arrived at a widely optimized codebase after decades of improvements.\n
@@ -193,7 +193,7 @@ CombinedParsers benchmarks have a ~20-times larger range between 33ns to 140μs.
 ![](log_btime_ratio_histogram.svg)\n\n
 
 The equal are histograms of log10-ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive, with speeds up to 10x faster in best cases and only rarely 100x slower in worst cases.
-Worst cases are investigated for improving [in this IJulia notebook](...).
+Worst cases are investigated for improving [in this IJulia notebook](https://github.com/gkappler/CombinedParsers.jl/blob/master/benchmark/benchmarks.ipynb).
 
 ## Unsupported
 $(n_patterns.unsupported) unsupported patterns were omitted for the following reasons:

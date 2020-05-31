@@ -31,7 +31,7 @@ mre[1]
 mre[:a]
 ```
 
-CombinedParsers.jl is tested and benchmarked against the PCRE C library testset, see [compliance report](man/pcre-compliance.html).
+CombinedParsers.jl is tested and benchmarked against the PCRE C library testset, see [compliance report](pcre-compliance.md).
 
 ## Parsing 
 

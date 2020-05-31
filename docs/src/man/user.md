@@ -107,8 +107,8 @@ The `@re_str` macro has a regex parser for lookahead and lookbehind expressions 
     2,
     "(?",
     Either(Sequence(v->PositiveLookahead(v[2]), "=", alternation),
-           Sequence(v->NegativeLookahead(v[2]), "!", alternation)),
-           Sequence(v->PositiveLookbehind(v[2]), "<=", alternation)),
+           Sequence(v->NegativeLookahead(v[2]), "!", alternation),
+           Sequence(v->PositiveLookbehind(v[2]), "<=", alternation),
            Sequence(v->NegativeLookbehind(v[2]), "<!", alternation)),
     ")")
 	
