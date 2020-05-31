@@ -207,6 +207,14 @@ bracket</code></pre><pre><code class="language-none">🗄 Sequence |&gt; map(#49
 │  │  ├─ [\ \t\u85\u200e\u200f\u2028\u2029\u2029\f\v\n]* CharIn |&gt; Repeat |&gt; map(Constant(re&quot;&quot;)) |&gt; on_options(&quot;xx&quot;) |&gt; with_name(:skip_ws)
 │  │  └─ |🗄... Either
 │  │     ├─ [^\]\\\^\-] CharNotIn
+│  │     ├─ \\b  |&gt; map(Constant(&#39;\b&#39;))
+│  │     ├─ 🗄 Sequence |&gt; map(#41)
+│  │     │  ├─ \\ 
+│  │     │  │  ⋮
+│  │     │  │  
+│  │     │  └─ [0-7]{1,3} CharIn |&gt; Repeat |&gt; map(#41)
+│  │     │     ⋮
+│  │     │     
 │  │     └─ 🗄 Sequence |&gt; map(#49) |&gt; with_name(:escaped_character)
 │  │        ├─ \\ 
 │  │        │  ⋮
@@ -273,9 +281,11 @@ bracket</code></pre><pre><code class="language-none">🗄 Sequence |&gt; map(#49
 │  │  └─ |🗄... Either # branches hidden
 │  ├─ |🗄... Either |&gt; map(#41)
 │  │  ├─ [^\]\\\^\-] CharNotIn
+│  │  ├─ \\b  |&gt; map(Constant(&#39;\b&#39;))
+│  │  ├─ 🗄 Sequence |&gt; map(#41) # branches hidden
 │  │  └─ 🗄 Sequence |&gt; map(#49) |&gt; with_name(:escaped_character) # branches hidden
 │  ├─ \^  |&gt; map(Constant(&#39;^&#39;))
 │  └─ \-  |&gt; map(Constant(&#39;-&#39;))
 └─ \] 
 ::CombinedParser
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pcre-compliance/">« PCRE Compliance</a><a class="docs-footer-nextpage" href="../json/">JSON »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 30 May 2020 13:15">Saturday 30 May 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pcre-compliance/">« PCRE Compliance</a><a class="docs-footer-nextpage" href="../json/">JSON »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 31 May 2020 16:33">Sunday 31 May 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
