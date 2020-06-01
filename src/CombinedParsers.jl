@@ -2853,6 +2853,13 @@ include("re.jl")
 include("show.jl")
 
 include("operators.jl")
+
+
+export optimize
+optimize(x) = deepmap_parser(_optimize,x)
+
+_optimize(x) = x
+deepmap_parser(::typeof(_optimize),dict::AbstractDict,x::SideeffectParser) = x.parser
 end # module
 
 
