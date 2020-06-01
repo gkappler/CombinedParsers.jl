@@ -445,17 +445,11 @@ regex_inner(x::Conditional) =
 children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
 
-function deepmap_parser(::typeof(log_names),mem::AbstractDict,x::Conditional,a...)
+function deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...)
     get!(mem,x) do
-        with_log("conditional $(regex_string(x))",x)
-    end
-end
-
-function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Conditional,context,a...)
-    get!(mem,x) do
-        Conditional(deepmap_parser(indexed_captures_,mem,x.condition,context,a...),
-                    deepmap_parser(indexed_captures_,mem,x.yes,context,a...),
-                    deepmap_parser(indexed_captures_,mem,x.no,context,a...))
+        Conditional(deepmap_parser(f,mem,x.condition,context,a...;kw...),
+                    deepmap_parser(f,mem,x.yes,context,a...;kw...),
+                    deepmap_parser(f,mem,x.no,context,a...;kw...))
     end
 end
 
