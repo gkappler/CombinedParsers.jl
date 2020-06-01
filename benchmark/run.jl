@@ -32,7 +32,8 @@ for (i,tt) in enumerate(tests)
             pc_ = optimize(Regcomb(p...))
             bs[["Regcomb","create"]] = @benchmarkable Regcomb($p...)
             pc_
-        catch
+        catch e
+            @warn "ignore Regcomb $i" exception=e
             nothing
         end
         pcre = try
