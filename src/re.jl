@@ -7,7 +7,7 @@ using TextParse
 import TextParse: AbstractToken
 using AutoHashEquals
 
-import ..CombinedParsers: WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
+import ..CombinedParsers: LeafParser, WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, _iterate, print_constructor
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
 import ..CombinedParsers: revert, reverse_index, state_type
@@ -167,7 +167,7 @@ export Backreference
 Parser matching previously captured sequence, optionally with a name.
 `index` field is recursively set when calling 'ParserWithCaptures` on the parser.
 """
-@auto_hash_equals struct Backreference <: CombinedParser{AbstractString}
+@auto_hash_equals struct Backreference <: LeafParser{AbstractString}
     name::Union{Nothing,Symbol}
     index::Int
     fallback::Function
