@@ -14,7 +14,7 @@ import ..CombinedParsers: revert, reverse_index, state_type
 
 import Base: prevind, nextind
 
-indexed_captures_(x,context,reset_number) = x
+indexed_captures_(x,a...) = x
 
 include("pcre.jl")
 
