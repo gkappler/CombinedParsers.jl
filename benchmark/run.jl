@@ -35,9 +35,10 @@ for (i,tt) in enumerate(tests)
         catch
             nothing
         end
-        pcre=try
+        pcre = try
+            pc_ = Regex(p...)
             bs[["Regex","create"]] = @benchmarkable Regex($p...)
-            Regex(p...)
+            pc_
         catch
             nothing
         end
