@@ -2,21 +2,26 @@ using Test
 using CombinedParsers.Regexp
 import CombinedParsers.Regexp: at_linestart, whitespace, integer, character_base, escaped_character
 import CombinedParsers.Regexp: pcre_options, with_options, parse_options, @test_pcre
+
+charparser = Either(
+    ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
+    Sequence('\\',character_base(8,1,3)) do v
+    Char(v[2])
+    end,
+    escaped_character,
+    AnyChar())
+
+
 unescaped=map(Repeat_until(
     AnyChar(), Sequence(Repeat(' '),'\n');
     wrap=JoinSubstring)) do v
-        join(parse(Repeat(
-            Either(
-                ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
-                Sequence('\\',character_base(8,3,3)) do v
-                Char(v[2])
-                end,
-                escaped_character,
-                AnyChar())),v))
+        join(parse(Repeat(charparser),v))
     end;
 comment_or_empty = Repeat(
     JoinSubstring(Either(Sequence(at_linestart,'#',Repeat_until(AnyChar(),'\n')),
                          Sequence(at_linestart,Repeat_until(whitespace,'\n')))));
+
+
 
 
 @test parse(unescaped,"A\\123B\n") == "ASB"
@@ -181,6 +186,102 @@ import CombinedParsers.Regexp: skip_whitespace_and_comments
  3: A
 """
 
+    re"(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\12\123"
+
+    
+    test_pcre"""
+/(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\12\123/
+    abcdefghijk\12S
+ 0: abcdefghijk\x0aS
+ 1: a
+ 2: b
+ 3: c
+ 4: d
+ 5: e
+ 6: f
+ 7: g
+ 8: h
+ 9: i
+10: j
+11: k
+"""
+    
+    test_pcre"""
+/^$/
+    
+ 0: 
+\= Expect no match
+    A non-empty line
+No match
+"""
+           
+    test_pcre"""
+/^[\w][\W][\s][\S][\d][\D][\b][\n][\c]][\022]/
+    a+ Z0+\x08\n\x1d\x12
+ 0: a+ Z0+\x08\x0a\x1d\x12
+"""
+    
+    re"abc\0def\00pqr\000xyz\0000AB"
+    test_pcre"""
+/abc\0def\00pqr\000xyz\0000AB/
+    abc\0def\00pqr\000xyz\0000AB
+ 0: abc\x00def\x00pqr\x00xyz\x000AB
+    abc456 abc\0def\00pqr\000xyz\0000ABCDE
+ 0: abc\x00def\x00pqr\x00xyz\x000AB
+"""
+
+    let at0 = ['@','0']
+        @test parse(Repeat(charparser),raw"\1000") == at0
+        @test parse(Repeat(charparser),raw"\x400") == at0
+        @test parse(Repeat(charparser),raw"\x40\x30") == at0
+        @test parse(Repeat(charparser),raw"\100\x30") == at0
+        @test parse(Repeat(charparser),raw"\100\060") == at0
+        @test parse(Repeat(charparser),raw"\100\60") == at0
+    end
+    parse(Repeat(charparser),raw"abcdefghijk\12S")
+    parse(Repeat(charparser),raw"abcdefghijk\x0aS")
+
+    parse(Repeat(charparser),raw"abc\010de")
+    parse(Repeat(charparser),raw"abc\x08de")
+
+    @test parse(Repeat(charparser),raw"a\1d") == ['a','\1','d']
+test_pcre"""/abc[\1]de/
+    abc\1de
+ 0: abc\x01de
+"""
+
+test_pcre"""/abc[\10]de/
+    abc\010de
+ 0: abc\x08de
+"""
+
+    test_pcre"""/abcd\t\n\r\f\a\e\071\x3b\$\\\?caxyz/
+    abcd\t\n\r\f\a\e9;\$\\?caxyz
+ 0: abcd\x09\x0a\x0d\x0c\x07\x1b9;$\\?caxyz
+"""
+    
+    test_pcre"""
+/(abc)\1000/
+    abc\x400
+ 0: abc@0
+ 1: abc
+    abc\x40\x30
+ 0: abc@0
+ 1: abc
+    abc\1000
+ 0: abc@0
+ 1: abc
+    abc\100\x30
+ 0: abc@0
+ 1: abc
+    abc\100\060
+ 0: abc@0
+ 1: abc
+    abc\100\60
+ 0: abc@0
+ 1: abc
+"""
+    
     @test parse(Repeat(Sequence(comment_or_empty,
                         testspec)),"""
                 /a(*F:X)b/

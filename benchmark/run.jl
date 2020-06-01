@@ -44,23 +44,31 @@ for (i,tt) in enumerate(tests)
         ##(j,test_seq) = first( enumerate(ts.test))
         for (j,test_seq) in enumerate(ts.test)
             s = test_seq.sequence
-            pcre !== nothing && ( bs[["Regex","match", "$j"]] = @benchmarkable match($pcre,$s) )
+            pc != nothing && try
+                bs[["Regex","match", "$j"]] = @benchmarkable match($pcre,$s)
+            catch
+                @warn "ignore Regex $i, $j" s
+            end
             pc != nothing && try
                 s_ = CombinedParsers.Regexp.SequenceWithCaptures(s,pc) 
                 _iterate(pc,s_)
                 bs[["Regcomb","match", "$j"]] = @benchmarkable _iterate($pc,$s_)
             catch
-                @warn "ignore $i, $j" s
+                @warn "ignore Regcomb $i, $j" s
             end
         end
         for (j,s) in enumerate(ts.tests_nomatch)
-            pcre !== nothing && ( bs[["Regex", "nomatch", "$j"]] = @benchmarkable match($pcre,$s) )
+            pc != nothing && try
+                bs[["Regex", "nomatch", "$j"]] = @benchmarkable match($pcre,$s)
+            catch
+                @warn "ignore Regex $i, $j" s
+            end
             pc != nothing && try
                 s_ = CombinedParsers.Regexp.SequenceWithCaptures(s,pc) 
                 _iterate(pc,s_)
                 bs[["Regcomb", "nomatch", "$j"]] = @benchmarkable _iterate($pc,$s_)
             catch
-                @warn "ignore $i, $j" s
+                @warn "ignore Regcomb $i, $j" s
             end
         end
 end
