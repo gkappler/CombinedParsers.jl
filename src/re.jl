@@ -447,9 +447,9 @@ children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
 function deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...)
     get!(mem,x) do
-        Conditional(deepmap_parser(f,mem,x.condition,context,a...;kw...),
-                    deepmap_parser(f,mem,x.yes,context,a...;kw...),
-                    deepmap_parser(f,mem,x.no,context,a...;kw...))
+        Conditional(deepmap_parser(f,mem,x.condition,a...;kw...),
+                    deepmap_parser(f,mem,x.yes,a...;kw...),
+                    deepmap_parser(f,mem,x.no,a...;kw...))
     end
 end
 
