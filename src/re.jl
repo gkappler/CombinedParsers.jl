@@ -269,7 +269,7 @@ export Subroutine
 Parser matching preceding capture, optionally with a name.
 `index` field is recursively set when calling `ParserWithCaptures` on the parser.
 """
-@auto_hash_equals struct Subroutine{T} <: CombinedParser{T}
+@auto_hash_equals struct Subroutine{T} <: LeafParser{T}
     name::Union{Nothing,Symbol}
     delta::Symbol
     index::Int
