@@ -44,7 +44,7 @@ for (i,tt) in enumerate(tests)
         ##(j,test_seq) = first( enumerate(ts.test))
         for (j,test_seq) in enumerate(ts.test)
             s = test_seq.sequence
-            pc != nothing && try
+            pcre != nothing && try
                 bs[["Regex","match", "$j"]] = @benchmarkable match($pcre,$s)
             catch
                 @warn "ignore Regex $i, $j" s
@@ -58,7 +58,7 @@ for (i,tt) in enumerate(tests)
             end
         end
         for (j,s) in enumerate(ts.tests_nomatch)
-            pc != nothing && try
+            pcre != nothing && try
                 bs[["Regex", "nomatch", "$j"]] = @benchmarkable match($pcre,$s)
             catch
                 @warn "ignore Regex $i, $j" s
