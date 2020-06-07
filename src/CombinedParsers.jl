@@ -1124,12 +1124,8 @@ julia> parse(ac, "c")
 @auto_hash_equals struct CharIn{S} <: NIndexParser{1,Char}
     sets::S
     CharIn(x_) =
-        let x = Set(optimize_(CharIn,x_))
-            if length(x) == 1
-                new{typeof(first(x))}(first(x))
-            else
-                new{typeof(x)}(x)
-            end
+        let x = optimize(CharIn,x_)
+            new{typeof(x)}(x)
         end
 end
 
@@ -1222,12 +1218,8 @@ Stacktrace:
 @auto_hash_equals struct CharNotIn{S} <: NIndexParser{1,Char}
     sets::S
     CharNotIn(x_) =
-        let x = Set(optimize_(CharIn,x_))
-            if length(x) == 1
-                new{typeof(first(x))}(first(x))
-            else
-                new{typeof(x)}(x)
-            end
+        let x = optimize(CharNotIn,x_)
+            new{typeof(x)}(x)
         end
 end
 result_type(::Type{<:CharNotIn}) = Char
@@ -1293,6 +1285,24 @@ optimize_(T::Type{<:Union{CharIn,CharNotIn}}, x1::Union{<:Vector,<:Tuple}) =
 optimize_(T::Type{<:Union{CharIn,CharNotIn}},x1,x...) =
     Iterators.flatten( Any[
         optimize_(T,x1), ( optimize_(T,e) for e in x )... ] )
+
+function optimize(T::Type{<:Union{CharIn,CharNotIn}},x1)
+    sets=Any[Set{Char}()]
+    for x in optimize_(T,x1)
+        if x isa Char
+            push!(sets[1],x)
+        else
+            push!(sets,x)
+        end
+    end
+    if isempty(sets[1])
+        popfirst!(sets)
+    elseif length(sets[1])==1
+        sets[1]=first(sets[1])
+    end
+    length(sets)==1 ? sets[1] : tuple(sets...)
+end
+
 export Repeat_stop, Repeat_until
 """
     Repeat_stop(p,stop)

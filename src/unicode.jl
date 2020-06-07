@@ -172,7 +172,7 @@ UnicodeClass(abbrev::Symbol...) =
     UnicodeClass(tuple((unicode_classes[a][3] for a in abbrev)...))
 UnicodeClass(abbrev::String...) =
     UnicodeClass((Symbol(a) for a in abbrev)...)
-ismatch(x::Char, set::UnicodeClass{<:Tuple}) =
+_ismatch(x::Char, set::UnicodeClass{<:Tuple}) =
     in_any(Base.Unicode.category_code(x),set.class)
 
 
