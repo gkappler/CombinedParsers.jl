@@ -412,11 +412,18 @@ _ismatch(c,p::AnyChar)::Bool = true
 _ismatch(c::Char,p::Union{StepRange,Set})::Bool = c in p
 
 function _ismatch(x::Char, set::Union{Tuple,Vector})::Bool
-    for s in set
-        ismatch(x,s) && return true
-    end
+    return _ismatch(x,set...)
+end
+
+function _ismatch(x::Char)::Bool
     return false
 end
+
+function _ismatch(x::Char, f, r1, r...)::Bool
+    ismatch(x,f) && return true
+    return _ismatch(x::Char, r1, r...)
+end
+
 function _ismatch(c::Char,p::Char)::Bool
     c==p
 end
@@ -1116,14 +1123,18 @@ julia> parse(ac, "c")
 """
 @auto_hash_equals struct CharIn{S} <: NIndexParser{1,Char}
     sets::S
-    CharIn(x) = new{typeof(x)}(x)
-    CharIn(x::Vector) =
-        if length(x) == 1
-            new{typeof(x[1])}(x[1])
-        else
-            new{typeof(x)}(x)
+    CharIn(x_) =
+        let x = Set(optimize_(CharIn,x_))
+            if length(x) == 1
+                new{typeof(first(x))}(first(x))
+            else
+                new{typeof(x)}(x)
+            end
         end
 end
+
+
+
 
 """
     CharIn(unicode_class::Symbol...)
@@ -1210,11 +1221,21 @@ Stacktrace:
 """
 @auto_hash_equals struct CharNotIn{S} <: NIndexParser{1,Char}
     sets::S
+    CharNotIn(x_) =
+        let x = Set(optimize_(CharIn,x_))
+            if length(x) == 1
+                new{typeof(first(x))}(first(x))
+            else
+                new{typeof(x)}(x)
+            end
+        end
 end
 result_type(::Type{<:CharNotIn}) = Char
 regex_inner(x::CharNotIn) =
     "[^"*join([regex_string_(s) for s in x.sets])*"]"
 _ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
+
+CharIn(x::Tuple{<:CharNotIn}) = x[1]
 
 """
     CharIn(unicode_classes::Symbol...)
@@ -1254,7 +1275,23 @@ for T in [:CharIn,:CharNotIn]
          end)
 end
          
-
+optimize_(::Type{<:Union{CharIn,CharNotIn}}) =
+    tuple()
+optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::CharIn) =
+    optimize_(CharIn,x1.sets)
+optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1) =
+    error("implement optimize_(::Type{<:Union{CharIn,CharNotIn}}, ::$(typeof(x1)))")
+optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::Union{Function,Char,UnicodeClass,CharNotIn}) =
+    tuple(x1)
+optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::StepRange) =
+    collect(x1)
+optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::Set{Char}) =
+    x1
+optimize_(T::Type{<:Union{CharIn,CharNotIn}}, x1::Union{<:Vector,<:Tuple}) =
+    optimize_(T,x1...)
+optimize_(T::Type{<:Union{CharIn,CharNotIn}},x1,x...) =
+    Iterators.flatten( Any[
+        optimize_(T,x1), ( optimize_(T,e) for e in x )... ] )
 export Repeat_stop, Repeat_until
 """
     Repeat_stop(p,stop)
