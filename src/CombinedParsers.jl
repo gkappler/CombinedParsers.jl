@@ -222,13 +222,13 @@ regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
 regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
 regex_inner(x::WrappedParser) = regex_inner(x.parser)
 state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
-@inline prevind(str,i::Int,parser::WrappedParser,x) =
-    prevind(str,i,parser.parser,x)
-@inline nextind(str,i::Int,parser::WrappedParser,x) =
-    nextind(str,i,parser.parser,x)
-Base.get(parser::WrappedParser, sequence, till, after, i, state) = 
+
+@inline prevind(str,i::Int,parser::W,x) where {W <: WrappedParser} = prevind(str,i,parser.parser,x)
+@inline nextind(str,i::Int,parser::W,x) where {W <: WrappedParser} = nextind(str,i,parser.parser,x)
+
+Base.get(parser::W, sequence, till, after, i, state) where {W <: WrappedParser} = 
     get(parser.parser, sequence, till, after, i, state)
-@inline _iterate(parser::WrappedParser, sequence, till, i, state) =
+@inline _iterate(parser::W, sequence, till, i, state) where {W <: WrappedParser} =
     _iterate(parser.parser, sequence, till, i, state)
 
 
