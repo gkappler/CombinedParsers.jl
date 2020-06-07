@@ -1961,7 +1961,7 @@ end
 
 @inline function prevind(str,i::Int,parser::Repeat,x::Vector)
     for j in lastindex(x):-1:1
-        i=prevind(str,i,parser.parser,x[j])
+        @inbounds i=prevind(str,i,parser.parser,x[j])
     end
     i
 end
@@ -2019,16 +2019,22 @@ end
     l,state
 end
 
+@inline function fill_rep_j_state((pos,state),state_::S,tparser::P)::Tuple{Int,S} where {S,P}
+    pos::Int, pushstate!(state_,tparser, state)::S
+end
 
-@inline function fill_rep(t::Repeat, sequence, till::Int, j::Int,state_::S) where S
+@inline function fill_rep(t::Repeat, sequence, till::Int, i::Int,state::S) where S
     j_::Int = -1
+    j::Int = i
+    state_::S = state
+    tp = t.parser
     while state_length(t,state_) < t.range.stop && ( x = _iterate(t.parser,sequence, till,j,nothing) )!==nothing
         ##@info "rep fill..." x state_
         ## e.g. match(re"(?:a|(?=b)|.)*\z","abc")
-        state_length(t,state_)>t.range.start && j_==x[1] && break
-        state_=pushstate!(state_,t.parser, x[2])
         j_=j
         j = x[1]
+        state_ = pushstate!(state_,tp,x[2])
+        state_length(t,state_)>t.range.start && j_==j && break
     end
     j,state_,state_length(t,state_) < t.range.start
 end
@@ -2086,9 +2092,6 @@ function _iterate(t::Repeat, sequence, till, i, state)
     end
 end
 
-
-
-
 function fill_rep(t_::Lazy{<:Repeat}, sequence, till, j,state_)
     t = t_.parser
     while state_length(t,state_) < t.range.start && (x = _iterate(t.parser,sequence, till,j,nothing))!==nothing 
@@ -2097,44 +2100,43 @@ function fill_rep(t_::Lazy{<:Repeat}, sequence, till, j,state_)
         j==x[1] && break
         j = x[1]
     end
-    j,state_
+    j,state_,false
 end
 function _iterate(t_::Lazy{<:Repeat}, sequence, till, i, state)
     t = t_.parser
-    i_ = i
-    state_ = state
-    if state === nothing
+    i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
         es = emptystate(state_type(typeof(t)))
-        i_,state_ = fill_rep(t_,sequence,till,i,es)
+        fill_rep(t_,sequence,till,i, es)
     else
         if state_length(t,state)<t.range.stop
-            x = _iterate(t.parser,sequence, till, i_, nothing)
-            if x!==nothing && ( x[1]>i_ || state_length(t,state)==0)
+            x = _iterate(t.parser,sequence, till, i, nothing)
+            if x!==nothing && ( x[1]>i || state_length(t,state)==0)
                 state_=pushstate!(state,t.parser,x[2])
                 return x[1],state_
             end
         end
-        goback = true
-        while goback
-            if state_length(t,state)==0
+        i, state, true
+    end
+
+    while goback
+        if state_length(t,state)==0
+            return nothing
+        end
+        lstate, state_=poplast!(state,t.parser)
+        before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
+        x = _iterate(t.parser,sequence, till, i_, lstate)
+        if x === nothing
+            i_ = before_i
+            prune_captures(sequence,i_)
+            if state_length(t,state_)==0
                 return nothing
             end
-            lstate, state_=poplast!(state,t.parser)
-            before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
-            x = _iterate(t.parser,sequence, till, i_, lstate)
-            if x === nothing
-                i_ = before_i
-                prune_captures(sequence,i_)
-                if state_length(t,state_)==0
-                    return nothing
-                end
-                state = state_
-            else
-                state_=pushstate!(state_,t.parser,x[2])
-                i_,state_ = fill_rep(t_,sequence,till,x[1],state_)
-                if state_length(t,state_) in t.range
-                    goback = false
-                end
+            state = state_
+        else
+            state_=pushstate!(state_,t.parser,x[2])
+            i_,state_ = fill_rep(t_,sequence,till,x[1],state_)
+            if state_length(t,state_) in t.range
+                goback = false
             end
         end
     end
