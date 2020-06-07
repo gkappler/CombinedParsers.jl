@@ -22,7 +22,10 @@ using CombinedParsers
 using CombinedParsers.Regexp
 ```
 CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
-The PCRE test output is downloaded from [the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), parsed with [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
+The PCRE test output is downloaded from 
+[the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), 
+parsed with 
+[a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
 ## Test Overview
 3025 successful tests on 961 patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).
@@ -30,8 +33,17 @@ The PCRE test output is downloaded from [the PCRE source repository](https://git
 41 failed tests on 27 patterns
 (See [list of failed patterns](pcre-compliance-failed.md)).
 ### Performance Overview:
-CombinedParsers is a very young package that will be optimized further, 
-but already `@re_str` pure Julia regular expression parsing is competitive with `@r_str` with the PCRE C backend which has arrived at a widely optimized codebase after decades of improvements.
+The PCRE C backend of `@r_str` has arrived at a widely optimized codebase after decades of improvements.
+Although CombinedParsers.jl is a very young package that will be optimized further, 
+`@re_str` pure Julia Regcomb is competitive with PCRE `@r_str` Regex.
+
+
+The benchmarkin results of the first 100 test patterns in the PCRE test set are summarized in the following, comparing `match(Regex(pattern,flags),s)` with `_iterate(Regcomb(pattern,flags),s)`:
+PCRE benchmarks have a range between 83.0ns to 682.5ns.
+CombinedParsers benchmarks range between 33.0ns to 28515.5ns.
+51.0% of benchmarks are faster with CombinedParsers compared to PCRE.
+The average ratio of `time_Recomb/time_Regex` is 2.73.
+
 
 Benchmark timings for regular expression construction and matching comparing `Regex` (x axis) and `Regcomb` (y axis), both on a log10 scale:
 
@@ -39,17 +51,18 @@ Benchmark timings for regular expression construction and matching comparing `Re
 ![](log_btimes.png)
 
 
-Points represent PCRE an individual benchmark. 
-PCRE benchmarks have a range between 82ns to 518ns.
-CombinedParsers benchmarks have a ~20-times larger range between 33ns to 140μs.
+Points represent PCRE an individual benchmark.
 ### Benchmark ratios histogram:
 ![](log_btime_ratio_histogram.svg)
 
 
 
-The equal are histograms of log10-ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive, with speeds up to 10x faster in best cases and only rarely 100x slower in worst cases.
-Worst cases are investigated for improving [in this IJulia notebook](https://github.com/gkappler/CombinedParsers.jl/blob/master/benchmark/benchmarks.ipynb).
+The equal-area-histograms of log10-ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive.
+Worst cases are investigated for further optimization [in this IJulia notebook](https://github.com/gkappler/CombinedParsers.jl/blob/master/benchmark/benchmarks.ipynb).
 
+Next steps in optimization are
+- caching codeunit lengths of matches for backtracking.
+- memoization of sub-parsings.
 ## Unsupported
 251 unsupported patterns were omitted for the following reasons:
 
