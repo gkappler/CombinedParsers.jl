@@ -1231,6 +1231,7 @@ Stacktrace:
         end
 end
 result_type(::Type{<:CharNotIn}) = Char
+regex_string_(x::CharNotIn) = "^"*regex_string_(x.sets)
 regex_inner(x::CharNotIn) =
     "[^"*join([regex_string_(s) for s in x.sets])*"]"
 _ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
