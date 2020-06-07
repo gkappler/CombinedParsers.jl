@@ -10,7 +10,7 @@ using AutoHashEquals
 import ..CombinedParsers: LeafParser, WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, _iterate, print_constructor
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
-import ..CombinedParsers: revert, reverse_index, state_type
+import ..CombinedParsers: revert, reverse_index, state_type, start_index
 
 import Base: prevind, nextind
 
@@ -123,7 +123,7 @@ Base.get(x::Capture, sequence, till, after, i, state) =
 
 
 @inline function _iterate(parser::Capture, sequence, till, i, state)
-    before_i = state === nothing ? i : prevind(sequence,i,parser.parser,state)
+    before_i = start_index(sequence,i,parser.parser,state)
     r = _iterate(parser.parser, sequence, till, i, state)
     if r !== nothing ## set only if found (e.g. if repeated capture capture last)
         set_capture(sequence,parser.index,before_i,prevind(sequence,r[1]))

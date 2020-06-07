@@ -1633,8 +1633,11 @@ function Base.get(parser::Sequence, sequence, till, after, i, state)
 end
 
 
+@inline function start_index(sequence,after,parser,state::Nothing)
+    after
+end
 @inline function start_index(sequence,after,parser,state)
-    r=state === nothing ? after : _prevind(sequence, after, parser, state)
+    _prevind(sequence, after, parser, state)
 end
 
 function prune_captures(sequence,after_i)
