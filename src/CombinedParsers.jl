@@ -1183,7 +1183,7 @@ regex_inner(x::CharIn) =
 
 print_constructor(io::IO,x::CharIn{Char}) = nothing
 regex_inner(x::CharIn{Char}) =
-    regex_string_(x.sets[1])
+    regex_string_(x.sets)
 
 
 
@@ -1225,7 +1225,7 @@ end
 result_type(::Type{<:CharNotIn}) = Char
 regex_string_(x::CharNotIn) = "^"*regex_string_(x.sets)
 regex_inner(x::CharNotIn) =
-    "[^"*join([regex_string_(s) for s in x.sets])*"]"
+    "[^"*regex_string_(x)*"]"
 _ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
 
 CharIn(x::Tuple{<:CharNotIn}) = x[1]
