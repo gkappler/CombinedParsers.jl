@@ -2285,12 +2285,13 @@ julia> parse("a" | "bc","bc")
 """
 struct Either{T,Ps} <: CombinedParser{T}
     options::Ps
-    Either{T}(p::P) where {T,P<:Union{Tuple,Vector}} =
+    Either{T}(p::P) where {T,P<:Union{Vector,Tuple}} =
         new{T,P}(p::P)
     Either{T}(p::CombinedParser...) where {T} =
         new{T,Vector{Any}}(Any[p...])
 end
-state_type(::Type{<:Either}) = Pair{Int,<:Any}##Tuple{Int, promote_type( state_type.(t.options)...) }
+state_type(::Type{<:Either}) = Pair{Int,Any}
+parser_types(::Type{Either{T, P}}) where {T, P} = P
 children(x::Either) = x.options
 regex_string(x::Either) = join(regex_string.(x.options),"|")
 regex_prefix(x::Either) = "|"
@@ -2484,22 +2485,67 @@ Base.show(io::IO, x::MutablePair) =
     x.second=s
     x
 end
-@inline function with_key_state!(x::MutablePair,k,s)
+@inline with_state!(x::Nothing,k,s) = Pair(k,s)
+@inline function with_state!(x::MutablePair,k,s)
     ##s isa Tuple{Int,Nothing} && error()
     x.first=k
     x.second=s
     x
 end
+@inline function with_state!(x::Pair,s)
+    Pair(x.first,s)
+end
+@inline function with_state!(x::Pair,k,s)
+    Pair(k, s)
+end
 
 @inline function prevind(str,i::Int,parser::Either,x)
     ## @show i
-    prevind(str,i,parser.options[x.first],x.second)
+    prevind(str,i,(@inbounds parser.options[x.first]),x.second)
 end
 
 @inline function nextind(str,i::Int,parser::Either,x)
     ## @show i
-    nextind(str,i,parser.options[x.first],x.second)
+    nextind(str,i,(@inbounds parser.options[x.first]),x.second)
 end
+
+ 
+
+@generated function prevind(str,i::Int,parser::Either{<:Any,<:Tuple},x)
+    pts = parser_types(parser)
+    fpts = fieldtypes(pts)
+    subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
+    push!(subsearch, gensym(:subsearch))
+    part = Symbol[ gensym(:part) for p in fpts ]
+    init = [
+        quote
+        @inbounds $(part[p]) = parser.options[$p]
+        end
+        for (p,t) in enumerate(fpts)
+    ]
+    parseoptions = [
+        quote
+        @label $(subsearch[p])
+        j > $p && @goto $(subsearch[p+1])
+        return prevind(str,i,$(part[p]),s)
+        end
+        for (p,t) in enumerate(fpts)
+    ]
+    init_before = 
+        quote
+            j = x.first
+            s = x.second
+        end
+    R = quote
+        $(init...)
+        $(init_before)
+        $(parseoptions...)
+        @label $(subsearch[end])
+        return i
+    end
+    R
+end
+
 
 function Base.get(parser::Either, sequence, till, after, i, state)
     j = state.first
@@ -2509,33 +2555,96 @@ end
 
 
 
-function _iterate(t::Either, str, till, i, state::Union{Nothing,Pair{Int,<:Any},MutablePair{Int,<:Any}})
-    ##sleep(1)
-    i, s_ = if state !== nothing
-        before_i = _prevind(str,i,t.options[state.first],state.second) ##state[end][1]
-        nstate = _iterate(t.options[state.first], str, till, i, state.second)
-        nstate !== nothing && return nstate[1], state.first => nstate[2]
-        #with_state!(state, nstate[2])
-        prune_captures(str,before_i)
-        before_i, state
-    else
-        i, 0=>nothing
-        ##MutablePair{Int,Any}(0,nothing)
-    end
-    fromindex = s_.first+1
-    ##sstate = nothing
-    for j in fromindex:length(t.options)
-        ## @info "alt" j str[i:till] typeof(t.options[j]) #t.options[j] 
-        if (sstate = _iterate(t.options[j], str, till, i, nothing)) !== nothing
-            ## i_::Int, nstate_ = sstate
-            ns = j=>sstate[2]
-            ## with_key_state!(s_,j,sstate[2])
-            return sstate[1], ns
-        end
+@inline function _iterate_paired(first, t, str, till, i, state)
+    sstate = _iterate(t, str, till, i, state)
+    if sstate !== nothing
+        i_::Int, nstate_ = sstate
+        return i_, Pair{Int,Any}(first,nstate_)
     end
     nothing
 end
 
+function _iterate(t::Either{<:Any,<:Vector}, str, till, i, state::Nothing)
+    for (j,o) in enumerate(t.options)
+        ( r = _iterate_paired(j,( @inbounds t.options[j] ),str,till,i,nothing) )!== nothing && return r
+    end
+    nothing
+end
+
+
+
+function _iterate(t::Either{<:Any,<:Vector}, str, till, i, state::Pair)
+    @inbounds opt = t.options[state.first]
+    fromindex = state.first+1
+    before_i = _prevind(str,i,opt,state.second) ##state[end][1]
+    r = _iterate_paired(state.first,opt,str,till,i,state.second)
+    r !== nothing && return r
+    prune_captures(str,before_i)
+    ##sstate = nothing
+    for j in fromindex:length(t.options)
+        ## @info "alt" j str[i:till] typeof(t.options[j]) #t.options[j] 
+            ## i_::Int, nstate_ = sstate
+            ## with_key_state!(s_,j,sstate[2])
+        @inbounds r = _iterate_paired(j,t.options[j],str,till,before_i,nothing)
+        r !== nothing && return r
+    end
+    nothing
+end
+
+
+@generated function _iterate(parser::Either{<:Any,<:Tuple}, sequence, till, i, state::Union{Nothing,Pair{Int,<:Any},MutablePair{Int,<:Any}})
+    pts = parser_types(parser)
+    fpts = fieldtypes(pts)
+    subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
+    push!(subsearch, gensym(:subsearch))
+    subresult = Symbol[ gensym(:r) for p in fpts ]
+    part = Symbol[ gensym(:part) for p in fpts ]
+    afteri = Symbol[ gensym(:after) for p in fpts ]
+    substate = Symbol[ gensym(:s) for p in fpts ]
+    init = [
+        quote
+        $(substate[p]) = nothing
+        @inbounds $(part[p]) = parser.options[$p]
+        end
+        for (p,t) in enumerate(fpts)
+    ]
+    parseoptions = [
+        quote
+        @label $(subsearch[p])
+        j > $p && @goto $(subsearch[p+1])
+        before_i = before_i == 0 ? start_index(sequence, i_, $(part[p]), sstate) : before_i
+        $(subresult[p]) = _iterate_paired($p, $(part[p]), sequence, till, i_, sstate)
+        if $(subresult[p]) !== nothing
+        return $(subresult[p])
+        end
+        i_ = before_i
+        sstate = nothing
+        end
+        for (p,t) in enumerate(fpts)
+    ]
+    init_before = if state <: Nothing
+        quote
+            j = 1
+            sstate = nothing
+            before_i = i
+        end
+    else
+        quote
+            j = state.first
+            sstate = state.second
+            before_i = 0
+        end
+    end
+    R = quote
+        i_::Int = i
+        $(init...)
+        $(init_before)
+        $(parseoptions...)
+        @label $(subsearch[end])
+        return nothing
+    end
+    R
+end
 
 
 
