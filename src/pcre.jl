@@ -238,10 +238,10 @@ end
         till, after, i, state)
 
 
-@inline function _iterate(parser::ParserOptions, sequence, till, i, state)
+@inline function _iterate(parser::ParserOptions, sequence, till, posi, next_i, state)
     _iterate(parser.parser,
              with_options(parser.set_flags,parser.unset_flags,sequence),
-             till, i, state)
+             till, posi, next_i, state)
 end
 
 
@@ -346,9 +346,9 @@ deepmap_parser(f::Function,mem::AbstractDict,x::OnOptionsParser,a...; kw...) =
 on_options(flags::Integer,p) =
     OnOptionsParser(parser(p),UInt32(flags))
 
-@inline function _iterate(parser::OnOptionsParser, sequence, till, i, state)
+@inline function _iterate(parser::OnOptionsParser, sequence, till, posi, next_i, state)
     _iterate(parser.parser,
-             (if_options(parser.flags,sequence)), till, i, state)
+             (if_options(parser.flags,sequence)), till, posi, next_i, state)
 end
 
 

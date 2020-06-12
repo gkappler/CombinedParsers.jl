@@ -98,21 +98,21 @@ function Lookbehind(does_match::Bool, p)
 end
 @deprecate look_behind(does_match,p) Lookbehind(does_match, p)
 
-function _iterate(t::NegativeLookbehind, str, till, i, state)
+function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state)
     if state === nothing
         rseq=revert(str)
-        i < 1 && return i, tuple()
+        next_i < 1 && return next_i, tuple()
         r = _iterate(t.parser, rseq, till,
-                     reverse_index(rseq,prevind(str,i)), nothing)
+                     reverse_index(rseq,prevind(str,next_i)), nothing)
         if r === nothing
-            i,tuple()
+            next_i,tuple()
         else
             nothing
         end
     elseif state === tuple()
         nothing
     else
-        i, tuple()
+        next_i, tuple()
     end
 end
 
@@ -120,18 +120,18 @@ function Base.get(parser::NegativeLookbehind, sequence, till, after, i, state)
     parser
 end
 
-_iterate(t::PositiveLookbehind, str, till, i, state::MatchState) =
+_iterate(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
     nothing
 
-function _iterate(t::PositiveLookbehind, str, till, i, state::Nothing)
+function _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::Nothing)
     rseq=revert(str)
-    i < 1 && return nothing
+    next_i < 1 && return nothing
     r = _iterate(t.parser, rseq, till,
-                 reverse_index(rseq,prevind(rseq,i)), nothing)
+                 reverse_index(rseq,prevind(rseq,next_i)), nothing)
     if r === nothing
         nothing
     else
-        i,MatchState()
+        next_i,MatchState()
     end
 end
 

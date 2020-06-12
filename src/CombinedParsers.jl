@@ -152,15 +152,18 @@ print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
 
-function _iterate(parser::AbstractToken, sequence, till, i, state)
-    parser isa CombinedParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, i, state)"
+_iterate(parser::AbstractToken, sequence, till, next_i, state) =
+    _iterate(parser, sequence, till, start_index(sequence,next_i,parser,state), next_i, state)
+    
+function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state)
+    parser isa CombinedParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, next_i, state)"
     ##@show parser typeof(parser)
     if state === nothing
-        r,i_ = tryparsenext(parser, sequence, i, till)
+        r,next_i_ = tryparsenext(parser, sequence, next_i, till)
         if isnull(r)
             nothing
         else
-            i_,(i_-i,get(r))
+            next_i_,(next_i_-next_i,get(r))
         end
     else
         nothing
@@ -203,8 +206,16 @@ Default method for parser types returning nothing
 Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state) =
     nothing
 state_type(p::Type{<:CombinedParser}) =  error("implement state_type(::Type{$(p)})")
-_iterate(x::CombinedParser,str,i,till,state) =
-    error("implement _iterate(x::$(typeof(x)),str::$(typeof(str)),i,till,state::$(typeof(state)))")
+
+"""
+    _iterate(parser, sequence, till, posi, next_i, states)
+
+Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
+such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
+and sequence[start_index(sequence,after,parser,state):prevind(sequence,next_i)] is the matched subsequence.
+"""
+_iterate(x::CombinedParser,str,posi, next_i,till,state) =
+    error("implement _iterate(x::$(typeof(x)),str::$(typeof(str)),posi, next_i,till,state::$(typeof(state)))")
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,T} <: CombinedParser{T} end
@@ -228,8 +239,8 @@ state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
 
 Base.get(parser::W, sequence, till, after, i, state) where {W <: WrappedParser} = 
     get(parser.parser, sequence, till, after, i, state)
-@inline _iterate(parser::W, sequence, till, i, state) where {W <: WrappedParser} =
-    _iterate(parser.parser, sequence, till, i, state)
+@inline _iterate(parser::W, sequence, till, posi, next_i, state) where {W <: WrappedParser} =
+    _iterate(parser.parser, sequence, till, posi, next_i, state)
 
 
 export JoinSubstring
@@ -336,20 +347,23 @@ Base.get(parser::ConstantParser{L,<:AbstractString}, sequence, till, after, i, s
     parser=="" ? "" : SubString(sequence,i,prevind(sequence,i+L))
 
 
-@inline function _iterate(parser::ConstantParser{L,Char}, sequence, till, i, state::Nothing) where L
-    i>till && return nothing
-    if ismatch(sequence[i],parser.parser)
-        i+L, MatchState()
+@inline function _iterate(parser::ConstantParser{L,Char}, sequence, till, posi, next_i, state::Nothing) where L
+    next_i>till && return nothing
+    if ismatch(sequence[next_i],parser.parser)
+        next_i+L, MatchState()
     else
         nothing
     end
 end
 
+@inline function _iterate(parser::ConstantParser{L,<:AbstractString}, sequence, till, posi, next_i, state::Nothing) where {L}
+    _iterate(parser.parser,sequence,till,posi, next_i,state,L)
+end
 
-@inline function _iterate(parser::ConstantParser{L,<:AbstractString}, sequence, till, i, state::Nothing) where {L}
-    j::Int = i
+@inline function _iterate(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L=ncodeunits(p))
+    till, posi, next_i
+    j::Int = next_i
     k::Int = 1
-    p = parser.parser
     while k<=L
         (j > till) && return(nothing)
         @inbounds pc,k=iterate(p,k)
@@ -359,8 +373,8 @@ end
     return j, MatchState()
 end
 
-function _iterate(parser::ConstantParser, sequence, till, i, state::Nothing)
-    _iterate(parser.parser, sequence, till, i, state)
+function _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing)
+    _iterate(parser.parser, sequence, till, posi, next_i, state)
 end
 
 
@@ -375,7 +389,7 @@ state_type(p::Type{<:NIndexParser}) = MatchState
     prevind(str,i,L)
 @inline nextind(str,i::Int,parser::NIndexParser{L},x) where L =
     nextind(str,i,L)
-_iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, i, state::MatchState)  =
+_iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, posi, next_i, state::MatchState)  =
     nothing
 
 
@@ -432,9 +446,9 @@ function ismatch(c::Char,p)::Bool
 end
 
 
-@inline function _iterate(parser::AnyChar, sequence, till, i, state::Nothing)
-    i>till && return(nothing)
-    @inbounds c,ni = iterate(sequence,i)
+@inline function _iterate(parser::AnyChar, sequence, till, posi, next_i, state::Nothing)
+    next_i>till && return(nothing)
+    @inbounds c,ni = iterate(sequence,next_i)
     !ismatch(c,parser) && return nothing
     return ni, MatchState()
 end
@@ -460,8 +474,8 @@ re"^"
 """
 struct AtStart <: NIndexParser{0,AtStart} end
 regex_prefix(x::AtStart) = "^"
-_iterate(parser::AtStart, sequence, till, i, state::Nothing) =
-    i == 1 ? (i, MatchState()) : nothing
+_iterate(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
+    next_i == 1 ? (next_i, MatchState()) : nothing
 
 print_constructor(io::IO, x::AtStart) = print(io,"AtStart")
 
@@ -478,8 +492,8 @@ re"\$"
 """
 struct AtEnd <: NIndexParser{0,AtEnd} end
 regex_suffix(x::AtEnd) = "\$"
-_iterate(parser::AtEnd, sequence, till, i, state::Nothing) =
-    i > till ? (i, MatchState()) : nothing
+_iterate(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
+    next_i > till ? (next_i, MatchState()) : nothing
 print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
 
 Base.get(parser::Union{AtStart,AtEnd}, sequence, till, after, i, state) =
@@ -505,7 +519,7 @@ struct Never <: LeafParser{Never} end
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
-_iterate(x::Never,str,i,till,state) =
+_iterate(x::Never,str,posi, next_i,till,state) =
     nothing
 
 state_type(::Type{Never}) = MatchState
@@ -533,13 +547,13 @@ regex_suffix(x::Always) = ""
 state_type(::Type{Always}) = MatchState
 Base.get(parser::LeafParser{Always}, sequence, till, after, i, state) =
     Always()
-_iterate(parser::Always, str, till, i, s::Nothing) =
-    i, MatchState()
-_iterate(parser::Always, str, till, i, s::MatchState) =
+_iterate(parser::Always, str, till, posi, next_i, s::Nothing) =
+    next_i, MatchState()
+_iterate(parser::Always, str, till, posi, next_i, s::MatchState) =
     nothing
 prevind(str,i::Int,p::Always,x) = i
 nextind(str,i::Int,p::Always,x) = i
-##_iterate(parser::Never, str, till, i, s) = nothing
+##_iterate(parser::Never, str, till, posi, next_i, s) = nothing
 
 
 Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
@@ -572,12 +586,12 @@ end
 regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
 regex_suffix(x::LookAround) = regex_suffix(x.parser)*")"
 regex_inner(x::LookAround) = regex_string(x.parser)
-function _iterate(t::PositiveLookahead, str, till, i, state::Nothing)
-    r = _iterate(t.parser, str, till, i, nothing)
+function _iterate(t::PositiveLookahead, str, till, posi, next_i, state::Nothing)
+    r = _iterate(t.parser, str, till, posi, next_i, nothing)
     if r === nothing
         nothing
     else
-        i,MatchState()
+        next_i,MatchState()
     end
 end
 
@@ -610,10 +624,10 @@ julia> parse(la*AnyChar(),"seek")
         end
 end
 regex_prefix(x::NegativeLookahead) = "(?!"*regex_prefix(x.parser)
-function _iterate(t::NegativeLookahead, str, till, i, state::Nothing)
-    r = _iterate(t.parser, str, till, i, nothing)
+function _iterate(t::NegativeLookahead, str, till, posi, next_i, state::Nothing)
+    r = _iterate(t.parser, str, till, posi, next_i, nothing)
     if r === nothing
-        i,MatchState()
+        next_i,MatchState()
     else
         nothing
     end
@@ -697,13 +711,12 @@ Call `f(sequence,before_i,after_i,state,a...)` if `p` matches,
 with_effect(f::Function,p,a...) =
     SideeffectParser(f,p,a...)
 
-@inline function _iterate(parser::SideeffectParser, sequence, till, i, state)
-    before_i = start_index(sequence,i,parser,state)
-    r = _iterate(parser.parser, sequence, till, i, state)
+@inline function _iterate(parser::SideeffectParser, sequence, till, posi, next_i, state)
+    r = _iterate(parser.parser, sequence, till, posi, next_i, state)
     if r!==nothing
-        parser.effect(sequence,before_i,r...,parser.args...)
+        parser.effect(sequence,posi,r...,parser.args...)
     else
-        parser.effect(sequence,before_i,before_i,nothing,parser.args...)
+        parser.effect(sequence,posi,posi,nothing,parser.args...)
     end
     r
 end
@@ -997,8 +1010,9 @@ function Base.get(parser::Transformation{IndexAt{Is}}, sequence, till, after, i,
     tuple(get(parser.parser,sequence, till, after, i, state)[parser.transform.i]...)
 end
 
-function _iterate(parser::Transformation, sequence, till, i, state)
-    r = _iterate(parser.parser, sequence, till, i, state )
+
+function _iterate(parser::Transformation, sequence, till, posi, next_i, state)
+    r = _iterate(parser.parser, sequence, till, posi, next_i, state )
 end
 
 function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...)
@@ -1238,16 +1252,16 @@ succeeds if char at cursor is not in any of the `unicode_classes`.
 CharNotIn(unicode_classes::Symbol...) =
     CharNotIn(UnicodeClass(unicode_classes...))
 
-@inline function _iterate(parser::CharNotIn, sequence, till, i, state::Nothing)
-    i>till && return(nothing)
-    @inbounds c,ni = iterate(sequence,i)
+@inline function _iterate(parser::CharNotIn, sequence, till, posi, next_i, state::Nothing)
+    next_i>till && return(nothing)
+    @inbounds c,ni = iterate(sequence,next_i)
     ismatch(c,parser.sets) && return nothing 
     return ni, MatchState()
 end
 
-@inline function _iterate(parser::CharIn, sequence, till, i, state::Nothing)
-    i>till && return(nothing)
-    @inbounds c,ni = iterate(sequence,i)
+@inline function _iterate(parser::CharIn, sequence, till, posi, next_i, state::Nothing)
+    next_i>till && return(nothing)
+    @inbounds c,ni = iterate(sequence,next_i)
     !ismatch(c,parser.sets) && return nothing
     return ni, MatchState()
 end
@@ -1427,38 +1441,39 @@ end
 
 
 state_type(p::Type{<:FlatMap{T,P}}) where {T,P} = Tuple{state_type(P),<:Any,<:Any}
-function _iterate(tokf::FlatMap, str, till, i, state)
+function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
     T = result_type(tokf)
     if state === nothing
-        before_i = i
-        lr = _iterate(tokf.left, str, till, i, nothing)
+        posi = next_i
+        lr = _iterate(tokf.left, str, till, posi, next_i, nothing)
         lr === nothing && return nothing
-        i_ = lr[1]
-        rightp = tokf.right(get(tokf.left, str, till, lr[1],i,lr[2]))
+        next_i_ = lr[1]
+        rightp = tokf.right(get(tokf.left, str, till, lr[1],next_i,lr[2]))
         rr = nothing
         while rr === nothing
-            rr = _iterate(rightp, str, till, i_, nothing)
+            rr = _iterate(rightp, str, till, next_i_, next_i_, nothing)
             if rr === nothing
-                lr = _iterate(tokf.left, str, till, i_, lr[2])
+                lr = _iterate(tokf.left, str, till, posi, next_i_, lr[2])
                 lr === nothing && return nothing
-                rightp = tokf.right(get(tokf.left, str, till, lr[1],before_i,lr[2]))
-                i_ = lr[1]
+                rightp = tokf.right(get(tokf.left, str, till, lr[1],posi,lr[2]))
+                next_i_ = lr[1]
             else
                 return rr[1], (lr[2], rightp, rr[2])
             end
         end
     else
         lstate,rightp,rstate = state
-        i_=i
-        before_i = start_index(str,i_,tokf.left,lstate)
+        next_i_=next_i
+        posi_ = start_index(str,next_i_,rightp,rstate)
         rr = nothing
         while rr === nothing
-            rr = _iterate(rightp, str, till, i_, rstate)
+            rr = _iterate(rightp, str, till, posi_, next_i_, rstate)
             if rr === nothing
-                lr = _iterate(tokf.left, str, till, i_, lstate)
+                lr = _iterate(tokf.left, str, till, posi, next_i_, lstate)
                 lr === nothing && return nothing
-                i_,lstate = lr
-                rightp = tokf.right(get(tokf.left, str, till, i_,before_i,lstate))
+                next_i_,lstate = lr
+                @show next_i_,posi,lstate
+                rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,lstate))
                 rstate = nothing
             else
                 return rr[1], (lstate, rightp, rr[2])
@@ -1660,19 +1675,13 @@ function state_type(parser::Type{<:Sequence})
     all(t->state_type(t)<:MatchState, fieldtypes(pts)) ? MatchState : Vector{Any}
 end
 
-"""
-    _iterate(parser, sequence, till, i, states)
 
-Note: `i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
-such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
-and sequence[start_index(sequence,after,parser,state):prevind(sequence,i)] is the matched subsequence.
-"""
-function _iterate_(parser::Sequence, sequence, till, i, states)
-    i_ = i
+function _iterate_(parser::Sequence, sequence, till, posi, next_i, states)
+    next_i_ = next_i
     parts=parser.parts
     nexti,states = if states === nothing
         sss = Vector{Any}(undef,length(parts))
-        length(parts) == 0 && return i,sss
+        length(parts) == 0 && return next_i,sss
         sss[1] = nothing
         1,sss
     else
@@ -1682,23 +1691,23 @@ function _iterate_(parser::Sequence, sequence, till, i, states)
     while nexti<=length(states)
         ## compute before next iteration, because states[nexti] might change.
         ## only used if ns===nothing, but states[nexti] might still be modified.
-        before_i = start_index(sequence, i_, parts[nexti], states[nexti])
-        ns = _iterate(parts[nexti], sequence, till, i_, states[nexti])
+        posi = start_index(sequence, next_i_, parts[nexti], states[nexti])
+        ns = _iterate(parts[nexti], sequence, till, posi, next_i_, states[nexti])
         if ns === nothing
             nexti -= 1
-            i_ = before_i
-            prune_captures(sequence,i_)
+            next_i_ = posi
+            prune_captures(sequence,next_i_)
             nexti == 0 && return nothing
-            if before_i==0
+            if posi==0
                 println(parts[nexti])
                 error()
             end
         else
             states[nexti] = ns[2]
-            i_ = ns[1]
+            next_i_ = ns[1]
             nexti += 1
             if nexti > length(states)
-                return i_, states
+                return next_i_, states
             else
                 states[nexti] = nothing
             end
@@ -1707,19 +1716,21 @@ function _iterate_(parser::Sequence, sequence, till, i, states)
     error("?")
 end
 
-@generated function _iterate(parser::Sequence, sequence, till, i, states)
+@generated function _iterate(parser::Sequence, sequence, till, posi, next_i, states)
     pts = parser_types(parser)
     fpts = fieldtypes(pts)
+    n = length(fpts)
     subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
     subresult = Symbol[ gensym(:r) for p in fpts ]
     part = Symbol[ gensym(:part) for p in fpts ]
-    afteri = Symbol[ gensym(:after) for p in fpts ]
+    pposi = Symbol[ gensym(:pos) for p in 1:(n+1) ]
     substate = Symbol[ gensym(:s) for p in fpts ]
     init = if states===Nothing
         [
             quote
             $(substate[p]) = nothing
             @inbounds $(part[p]) = parser.parts[$p]
+            $(pposi[p])::Int = 0
             end
             for (p,t) in enumerate(fpts)
         ]
@@ -1728,6 +1739,7 @@ end
             quote
             $(substate[p]) = MatchState()
             @inbounds $(part[p]) = parser.parts[$p]
+            $(pposi[p])::Int = 0
             end
             for (p,t) in enumerate(fpts)
         ]
@@ -1736,6 +1748,7 @@ end
             quote
             $(substate[p]) = states[$p]
             @inbounds $(part[p]) = parser.parts[$p]
+            $(pposi[p])::Int = 0
             end
             for (p,t) in enumerate(fpts)
         ]
@@ -1749,26 +1762,41 @@ end
     parseparts = [
         quote
         @label $(subsearch[p])
-        before_i = start_index(sequence, i_, $(part[p]), $(substate[p]))
-        $(subresult[p]) = _iterate($(part[p]), sequence, till, i_, $(substate[p]))
+        if iszero($(pposi[p]))
+            $(pposi[p]) = start_index(sequence, $(pposi[p+1]), $(part[p]), $(substate[p]))
+        end
+        if $(substate[p]) === nothing
+            ## if sss[$p] === nothing
+            $(pposi[p+1]) = $(pposi[p])
+        end
+        ## TODO: gc happening in next line?
+        $(subresult[p]) = _iterate($(part[p]), sequence, till, $(pposi[p]), $(pposi[p+1]), $(substate[p]))
         if $(subresult[p]) === nothing
-        i_ = before_i
-        prune_captures(sequence,i_)
-        @goto $(p == 1 ? :theend : subsearch[p-1])
+            prune_captures(sequence,$(pposi[p]))
+            @goto $(p == 1 ? :theend : subsearch[p-1])
         else
-        i_, $(substate[p]) = $(subresult[p])
-        $(if p < length(fpts); (:($((substate[p+1]))=nothing)); end )
+            $(pposi[p+1]) = $(subresult[p])[1]
+            $(substate[p]) = $(subresult[p])[2]
+        ##$(pposi[p+1]), $(substate[p]) = $(subresult[p])
+            $(if p < length(fpts); (:($((substate[p+1]))=nothing)); end )
         end
         end
         for (p,t) in enumerate(fpts)
     ]
     R = quote
-        i_::Int = i
+        $(pposi[end])::Int = next_i
         $(init...)
+        $(pposi[1]) = posi
         states !== nothing && @goto $(subsearch[end])
         $(parseparts...)
         $ret_state
-        return i_, R
+        return $(pposi[end]), R
+        @label theend
+        return nothing
+    end
+    R
+end
+
         @label theend
         return nothing
     end
@@ -2038,22 +2066,23 @@ end
     j::Int = i
     state_::S = state
     tp = t.parser
-    while state_length(t,state_) < t.range.stop && ( x = _iterate(t.parser,sequence, till,j,nothing) )!==nothing
-        ##@info "rep fill..." x state_
+    while state_length(t,state_) < t.range.stop && ( x = _iterate(t.parser,sequence, till, j, j,nothing) )!==nothing
+        ## @info "rep fill..." x state_
         ## e.g. match(re"(?:a|(?=b)|.)*\z","abc")
         j_=j
         j = x[1]
         state_ = pushstate!(state_,tp,x[2])
+        ##j, state_ = fill_rep_j_state(x,state_,tp)
         state_length(t,state_)>t.range.start && j_==j && break
     end
     j,state_,state_length(t,state_) < t.range.start
 end
 
 
-function _iterate(t::Repeat, sequence, till, i, state)
-    i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
+function _iterate(t::Repeat, sequence, till, posi, next_i, state)
+    next_i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
         es = emptystate(state_type(typeof(t)))
-        fill_rep(t,sequence,till,i, es)
+        fill_rep(t,sequence,till,next_i, es)
     else
         if state_length(t,state)==0
             return nothing
@@ -2072,39 +2101,39 @@ function _iterate(t::Repeat, sequence, till, i, state)
             # forcibly broken.
         #     return nothing
         end
-        i, state, true
+        next_i, state, true
     end
     while goback
         if state_length(t,state_)==0
             return nothing
         end
         lstate, state_=poplast!(state_,t.parser)
-        before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
-        prune_captures(sequence,before_i)
-        x = _iterate(t.parser,sequence, till, i_, lstate)
+        posi = _prevind(sequence,next_i_,t.parser,lstate) ##state[end][1]
+        prune_captures(sequence,posi)
+        x = _iterate(t.parser,sequence, till, posi, next_i_, lstate)
         if x === nothing
-            state_length(t,state_) in t.range && return before_i, state_
-            i_ = before_i
+            state_length(t,state_) in t.range && return posi, state_
+            next_i_ = posi
             if state_length(t,state_)==0
                 goback = false
             end
-        elseif before_i==x[1]
-            i_ = before_i
+        elseif posi==x[1]
+            next_i_ = posi
         else
             state_=pushstate!(state_,t.parser,x[2])
-            i_,state_,goback = fill_rep(t,sequence,till,x[1],state_)
+            next_i_,state_,goback = fill_rep(t,sequence,till,x[1],state_)
         end
     end
     if state_length(t,state_) in t.range
-        i_, state_
+        next_i_, state_
     else
         nothing
     end
 end
 
-function fill_rep(t_::Lazy{<:Repeat}, sequence, till, j,state_)
+@inline function fill_rep(t_::Lazy{<:Repeat}, sequence, till, j,state_)
     t = t_.parser
-    while state_length(t,state_) < t.range.start && (x = _iterate(t.parser,sequence, till,j,nothing))!==nothing 
+    while state_length(t,state_) < t.range.start && (x = _iterate(t.parser,sequence, till,j, j,nothing))!==nothing 
         j==x[1] && state_length(t,state_)>0 && break
         state_=pushstate!(state_,t.parser,x[2])
         j==x[1] && break
@@ -2112,20 +2141,20 @@ function fill_rep(t_::Lazy{<:Repeat}, sequence, till, j,state_)
     end
     j,state_,false
 end
-function _iterate(t_::Lazy{<:Repeat}, sequence, till, i, state)
+function _iterate(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
     t = t_.parser
-    i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
+    next_i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
         es = emptystate(state_type(typeof(t)))
-        fill_rep(t_,sequence,till,i, es)
+        fill_rep(t_,sequence,till,next_i, es)
     else
         if state_length(t,state)<t.range.stop
-            x = _iterate(t.parser,sequence, till, i, nothing)
-            if x!==nothing && ( x[1]>i || state_length(t,state)==0)
+            x = _iterate(t.parser,sequence, till, next_i, next_i, nothing)
+            if x!==nothing && ( x[1]>next_i || state_length(t,state)==0)
                 state_=pushstate!(state,t.parser,x[2])
                 return x[1],state_
             end
         end
-        i, state, true
+        next_i, state, true
     end
 
     while goback
@@ -2133,25 +2162,25 @@ function _iterate(t_::Lazy{<:Repeat}, sequence, till, i, state)
             return nothing
         end
         lstate, state_=poplast!(state,t.parser)
-        before_i = _prevind(sequence,i_,t.parser,lstate) ##state[end][1]
-        x = _iterate(t.parser,sequence, till, i_, lstate)
+        posi = start_index(sequence,next_i_,t.parser,lstate) ##state[end][1]
+        x = _iterate(t.parser,sequence, till, posi, next_i_, lstate)
         if x === nothing
-            i_ = before_i
-            prune_captures(sequence,i_)
+            next_i_ = posi
+            prune_captures(sequence,next_i_)
             if state_length(t,state_)==0
                 return nothing
             end
             state = state_
         else
             state_=pushstate!(state_,t.parser,x[2])
-            i_,state_ = fill_rep(t_,sequence,till,x[1],state_)
+            next_i_,state_ = fill_rep(t_,sequence,till,x[1],state_)
             if state_length(t,state_) in t.range
                 goback = false
             end
         end
     end
     if state_length(t,state_) in t.range ## && state_length(t,state_)>0
-        return i_, state_
+        return next_i_, state_
     else
         nothing
     end
@@ -2239,26 +2268,26 @@ function Base.get(parser::Optional, sequence, till, after, i, state)
     state === None() ? parser.default : get(parser.parser,sequence, till, after, i, state)
 end
 
-_iterate(t::Optional, str, till, i, state::None) =
+_iterate(t::Optional, str, till, posi, next_i, state::None) =
     nothing
 
-function _iterate(t::Optional, str, till, i, state)
-    before_i = state === nothing ? i : prevind(str,i,t.parser,state) ##state[end][1]
-    r = _iterate(t.parser, str, till, i, state)
+function _iterate(t::Optional, str, till, posi, next_i, state)
+    posi = state === nothing ? next_i : prevind(str,next_i,t.parser,state) ##state[end][1]
+    r = _iterate(t.parser, str, till, posi, next_i, state)
     if r === nothing
-        prune_captures(str,before_i)
-        return tuple(before_i, None())
+        prune_captures(str,posi)
+        return tuple(posi, None())
     else
         r[1], r[2]
     end
 end
 
-function _iterate(t_::Lazy{<:Optional}, str, till, i, state)
+function _iterate(t_::Lazy{<:Optional}, str, till, posi, next_i, state)
     t=t_.parser
     if state === nothing
-        i,None()
+        next_i,None()
     else 
-        r = _iterate(t.parser, str, till, i,
+        r = _iterate(t.parser, str, till, posi, next_i,
                      state === None() ? nothing : state)
         if r === nothing
             nothing
@@ -2580,35 +2609,32 @@ end
     nothing
 end
 
-function _iterate(t::Either{<:Any,<:Vector}, str, till, i, state::Nothing)
+function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Nothing)
     for (j,o) in enumerate(t.options)
-        ( r = _iterate_paired(j,( @inbounds t.options[j] ),str,till,i,nothing) )!== nothing && return r
+        ( r = _iterate_paired(j,( @inbounds t.options[j] ),str,till,posi, next_i,nothing) )!== nothing && return r
     end
     nothing
 end
 
 
 
-function _iterate(t::Either{<:Any,<:Vector}, str, till, i, state::Pair)
+function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Pair)
     @inbounds opt = t.options[state.first]
     fromindex = state.first+1
-    before_i = _prevind(str,i,opt,state.second) ##state[end][1]
-    r = _iterate_paired(state.first,opt,str,till,i,state.second)
+    posi = _prevind(str,next_i,opt,state.second) ##state[end][1]
+    r = _iterate_paired(state.first,opt,str,till,posi, next_i,state.second)
     r !== nothing && return r
-    prune_captures(str,before_i)
+    prune_captures(str,posi)
     ##sstate = nothing
     for j in fromindex:length(t.options)
-        ## @info "alt" j str[i:till] typeof(t.options[j]) #t.options[j] 
-            ## i_::Int, nstate_ = sstate
-            ## with_key_state!(s_,j,sstate[2])
-        @inbounds r = _iterate_paired(j,t.options[j],str,till,before_i,nothing)
+        @inbounds r = _iterate_paired(j,t.options[j],str,till,posi,posi,nothing)
         r !== nothing && return r
     end
     nothing
 end
 
 
-@generated function _iterate(parser::Either{<:Any,<:Tuple}, sequence, till, i, state::Union{Nothing,Pair{Int,<:Any},MutablePair{Int,<:Any}})
+@generated function _iterate(parser::Either{<:Any,<:Tuple}, sequence, till, posi, next_i, state::Union{Nothing,Pair{Int,<:Any},MutablePair{Int,<:Any}})
     pts = parser_types(parser)
     fpts = fieldtypes(pts)
     subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
@@ -2628,12 +2654,11 @@ end
         quote
         @label $(subsearch[p])
         j > $p && @goto $(subsearch[p+1])
-        before_i = before_i == 0 ? start_index(sequence, i_, $(part[p]), sstate) : before_i
-        $(subresult[p]) = _iterate_paired($p, $(part[p]), sequence, till, i_, sstate)
+        $(subresult[p]) = _iterate_paired($p, $(part[p]), sequence, till, posi, next_i_, sstate)
         if $(subresult[p]) !== nothing
         return $(subresult[p])
         end
-        i_ = before_i
+        next_i_ = posi
         sstate = nothing
         end
         for (p,t) in enumerate(fpts)
@@ -2642,17 +2667,15 @@ end
         quote
             j = 1
             sstate = nothing
-            before_i = i
         end
     else
         quote
             j = state.first
             sstate = state.second
-            before_i = 0
         end
     end
     R = quote
-        i_::Int = i
+        next_i_::Int = next_i
         $(init...)
         $(init_before)
         $(parseoptions...)
@@ -2889,11 +2912,11 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...;kw...) =
             deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
-@inline function _iterate(parser::Atomic, sequence, till, i, state)
+@inline function _iterate(parser::Atomic, sequence, till, posi, next_i, state)
     if state !== nothing
         nothing
     else
-        _iterate(parser.parser, sequence, till, i, state)
+        _iterate(parser.parser, sequence, till, posi, next_i, state)
     end
 end
 

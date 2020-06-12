@@ -122,13 +122,12 @@ Base.get(x::Capture, sequence, till, after, i, state) =
     get(x.parser, sequence, till, after, i, state)
 
 
-@inline function _iterate(parser::Capture, sequence, till, i, state)
-    before_i = start_index(sequence,i,parser.parser,state)
-    r = _iterate(parser.parser, sequence, till, i, state)
+@inline function _iterate(parser::Capture, sequence, till, posi, next_i, state)
+    r = _iterate(parser.parser, sequence, till, posi, next_i, state)
     if r !== nothing ## set only if found (e.g. if repeated capture capture last)
-        set_capture(sequence,parser.index,before_i,prevind(sequence,r[1]))
+        set_capture(sequence,parser.index,posi,prevind(sequence,r[1]))
     elseif state !== nothing
-        prune_captures(sequence, before_i)
+        prune_captures(sequence, posi)
     end
     r
 end
@@ -233,7 +232,7 @@ end
 
 
 state_type(::Type{<:Backreference}) = Int
-@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, i, state)
+@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, posi, next_i, state)
     return nothing
 end
 
@@ -249,18 +248,18 @@ function resolve_index(p::Backreference, sequence::SequenceWithCaptures)
     ( index<0 || isempty(sequence.captures[index]) ) ? -1 : index
 end
 
-@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, i, state::Nothing)
+@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, posi, next_i, state::Nothing)
     index = resolve_index(p, sequence)
     index<0 && return nothing
     sequence.captures[index]
     r = _iterate(
-        parser(SubString(sequence.match, sequence.captures[index][end])),
-        sequence, till, i, state)
+        SubString(sequence.match, sequence.captures[index][end]),
+        sequence, till, posi, next_i, state)
     r === nothing && return nothing
-    r[1], r[1]-i
+    r[1], r[1]-next_i
 end
 
-_iterate_condition(p::Backreference, sequence, till, i, state) =
+_iterate_condition(p::Backreference, sequence, till, posi, next_i, state) =
     resolve_index(p, sequence)>0
 
 
@@ -301,7 +300,7 @@ regex_suffix(x::Subroutine) = ")"
 regex_inner(x::Subroutine) = ""
 deepmap_parser(::typeof(revert),mem::AbstractDict,x::Subroutine) = x
 
-function _iterate_condition(cond::Subroutine, sequence, till, i, state)
+function _iterate_condition(cond::Subroutine, sequence, till, posi, next_i, state)
     sequence.state === nothing && return false
     if cond.name === nothing && cond.index < 0
         true
@@ -344,10 +343,10 @@ Index of a subroutine.
 index(parser::Subroutine,sequence) =
     parser.index <= 0 ? first(sequence.names[parser.name]) : parser.index
 
-@inline function _iterate(parser::Subroutine, sequence::SequenceWithCaptures, till, i, state)
+@inline function _iterate(parser::Subroutine, sequence::SequenceWithCaptures, till, posi, next_i, state)
     _iterate(
         with_log("$(parser.name)", sequence.subroutines[index(parser,sequence)].parser),
-        copy_captures(sequence,parser), till, i, state)
+        copy_captures(sequence,parser), till, posi, next_i, state)
 end
 state_type(::Type{<:Subroutine}) = Any
 
@@ -456,8 +455,8 @@ end
 @inline Base.get(parser::Conditional, sequence, till, after, i, state) =
     get(state.first == :yes ? parser.yes : parser.no, sequence, till, after, i, state.second)
 
-_iterate_condition(cond, sequence, till, i, state) =
-    _iterate(cond, sequence, till, i, state) !== nothing
+_iterate_condition(cond, sequence, till, posi, next_i, state) =
+    _iterate(cond, sequence, till, posi, next_i, state) !== nothing
 
 state_type(::Type{Conditional{C,Y,N,T}}) where {C,Y,N,T} =
     Pair{Symbol,Union{state_type(Y),state_type(N)}}
@@ -471,18 +470,18 @@ end
     nextind(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
 end
 
-@inline function _iterate(parser::Conditional, sequence, till, i, state::Nothing)
-    c = _iterate_condition(parser.condition, sequence, till, i, state)
+@inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Nothing)
+    c = _iterate_condition(parser.condition, sequence, till, posi, next_i, state)
     f = c ? :yes : :no
     cparse = f == :yes ? parser.yes : parser.no
     s = _iterate(cparse,
-                 sequence, till, i, state)
+                 sequence, till, posi, next_i, state)
     s === nothing && return nothing
     s[1], f => s[2]
 end
 
-@inline function _iterate(parser::Conditional, sequence, till, i, state::Pair)
-    _iterate(state.first == :yes ? parser.yes : parser.no, sequence, till, i, state.second)
+@inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Pair)
+    _iterate(state.first == :yes ? parser.yes : parser.no, sequence, till, posi, next_i, state.second)
 end
 
 
@@ -573,7 +572,7 @@ function Base.match(parser::ParserWithCaptures,sequence::AbstractString; log=fal
     start,till=1, lastindex(s)
     i = nothing
     while i===nothing && start <= till+1
-        i = _iterate(parser,s,till,start,nothing)
+        i = _iterate(parser,s,till,start,start,nothing)
         i === nothing && (start = start <= till ? nextind(sequence,start) : start+1)
     end
     ##@show start
@@ -586,8 +585,8 @@ end
 
 """
 function _iterate(p::ParserWithCaptures, sequence::AbstractString)
-    s = SequenceWithCaptures(sequence,p)
-    i = _iterate(p,s)
+    sequence = SequenceWithCaptures(sequence,p)
+    _iterate(p, sequence, lastindex(sequence), 1, 1, nothing)
 end
 
 ##Base.getindex(x::ParserWithCaptures, i) = ParserWithCaptures(getindex(i,x)
