@@ -197,7 +197,23 @@ result_type(x::ParserTypes) = result_type(typeof(x))
 result_type(T::Type{<:Union{Char,AbstractString}}) = T
 result_type(::Type{<:AbstractToken{T}}) where T = T
 
+"""
+State object for a match that is defined by the parser, sequence and position.
+
+See also [`NCodeuntitsMatchState`](@ref).
+"""
 struct MatchState end
+
+"""
+State object representing ncodeunits of match for `prevind`, `nextind`, performance.
+
+See also [`MatchState`](@ref), [`prevind`](@ref), [`nextind`](@ref).
+"""
+struct NCodeunitsState{S}
+    nc::Int
+    state::S
+end
+
 """
     Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state)
 
