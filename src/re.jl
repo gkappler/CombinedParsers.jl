@@ -44,10 +44,7 @@ See also [`ParserWithCaptures`](@ref)
         end
     function SequenceWithCaptures(cs::SequenceWithCaptures,start::Integer,stop::Integer,state)
         m = (cs.match,start:stop)
-        caps = [ [ (c.start-start+1):(c.stop-start+1) for c in caps
-                   if c.stop<=stop # c.start>=start && 
-                   ]
-                 for caps in cs.captures ]
+        caps = deepcopy(cs.captures)
         new{typeof(m),typeof(state)}(m,cs.subroutines,caps,cs.names,state)
     end
 end
