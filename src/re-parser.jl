@@ -53,7 +53,10 @@ bsr = Atomic(Either("\r\n",CharIn('\n','\x0b','\f','\r','\U0085', '\U2028','\U20
 
 newline = bsr
 inline = !Repeat(CharNotIn(vertical_space))
-whitespace = !Repeat(CharIn(horizontal_space))
+"Zero or more vertical whitespace."
+whitespace_maybe = !Repeat(CharIn(horizontal_space))
+"At least one vertical whitespace."
+whitespace_vertical = !Repeat1(CharIn(horizontal_space))
 
 
 bracket_range(start) =
@@ -189,7 +192,9 @@ escape_sequence(stop=AtEnd()) =
 push!(pattern,
       map(parser, with_name(:escape_sequence, escape_sequence())));
 
-word=CharIn(UnicodeClass("L","N"),'_')
+word_char=CharIn(UnicodeClass("L","N"),'_')
+word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
+words = JoinSubstring(Repeat1(CharIn(word_char,whitespace_char))) ## "[[:alpha:] ]+"
 
 non_word=CharNotIn(UnicodeClass("L","N"),'_')
 non_word_ = Either(non_word,AtStart(),AtEnd())
@@ -301,7 +306,7 @@ push!(repeatable,backreference);
             # "any character that is not a vertical white space character"),
             'V' => CharNotIn(vertical_space...),
             # "any "word" character"),
-            'w' => word,
+            'w' => word_char,
             # "any "non-word" character"),
             'W' => non_word,
         ));
