@@ -2041,11 +2041,26 @@ function Base.join(x::Repeat,delim_)
     map(x.parser * Repeat(
         max(0,x.range.start-1),
         x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1,
-        ( delim_ * x.parser )[2])) do (f,r)
+        Sequence(2, delim_,x.parser ))) do (f,r)
             pushfirst!(r,f)
-            r
+            r::result_type(x)
         end
 end
+
+"""
+    Base.join(x::Repeat,delim)
+
+Shorthand for `join(Repeat(x),delim)`.
+"""
+Base.join(x::CombinedParser,delim) = join(Repeat(x),delim)
+
+"""
+    Base.join(f::Function, x::CombinedParser, delim)
+
+Shorthand for `map(f,join(x,delim))`.
+"""
+Base.join(f::Function,p::CombinedParser,delim_) =
+    map(f,join(p,delim_))
 
 function print_constructor(io::IO,x::Repeat)
     print_constructor(io,x.parser)
