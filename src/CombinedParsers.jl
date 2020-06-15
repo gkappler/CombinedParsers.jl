@@ -2470,7 +2470,8 @@ struct Either{T,Ps} <: CombinedParser{T}
     Either{T}(p::CombinedParser...) where {T} =
         new{T,Vector{Any}}(Any[p...])
 end
-state_type(::Type{<:Either}) = Pair{Int,Any}
+state_type(::Type{<:Either}) = Pair
+@inline with_state!(x::Nothing,k::Int,s) = Pair(k,s)
 parser_types(::Type{Either{T, P}}) where {T, P} = P
 children(x::Either) = x.options
 regex_string(x::Either) = join(regex_string.(x.options),"|")
@@ -2478,6 +2479,7 @@ regex_prefix(x::Either) = "|"
 regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
 regex_suffix(x::Either) = "..."
 print_constructor(io::IO,x::Either) = print(io,"Either")
+
 
 function Either(x::ParserTypes...)
     parts = Any[ parser(y) for y in x ]
@@ -2657,6 +2659,8 @@ mutable struct MutablePair{K,V}
     second::V
     MutablePair{K,V}(f,s) where {K,V} =
         new{K,V}(f,s)
+    MutablePair(f,s) =
+        new{typeof(f),typeof(s)}(f,s)
 end
 Base.show(io::IO, x::MutablePair) =
     print(io, x.first, "=>", x.second)
@@ -2665,7 +2669,7 @@ Base.show(io::IO, x::MutablePair) =
     x.second=s
     x
 end
-@inline with_state!(x::Nothing,k,s) = Pair(k,s)
+
 @inline function with_state!(x::MutablePair,k,s)
     ##s isa Tuple{Int,Nothing} && error()
     x.first=k
@@ -2734,14 +2738,16 @@ function Base.get(parser::Either, sequence, till, after, i, state)
 end
 
 
-
-@inline function _iterate_paired(first, t, str, till, i, state)
-    sstate = _iterate(t, str, till, i, state)
-    if sstate !== nothing
-        i_::Int, nstate_ = sstate
-        return i_, Pair{Int,Any}(first,nstate_)
-    end
+@inline function __iterate_paired(first,sstate::Nothing)
     nothing
+end
+
+@inline function __iterate_paired(first, (next_i_, nstate_))
+    next_i_, with_state!(nothing,first,nstate_)
+end
+
+@inline function _iterate_paired(first, t, str, till, posi, next_i, state)
+    __iterate_paired(first, _iterate(t, str, till, posi, next_i, state))
 end
 
 function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Nothing)
@@ -2769,18 +2775,16 @@ function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Pai
 end
 
 
-@generated function _iterate(parser::Either{<:Any,<:Tuple}, sequence, till, posi, next_i, state::Union{Nothing,Pair{Int,<:Any},MutablePair{Int,<:Any}})
+
+@generated function _iterate(parser::Either{<:Any,<:Tuple}, sequence, till, posi, next_i, state::Union{Nothing,Pair,MutablePair})
     pts = parser_types(parser)
     fpts = fieldtypes(pts)
     subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
     push!(subsearch, gensym(:subsearch))
     subresult = Symbol[ gensym(:r) for p in fpts ]
     part = Symbol[ gensym(:part) for p in fpts ]
-    afteri = Symbol[ gensym(:after) for p in fpts ]
-    substate = Symbol[ gensym(:s) for p in fpts ]
     init = [
         quote
-        $(substate[p]) = nothing
         @inbounds $(part[p]) = parser.options[$p]
         end
         for (p,t) in enumerate(fpts)
@@ -2789,10 +2793,8 @@ end
         quote
         @label $(subsearch[p])
         j > $p && @goto $(subsearch[p+1])
-        $(subresult[p]) = _iterate_paired($p, $(part[p]), sequence, till, posi, next_i_, sstate)
-        if $(subresult[p]) !== nothing
-        return $(subresult[p])
-        end
+        $(subresult[p]) = _iterate($(part[p]), sequence, till, posi, next_i_, sstate)
+        $(subresult[p]) !== nothing && return $(subresult[p])[1], with_state!(state, $p,$(subresult[p])[2])
         next_i_ = posi
         sstate = nothing
         end
