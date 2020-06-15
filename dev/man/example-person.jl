@@ -15,8 +15,8 @@ using CombinedParsers
 using CombinedParsers.Regexp
 # you can write a program to parse such names and addresses.
 # The example uses parser building blocks:
-import CombinedParsers.Regexp: word, words, whitespace, whitespace_maybe, newline
-import CombinedParsers.Regexp: whitespace, whitespace_maybe, newline
+import CombinedParsers.Regexp: word, words
+import CombinedParsers.Regexp: whitespace_horizontal, whitespace_maybe, newline
 
 # ## Names
 # can be written in many ways.
@@ -73,26 +73,26 @@ end
 # The street is a sequence of alphabetical symbols or space (not numbers or `AnyChar()`)
 # can be written concisely as `re"Regex"`:
 @syntax for street_address in texts ## todo: override in Either
-    Sequence(:street => !re"[[:alpha:] ]+", whitespace, :no =>Numeric(Int))
+    Sequence(:street => !re"[[:alpha:] ]+", whitespace_horizontal, :no =>Numeric(Int))
 end;
 
+street_address"Allee 47"
 
 
 # Defined `@syntax`'s can be combined.
-whitenewline = Repeat1(Either(whitespace_maybe,newline));
+whitenewline = Repeat1(Either(whitespace_horizontal,newline));
 @syntax for address in texts
     Sequence(
         Optional("Adresse:",whitenewline),
         :door => street_address, whitenewline,
-        :zip =>Numeric(Int), whitespace,
+        :zip =>Numeric(Int), whitespace_horizontal,
         :city => !re"[[:alpha:] ]+",
-        whitespace
+        whitespace_maybe
     )
-end;
+end
 
 # A `@syntax` can be applied as a julia String macro
-address"""
-Allee 47
+address"""Allee 47
 80000 Augsburg
 """
 
