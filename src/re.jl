@@ -559,9 +559,20 @@ JoinSubstring(x::ParserWithCaptures) =
 Transformation{T}(t,x::ParserWithCaptures) where T =
     ParserWithCaptures(Transformation{T}(t,x.parser),x.subroutines,x.names)
  
-function Base.match(parser::ParserTypes,sequence::AbstractString; kw...)
-    @warn "For better performance create `ParserWithCaptures(parser)` before calling `match`."
-    match(ParserWithCaptures(parser),sequence; kw...)
+function Base.match(parser::ParserTypes,sequence; log=nothing)
+    p = log === nothing ? parser : log_names(parser,log)
+    start,till=1, lastindex(sequence)
+    i = nothing
+    while i===nothing && start <= till+1
+        i = _iterate(p,sequence,till,start,start,nothing)
+        i === nothing && (start = start <= till ? nextind(sequence,start) : start+1)
+    end
+    if i === nothing
+        nothing
+    else
+        ParseMatch(sequence,start,prevind(sequence,i[1]),i[2])
+        # SubString(sequence,start,prevind(sequence,i[1]))
+    end
 end
 
 """
@@ -569,17 +580,8 @@ end
 
 Plug-in replacement for match(::Regex,sequence).
 """
-function Base.match(parser::ParserWithCaptures,sequence::AbstractString; log=false)
-    log && ( parser=log_names(parser) )
-    s = SequenceWithCaptures(sequence,parser)
-    start,till=1, lastindex(s)
-    i = nothing
-    while i===nothing && start <= till+1
-        i = _iterate(parser,s,till,start,start,nothing)
-        i === nothing && (start = start <= till ? nextind(sequence,start) : start+1)
-    end
-    ##@show start
-    i === nothing ? nothing : ParseMatch(s,start,prevind(s,i[1]),i[2])
+function Base.match(parser::ParserWithCaptures,sequence::AbstractString; kw...)
+    match(parser, SequenceWithCaptures(sequence,parser);kw...)
 end
 
 """
@@ -592,12 +594,25 @@ function _iterate(p::ParserWithCaptures, sequence::AbstractString)
     _iterate(p, sequence, lastindex(sequence), 1, 1, nothing)
 end
 
+import Base: empty!
+Base.empty!(sequence::SequenceWithCaptures) =
+    for c in sequence.captures
+        Base.empty!(c)
+    end
+
+function _iterate(p::ParserWithCaptures, sequence::SequenceWithCaptures)
+    Base.empty!(sequence)
+    _iterate(p, sequence, lastindex(sequence), 1, 1, nothing)
+end
+
+
 ##Base.getindex(x::ParserWithCaptures, i) = ParserWithCaptures(getindex(i,x)
 
 function SequenceWithCaptures(x,cs::ParserWithCaptures)
     SequenceWithCaptures(
         x,cs.subroutines,
-        Vector{String}[ String[] for c in cs.subroutines ],cs.names,
+        Vector{String}[ String[] for c in cs.subroutines ],
+        cs.names,
         nothing)
 end
 
@@ -646,11 +661,12 @@ julia> m[2]
 
 julia> m.match, m.captures
 ("soso or", SubString{String}["so", "or"])
+
 ```
 """
-@auto_hash_equals struct ParseMatch{C<:SequenceWithCaptures}
+@auto_hash_equals struct ParseMatch{C}
     m::C
-    ParseMatch(x,cs::SequenceWithCaptures,state) =
+    ParseMatch(x,cs,state) =
         let wc=SequenceWithCaptures(x,cs,state)
             new{typeof(wc)}(wc)
         end
@@ -658,15 +674,34 @@ julia> m.match, m.captures
         wc=SequenceWithCaptures(cs,start,stop,state)
         new{typeof(wc)}(wc)
     end
+    function ParseMatch(s::AbstractString,start::Integer,stop::Integer,state)
+        wc=SubString(s,start,stop)
+        new{typeof(wc)}(wc)
+    end
 end
 
-function Base.getindex(x::ParseMatch,i::Integer)
+function Base.getproperty(x::ParseMatch{<:AbstractString},key::Symbol)
+    m = getfield(x,1)
+    if key==:captures
+        AbstractString[ ]
+    elseif key==:match
+        m
+    end
+end
+
+function Base.show(io::IO,m::ParseMatch{<:AbstractString})
+    print(io,"ParseMatch(\"",escape_string(m.match),"\"")
+    print(io,")")
+end
+
+
+function Base.getindex(x::ParseMatch{<:SequenceWithCaptures},i::Integer)
     m = getfield(x,1)
     c = m.captures[i]
     isempty(c) ? nothing : match_string(m.match,c[end])
 end
 
-function Base.getindex(m::ParseMatch,i::Symbol)
+function Base.getindex(m::ParseMatch{<:SequenceWithCaptures},i::Symbol)
     x=getfield(m,1)
     for j in x.names[i]
         c=getindex(m,j)
@@ -683,7 +718,7 @@ match_string(x::Tuple{<:AbstractString,UnitRange{<:Integer}},y::UnitRange{<:Inte
     end
 
 import Base: getproperty
-function Base.getproperty(x::ParseMatch,key::Symbol)
+function Base.getproperty(x::ParseMatch{<:SequenceWithCaptures},key::Symbol)
     m = getfield(x,1)
     if key==:captures
         [ isempty(c) ? nothing : match_string(m.match,c[end])
@@ -693,7 +728,7 @@ function Base.getproperty(x::ParseMatch,key::Symbol)
     end
 end
 
-function Base.show(io::IO,m::ParseMatch)
+function Base.show(io::IO,m::ParseMatch{<:SequenceWithCaptures})
     x=getfield(m,1)
     print(io,"ParseMatch(\"",escape_string(m.match),"\"")
     indnames=Dict( ( i=>k.first for k in pairs(x.names) for i in k.second )... )
@@ -707,7 +742,6 @@ function Base.show(io::IO,m::ParseMatch)
     end
     print(io,")")
 end
-
 
 ==(pc_m::ParseMatch,pcre_m::RegexMatch) =
     pcre_m==pc_m
