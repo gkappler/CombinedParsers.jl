@@ -2743,7 +2743,7 @@ end
 
 
 
-function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Pair)
+function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Union{Pair,MutablePair})
     @inbounds opt = t.options[state.first]
     fromindex = state.first+1
     posi = _prevind(str,next_i,opt,state.second) ##state[end][1]
