@@ -10,7 +10,11 @@ struct MemoTreeChildren{P}
 end
 
 children(x::MemoTreeChildren) =
-    x.descend ?  MemoTreeChildren(children(x.child), x.visited ) : []
+    if x.descend
+        [ MemoTreeChildren(x.visited, c, x.descend ) for c in children(x.child) ]
+    else
+        tuple()
+    end
 
 function printnode(io::IO, x::MemoTreeChildren)
     printnode(io, x.child)
@@ -19,6 +23,9 @@ end
 
 children(x::Union{Regex,AbstractString}) = ()
 
+
+Base.show(io::IO, x::MemoTreeChildren) =
+    show(io,x.child)
 
 function Base.show(io::IO, x::Union{ConstantParser,NIndexParser})
     print(io, "re\"",regex_string(x),"\"") ##!!
