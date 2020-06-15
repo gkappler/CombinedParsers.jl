@@ -69,7 +69,7 @@ function TextParse.tryparsenext(x::CombinedParser,str,i,till,opts=TextParse.defa
     if s === nothing
         Nullable{result_type(x)}(),i
     else
-        Nullable(get(x,str,till,s[1],i,s[2])),s[1]
+        Nullable(get(x,str,till,tuple_pos(s),i,tuple_state(s))),tuple_pos(s)
     end
 end
 
