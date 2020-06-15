@@ -504,10 +504,16 @@ See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
     ParserWithCaptures(parser,captures,names) =
         new{typeof(parser),result_type(parser)}(parser,captures,names)
 end
+"""
+    ParserWithCaptures(x)
+
+Return `ParserWithCaptures` if captures are used, `x` otherwise.
+"""
 ParserWithCaptures(x) =
     let cs = ParserWithCaptures(x,ParserTypes[],Dict{Symbol,Int}())
         pass1 = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),x,cs,false),cs.subroutines,cs.names)
-        ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
+        r = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
+        isempty(r.subroutines) ? r.parser : r
     end
 
 
