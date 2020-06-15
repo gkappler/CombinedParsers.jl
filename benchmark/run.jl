@@ -2,11 +2,12 @@
 push!(LOAD_PATH,"../src")
 using Pkg
 Pkg.activate(".")
+
+testpath = joinpath("..","test")
+
 using CombinedParsers
 using CombinedParsers.Regexp
 using BenchmarkTools
-
-testpath = joinpath("..","test")
 
 @info "defining pcre testset parser"
 include(joinpath(testpath,"pcretest-parser.jl"))
@@ -16,12 +17,46 @@ testfile = joinpath(testpath,"testoutput1")
 tests_string=read(testfile,String);
 tests = parse(tests_parser, tests_string)[1];
 
+using DataStructures
+ignore_idx = SortedDict{Int,String}(
+    ## 14 => "unicode escape in test parser needs to support \"\\u81\".",
+    69 => "because of very long compile time. The complex pattern parses email adresses",
+    70 => "because of very long compile time. The complex pattern parses email adresses",
+    89 => "CombinedParsers brackets use unicode character ranges. Avoid such patterns for now, contributions very welcome.",
+    90 => "CombinedParsers brackets use unicode character ranges. Avoid such patterns for now, contributions very welcome.",
+    135 => "escaped characters needs investigation.",
+    664 => "because of very long matching time for `Repeat(Repeat1('a'))` when there is no match. Avoid such patterns, contributions optimizing these cases are also very welcome.", ## slooow
+    887 => """do I misunderstand [recursive backreferences](https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19)?
+
+```@repl session
+pattern = "(?P<abn>(?P=abn)xxx|)+"
+match(Regex(pattern),"xxx")
+match(Regcomb(pattern),"xxx")
+```
+
+IMO the pcre behaviour is confusing after considering the logic of expanding the repeat
+```@repl session
+pattern = "(?P<abn>(?P=abn)xxx|)((?P=abn)xxx|)"
+match(Regex(pattern),"xxx")
+match(Regcomb(pattern),"xxx")
+```
+
+""",
+    104 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    260 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    261 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    562 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    1146 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    1173 => "because of very long compile time. The complex pattern parses PCRE regex syntax."
+)
+
 
 suite = BenchmarkGroup()
 i,tt=1,tests[59]
 p = tt[2].pattern
 s = tt[2].test[1].sequence
-for (i,tt) in enumerate(tests)
+for (i,tt) in Iterators.take(enumerate(tests),100)
+    if !haskey(ignore_idx,i)
         ts = tt[2]
         name = string(ts.pattern)
         @info "setting up $i: $name"
@@ -73,6 +108,7 @@ for (i,tt) in enumerate(tests)
                 @warn "ignore Regcomb $i, $j" s
             end
         end
+    end
 end
 
 @info "tune!"
