@@ -2700,34 +2700,19 @@ end
 @generated function prevind(str,i::Int,parser::Either{<:Any,<:Tuple},x)
     pts = parser_types(parser)
     fpts = fieldtypes(pts)
-    subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
-    push!(subsearch, gensym(:subsearch))
-    part = Symbol[ gensym(:part) for p in fpts ]
-    init = [
-        quote
-        @inbounds $(part[p]) = parser.options[$p]
-        end
-        for (p,t) in enumerate(fpts)
-    ]
     parseoptions = [
         quote
-        @label $(subsearch[p])
-        j > $p && @goto $(subsearch[p+1])
-        return prevind(str,i,$(part[p]),s)
+        if j === $p
+        return prevind(str,i,parser.options[$p],s) # $(part[p]),s)
+        end
         end
         for (p,t) in enumerate(fpts)
     ]
-    init_before = 
-        quote
-            j = x.first
-            s = x.second
-        end
     R = quote
-        $(init...)
-        $(init_before)
+        j = x.first
+        s = x.second
         $(parseoptions...)
-        @label $(subsearch[end])
-        return i
+        error("?")
     end
     R
 end
