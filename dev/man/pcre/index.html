@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Regular Expressions · CombinedParsers.jl</title><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/pcre/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">CombinedParsers.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li><a class="tocitem" href="../pcre-compliance/">PCRE Compliance</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li class="is-active"><a class="tocitem" href>Regular Expressions</a><ul class="internal"><li><a class="tocitem" href="#Characters-and-Escaped-Characters-1"><span>Characters and Escaped Characters</span></a></li><li><a class="tocitem" href="#Transforming-a-Parsing-1"><span>Transforming a Parsing</span></a></li><li><a class="tocitem" href="#Repeated-patterns-1"><span>Repeated patterns</span></a></li><li><a class="tocitem" href="#Number-of-Repetitions-1"><span>Number of Repetitions</span></a></li><li><a class="tocitem" href="#[Either](@ref)-1"><span><code>Either</code></span></a></li><li><a class="tocitem" href="#Repeatable-patterns,-[Optional](@ref),-[Lazy](@ref)-and-[Atomic](@ref)-1"><span>Repeatable patterns, <code>Optional</code>, <code>Lazy</code> and <code>Atomic</code></span></a></li><li><a class="tocitem" href="#[Sequence](@ref)s-and-Alternations-1"><span><code>Sequence</code>s and Alternations</span></a></li><li><a class="tocitem" href="#[Capture](@ref)s-1"><span><code>Capture</code>s</span></a></li><li><a class="tocitem" href="#[Lookahead](@ref)-and-[Lookbehind](@ref)-1"><span><code>Lookahead</code> and <code>Lookbehind</code></span></a></li><li><a class="tocitem" href="#Regular-Expression-Brackets-1"><span>Regular Expression Brackets</span></a></li></ul></li><li><a class="tocitem" href="../json/">JSON</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Public</a></li><li><a class="tocitem" href="../../lib/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Regular Expressions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Regular Expressions</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/blob/master/docs/src/man/pcre.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Parsing-Regular-Expressions-and-constructing-an-equivalent-[CombinedParser](@ref)-1"><a class="docs-heading-anchor" href="#Parsing-Regular-Expressions-and-constructing-an-equivalent-[CombinedParser](@ref)-1">Parsing Regular Expressions and constructing an equivalent <a href="../../lib/internals/#CombinedParsers.CombinedParser"><code>CombinedParser</code></a></a><a class="docs-heading-anchor-permalink" href="#Parsing-Regular-Expressions-and-constructing-an-equivalent-[CombinedParser](@ref)-1" title="Permalink"></a></h1><p>This guide demonstrates constructing a recursive parser with the  <strong><a href="../../lib/public/#Base.push!"><code>push!</code></a> to <a href="../../lib/public/#CombinedParsers.Either"><code>Either</code></a></strong> technique by means of a similified parser for regular expressions. </p><p>This page outlines parts of the <code>CombinedParser</code> used in the <code>re_str</code> macro. <code>CombinedParsers.jl</code> is tested and benchmarked against the PCRE C library testset, see <a href="../pcre-compliance/">compliance report</a>.</p><h2 id="Characters-and-Escaped-Characters-1"><a class="docs-heading-anchor" href="#Characters-and-Escaped-Characters-1">Characters and Escaped Characters</a><a class="docs-heading-anchor-permalink" href="#Characters-and-Escaped-Characters-1" title="Permalink"></a></h2><p>The simplest regular expression pattern is a character matcher.</p><pre><code class="language-julia">using CombinedParsers
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Regular Expressions · CombinedParsers.jl</title><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/pcre/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">CombinedParsers.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li><a class="tocitem" href="../pcre-compliance/">PCRE Compliance</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../example-person/">Name and addresses</a></li><li><a class="tocitem" href="../example-number-ranges/">Number sequences</a></li><li class="is-active"><a class="tocitem" href>Regular Expressions</a><ul class="internal"><li><a class="tocitem" href="#Characters-and-Escaped-Characters-1"><span>Characters and Escaped Characters</span></a></li><li><a class="tocitem" href="#Transforming-a-Parsing-1"><span>Transforming a Parsing</span></a></li><li><a class="tocitem" href="#Repeated-patterns-1"><span>Repeated patterns</span></a></li><li><a class="tocitem" href="#Number-of-Repetitions-1"><span>Number of Repetitions</span></a></li><li><a class="tocitem" href="#[Either](@ref)-1"><span><code>Either</code></span></a></li><li><a class="tocitem" href="#Repeatable-patterns,-[Optional](@ref),-[Lazy](@ref)-and-[Atomic](@ref)-1"><span>Repeatable patterns, <code>Optional</code>, <code>Lazy</code> and <code>Atomic</code></span></a></li><li><a class="tocitem" href="#[Sequence](@ref)s-and-Alternations-1"><span><code>Sequence</code>s and Alternations</span></a></li><li><a class="tocitem" href="#[Capture](@ref)s-1"><span><code>Capture</code>s</span></a></li><li><a class="tocitem" href="#[Lookahead](@ref)-and-[Lookbehind](@ref)-1"><span><code>Lookahead</code> and <code>Lookbehind</code></span></a></li><li><a class="tocitem" href="#Regular-Expression-Brackets-1"><span>Regular Expression Brackets</span></a></li></ul></li><li><a class="tocitem" href="../json/">JSON</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Public</a></li><li><a class="tocitem" href="../../lib/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Regular Expressions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Regular Expressions</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/blob/master/docs/src/man/pcre.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Parsing-Regular-Expressions-and-constructing-an-equivalent-[CombinedParser](@ref)-1"><a class="docs-heading-anchor" href="#Parsing-Regular-Expressions-and-constructing-an-equivalent-[CombinedParser](@ref)-1">Parsing Regular Expressions and constructing an equivalent <a href="../../lib/internals/#CombinedParsers.CombinedParser"><code>CombinedParser</code></a></a><a class="docs-heading-anchor-permalink" href="#Parsing-Regular-Expressions-and-constructing-an-equivalent-[CombinedParser](@ref)-1" title="Permalink"></a></h1><p>This guide demonstrates constructing a recursive parser with the  <strong><a href="../../lib/public/#Base.push!"><code>push!</code></a> to <a href="../../lib/public/#CombinedParsers.Either"><code>Either</code></a></strong> technique by means of a similified parser for regular expressions. </p><p>This page outlines parts of the <code>CombinedParser</code> used in the <code>re_str</code> macro. <code>CombinedParsers.jl</code> is tested and benchmarked against the PCRE C library testset, see <a href="../pcre-compliance/">compliance report</a>.</p><h2 id="Characters-and-Escaped-Characters-1"><a class="docs-heading-anchor" href="#Characters-and-Escaped-Characters-1">Characters and Escaped Characters</a><a class="docs-heading-anchor-permalink" href="#Characters-and-Escaped-Characters-1" title="Permalink"></a></h2><p>The simplest regular expression pattern is a character matcher.</p><pre><code class="language-julia">using CombinedParsers
 using CombinedParsers.Regexp
 import CombinedParsers.Regexp: meta_chars
 
@@ -14,7 +14,7 @@ char_matcher =  Either(
 
 )</code></pre><pre><code class="language-none">|🗄... Either
 ├─ [^^\[\)\?\(\*\\\|\+\$\^\.\{] CharNotIn |&gt; with_name(:character)
-└─ 🗄 Sequence |&gt; map(#49) |&gt; with_name(:escaped meta)
+└─ 🗄 Sequence |&gt; map(#54) |&gt; with_name(:escaped meta)
    ├─ \\ 
    └─ [\[\)\?\(\*\\\|\+\$\^\.\{] CharIn
 ::Char
@@ -57,16 +57,16 @@ julia&gt; parse(p,&quot;[&quot;)
 ├─ \?  |&gt; map(Constant((0, 1)))
 ├─ \+  |&gt; map(Constant((1, 9223372036854775807)))
 ├─ \*  |&gt; map(Constant((0, 9223372036854775807)))
-└─ 🗄 Sequence |&gt; map(#41)
+└─ 🗄 Sequence |&gt; map(#46)
    ├─ \{ 
-   ├─ 🗄 Sequence |&gt; map(#41)
+   ├─ 🗄 Sequence |&gt; map(#46)
    │  ├─ \-?  |&gt; Optional(default=missing)
-   │  └─ [0123476985]+ CharIn |&gt; Repeat |&gt; map(#41)
-   ├─ 🗄? Sequence |&gt; map(#49) |&gt; Optional(default=missing)
+   │  └─ [0123476985]+ CharIn |&gt; Repeat |&gt; map(#46)
+   ├─ 🗄? Sequence |&gt; map(#54) |&gt; Optional(default=missing)
    │  ├─ , 
-   │  └─ 🗄? Sequence |&gt; map(#41) |&gt; Optional(default=9223372036854775807)
+   │  └─ 🗄? Sequence |&gt; map(#46) |&gt; Optional(default=9223372036854775807)
    │     ├─ \-?  |&gt; Optional(default=missing)
-   │     └─ [0123476985]+ CharIn |&gt; Repeat |&gt; map(#41)
+   │     └─ [0123476985]+ CharIn |&gt; Repeat |&gt; map(#46)
    └─ \} 
 ::Tuple{Int64,Int64}
 </code></pre><p><code>repetition</code> parses PCRE repetition syntax into a <code>(min, max)</code>:</p><pre><code class="language-julia-repl">julia&gt; parse(repetition, &quot;?&quot;)
@@ -196,11 +196,11 @@ pushfirst!(repeatable,lookbehind);
 
 nothing # hide</code></pre><h2 id="Regular-Expression-Brackets-1"><a class="docs-heading-anchor" href="#Regular-Expression-Brackets-1">Regular Expression Brackets</a><a class="docs-heading-anchor-permalink" href="#Regular-Expression-Brackets-1" title="Permalink"></a></h2><pre><code class="language-julia">import CombinedParsers.Regexp: bracket
 push!(repeatable,bracket);
-bracket</code></pre><pre><code class="language-none">🗄 Sequence |&gt; map(#49) |&gt; with_name(:bracket)
+bracket</code></pre><pre><code class="language-none">🗄 Sequence |&gt; map(#54) |&gt; with_name(:bracket)
 ├─ \[ 
 ├─ \^?  |&gt; Optional(default=missing)
 ├─ |🗄...{,1} Either |&gt; Repeat
-│  ├─ 🗄 Sequence |&gt; map(#41) |&gt; with_name(:char_range)
+│  ├─ 🗄 Sequence |&gt; map(#46) |&gt; with_name(:char_range)
 │  │  ├─ \] 
 │  │  ├─ [\u2028\u200e\v\u2029\u85\u200f\f\n\t\ ]* CharIn |&gt; Repeat |&gt; map(Constant(re&quot;&quot;)) |&gt; on_options(&quot;xx&quot;) |&gt; with_name(:skip_ws)
 │  │  ├─ \- 
@@ -208,15 +208,15 @@ bracket</code></pre><pre><code class="language-none">🗄 Sequence |&gt; map(#49
 │  │  └─ |🗄... Either
 │  │     ├─ [^^\]\\\^\-] CharNotIn
 │  │     ├─ \\b  |&gt; map(Constant(&#39;\b&#39;))
-│  │     ├─ 🗄 Sequence |&gt; map(#41)
+│  │     ├─ 🗄 Sequence |&gt; map(#46)
 │  │     │  ├─ \\ 
-│  │     │  └─ [01234765]{1,3} CharIn |&gt; Repeat |&gt; map(#41)
-│  │     └─ 🗄 Sequence |&gt; map(#49) |&gt; with_name(:escaped_character)
+│  │     │  └─ [01234765]{1,3} CharIn |&gt; Repeat |&gt; map(#46)
+│  │     └─ 🗄 Sequence |&gt; map(#54) |&gt; with_name(:escaped_character)
 │  │        ├─ \\ 
 │  │        └─ |🗄... Either
 │  └─ \]  |&gt; map(Constant(&#39;]&#39;))
 ├─ |🗄...* Either |&gt; Repeat
-│  ├─ 🗄 Sequence |&gt; map(#49)
+│  ├─ 🗄 Sequence |&gt; map(#54)
 │  │  ├─ \[\: 
 │  │  ├─ |🗄... Either
 │  │  │  ├─ alnum  |&gt; map(Constant(re&quot;[\p{1:5}\p{9:11}]&quot;))
@@ -235,16 +235,16 @@ bracket</code></pre><pre><code class="language-none">🗄 Sequence |&gt; map(#49
 │  │  └─ \:\] 
 │  ├─ [\u2028\u200e\v\u2029\u85\u200f\f\n\t\ ]* CharIn |&gt; Repeat |&gt; map(Constant(re&quot;&quot;)) |&gt; on_options(&quot;xx&quot;) |&gt; map(Constant(re&quot;(*FAIL)&quot;)) |&gt; with_name(:skip_ws)
 │  ├─ \\E  |&gt; map(Constant(re&quot;(*FAIL)&quot;))
-│  ├─ 🗄 Sequence |&gt; map(#49) |&gt; map(#41) |&gt; with_name(:escape_sequence)
+│  ├─ 🗄 Sequence |&gt; map(#54) |&gt; map(#46) |&gt; with_name(:escape_sequence)
 │  │  ├─ \\Q 
-│  │  └─ 🗄 Sequence |&gt; map(#49)
-│  │     ├─ 🗄* Sequence |&gt; map(#49) |&gt; Repeat |&gt; JoinSubstring
+│  │  └─ 🗄 Sequence |&gt; map(#54)
+│  │     ├─ 🗄* Sequence |&gt; map(#54) |&gt; Repeat |&gt; JoinSubstring
 │  │     │  ├─ (?!|🗄...) NegativeLookahead
 │  │     │  └─ . AnyChar
 │  │     └─ |🗄... Either
 │  │        ├─ \\E 
 │  │        └─ (?=🗄$) PositiveLookahead
-│  ├─ 🗄 Sequence |&gt; map(#49) |&gt; with_name(:generic_character_type)
+│  ├─ 🗄 Sequence |&gt; map(#54) |&gt; with_name(:generic_character_type)
 │  │  ├─ \\ 
 │  │  └─ |🗄... Either
 │  │     ├─ d  |&gt; map(Constant(re&quot;[0123476985]&quot;))
@@ -257,19 +257,53 @@ bracket</code></pre><pre><code class="language-none">🗄 Sequence |&gt; map(#49
 │  │     ├─ V  |&gt; map(Constant(re&quot;[^^\r\u2028\v\u2029\n\f\u85]&quot;))
 │  │     ├─ w  |&gt; map(Constant(re&quot;[_\p{1:5}\p{9:11}]&quot;))
 │  │     └─ W  |&gt; map(Constant(re&quot;[^^_\p{1:5}\p{9:11}]&quot;))
-│  ├─ 🗄 Sequence |&gt; map(#41) |&gt; with_name(:char_range)
-│  │  ├─ |🗄... Either # branches hidden
+│  ├─ 🗄 Sequence |&gt; map(#46) |&gt; with_name(:char_range)
+│  │  ├─ |🗄... Either
+│  │  │  ├─ [^^\]\\\^\-] CharNotIn
+│  │  │  ├─ \\b  |&gt; map(Constant(&#39;\b&#39;))
+│  │  │  ├─ 🗄 Sequence |&gt; map(#46)
+│  │  │  │  ├─ \\ 
+│  │  │  │  └─ [01234765]{1,3} CharIn |&gt; Repeat |&gt; map(#46)
+│  │  │  └─ 🗄 Sequence |&gt; map(#54) |&gt; with_name(:escaped_character)
+│  │  │     ├─ \\ 
+│  │  │     └─ |🗄... Either
 │  │  ├─ [\u2028\u200e\v\u2029\u85\u200f\f\n\t\ ]* CharIn |&gt; Repeat |&gt; map(Constant(re&quot;&quot;)) |&gt; on_options(&quot;xx&quot;) |&gt; with_name(:skip_ws)
 │  │  ├─ \- 
 │  │  ├─ [\u2028\u200e\v\u2029\u85\u200f\f\n\t\ ]* CharIn |&gt; Repeat |&gt; map(Constant(re&quot;&quot;)) |&gt; on_options(&quot;xx&quot;) |&gt; with_name(:skip_ws)
-│  │  └─ |🗄... Either # branches hidden
-│  ├─ |🗄... Either |&gt; map(#41)
+│  │  └─ |🗄... Either
+│  │     ├─ [^^\]\\\^\-] CharNotIn
+│  │     ├─ \\b  |&gt; map(Constant(&#39;\b&#39;))
+│  │     ├─ 🗄 Sequence |&gt; map(#46)
+│  │     │  ├─ \\ 
+│  │     │  └─ [01234765]{1,3} CharIn |&gt; Repeat |&gt; map(#46)
+│  │     └─ 🗄 Sequence |&gt; map(#54) |&gt; with_name(:escaped_character)
+│  │        ├─ \\ 
+│  │        └─ |🗄... Either
+│  ├─ |🗄... Either |&gt; map(#46)
 │  │  ├─ [^^\]\\\^\-] CharNotIn
 │  │  ├─ \\b  |&gt; map(Constant(&#39;\b&#39;))
-│  │  ├─ 🗄 Sequence |&gt; map(#41) # branches hidden
-│  │  └─ 🗄 Sequence |&gt; map(#49) |&gt; with_name(:escaped_character) # branches hidden
+│  │  ├─ 🗄 Sequence |&gt; map(#46)
+│  │  │  ├─ \\ 
+│  │  │  └─ [01234765]{1,3} CharIn |&gt; Repeat |&gt; map(#46)
+│  │  └─ 🗄 Sequence |&gt; map(#54) |&gt; with_name(:escaped_character)
+│  │     ├─ \\ 
+│  │     └─ |🗄... Either
+│  │        ├─ a  |&gt; map(Constant(&#39;\a&#39;))
+│  │        ├─ 🗄 Sequence |&gt; map(#46)
+│  │        ├─ e  |&gt; map(Constant(&#39;\e&#39;))
+│  │        ├─ f  |&gt; map(Constant(&#39;\f&#39;))
+│  │        ├─ n  |&gt; map(Constant(&#39;\n&#39;))
+│  │        ├─ r  |&gt; map(Constant(&#39;\r&#39;))
+│  │        ├─ t  |&gt; map(Constant(&#39;\t&#39;))
+│  │        ├─ \&quot;  |&gt; map(Constant(&#39;&quot;&#39;))
+│  │        ├─ 🗄 Sequence |&gt; map(#46)
+│  │        ├─ 🗄 Sequence |&gt; map(#46)
+│  │        ├─ 🗄 Sequence |&gt; map(#46)
+│  │        ├─ 🗄 Sequence |&gt; map(#46)
+│  │        ├─ 🗄 Sequence |&gt; map(#46)
+│  │        └─ [^^EQ] CharNotIn
 │  ├─ \^  |&gt; map(Constant(&#39;^&#39;))
 │  └─ \-  |&gt; map(Constant(&#39;-&#39;))
 └─ \] 
 ::CombinedParser
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pcre-compliance/">« PCRE Compliance</a><a class="docs-footer-nextpage" href="../json/">JSON »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 8 June 2020 00:02">Monday 8 June 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-number-ranges/">« Number sequences</a><a class="docs-footer-nextpage" href="../json/">JSON »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 15 June 2020 14:11">Monday 15 June 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
