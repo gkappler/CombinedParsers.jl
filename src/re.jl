@@ -569,8 +569,7 @@ function Base.match(parser::ParserTypes,sequence; log=nothing)
     if i === nothing
         nothing
     else
-        # SubString(sequence,start,prevind(sequence,i[1]))
-        ParseMatch(sequence,start,prevind(sequence,tuple_pos(i)),tuple_state(i))
+        ParseMatch(parser,sequence,start,i...)
     end
 end
 
@@ -663,45 +662,65 @@ julia> m.match, m.captures
 
 ```
 """
-@auto_hash_equals struct ParseMatch{C}
-    m::C
-    ParseMatch(x,cs,state) =
-        let wc=SequenceWithCaptures(x,cs,state)
-            new{typeof(wc)}(wc)
-        end
-    function ParseMatch(cs::SequenceWithCaptures,start::Integer,stop::Integer,state)
-        wc=SequenceWithCaptures(cs,start,stop,state)
-        new{typeof(wc)}(wc)
-    end
-    function ParseMatch(s::AbstractString,start::Integer,stop::Integer,state)
-        wc=SubString(s,start,stop)
-        new{typeof(wc)}(wc)
+@auto_hash_equals struct ParseMatch{P,S,State}
+    parser::P
+    sequence::S
+    start::Int
+    stop::Int
+    state::State
+    function ParseMatch(parser::CombinedParser,s,start::Integer,stop::Integer,state)
+        new{typeof(parser),typeof(s),typeof(state)}(parser,s,start,stop,state)
     end
 end
 
-function Base.getproperty(x::ParseMatch{<:AbstractString},key::Symbol)
-    m = getfield(x,1)
+
+"""
+    Base.get(x::ParseMatch{<:MatchTuple})
+
+Get the result of a match result.
+
+```jldoctest
+julia> m = match(re"(?<a>so)+ (or)", "soso or")
+ParseMatch("soso or", a="so", 2="or")
+
+julia> get(m)
+"so"
+
+julia> m[2]
+"or"
+
+julia> m.match, m.captures
+("soso or", SubString{String}["so", "or"])
+
+```
+"""
+function Base.get(x::ParseMatch)
+    get(getfield(x,1), getfield(x,2), getfield(x,3), getfield(x,4), getfield(x,3),
+        getfield(x,5))
+end
+
+function Base.getproperty(x::ParseMatch{<:Any,<:AbstractString,<:Any},key::Symbol)
     if key==:captures
         AbstractString[ ]
     elseif key==:match
-        m
+        SubString(getfield(x,2),getfield(x,3),prevind(getfield(x,2),getfield(x,4)))
     end
 end
 
-function Base.show(io::IO,m::ParseMatch{<:AbstractString})
+function Base.show(io::IO,m::ParseMatch{<:Any,<:AbstractString,<:Any})
     print(io,"ParseMatch(\"",escape_string(m.match),"\"")
     print(io,")")
 end
 
 
-function Base.getindex(x::ParseMatch{<:SequenceWithCaptures},i::Integer)
-    m = getfield(x,1)
+function Base.getindex(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Integer)
+    m = getfield(x,2)
     c = m.captures[i]
     isempty(c) ? nothing : match_string(m.match,c[end])
 end
 
-function Base.getindex(m::ParseMatch{<:SequenceWithCaptures},i::Symbol)
-    x=getfield(m,1)
+function Base.getindex(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Symbol)
+    x = getfield(m,2)
     for j in x.names[i]
         c=getindex(m,j)
         c !== nothing && return c
@@ -716,19 +735,24 @@ match_string(x::Tuple{<:AbstractString,UnitRange{<:Integer}},y::UnitRange{<:Inte
         SubString(x[1],y.start,y.stop)
     end
 
+match_string(x::AbstractString,y::UnitRange{<:Integer}) =
+    SubString(x,y.start,y.stop)
+
 import Base: getproperty
-function Base.getproperty(x::ParseMatch{<:SequenceWithCaptures},key::Symbol)
-    m = getfield(x,1)
+function Base.getproperty(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key::Symbol)
+    m = getfield(x,2)
+    start = getfield(x,3)
+    stop = getfield(x,4)
     if key==:captures
         [ isempty(c) ? nothing : match_string(m.match,c[end])
           for c in m.captures ]
     elseif key==:match
-        SubString(m.match[1],m.match[2])
+        SubString(m.match,start,prevind(m,stop))
     end
 end
 
-function Base.show(io::IO,m::ParseMatch{<:SequenceWithCaptures})
-    x=getfield(m,1)
+function Base.show(io::IO,m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any})
+    x = getfield(m,2)
     print(io,"ParseMatch(\"",escape_string(m.match),"\"")
     indnames=Dict( ( i=>k.first for k in pairs(x.names) for i in k.second )... )
     for i in 1:length(x.captures)
