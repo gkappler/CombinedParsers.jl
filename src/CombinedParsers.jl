@@ -1783,11 +1783,21 @@ function prune_captures(sequence,after_i)
 end
 
 
-function state_type(parser::Type{<:Sequence})
-    pts = parser_types(parser)
-    all(t->state_type(t)<:MatchState, fieldtypes(pts)) ? MatchState : Vector{Any}
+@generated function state_type(parser::Type{S}) where {S<:Sequence}
+    pts = parser_types(S)
+    if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
+        MatchState
+    else
+        Tuple{(state_type(p) for p in fieldtypes(pts))...} #
+    end
 end
 
+
+Base.getindex(A::MatchState, i::Int) = MatchState()
+Base.setindex!(A::MatchState, ::MatchState, i::Int) = nothing
+Base.setindex!(A::MatchState, v, i::Int) = error("MatchState elements can only be ::MatchState")
+
+Base.convert(::Type{MatchState},::Tuple{}) = MatchState()
 
 function _iterate_(parser::Sequence, sequence, till, posi, next_i, states)
     next_i_ = next_i
@@ -1869,8 +1879,17 @@ end
 
     ret_state = if state_type(parser) <: MatchState
         :(R::MatchState = MatchState())
-    else
+    elseif state_type(parser) <: Tuple
+        :(R::$(state_type(parser)) = tuple( $([ :(($(s))) for s in substate ]...) ) )
+    elseif states <: Nothing
         :(R::$(state_type(parser)) = Any[ $([ :(($(s))) for s in substate ]...) ] )
+    elseif states <: Vector
+        quote
+            $( [ :(states[$i]=$(substate[i])) for i in 1:n ]...)
+            R::$(state_type(parser)) = states
+        end
+    else
+        error("invalid state_type")
     end
     parseparts = [
         quote
