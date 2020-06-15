@@ -71,7 +71,10 @@ with_options(flags::UInt32,x::SequenceWithCaptures) =
     getindex(x.match,i...)
 @inline Base.@propagate_inbounds Base.iterate(x::SequenceWithCaptures,i...) =
     iterate(x.match,i...)
-
+function Base.show(io::IO, x::SequenceWithCaptures)
+    print(io, "SequenceWithCaptures ")
+    show(io,x.match)
+end
 Base.SubString(x::SequenceWithCaptures,a...) =
     SubString(x.match,a...)
 
