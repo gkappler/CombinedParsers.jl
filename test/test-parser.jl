@@ -1,7 +1,8 @@
 using CombinedParsers.Regexp
 import CombinedParsers.Regexp: word, non_word
-import CombinedParsers.Regexp: newline, inline, whitespace
+import CombinedParsers.Regexp: newline, inline, whitespace_maybe
 
+@testset "CombinedParsers" begin
 @testset "CharIn" begin
     @test parse(CharIn(isuppercase),"A") =='A'
     @test parse(map(v->length(v),re"a*"),"aaaa") == 4
@@ -42,92 +43,24 @@ end
                 "(balanced parenthesis)") ==
         ("(",["balanced", " ", "parenthesis"])
 end
-
-@testset "demo data parsing" begin
-    @test 1:3 == [1,2,3]
-    @test "1-3" != [1,2,3]
-
-    import TextParse
-    import TextParse: Numeric
-
-    int_range = Sequence(
-        Numeric(Int), re" *- *", Numeric(Int)) do v
-            collect(v[1]:v[3])
-        end
-
-    @test parse(int_range, "1-3") == 1:3
-    @test parse(int_range, "8-11") == 8:11
-
-    int = map(x->[x],
-              TextParse.Numeric(Int))
-
-    @test parse(int, "1") == [1]
-
-    bracket_numbers = Sequence(
-        Vector{Int},
-        "[", alternate(
-            Either(int_range, int),
-            re" *, *";
-        ), "]") do v
-            vcat(v[2]...)
-        end
-
-    @test parse(bracket_numbers, "[1-3,9]")==[1,2,3,9]
-
-    @test parse(Sequence(:street => !re"[[:alpha:] ]+",
-                         " ",
-                         :no =>Numeric(Int)),
-                "Am Hang 19") == (street="Am Hang", no=19)
-    
-    import CombinedParsers.Regexp: inline, newline, whitespace
-    
-    person = Sequence("Name: ", :name => inline, Repeat(newline),
-                      :adresses => alternate(
-                          Sequence(
-                              "Adresse:",newline,
-                              :street => !re"[[:alpha:] ]+",
-                              " ",
-                              :no =>Numeric(Int), newline,
-                              :zip =>Numeric(Int), whitespace,
-                              :city => !re"[[:alpha:] ]+",
-                              Repeat(Either(whitespace,newline)),
-                          ),
-                          Repeat1(newline)
-                      ));
-
-    representation =
-        """
-    Name: Gottfried Mutbürger
-
-    Adresse:
-    Am Hang 19
-    86653 Glauberg
-
-    Adresse:
-    Allee 47
-    80650 Zweistadt
-    """
-
-    data = ( name = "Gottfried Mutbürger",
-             adresses = [
-                 (street = "Am Hang", no = 19,
-                  zip = 86653, city = "Glauberg"),
-                 (street = "Allee", no = 47,
-                  zip = 80650, city = "Zweistadt")])
-
-    @test parse(person,representation) == data
-
 end
 
 
 
-export attribute_parser
+@testset "FlatMap" begin
+    @test parse(
+        after(with_log("left",Either("a","ab"))) do v
+        parser(v)
+        end,
+        "abab")=="ab"
+    # parse(pattern,with_options(Base.PCRE.MULTILINE,"^"))
+end
 
 attribute_parser =
     map_at(
         (v,i) -> (lowercase(v[1]) => "$(v[5])")::Pair{String,String},
         Sequence(
-            !Repeat1(word), Optional(whitespace),"=", Optional(whitespace),
+            !Repeat1(word), whitespace_maybe,"=", whitespace_maybe,
             Either(Sequence(2,"\"", Repeat_until(AnyChar(),"\"",wrap=JoinSubstring)),
                    Sequence(2,"'", Repeat_until(AnyChar(),"'",wrap=JoinSubstring)),
                    !re"[0-9]+%",
@@ -136,7 +69,7 @@ attribute_parser =
                    !re"#[0-9A-Fa-f]{6}")
         ));
 
-attributes = alternate(attribute_parser, whitespace);
+attributes = alternate(attribute_parser, whitespace_maybe);
 
 parse(attributes,"a = 1 b=6% font=\"+1asd\"")
 
@@ -171,9 +104,9 @@ function html(inner::Function, T::Type, tags::CombinedParser, attrs_parser=attri
                 tags,
                 Optional(Sequence(
                     2,
-                    Optional(whitespace),
+                    whitespace_maybe,
                     attrs_parser,
-                    Optional(whitespace))))),
+                    whitespace_maybe)))),
     nested_html)
 end
 

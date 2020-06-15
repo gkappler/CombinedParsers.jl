@@ -1,6 +1,6 @@
 using Test
 using CombinedParsers.Regexp
-import CombinedParsers.Regexp: at_linestart, whitespace, integer, character_base, escaped_character
+import CombinedParsers.Regexp: at_linestart, whitespace_char, integer, character_base, escaped_character
 import CombinedParsers.Regexp: pcre_options, with_options, parse_options, @test_pcre
 
 charparser = Either(
@@ -19,7 +19,7 @@ unescaped=map(Repeat_until(
     end;
 comment_or_empty = Repeat(
     JoinSubstring(Either(Sequence(at_linestart,'#',Repeat_until(AnyChar(),'\n')),
-                         Sequence(at_linestart,Repeat_until(whitespace,'\n')))));
+                         Sequence(at_linestart,Repeat_until(whitespace_char,'\n')))));
 
 
 
@@ -41,7 +41,7 @@ comment_or_empty = Repeat(
                 AnyChar(),
                 Sequence(3, NegativeLookbehind('\\'),
                          s, Repeat_until(AnyChar(),
-                                         Sequence(Repeat(whitespace), '\n'),
+                                         Sequence(Repeat(whitespace_char), '\n'),
                                          wrap=JoinSubstring)),
                 true; wrap=JoinSubstring)
             end,

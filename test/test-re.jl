@@ -1,12 +1,6 @@
 import CombinedParsers: ParserTypes
 using CombinedParsers.Regexp
 
-@testset "comments" begin
-    ##@test parse(comment_par,"(?# comment)") == with_log("comment",Always())
-    @test match(re"(?# comment)a","a").match == "a"
-    ## match(re"(?# comment)a","a").match == "a"
-end
-
 import CombinedParsers.Regexp: char, character_base, escape_sequence, escaped_character
 @testset "char" begin
     ##@test match(parse(char,with_options(Base.PCRE.CASELESS,"A")) =='a'
@@ -59,13 +53,38 @@ import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
     @test parse(re"[a- z]"xx,"b")=='b'
     ##@test match(r" [a-z]"xxx,"b")==match(re" [a-z]"xxx,"b")
     @test result_type(bracket) == CombinedParser
+    @test parse(bracket,"[a\\E]") == CharIn('a')
+    ##parse(bracket,with_options("i","[^]a]"))
+    @test_throws ArgumentError Regcomb("[")
 end
 
-import CombinedParsers.Regexp: option_sequences
+
+
+parse(re"\v(?#ss=)","\n")
+
+
+
+
+import CombinedParsers.Regexp: option_sequences,skip_whitespace_on, ParserWithCaptures
 @testset "internal options" begin
     @test match(r"(?xx)[a- x]","b")==match(re"(?xx)[a- x]","b")    
     @test parse(pcre_options,"i")==Base.PCRE.CASELESS
     @test parse(parse(option_sequences,"a|b(?i)a"),"bA")==('b','A')
+    @test re" a"x == CharIn('a')
+   
+    
+@testset "comments" begin
+    ##@test parse(comment_par,"(?# comment)") == with_log("comment",Always())
+    @test match(re"(?# comment)a","a").match == "a"
+    ## match(re"(?# comment)a","a").match == "a"
+    
+    ## parse(seq(parse(skip_whitespace_and_comments,with_options("x"," (?#xxx) (?#yyy) "))...),"a")
+## push!(pattern,lazy(opt(comment_par)));
+
+## parse_all(lazy(opt(comment_par)),"(?#a)")
+
+end
+
 end
 
 import CombinedParsers: Repeat_max
@@ -85,13 +104,14 @@ import CombinedParsers.Regexp: quantified, repetition, sequence
     ## lazy rep
     @test_pcre "a(?:b|(c|e){1,2}?|d)+?(.)" "ace"
     @test parse(parse(quantified,"a*"),"aa")==Char['a','a']
-    @test tokenize(quantified,"a?")|>regex_string == "a?"
+    @test parse(quantified,"a?")|>regex_string == "a?"
     parse(quantified,"a{3}")
     parse(quantified,with_options(Base.PCRE.EXTENDED,"a {3}"))
     parse(parse(sequence,"ab*"), "abbb")
     pp=parse(sequence,"ab*")
     ##@btime _iterate(pp, "abbb")
     ##@btime match(r"ab*","abbb")
+    @test parse(quantified,with_options(Base.PCRE.CASELESS,"a*?")) == Lazy(Repeat(CharIn('a','A')))
 end
 
 
@@ -104,7 +124,6 @@ import CombinedParsers.Regexp: alternation
           with_options(Base.PCRE.EXTENDED|Base.PCRE.EXTENDED_MORE,
                        "a {3}bc | d | [a - e]# comment?"))
     @test parse(seq(AtStart(),alternation,AtEnd(), transform=2),"")==seq()
-    ## push!(pattern,alternation) ## stackoverflow
 end
 
 import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference, subroutine
@@ -145,8 +164,21 @@ import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference
 end                 
 
 
+
 @testset "look around" begin
     @test_pcre "ab*(?<=ab)c" "abc" true
 end
 
+@test_pcre "(ab|a|b)+c" "abbabc" true
 
+@test regex_string(AtEnd())=="\$"
+
+@test_pcre "^(a|b|abc)+c\$" "abcbabc"
+
+
+@test_pcre "^aaa(?<!c)b" "aaab"
+
+
+@test _iterate(PositiveLookahead("a"), "aaab") == (1, CombinedParsers.MatchState())
+
+@test get(PositiveLookahead("a"),"aaab",4,1,1,CombinedParsers.MatchState()) == "a"
