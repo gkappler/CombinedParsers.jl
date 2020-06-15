@@ -2312,11 +2312,23 @@ todo: Note that the options array is kept. As a consequence `push!`on result wil
     Either{Union{result_type(x),T}}(x.options)
 
 
+Base.push!(x::Repeat{<:Either}, y) = push!(x.parser,y)
+Base.pushfirst!(x::Repeat{<:Either}, y) = pushfirst!(x.parser,y)
+
+"""
+    Base.push!(x::Either, option)
+
+Push `option` to `x.options` as parser tried first before `x` .
+Recursive parsers can be built with the `push!` to `Either`.
+
+See also [`push!`](@ref).
+"""
 function Base.push!(x::Either, y)
     result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     push!(x.options,y)
     x
 end
+
 function Base.pushfirst!(x::Either, y)
     result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     pushfirst!(x.options,y)
