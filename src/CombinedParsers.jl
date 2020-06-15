@@ -2625,6 +2625,8 @@ function Base.push!(x::Either, y)
     push!(x.options,y)
     x
 end
+Base.push!(x::Repeat{<:Either}, y) = push!(x.parser,y)
+Base.pushfirst!(x::Repeat{<:Either}, y) = pushfirst!(x.parser,y)
 
 """
     Base.pushfirst!(x::Either, option)
