@@ -161,6 +161,12 @@ print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
 
+@inline tuple_pos(pos_state::Tuple) =
+    pos_state[1]
+
+@inline tuple_state(pos_state::Tuple) =
+    pos_state[2]
+
 _iterate(parser::AbstractToken, sequence, till, next_i, state) =
     _iterate(parser, sequence, till, start_index(sequence,next_i,parser,state), next_i, state)
     
@@ -180,16 +186,16 @@ function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state
 end
 
 function Base.get(parser::AbstractToken, sequence, till, after, i, state)
-    state[2]
+    tuple_state(state)
 end
 
 @inline function nextind(str,i::Int,parser::AbstractToken,x)
     parser isa CombinedParser && @warn "define nextind(str,i::Int,parser::$(typeof(parser)),x)"
-    i+x[1]
+    i+tuple_pos(x)
 end
 @inline function prevind(str,i::Int,parser::AbstractToken,x)
     parser isa CombinedParser && @warn "define prevind(str,i::Int,parser::$(typeof(parser)),x)"
-    i-x[1]
+    i-tuple_pos(x)
 end
 
 function Base.get(parser::CombinedParser, sequence, till, after, i, state)
@@ -1530,20 +1536,20 @@ regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
 
 @inline nextind(str,i::Int,parser::FlatMap,x::Tuple) =
-    let li = nextind(str,i,parser.left,x[1])
+    let li = nextind(str,i,parser.left,tuple_pos(x))
         nextind(str,li,x[2],x[3])
     end
 
 @inline prevind(str,i::Int,parser::FlatMap,x::Tuple) =
     let li = prevind(str,i,x[2],x[3])
-        prevind(str,li,parser.left,x[1])
+        prevind(str,li,parser.left,tuple_pos(x))
     end
 
     
 
 
 function Base.get(parser::FlatMap, sequence, till, after, i, state)
-    li = nextind(sequence,i,parser.left,state[1])
+    li = nextind(sequence,i,parser.left,tuple_pos(state))
     get(state[2],sequence, till, after,
               li,
               state[3])
@@ -1557,18 +1563,18 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
         posi = next_i
         lr = _iterate(tokf.left, str, till, posi, next_i, nothing)
         lr === nothing && return nothing
-        next_i_ = lr[1]
-        rightp = tokf.right(get(tokf.left, str, till, lr[1],next_i,lr[2]))
+        next_i_ = tuple_pos(lr)
+        rightp = tokf.right(get(tokf.left, str, till, next_i_,next_i,tuple_state(lr)))
         rr = nothing
         while rr === nothing
             rr = _iterate(rightp, str, till, next_i_, next_i_, nothing)
             if rr === nothing
-                lr = _iterate(tokf.left, str, till, posi, next_i_, lr[2])
+                lr = _iterate(tokf.left, str, till, posi, next_i_, tuple_state(lr))
                 lr === nothing && return nothing
-                rightp = tokf.right(get(tokf.left, str, till, lr[1],posi,lr[2]))
-                next_i_ = lr[1]
+                next_i_ = tuple_pos(lr)
+                rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,tuple_state(lr)))
             else
-                return rr[1], (lr[2], rightp, rr[2])
+                return tuple_pos(rr), (tuple_state(lr), rightp, tuple_state(rr))
             end
         end
     else
@@ -1586,7 +1592,7 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
                 rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,lstate))
                 rstate = nothing
             else
-                return rr[1], (lstate, rightp, rr[2])
+                return tuple_pos(rr), (lstate, rightp, tuple_state(rr))
             end
         end
     end
@@ -1812,8 +1818,8 @@ function _iterate_(parser::Sequence, sequence, till, posi, next_i, states)
                 error()
             end
         else
-            states[nexti] = ns[2]
-            next_i_ = ns[1]
+            states[nexti] = tuple_state(ns)
+            next_i_ = tuple_pos(ns)
             nexti += 1
             if nexti > length(states)
                 return next_i_, states
@@ -2222,8 +2228,8 @@ end
 ## used by Lazy{Repeat}
 @inline function pushstate!_fill_rep(t_, sequence, till, state_, x)
     t = t_.parser
-    state_=pushstate!(state_,t.parser,x[2])
-    fill_rep(t_,sequence,till,x[1],state_)
+    state_=pushstate!(state_,t.parser,tuple_state(x))
+    fill_rep(t_,sequence,till,tuple_pos(x),state_)
 end
 
 function _iterate(t::Repeat, sequence, till, posi, next_i, state)
@@ -2286,8 +2292,8 @@ function _iterate(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
     else
         if state_length(t,state)<t.range.stop
             x = _iterate(t.parser,sequence, till, next_i, next_i, nothing)
-            if x!==nothing && ( x[1]>next_i || state_length(t,state)==0)
-                return fill_rep_j_state(x,state,t.parser) #x[1],pushstate!(state,t.parser,x[2])
+            if x!==nothing && ( tuple_pos(x)>next_i || state_length(t,state)==0)
+                return fill_rep_j_state(x,state,t.parser) #tuple_pos(x),pushstate!(state,t.parser,tuple_state(x))
             end
         end
         next_i, state, true
@@ -2413,7 +2419,7 @@ function _iterate(t::Optional, str, till, posi, next_i, state)
         prune_captures(str,posi)
         return tuple(posi, None())
     else
-        r[1], r[2]
+        r
     end
 end
 
@@ -2427,7 +2433,7 @@ function _iterate(t_::Lazy{<:Optional}, str, till, posi, next_i, state)
         if r === nothing
             nothing
         else
-            r[1], r[2]
+            r
         end            
     end
 end
@@ -3077,7 +3083,7 @@ import Base: iterate
 function Base.iterate(x::Parsings, s=(1,nothing))
     s_ = _iterate(x.parser,x.sequence,x.till,s...)
     s_ === nothing && return s_
-    get(x.parser,x.sequence,x.till,s_[1],1,s_[2]), s_
+    get(x.parser,x.sequence,x.till,tuple_pos(s_),1,tuple_state(s_)), s_
 end
 
 export parse_all
@@ -3126,7 +3132,7 @@ Like `parse`, but returns either a value of `result_type(parser)` or `nothing` i
 function Base.tryparse(p::AbstractToken, s)
     i = _iterate(p,s)
     i === nothing && return nothing
-    get(p,s,lastindex(s),i[1],1,i[2])
+    get(p,s,lastindex(s),tuple_pos(i),1,tuple_state(i))
 end
 
 export tryparse_pos
@@ -3138,7 +3144,7 @@ Like `parse`, but returns either a tuple of `result_type(parser)` and the positi
 function tryparse_pos(p,s)
     i = _iterate(p,s)
     i === nothing && return nothing
-    get(p,s,lastindex(s),i[1],1,i[2]),i[1]
+    get(p,s,lastindex(s),tuple_pos(i),1,tuple_state(i)),tuple_pos(i)
 end
 
 _iterate(parser,sequence) =

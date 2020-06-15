@@ -137,7 +137,7 @@ Base.getindex(x::WithOptions,i...) =
     with_options(x.flags,(getindex(x.x,i...)))
 Base.iterate(x::WithOptions{<:AbstractString},a...) =
     let n = iterate(x.x,a...)
-        n===nothing ? nothing : with_options(x.flags,n[1]),n[2]
+        n===nothing ? nothing : with_options(x.flags,tuple_pos(n)),tuple_state(n)
     end
 Base.SubString(x::WithOptions,a...) =
     SubString(x.x,a...)
@@ -294,7 +294,7 @@ Base.ncodeunits(x::FilterOptions) =
     ncodeunits(x.x)
 Base.iterate(x::FilterOptions,a...) =
     let n = iterate(x.x,a...)
-        n===nothing ? nothing : if_options(x.flags,n[1]),n[2]
+        n===nothing ? nothing : if_options(x.flags,tuple_pos(n)),tuple_state(n)
     end
 
 Base.convert(::Type{Union{Char,CharIn}},x::FilterOptions{Char}) = x.x

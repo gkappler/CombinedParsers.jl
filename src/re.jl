@@ -10,7 +10,7 @@ using AutoHashEquals
 import ..CombinedParsers: LeafParser, WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, _iterate, print_constructor
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
-import ..CombinedParsers: revert, reverse_index, state_type, start_index
+import ..CombinedParsers: revert, reverse_index, state_type, start_index, tuple_pos, tuple_state
 
 import Base: prevind, nextind
 
@@ -124,11 +124,10 @@ end
 Base.get(x::Capture, sequence, till, after, i, state) =
     get(x.parser, sequence, till, after, i, state)
 
-
 @inline function _iterate(parser::Capture, sequence, till, posi, next_i, state)
     r = _iterate(parser.parser, sequence, till, posi, next_i, state)
     if r !== nothing ## set only if found (e.g. if repeated capture capture last)
-        set_capture(sequence,parser.index,posi,prevind(sequence,r[1]))
+        set_capture(sequence,parser.index,posi,prevind(sequence,tuple_pos(r)))
     elseif state !== nothing
         prune_captures(sequence, posi)
     end
@@ -259,7 +258,7 @@ end
         SubString(sequence.match, sequence.captures[index][end]),
         sequence, till, posi, next_i, state)
     r === nothing && return nothing
-    r[1], r[1]-next_i
+    tuple_pos(r), tuple_pos(r)-next_i
 end
 
 _iterate_condition(p::Backreference, sequence, till, posi, next_i, state) =
@@ -480,7 +479,7 @@ end
     s = _iterate(cparse,
                  sequence, till, posi, next_i, state)
     s === nothing && return nothing
-    s[1], f => s[2]
+    tuple_pos(s), f => tuple_state(s)
 end
 
 @inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Pair)
@@ -570,8 +569,8 @@ function Base.match(parser::ParserTypes,sequence; log=nothing)
     if i === nothing
         nothing
     else
-        ParseMatch(sequence,start,prevind(sequence,i[1]),i[2])
         # SubString(sequence,start,prevind(sequence,i[1]))
+        ParseMatch(sequence,start,prevind(sequence,tuple_pos(i)),tuple_state(i))
     end
 end
 
