@@ -33,7 +33,16 @@ export result_type
 Abstract parser type for parsers returning matches transformed to `::T`.
 """
 abstract type CombinedParser{T} <: AbstractToken{T} end
+"""
+    (x::CombinedParser)(str;kw...)
 
+
+`parse(x,str;kw...)`
+
+See also [`parse`](@ref).
+"""
+(x::CombinedParser)(str;kw...) = parse(x,str;kw...)
+(x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
 
 """
     LeafParser{T} <: AbstractToken{T}
@@ -920,6 +929,91 @@ See also [`log_names(parser)`](@ref)
 """
 macro with_names(block)
     esc(with_names(block))
+end
+
+export @syntax
+"""
+Convenience macro `@syntax name = expr` for defining a CombinedParser `name=expr` and custom parsing macro `@name_str`.
+
+With `@syntax for name in either; expr; end` the defined parser is [`pushfirst!`](@ref) to `either`.
+If `either` is undefined, it will be created.
+If `either == :text || either == Symbol(:)` the parser will be added to `CombinedParser_globals` variable in your module.
+
+```jldoctest
+julia> @syntax german_street_address = Sequence(:street => !Repeat(AnyChar()),
+                 " ",
+                 :no =>Numeric(Int))
+
+julia> german_street_address"Some Avenue 42"
+
+julia> @syntax for german_street_address in street_address; end;
+
+julia> @syntax for us_street_address in street_address
+    Sequence(:no =>Numeric(Int), " ", :street => !Repeat(AnyChar()))
+end;
+
+julia> street_address"50 Oakland Ave"
+```
+"""
+macro syntax(block)
+    R = if block.head == :for
+        name, within = block.args[1].args
+        within_expr = if within === :texts || within === Symbol(":") ## parser is global
+            quote
+                if isdefined($__module__,:CombinedParser_globals)
+                    CombinedParser_globals
+                else
+                    global CombinedParser_globals
+                    CombinedParser_globals = Repeat(Either{Any}())
+                end
+            end
+        elseif __module__.eval( :(isdefined($__module__,$(QuoteNode(within))) && $within isa CombinedParser ))
+            :($within)
+        else ## new Either
+            quote
+                global $within = Either{result_type($name)}()
+            end
+        end
+        body = block.args[2]
+        if body.head==:block
+            expr = Any[]
+            for e in body.args
+                if e isa LineNumberNode
+                    push!(expr,e)
+                elseif e isa Symbol
+                    push!(expr,e)
+                elseif e.head==Symbol("=") && e.args[1]==:examples
+                    @warn "examples currently ignored" 
+                else
+                    push!(expr,with_names(Expr(Symbol("="), name, e)))
+                end
+            end
+            quote
+                macro $(Symbol(string(name)*"_str"))(x)
+                    $name(x)
+                end
+                global $name
+                $(expr...)
+                pushfirst!($within_expr, $name)
+                $name
+            end
+        else
+            dump(block)
+            error()
+        end
+    elseif block.head==Symbol("=")
+        name = block.args[1]
+        quote
+            macro $(Symbol(string(name)*"_str"))(x)
+                $name(x)
+            end
+            $(with_names(block))
+        end
+    else
+        dump(block)
+        error()
+    end
+    esc(R)
 end
 
 export Transformation
