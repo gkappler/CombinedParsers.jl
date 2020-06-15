@@ -146,10 +146,9 @@ set_capture(sequence::SequenceWithCaptures{<:Reverse}, index::Int, start,stop) =
                                             start))
 
 function prune_captures(sequence::SequenceWithCaptures,after_i)
-    for i in 1:length(sequence.captures)
-        cv = sequence.captures[i]
-        while !isempty(cv) && ( cv[end].stop >= after_i)
-            ##@show after_i
+    @inbounds for i in 1:length(sequence.captures)
+        @inbounds cv = sequence.captures[i]
+        while !isempty(cv) && (@inbounds  cv[end].stop >= after_i)
             pop!(cv)
         end
     end
