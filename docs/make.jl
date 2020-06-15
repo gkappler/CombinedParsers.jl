@@ -3,11 +3,20 @@ using Documenter: Documenter, makedocs, deploydocs, doctest, DocMeta
 using CombinedParsers
 using CombinedParsers.Regexp
 using Test
+using Literate
 
+docdir = joinpath(dirname(pathof(CombinedParsers)),"../docs/src/")
+mandir = joinpath(docdir,"man")
 DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
     using CombinedParsers
     using CombinedParsers.Regexp
 end; recursive=true)
+
+for f in [ "example-person.jl", "example-number-ranges.jl" ]
+    Literate.markdown(joinpath(mandir,f), mandir,
+                      repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs",
+                      codefence = "```@repl session" => "```")
+end
 
 makedocs(;
     modules=[CombinedParsers],
@@ -27,6 +36,8 @@ makedocs(;
             "PCRE Compliance" => "man/pcre-compliance.md",
         ],
         "Examples" => [
+            "Name and addresses" => "man/example-person.md",
+            "Number sequences" => "man/example-number-ranges.md",
             "Regular Expressions" => "man/pcre.md",
             "JSON" => "man/json.md",
         ],
