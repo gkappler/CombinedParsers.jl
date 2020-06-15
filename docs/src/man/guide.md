@@ -36,6 +36,11 @@ CombinedParsers.jl is tested and benchmarked against the PCRE C library testset,
 ## Parsing 
 
 `match` searches for the first match of the Regex in the String and return a `RegexMatch`/`Parsematch` object containing the match and captures, or nothing if the match failed.
+If a capture matches repeatedly only the last match is captured.
+```@repl session
+match(pattern,"aBBac")
+```
+
 `Base.parse` methods parse a String into a Julia type.
 A CombinedParser `p` will parse into an instance of `result_type(p)`.
 For parsers defined with the `@re_str` the `result_type`s are nested Tuples and Vectors of SubString, Chars and Missing.

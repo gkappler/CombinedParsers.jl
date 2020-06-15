@@ -56,7 +56,7 @@ inline = !Repeat(CharNotIn(vertical_space))
 "Zero or more vertical whitespace."
 whitespace_maybe = !Repeat(CharIn(horizontal_space))
 "At least one vertical whitespace."
-whitespace_vertical = !Repeat1(CharIn(horizontal_space))
+whitespace_horizontal = !Repeat1(CharIn(horizontal_space))
 
 
 bracket_range(start) =
