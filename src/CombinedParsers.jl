@@ -214,8 +214,6 @@ result_type(::Type{<:AbstractToken{T}}) where T = T
 
 """
 State object for a match that is defined by the parser, sequence and position.
-
-See also [`NCodeuntitsMatchState`](@ref).
 """
 struct MatchState end
 
