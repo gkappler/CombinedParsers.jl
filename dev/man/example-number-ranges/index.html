@@ -33,37 +33,37 @@ julia&gt; parse(int,&quot;19&quot;)
 julia&gt; int(&quot;19&quot;)
 1-element Array{Int64,1}:
  19</code></pre><p>The tree displays how a number is read and transformed to a Vector with length 1.</p><pre><code class="language-julia-repl">julia&gt; int
-TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#46)
+TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#43)
 ::Array{Int64,1}</code></pre><h2 id="Joining-numbers-and-ranges-1"><a class="docs-heading-anchor" href="#Joining-numbers-and-ranges-1">Joining numbers and ranges</a><a class="docs-heading-anchor-permalink" href="#Joining-numbers-and-ranges-1" title="Permalink"></a></h2><pre><code class="language-julia-repl">julia&gt; @syntax numbers = map(join(
            Repeat(Either(int_vector, int)),
            re&quot; *, *&quot;
        )) do v
            vcat(v...)::Vector{Int}
        end
-🗄 Sequence |&gt; map(#46) |&gt; map(#46) |&gt; with_name(:numbers)
+🗄 Sequence |&gt; map(#43) |&gt; map(#43) |&gt; with_name(:numbers)
 ├─ |🗄... Either
-│  ├─ 🗄 Sequence |&gt; map(#46) |&gt; map(#46) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
+│  ├─ 🗄 Sequence |&gt; map(#43) |&gt; map(#43) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
 │  │  ├─ &lt;Int64&gt;
 │  │  ├─ 🗄 Sequence
 │  │  │  ├─ \ *  |&gt; Repeat
 │  │  │  ├─ \-
 │  │  │  └─ \ *  |&gt; Repeat
 │  │  └─ &lt;Int64&gt;
-│  └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#46)
-└─ 🗄* Sequence |&gt; map(#54) |&gt; Repeat
+│  └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#43)
+└─ 🗄* Sequence |&gt; map(#51) |&gt; Repeat
    ├─ 🗄 Sequence
    │  ├─ \ *  |&gt; Repeat
    │  ├─ ,
    │  └─ \ *  |&gt; Repeat
    └─ |🗄... Either
-      ├─ 🗄 Sequence |&gt; map(#46) |&gt; map(#46) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
+      ├─ 🗄 Sequence |&gt; map(#43) |&gt; map(#43) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
       │  ├─ &lt;Int64&gt;
       │  ├─ 🗄 Sequence
       │  │  ├─ \ *  |&gt; Repeat
       │  │  ├─ \-
       │  │  └─ \ *  |&gt; Repeat
       │  └─ &lt;Int64&gt;
-      └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#46)
+      └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#43)
 ::Array{Int64,1}
 
 julia&gt; numbers&quot;1-3,9&quot;
@@ -72,11 +72,12 @@ julia&gt; numbers&quot;1-3,9&quot;
  2
  3
  9</code></pre><p>Prepend another parser by</p><pre><code class="language-julia-repl">julia&gt; (re&quot;no *&quot;*numbers)[end](&quot;no 2-4,19&quot;)
-4-element Array{Int64,1}:
-  2
-  3
-  4
- 19</code></pre><h2 id="Inclusion-in-a-wikitext-parser-1"><a class="docs-heading-anchor" href="#Inclusion-in-a-wikitext-parser-1">Inclusion in a wikitext parser</a><a class="docs-heading-anchor-permalink" href="#Inclusion-in-a-wikitext-parser-1" title="Permalink"></a></h2><p>Long and complicated texts like the Wikipedia can be parsed with <code>CombinedParsers.jl</code>. The parsers are less pain to write and execute at speeds comparably to PCRE implemented in C, the regular expressions industry standard. <code>CombinedParsers.jl</code> can inter-operate with Julia packages <code>TextParse.jl</code>.</p><pre><code class="language-julia-repl">julia&gt; @syntax wiki_references = Sequence(2,&quot;[&quot;,numbers,&quot;]&quot;);
+ERROR: MethodError: no method matching lastindex(::Sequence{Tuple{Char,Char,Array{Char,1},Array{Int64,1}},Tuple{CharIn{Char},CharIn{Char},Repeat{CharIn{Char},Array{Char,1}},NamedParser{Transformation{CombinedParsers.var&quot;#43#44&quot;{Main.ex-session.var&quot;#5#6&quot;,Tuple{}},Transformation{CombinedParsers.var&quot;#43#44&quot;{CombinedParsers.var&quot;#148#149&quot;{Repeat{Either{Array{Int64,1},Array{Any,1}},Array{Array{Int64,1},1}}},Tuple{}},Sequence{Tuple{Array{Int64,1},Array{Array{Int64,1},1}},Tuple{Either{Array{Int64,1},Array{Any,1}},Repeat{Transformation{CombinedParsers.var&quot;#51#52&quot;{CombinedParsers.var&quot;#103#104&quot;{2},Tuple{}},Sequence{Tuple{Tuple{Array{Char,1},Char,Array{Char,1}},Array{Int64,1}},Tuple{Sequence{Tuple{Array{Char,1},Char,Array{Char,1}},Tuple{Repeat{CharIn{Char},Array{Char,1}},CharIn{Char},Repeat{CharIn{Char},Array{Char,1}}}},Either{Array{Int64,1},Array{Any,1}}}},Array{Int64,1}},Array{Array{Int64,1},1}}}},Array{Array{Int64,1},1}},Array{Int64,1}},Array{Int64,1}}}})
+Closest candidates are:
+  lastindex(!Matched::Core.SimpleVector) at essentials.jl:599
+  lastindex(!Matched::Cmd) at process.jl:639
+  lastindex(!Matched::Base64.Buffer) at /buildworker/worker/package_linux64/build/usr/share/julia/stdlib/v1.3/Base64/src/buffer.jl:19
+  ...</code></pre><h2 id="Inclusion-in-a-wikitext-parser-1"><a class="docs-heading-anchor" href="#Inclusion-in-a-wikitext-parser-1">Inclusion in a wikitext parser</a><a class="docs-heading-anchor-permalink" href="#Inclusion-in-a-wikitext-parser-1" title="Permalink"></a></h2><p>Long and complicated texts like the Wikipedia can be parsed with <code>CombinedParsers.jl</code>. The parsers are less pain to write and execute at speeds comparably to PCRE implemented in C, the regular expressions industry standard. <code>CombinedParsers.jl</code> can inter-operate with Julia packages <code>TextParse.jl</code>.</p><pre><code class="language-julia-repl">julia&gt; @syntax wiki_references = Sequence(2,&quot;[&quot;,numbers,&quot;]&quot;);
 
 julia&gt; wiki_references&quot;[1, 7-9, 2]&quot;
 5-element Array{Int64,1}:
@@ -85,29 +86,29 @@ julia&gt; wiki_references&quot;[1, 7-9, 2]&quot;
  8
  9
  2</code></pre><p>The tree displays how a bracketed comma separated sequence of numbers and number ranges is read and transformed to a Vector.</p><pre><code class="language-julia-repl">julia&gt; wiki_references
-🗄 Sequence |&gt; map(#54) |&gt; with_name(:wiki_references)
+🗄 Sequence |&gt; map(#51) |&gt; with_name(:wiki_references)
 ├─ \[
-├─ 🗄 Sequence |&gt; map(#46) |&gt; map(#46) |&gt; with_name(:numbers)
+├─ 🗄 Sequence |&gt; map(#43) |&gt; map(#43) |&gt; with_name(:numbers)
 │  ├─ |🗄... Either
-│  │  ├─ 🗄 Sequence |&gt; map(#46) |&gt; map(#46) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
+│  │  ├─ 🗄 Sequence |&gt; map(#43) |&gt; map(#43) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
 │  │  │  ├─ &lt;Int64&gt;
 │  │  │  ├─ 🗄 Sequence
 │  │  │  │  ├─ \ *  |&gt; Repeat
 │  │  │  │  ├─ \-
 │  │  │  │  └─ \ *  |&gt; Repeat
 │  │  │  └─ &lt;Int64&gt;
-│  │  └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#46)
-│  └─ 🗄* Sequence |&gt; map(#54) |&gt; Repeat
+│  │  └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#43)
+│  └─ 🗄* Sequence |&gt; map(#51) |&gt; Repeat
 │     ├─ 🗄 Sequence
 │     │  ├─ \ *  |&gt; Repeat
 │     │  ├─ ,
 │     │  └─ \ *  |&gt; Repeat
 │     └─ |🗄... Either
-│        ├─ 🗄 Sequence |&gt; map(#46) |&gt; map(#46) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
+│        ├─ 🗄 Sequence |&gt; map(#43) |&gt; map(#43) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
 │        │  ├─ &lt;Int64&gt;
 │        │  ├─ 🗄 Sequence
 │        │  └─ &lt;Int64&gt;
-│        └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#46)
+│        └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#43)
 └─ \]
 ::Array{Int64,1}</code></pre><h2 id="PCRE-papercuts-when-parsing-number-sequences-1"><a class="docs-heading-anchor" href="#PCRE-papercuts-when-parsing-number-sequences-1">PCRE papercuts when parsing number sequences</a><a class="docs-heading-anchor-permalink" href="#PCRE-papercuts-when-parsing-number-sequences-1" title="Permalink"></a></h2><p>The same parser as a regular expression will be tedious to understand and write (though writing the regular expression <code>re&quot; *- *&quot;</code> is clear). PCRE matching does recognize the match but makes not all required parsing parts accessible (7 is not captured).</p><pre><code class="language-julia-repl">julia&gt; re = &quot;\\[([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+)(?: *, *([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+))*\\]&quot;
 &quot;\\[([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+)(?: *, *([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+))*\\]&quot;
@@ -115,4 +116,4 @@ julia&gt; wiki_references&quot;[1, 7-9, 2]&quot;
 julia&gt; match(Regex(&quot;^&quot;*re*&quot;\$&quot;), &quot;[1-3,7,9]&quot;)
 RegexMatch(&quot;[1-3,7,9]&quot;, 1=&quot;1-3&quot;, 2=&quot;9&quot;)
 
-julia&gt; ### TODO: regex_string(wiki_references)</code></pre><p>To make the parsing work with regular expressions you would choose a stepwise strategy, handling <code>[</code> and <code>]</code> and stepping though <code>,</code> separated parts. Parsing was pain.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-person/">« Name and addresses</a><a class="docs-footer-nextpage" href="../pcre/">Regular Expressions »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 15 June 2020 14:45">Monday 15 June 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+julia&gt; ### TODO: regex_string(wiki_references)</code></pre><p>To make the parsing work with regular expressions you would choose a stepwise strategy, handling <code>[</code> and <code>]</code> and stepping though <code>,</code> separated parts. Parsing was pain.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-person/">« Name and addresses</a><a class="docs-footer-nextpage" href="../pcre/">Regular Expressions »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 16 June 2020 15:06">Tuesday 16 June 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
