@@ -61,6 +61,27 @@ end
 
 
 
+## Performance
+`CombinedParsers` are fast, utilizing parametric types and generated functions in the Julia compiler.
+
+```@repl session
+
+using BenchmarkTools
+pattern = r"[aB]+c"
+@btime mr = match(pattern,"aBc")
+
+pattern = re"[aB]+c"
+@btime mre = match(pattern,"aBc")
+```
+
+Regex captures are supported but comparably slow for compatibility.
+```@repl session
+pattern = r"([aB])+c"
+@btime mr = match(pattern,"aBc")
+pattern = re"([aB])+c"
+@btime mre = match(pattern,"aBc")
+```
+
 ## Transformations
 Transform the result of a parsing with `map`.
 The `result_type` inferred automatically using julia type inference.
@@ -78,3 +99,4 @@ Conveniently, calling `getindex(::CombinedParser,::Integer)` and `map(::Integer,
 parse(map(IndexAt(2),re"abc"),"abc")
 parse(re"abc"[2],"abc")
 ```
+
