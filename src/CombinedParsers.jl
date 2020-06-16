@@ -1620,6 +1620,8 @@ export Sequence
     end
 end
 
+Base.lastindex(x::Sequence) = lastindex(x.parts)
+
 """
     Sequence(;kw...)
 
