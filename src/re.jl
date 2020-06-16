@@ -16,10 +16,10 @@ import Base: prevind, nextind
 
 indexed_captures_(x,a...) = x
 
+import Base: SubString, ==
+
 include("pcre.jl")
 
-
-import Base: SubString, ==
 
 """
 SequenceWithCaptures ensapsulates a sequence to be parsed, and parsed captures.
