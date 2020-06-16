@@ -75,6 +75,12 @@ end
 Base.SubString(x::SequenceWithCaptures,a...) =
     SubString(x.match,a...)
 
+with_options(set_flags::UInt32, unset_flags::UInt32,x::SequenceWithCaptures) =
+    SequenceWithCaptures(
+        with_options(set_flags, unset_flags,x.match),
+        x
+    )
+
 
 export Capture
 """
@@ -175,6 +181,7 @@ Parser matching previously captured sequence, optionally with a name.
     Backreference(f::Function,name::AbstractString) =
         new(Symbol(name),-1,f)
 end
+state_type(::Type{<:Backreference}) = Int
 
 regex_string_(x::Function) = "#\$($x)"
                                                           
@@ -229,11 +236,6 @@ end
 end
 
 
-state_type(::Type{<:Backreference}) = Int
-@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, posi, next_i, state)
-    return nothing
-end
-
 function resolve_index(p::Backreference, sequence::SequenceWithCaptures)
     index = p.index
     if index < 0 && p.name !== nothing
@@ -246,16 +248,41 @@ function resolve_index(p::Backreference, sequence::SequenceWithCaptures)
     ( index<0 || isempty(sequence.captures[index]) ) ? -1 : index
 end
 
-@inline function _iterate(p::Backreference, sequence::SequenceWithCaptures, till, posi, next_i, state::Nothing)
+capture_substring(p::ParserOptions{<:Backreference}, sequence::SequenceWithCaptures) =
+    with_options(p.set_flags, p.unset_flags,capture_substring(p.parser, sequence))
+
+function capture_substring(p::Backreference, sequence::SequenceWithCaptures)
     index = resolve_index(p, sequence)
     index<0 && return nothing
-    sequence.captures[index]
+    SubString(sequence.match, sequence.captures[index][end])
+end
+
+@inline function _iterate(
+    p::Union{Backreference,ParserOptions{<:Backreference}},
+    sequence::SequenceWithCaptures, till,
+    posi, next_i, state::Nothing)
     r = _iterate(
-        SubString(sequence.match, sequence.captures[index][end]),
+        capture_substring(p, sequence),
         sequence, till, posi, next_i, state)
     r === nothing && return nothing
     tuple_pos(r), tuple_pos(r)-next_i
 end
+
+@inline function _iterate(
+    p::Union{Backreference,ParserOptions{<:Backreference}},
+    sequence::SequenceWithCaptures, till,
+    posi, next_i, state)
+    return nothing
+end
+
+
+@inline function _iterate(
+    p::Nothing,
+    sequence, till,
+    posi, next_i, state)
+    return nothing
+end
+
 
 _iterate_condition(p::Backreference, sequence, till, posi, next_i, state) =
     resolve_index(p, sequence)>0

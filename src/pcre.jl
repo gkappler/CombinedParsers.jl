@@ -85,7 +85,7 @@ With parsing options
 
 TODO: make flags a transformation function?
 """
-struct WithOptions{S}
+struct WithOptions{S} <: AbstractString
     x::S
     flags::UInt32
     function WithOptions(x,flags)
@@ -132,28 +132,36 @@ Base.Regex(x::WithOptions) =
     Regex(x.x, options_string(x.flags))
 Base.show(io::IO, x::WithOptions) =
     print(io,x.x)
+Base.print(io::IO, x::WithOptions{Char}) =
+    print(io,x.x)
 
-Base.getindex(x::WithOptions,i...) =
-    with_options(x.flags,(getindex(x.x,i...)))
-Base.iterate(x::WithOptions{<:AbstractString},a...) =
-    let n = iterate(x.x,a...)
-        n===nothing ? nothing : with_options(x.flags,tuple_pos(n)),tuple_state(n)
+Base.getindex(x::WithOptions,i::Integer) =
+    with_options(x.flags,(getindex(x.x,i)))
+Base.iterate(x::WithOptions{<:AbstractString}) =
+    let n = iterate(x.x)
+        n===nothing ? nothing : ( with_options(x.flags,n[1]),n[2] ) 
     end
-Base.SubString(x::WithOptions,a...) =
-    SubString(x.x,a...)
+Base.iterate(x::WithOptions{<:AbstractString},i::Integer) =
+    let n = iterate(x.x,i)
+        n===nothing ? nothing : ( with_options(x.flags,n[1]),n[2] )
+    end
+
+Base.isless(x::WithOptions{Char},y) = isless(x.x,y)
+(==)(x::WithOptions{Char},y) = x.x==y
+Base.SubString(x::WithOptions,start::Int,stop::Int) = with_options(x.flags,SubString(x.x,start,stop))
 Base.length(x::WithOptions) =
     length(x.x)
 Base.lastindex(x::WithOptions) =
     lastindex(x.x)
 Base.firstindex(x::WithOptions) =
     firstindex(x.x)
-Base.prevind(x::WithOptions,i::Integer,n::Integer) =
+Base.prevind(x::WithOptions,i::Int,n::Int) =
     prevind(x.x,i,n)
-Base.nextind(x::WithOptions,i::Integer,n::Integer) =
+Base.nextind(x::WithOptions,i::Int,n::Int) =
     nextind(x.x,i,n)
-Base.prevind(x::WithOptions,i::Integer) =
+Base.prevind(x::WithOptions,i::Int) =
     prevind(x.x,i)
-Base.nextind(x::WithOptions,i::Integer) =
+Base.nextind(x::WithOptions,i::Int) =
     nextind(x.x,i)
 Base.ncodeunits(x::WithOptions) =
     ncodeunits(x.x)
@@ -161,6 +169,14 @@ Base.ncodeunits(x::WithOptions) =
 import ..CombinedParsers: ismatch, _ismatch
 function ismatch(c::WithOptions{Char},p)
     _ismatch(c.x,p)
+end
+
+function _ismatch(c,p::WithOptions{Char})
+    if !iszero(p.flags & Base.PCRE.CASELESS)
+        _ismatch(lowercase(c),lowercase(p.x))
+    else
+        _ismatch(c,p.x)
+    end
 end
 
 function Base.convert(::Type{CombinedParser},x::Char)
@@ -229,6 +245,10 @@ function regex_prefix(x::ParserOptions)
 end
 function regex_suffix(x::ParserOptions)
     ")"
+end
+function print_constructor(io::IO,x::ParserOptions)
+    print_constructor(io,x.parser)
+    print(io, " |> set_options")
 end
 
 

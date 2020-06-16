@@ -1170,6 +1170,17 @@
 ---
 
 ```
+/(abc)\1/i
+```
+(no 104) succeeded 3 of 3 times:
+
+- ✓ `abcabc`
+- ✓ `ABCabc`
+- ✓ `abcABC`
+
+---
+
+```
 /abc$/
 ```
 (no 105) succeeded 3 of 3 times:
@@ -2766,6 +2777,31 @@
 - ✓ `blah BLAH` no match
 - ✓ `Blah blah` no match
 - ✓ `blaH blah` no match
+
+---
+
+```
+/((?i)blah)\s+(?i:\1)/
+```
+(no 260) succeeded 7 of 7 times:
+
+- ✓ `blah blah`
+- ✓ `BLAH BLAH`
+- ✓ `Blah Blah`
+- ✓ `blaH blaH`
+- ✓ `blah BLAH`
+- ✓ `Blah blah`
+- ✓ `blaH blah`
+
+---
+
+```
+/((?i)blah)\s+(?m)A(?i:\1)/
+```
+(no 261) succeeded 2 of 2 times:
+
+- ✓ `blah ABLAH`
+- ✓ `blah aBLAH` no match
 
 ---
 
@@ -5580,6 +5616,16 @@
 (no 561) succeeded 1 of 1 times:
 
 - ✓ `caaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`
+
+---
+
+```
+/(ab)\d\1/i
+```
+(no 562) succeeded 2 of 2 times:
+
+- ✓ `Ab4ab`
+- ✓ `ab4Ab`
 
 ---
 

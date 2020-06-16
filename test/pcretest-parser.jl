@@ -173,7 +173,7 @@ import CombinedParsers.Regexp: skip_whitespace_and_comments
                 """
                 ).pattern[1]=="^abc\$"
 
-    
+    Regcomb(raw"^ (?:(?<A>A)|(?'B'B)(?<A>A)) (?('A')x) (?(<B>)y)$","x,dupnames")
     test_pcre"""
 /^ (?:(?<A>A)|(?'B'B)(?<A>A)) (?('A')x) (?(<B>)y)$/x,dupnames
     Ax

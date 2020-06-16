@@ -37,11 +37,6 @@
 
 ---
 
-```
-/(abc)\1/i
-```
-
-(no 104) skipped, case-ignoring backreferences still need to be done, contributions are very welcome,
 
 
 ---
@@ -52,28 +47,22 @@
 ---
 
 ```
-/((?i)blah)\s+(?i:\1)/
 ```
 
-(no 260) skipped, case-ignoring backreferences still need to be done, contributions are very welcome,
 
 
 ---
 
 ```
-/((?i)blah)\s+(?m)A(?i:\1)/
 ```
 
-(no 261) skipped, case-ignoring backreferences still need to be done, contributions are very welcome,
 
 
 ---
 
 ```
-/(ab)\d\1/i
 ```
 
-(no 562) skipped, case-ignoring backreferences still need to be done, contributions are very welcome,
 
 
 ---

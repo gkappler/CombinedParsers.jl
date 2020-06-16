@@ -252,7 +252,16 @@ name = JoinSubstring(
                       "$v")
             end
         end;
-push!(repeatable,backreference);
+
+push!(repeatable,
+      on_options(
+          Base.PCRE.CASELESS,
+          map(p->set_options(Base.PCRE.CASELESS,p),
+              backreference)
+      ));
+
+push!(repeatable,
+      backreference);
 
 
 @with_names escaped_character = 
