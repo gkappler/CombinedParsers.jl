@@ -51,7 +51,7 @@ int
     re" *, *"
 )) do v
     vcat(v...)::Vector{Int}
-end
+end;
 
 numbers"1-3,9"
 
