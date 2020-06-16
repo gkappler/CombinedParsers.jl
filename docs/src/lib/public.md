@@ -8,6 +8,7 @@ See the Internals section of the manual for internal package docs covering all s
 
 ```@docs
 CombinedParsers
+@syntax
 parser
 convert
 ```
