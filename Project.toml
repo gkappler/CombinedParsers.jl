@@ -12,6 +12,10 @@ TextParse = "e0df1984-e451-5cb5-8b61-797a481e67e3"
 
 [compat]
 julia = "1"
+AbstractTrees = "0.2.1, 0.3.3"
+AutoHashEquals = "0.2.0"
+Nullables = "1.0.0"
+TextParse = "1.0.0"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
