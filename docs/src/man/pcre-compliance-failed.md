@@ -1,10 +1,10 @@
 
 # Failed PCRE Tests
-41 failed tests on 27 patterns.
+25 failed tests on 17 patterns.
 
 
 ## Skipped
-13 patterns were skipped for the following reasons:
+12 patterns were skipped for the following reasons:
 
 
 ---
@@ -38,31 +38,44 @@
 ---
 
 
-
----
-
-
 (no 135) skipped, escaped characters needs investigation.
 
 ---
 
 ```
+/^(?:b|a(?=(.)))*\1/
 ```
 
+(no 524) skipped, Captures in Lookarounds need refactoring. Low prio because instead of using backreference, `FlatMap` is recommended in `CombinedParsers.jl`.
 
 
 ---
 
 ```
+/^((a|b)+)*ax/
 ```
 
+(no 527) skipped, Capture backtracking needs refactoring. Low prio because instead of using captures, `parse` is recommended in `CombinedParsers.jl`.
 
 
 ---
 
 ```
+/^((a|bc)+)*ax/
 ```
 
+(no 528) skipped, Capture backtracking needs refactoring. Low prio because instead of using captures, `parse` is recommended in `CombinedParsers.jl`.
+
+
+---
+
+```
+/(?<=\d{3}(?!999)...)foo/
+```
+
+(no 625) skipped, 
+!!! note
+    Lookahead in Lookbehind needs refactoring.
 
 
 ---
@@ -97,14 +110,14 @@ match(Regcomb(pattern),"xxx")
 
 
 
-
----
-
+```@repl session
+parse(re"(\1xxx|)+","xxx")
+match(r"(\1xxx|)+","xxx")
+parse(re"(|\1xxx)+", "xxx")
+parse(r"(|\1xxx)+", "xxx")
 ```
-/(Z)(a)\2{1,2}?(?-i)\1X/i
-```
 
-(no 1146) skipped, case-ignoring backreferences still need to be done, contributions are very welcome,
+
 
 
 ---
@@ -125,14 +138,6 @@ match(Regcomb(pattern),"xxx")
 ---
 
 ```
-/a\\b/
-```
-(no 344) failed  0 of 1 times:
-- ✕ `a\\b`
-
----
-
-```
 /(([a-c])b*?\2){3}/
 ```
 (no 397) failed  0 of 1 times:
@@ -149,62 +154,10 @@ match(Regcomb(pattern),"xxx")
 ---
 
 ```
-/a\\b/i
-```
-(no 442) failed  1 of 2 times:
-- ✕ `A\\b`
-- ✕ `a\\B`
-
----
-
-```
-/^(?:b|a(?=(.)))*\1/
-```
-(no 524) failed  0 of 1 times:
-- ✕ `abc`
-
----
-
-```
-/^((a|b)+)*ax/
-```
-(no 527) failed  0 of 1 times:
-- ✕ `aax`
-
----
-
-```
-/^((a|bc)+)*ax/
-```
-(no 528) failed  0 of 1 times:
-- ✕ `aax`
-
----
-
-```
 /()?(?(1)b|a)/
 ```
 (no 586) failed  0 of 1 times:
 - ✕ `a`
-
----
-
-```
-/(?<=\d{3}(?!999)...)foo/
-```
-(no 625) failed  0 of 4 times:
-- ✓ `123abcfoo`
-- ✓ `123456foo`
-- ✕ `123999foo` no match
-- ✓ `` no match
-
----
-
-```
-/\Qabc\$xyz\E/
-```
-(no 650) failed  0 of 1 times:
-- ✕ `abc\\$xyz`
 
 ---
 
@@ -251,30 +204,6 @@ match(Regcomb(pattern),"xxx")
 - ✕ `b`
 - ✕ `-` no match
 - ✓ `` no match
-
----
-
-```
-/^(?:((.)(?1)\2|)|((.)(?3)\4|.))$/i
-```
-(no 827) failed  2 of 5 times:
-- ✓ `1221`
-- ✕ `Satanoscillatemymetallicsonatas`
-- ✕ `AmanaplanacanalPanama`
-- ✕ `AblewasIereIsawElba`
-- ✓ `Thequickbrownfox` no match
-
----
-
-```
-/^\W*+(?:((.)\W*+(?1)\W*+\2|)|((.)\W*+(?3)\W*+\4|\W*+.\W*+))\W*+$/i
-```
-(no 840) failed  2 of 5 times:
-- ✓ `1221`
-- ✕ `Satan, oscillate my metallic sonatas!`
-- ✕ `A man, a plan, a canal: Panama!`
-- ✕ `Able was I ere I saw Elba.`
-- ✓ `The quick brown fox` no match
 
 ---
 
@@ -337,16 +266,3 @@ match(Regcomb(pattern),"xxx")
 - ✕ `The quick brown fox jumps over the lazy cat.` no match
 - ✕ `Hackdaws love my big sphinx of quartz.` no match
 - ✕ `Pack my fox with five dozen liquor jugs.` no match
-
----
-
-```
-/^(?>.*?([A-Z])(?!.*\1)){26}/i
-```
-(no 1247) failed  1 of 6 times:
-- ✕ `The quick brown fox jumps over the lazy dog.`
-- ✓ `Jackdaws love my big sphinx of quartz.`
-- ✓ `Pack my box with five dozen liquor jugs.`
-- ✓ `The quick brown fox jumps over the lazy cat.` no match
-- ✕ `Hackdaws love my big sphinx of quartz.` no match
-- ✓ `Pack my fox with five dozen liquor jugs.` no match

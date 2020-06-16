@@ -1,5 +1,5 @@
 # PCRE Compliance
-3025 successful tests on 961 patterns.
+3071 successful tests on 972 patterns.
 
 
 
@@ -3678,6 +3678,15 @@
 ---
 
 ```
+/a\\b/
+```
+(no 344) succeeded 1 of 1 times:
+
+- ✓ `a\\b`
+
+---
+
+```
 /((a))/
 ```
 (no 345) succeeded 1 of 1 times:
@@ -4554,6 +4563,16 @@
 
 - ✓ `AB`
 - ✓ `A((B`
+
+---
+
+```
+/a\\b/i
+```
+(no 442) succeeded 2 of 2 times:
+
+- ✓ `A\\b`
+- ✓ `a\\B`
 
 ---
 
@@ -6470,6 +6489,15 @@
 ---
 
 ```
+/\Qabc\$xyz\E/
+```
+(no 650) succeeded 1 of 1 times:
+
+- ✓ `abc\\$xyz`
+
+---
+
+```
 /\Qabc\E\$\Qxyz\E/
 ```
 (no 651) succeeded 1 of 1 times:
@@ -8025,6 +8053,19 @@
 ---
 
 ```
+/^(?:((.)(?1)\2|)|((.)(?3)\4|.))$/i
+```
+(no 827) succeeded 5 of 5 times:
+
+- ✓ `1221`
+- ✓ `Satanoscillatemymetallicsonatas`
+- ✓ `AmanaplanacanalPanama`
+- ✓ `AblewasIereIsawElba`
+- ✓ `Thequickbrownfox` no match
+
+---
+
+```
 /^(\d+|\((?1)([+*-])(?1)\)|-(?1))$/
 ```
 (no 828) succeeded 4 of 4 times:
@@ -8064,6 +8105,19 @@
 (no 832) succeeded 1 of 1 times:
 
 - ✓ `aaabccc` no match
+
+---
+
+```
+/^\W*+(?:((.)\W*+(?1)\W*+\2|)|((.)\W*+(?3)\W*+\4|\W*+.\W*+))\W*+$/i
+```
+(no 840) succeeded 5 of 5 times:
+
+- ✓ `1221`
+- ✓ `Satan, oscillate my metallic sonatas!`
+- ✓ `A man, a plan, a canal: Panama!`
+- ✓ `Able was I ere I saw Elba.`
+- ✓ `The quick brown fox` no match
 
 ---
 
@@ -9141,6 +9195,15 @@
 ---
 
 ```
+/(Z)(a)\2{1,2}?(?-i)\1X/i
+```
+(no 1146) succeeded 1 of 1 times:
+
+- ✓ `ZaAAZX`
+
+---
+
+```
 /(?'c')XX(?'YYYYYYYYYYYYYYYYYYYYYYYCl')/
 ```
 (no 1147) succeeded 0 of 0 times:
@@ -9834,6 +9897,20 @@
 (no 1245) succeeded 1 of 1 times:
 
 - ✓ `111133X`
+
+---
+
+```
+/^(?>.*?([A-Z])(?!.*\1)){26}/i
+```
+(no 1247) succeeded 6 of 6 times:
+
+- ✓ `The quick brown fox jumps over the lazy dog.`
+- ✓ `Jackdaws love my big sphinx of quartz.`
+- ✓ `Pack my box with five dozen liquor jugs.`
+- ✓ `The quick brown fox jumps over the lazy cat.` no match
+- ✓ `Hackdaws love my big sphinx of quartz.` no match
+- ✓ `Pack my fox with five dozen liquor jugs.` no match
 
 ---
 

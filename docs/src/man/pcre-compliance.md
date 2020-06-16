@@ -15,7 +15,8 @@
     - ✓ comments
 !!! warning 
     PCRE functionality that is currently not supported:
-    - ✕ capture groups in lookbehinds.
+    - ✕ Capture groups in lookbehinds.
+    - ✕ Lookaheads within lookbehinds.
     - ✕ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \K
 ```@setup session
 using CombinedParsers
@@ -26,11 +27,12 @@ The PCRE test output is downloaded from
 [the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), 
 parsed with 
 [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
+(Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
 ## Test Overview
-3025 successful tests on 961 patterns
+3071 successful tests on 972 patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).
 
-41 failed tests on 27 patterns
+25 failed tests on 17 patterns
 (See [list of failed patterns](pcre-compliance-failed.md)).
 ### Performance Overview:
 The PCRE C backend of `@r_str` has arrived at a widely optimized codebase after decades of improvements.

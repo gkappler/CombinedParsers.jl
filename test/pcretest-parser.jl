@@ -68,13 +68,15 @@ is_expected(pc_match::Nothing,expect) = isempty(expect)
 function is_expected(pc_match,expect)
     ##@show expect
     for e in expect
-        r = e.result == "<unset>" ? nothing : e.result
+        ## todo: <unset>=nothing
+        r = e.result == "<unset>" ? "" : e.result
         trimstring(r) != trimstring(if e.i==0
                                     pc_match.match
                                     elseif e.i isa Integer
-                                    pc_match.captures[e.i]
+                                    r2=pc_match.captures[e.i]
+                                    r2 === nothing ? "" : r2 ##""
                                     else ## MK unsupported
-                                    r ##""
+                                    r
                                     end) && return false
     end
     return true

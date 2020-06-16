@@ -4033,7 +4033,7 @@ No match
 
 /a\\b/
     a\\b
- 0: a\b
+ 0: a\\b
 
 /((a))/
     abc
@@ -4570,9 +4570,9 @@ No match
 
 /a\\b/i
     A\\b
- 0: A\b
+ 0: A\\b
     a\\B 
- 0: a\B
+ 0: a\\B
 
 /((a))/i
     ABC
@@ -5814,11 +5814,11 @@ No match
  0: abc#not comment\x0a    literal
 
 /\Qabc\$xyz\E/
-    abc\\\$xyz
- 0: abc\$xyz
+    abc\\$xyz
+ 0: abc\\$xyz
 
 /\Qabc\E\$\Qxyz\E/
-    abc\$xyz
+    abc$xyz
  0: abc$xyz
 
 /\Gabc/

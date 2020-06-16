@@ -18,7 +18,7 @@ ignore_idx = SortedDict{Int,String}(
     90 => "CombinedParsers brackets use unicode character ranges. Avoid such patterns for now, contributions very welcome.",
     135 => "escaped characters needs investigation.",
     664 => "because of very long matching time for `Repeat(Repeat1('a'))` when there is no match. Avoid such patterns, contributions optimizing these cases are also very welcome.", ## slooow
-    887 => """do I misunderstand [recursive backreferences](https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19)?
+    887 => raw"""do I misunderstand [recursive backreferences](https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19)?
 
 ```@repl session
 pattern = "(?P<abn>(?P=abn)xxx|)+"
@@ -33,12 +33,25 @@ match(Regex(pattern),"xxx")
 match(Regcomb(pattern),"xxx")
 ```
 
+
+
+```@repl session
+parse(re"(\1xxx|)+","xxx")
+match(r"(\1xxx|)+","xxx")
+parse(re"(|\1xxx)+", "xxx")
+parse(r"(|\1xxx)+", "xxx")
+```
+
 """,
-    104 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
-    260 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
-    261 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
-    562 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
-    1146 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    ## 104 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    ## 260 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    ## 261 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    ## 562 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
+    524 => "Captures in Lookarounds need refactoring. Low prio because instead of using backreference, `FlatMap` is recommended in `CombinedParsers.jl`.",
+    527 => "Capture backtracking needs refactoring. Low prio because instead of using captures, `parse` is recommended in `CombinedParsers.jl`.",
+    528 => "Capture backtracking needs refactoring. Low prio because instead of using captures, `parse` is recommended in `CombinedParsers.jl`.",
+    625 => "\n!!! note\n    Lookahead in Lookbehind needs refactoring.",
+    ## 1146 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
     1173 => "because of very long compile time. The complex pattern parses PCRE regex syntax."
 )
 
@@ -169,7 +182,8 @@ open(joinpath(docdir,"man","pcre-compliance.md"),"w") do io
     - ✓ comments
 !!! warning 
     PCRE functionality that is currently not supported:
-    - ✕ capture groups in lookbehinds.
+    - ✕ Capture groups in lookbehinds.
+    - ✕ Lookaheads within lookbehinds.
     - ✕ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \\K
 ```@setup session
 using CombinedParsers
@@ -180,6 +194,7 @@ The PCRE test output is downloaded from
 [the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), 
 parsed with 
 [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
+(Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
 ## Test Overview
 $n_successes successful tests on $(n_patterns.success) patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).\n
