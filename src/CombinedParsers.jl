@@ -1759,18 +1759,63 @@ end
     i
 end
 
-Base.get(parser::Sequence, sequence, till, after, i, state::MatchState) =
-    get(parser, sequence, till, after, i, ( MatchState() for i in 1:length(parser.parts)) )
+# Base.get(parser::Sequence, sequence, till, after, i, state::MatchState) =
+#     get(parser, sequence, till, after, i, ( MatchState() for i in 1:length(parser.parts)) )
+# function Base.get(parser::Sequence, sequence, till::Int, after::Int, i::Int, state)
+#     r = Vector{Any}(undef,length(parser.parts))
+#     i_::Int = i
+#     for (p,s) in enumerate(state)
+#         after_=nextind(sequence,i_,parser.parts[p],s)
+#         r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
+#         i_=after_
+#     end
+#     1
+#     tuple(r...)
+# end
 
-function Base.get(parser::Sequence, sequence, till, after, i, state)
-    r = Vector{Any}(undef,length(parser.parts))
-    i_=i
-    for (p,s) in enumerate(state)
-        after_=nextind(sequence,i_,parser.parts[p],s)
-        r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
-        i_=after_
+
+@generated function get(parser::Sequence, sequence, till::Int, after::Int, posi::Int, states)
+    pts = parser_types(parser)
+    fpts = fieldtypes(pts)
+    n = length(fpts)
+    subresult = Symbol[ gensym(:r) for p in fpts ]
+    part = Symbol[ gensym(:part) for p in fpts ]
+    pposi = Symbol[ gensym(:pos) for p in 1:(n+1) ]
+    substate = Symbol[ gensym(:s) for p in fpts ]
+    init = if states===MatchState
+        [
+            quote
+            $(substate[p]) = MatchState()
+            @inbounds $(part[p]) = parser.parts[$p]
+            $(pposi[p])::Int = 0
+            end
+            for (p,t) in enumerate(fpts)
+        ]
+    else
+        [
+            quote
+            $(substate[p]) = states[$p]
+            @inbounds $(part[p]) = parser.parts[$p]
+            $(pposi[p])::Int = 0
+            end
+            for (p,t) in enumerate(fpts)
+        ]
     end
-    tuple(r...)
+    parseparts = [
+        quote
+        $(pposi[p+1]) = nextind(sequence,$(pposi[p]),$(part[p]),$(substate[p]))
+        $(subresult[p]) = get($(part[p]),sequence, till, $(pposi[p+1]), $(pposi[p]), $(substate[p]))
+        end
+        for (p,t) in enumerate(fpts)
+    ]
+    R = quote
+        $(pposi[end])::Int = after
+        $(init...)
+        $(pposi[1]) = posi
+        $(parseparts...)
+        tuple($(subresult...))
+    end
+    R
 end
 
 
@@ -2151,7 +2196,7 @@ function Base.get(parser::Repeat, sequence, till, after, i, state::Vector)
     i_=i
     for (p,s) in enumerate(state)
         after_=nextind(sequence,i_,parser.parser,s)
-        r[p] = get(parser.parser,sequence, till, after_, i_, s)
+        @inbounds r[p] = get(parser.parser,sequence, till, after_, i_, s)
         i_=after_
     end
     r
@@ -2163,7 +2208,7 @@ function Base.get(parser::Repeat, sequence, till, after, i, state::Int)
     s=MatchState()
     for p in 1:state
         after_=nextind(sequence,i_,parser.parser,s)
-        r[p] = get(parser.parser,sequence, till, after_, i_, s)
+        @inbounds r[p] = get(parser.parser,sequence, till, after_, i_, s)
         i_=after_
     end
     r

@@ -68,18 +68,23 @@ end
 
 using BenchmarkTools
 pattern = r"[aB]+c"
-@btime mr = match(pattern,"aBc")
+@btime match(pattern,"aBaBc")
 
 pattern = re"[aB]+c"
-@btime mre = match(pattern,"aBc")
+@btime match(pattern,"aBaBc")
 ```
 
-Regex captures are supported but comparably slow for compatibility.
+Matching Regex captures are supported for compatibility but slow compared with `parse`.
 ```@repl session
+
 pattern = r"([aB])+c"
-@btime mr = match(pattern,"aBc")
+@btime match(pattern,"aBaBc")
 pattern = re"([aB])+c"
-@btime mre = match(pattern,"aBc")
+@btime match(pattern,"aBaBc")
+
+pattern = re"[aB]+c"
+@btime (mre = match(pattern,"aBaBc"))
+@btime get(mre)
 ```
 
 ## Transformations
@@ -88,11 +93,8 @@ The `result_type` inferred automatically using julia type inference.
 
 ```@repl session
 p = map(length,re"(ab)*")
-result_type(p)
 parse(p,"abababab")
 ```
-
-<!-- A supertype `T >: result_type(map(f,p))` can be set as `result_type` with `map(f, T, p)`. -->
 
 Conveniently, calling `getindex(::CombinedParser,::Integer)` and `map(::Integer,::CombinedParser)` create a transforming parser selecting from the result of the parsing.
 ```@repl session
