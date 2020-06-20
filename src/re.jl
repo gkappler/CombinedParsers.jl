@@ -48,6 +48,11 @@ See also [`ParserWithCaptures`](@ref)
         new{typeof(m),typeof(state)}(m,cs.subroutines,caps,cs.names,state)
     end
 end
+import Base: empty!
+Base.empty!(sequence::SequenceWithCaptures) =
+    for c in sequence.captures
+        Base.empty!(c)
+    end
 copy_captures(x::SequenceWithCaptures,state) =
     SequenceWithCaptures(x.match,x.subroutines, [ copy(c) for c in x.captures ],x.names,state)
 revert(x::SequenceWithCaptures) = SequenceWithCaptures(revert(x.match),x)
@@ -294,16 +299,6 @@ function deepmap_parser(::typeof(log_names_),mem::AbstractDict,x::Backreference,
     end
 end
 
-function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Backreference,context,a...)
-    get!(mem,x) do
-        idx = capture_index(x.name,Symbol(""),x.index,context)
-        if idx < 1 || idx>lastindex(context.subroutines)
-            x.name === nothing ? x.fallback() : x
-        else
-            Backreference(x.fallback,x.name, idx)
-        end
-    end
-end
 
 function Base.get(x::Backreference, sequence, till, after, i, state)
     sequence[i:prevind(sequence,i+state)]
@@ -419,17 +414,6 @@ function _iterate_condition(cond::Subroutine, sequence, till, posi, next_i, stat
     end
 end
 
-function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Subroutine,context,a...)
-    get!(mem,x) do
-        index = capture_index(x.name,x.delta,x.index, context)
-        if index <= 0 || index>length(context.subroutines)
-            Subroutine{Any}(x.name,Symbol(""),index)
-        else
-            Subroutine{result_type(context.subroutines[index])}(
-                x.name,Symbol(""),index)
-        end
-    end
-end
 
 @inline function prevind(sequence,i::Int,parser::Subroutine,x)
     prevind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
@@ -492,37 +476,6 @@ deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw...
     get!(mem,x) do
         DupSubpatternNumbers(deepmap_parser(f,mem,x.parser,a...;kw...))
     end
-
-function deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
-    get!(mem,x) do
-        DupSubpatternNumbers(deepmap_parser(
-            indexed_captures_,mem,
-            x.parser,context,
-            true))
-    end
-end
-
-function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Either,context,reset_index)
-    if reset_index
-        idx = lastindex(context.subroutines)
-        branches = Any[]
-        for p in reverse(x.options) ## keep first for subroutines
-            while lastindex(context.subroutines)>idx
-                pop!(context.subroutines)
-            end
-            push!(branches,deepmap_parser(
-                indexed_captures_,
-                mem,
-                p,context,false))
-        end
-        Either{result_type(x)}(tuple( branches... ))
-    else
-        Either{result_type(x)}(
-            tuple( (deepmap_parser(indexed_captures_,mem,p,context,false) for p in x.options )...))
-    end
-end
-
-
 
 
 
@@ -591,135 +544,8 @@ end
     _iterate(state.first == :yes ? parser.yes : parser.no, sequence, till, posi, next_i, state.second)
 end
 
-
-
-"""
-Top level parser supporting regular expression features
-captures, backreferences and subroutines.
-Collects subroutines in field `subroutines::Vector` and 
-indices of named capture groups in field `names::Dict`.
-
-!!! note
-    implicitly called in `match`
-See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
-"""
-@auto_hash_equals struct ParserWithCaptures{P,T} <: WrappedParser{P,T}
-    parser::P
-    subroutines::Vector{ParserTypes} ## todo: rename subroutines
-    names::Dict{Symbol,Vector{Int}}
-    ParserWithCaptures(parser,captures,names) =
-        new{typeof(parser),result_type(parser)}(parser,captures,names)
-end
-"""
-    ParserWithCaptures(x)
-
-Return `ParserWithCaptures` if captures are used, `x` otherwise.
-"""
-ParserWithCaptures(x) =
-    let cs = ParserWithCaptures(x,ParserTypes[],Dict{Symbol,Int}())
-        pass1 = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),x,cs,false),cs.subroutines,cs.names)
-        r = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
-        isempty(r.subroutines) ? r.parser : r
-    end
-
-
-"""
-    deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
-
-Map the capture my setting `index` to  `nextind(context,x)`.
-
-Registers result in `context.subroutines` if no previous subroutine with the same index exists
-(see also [`DupSubpatternNumbers`](@ref)).
-"""
-function deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
-    get!(mem,x) do
-        index,reset=subroutine_index_reset(context,x)
-        r = Capture(
-            x.name,
-            deepmap_parser(indexed_captures_,mem,x.parser,context,a...),
-            index
-        )
-        reset && ( context.subroutines[index] = r )
-        r
-    end
-end
-
-"""
-https://www.pcre.org/original/doc/html/pcrepattern.html#SEC16
-"""
-function subroutine_index_reset(context::ParserWithCaptures,x::Capture)
-    if x.index<0
-        index = length(context.subroutines)+1
-        push!(context.subroutines,Capture(x,index))
-        if x.name !== nothing
-            push!(get!(context.names,x.name) do
-                  Int[]
-                  end,
-                  index)
-        end
-        index, true
-    else
-        x.index, false
-    end
-end
-
-import ..CombinedParsers: JoinSubstring, Transformation
-JoinSubstring(x::ParserWithCaptures) =
-    ParserWithCaptures(JoinSubstring(x.parser),x.subroutines,x.names)
-Transformation{T}(t,x::ParserWithCaptures) where T =
-    ParserWithCaptures(Transformation{T}(t,x.parser),x.subroutines,x.names)
+include("indexed_captures.jl")
  
-
-
-import Base: empty!
-Base.empty!(sequence::SequenceWithCaptures) =
-    for c in sequence.captures
-        Base.empty!(c)
-    end
-
-function _iterate(p::ParserWithCaptures, sequence::SequenceWithCaptures)
-    Base.empty!(sequence)
-    _iterate(p, sequence, lastindex(sequence), 1, 1, nothing)
-end
-
-
-##Base.getindex(x::ParserWithCaptures, i) = ParserWithCaptures(getindex(i,x)
-
-function SequenceWithCaptures(x,cs::ParserWithCaptures)
-    SequenceWithCaptures(
-        x,cs.subroutines,
-        Vector{String}[ String[] for c in cs.subroutines ],
-        cs.names,
-        nothing)
-end
-
-function print_constructor(io::IO, x::ParserWithCaptures)
-    print_constructor(io,x.parser)
-    print(io, " |> regular expression combinator",
-          ( length(x.subroutines)>0 ? " with $(length(x.subroutines)) capturing groups" : "" ) )
-end
-
-set_options(set::UInt32,unset::UInt32,parser::ParserWithCaptures) =
-    ParserWithCaptures(set_options(set,unset,parser.parser),
-                       ParserTypes[ set_options(set,unset,p) for p in parser.subroutines],
-                       parser.names)
-
-function deepmap_parser(f::Function,mem::AbstractDict,x::ParserWithCaptures,a...;kw...)
-    ParserWithCaptures(deepmap_parser(f,mem,x.parser,a...;kw...),
-                       [ deepmap_parser(f,mem,p,a...;kw...) for p in x.subroutines ],
-                       x.names)
-end
-
-ParserWithCaptures(x::ParserWithCaptures) = x
-
-"For use in ParserWithCaptures to enforce different indices for identical captures."
-struct NoDict{K,V} <: AbstractDict{K,V} end
-NoDict() = NoDict{Any,Any}()
-
-import Base: get!
-Base.get!(f::Function,d::NoDict,k) = f()
-
-
 
 
 
