@@ -81,6 +81,88 @@ with_options(set_flags::UInt32, unset_flags::UInt32,x::SequenceWithCaptures) =
         x
     )
 
+"""
+    ==(pcre_m::RegexMatch,pc_m::ParseMatch)
+
+equal iif values of `.match`, `.offset`, `.ncodeunits` and `.captures` are equal.
+"""
+function ==(pcre_m::RegexMatch,pc_m::ParseMatch)
+    pcre_m.match==pc_m.match &&
+        pcre_m.match.offset==pc_m.match.offset &&
+        pcre_m.match.ncodeunits==pc_m.match.ncodeunits &&
+        pcre_m.captures==pc_m.captures
+end
+==(pc_m::ParseMatch,pcre_m::RegexMatch) =
+    pcre_m==pc_m
+
+import Base: getproperty
+"""
+    Base.getproperty(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key::Symbol)
+
+enable `m.captures` and `m.match`.
+
+See API of `RegexMatch`.
+"""
+function Base.getproperty(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key::Symbol)
+    x = getfield(m,1).sequence
+    if key==:captures
+        [ isempty(c) ? nothing : match_string(x.match,c[end])
+          for c in x.captures ]
+    elseif key==:match
+        SubString(x.match,m.start,
+                  prevind(x.match,m.stop))
+    else
+        CombinedParsers._getproperty(m,key)
+    end
+end
+
+"""
+    Base.getindex(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Union{Integer,Symbol})
+
+Gets capture `i` as SubString.
+
+See API of `RegexMatch`.
+"""
+function Base.getindex(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Integer)
+    m = getfield(x,1).sequence
+    c = m.captures[i]
+    isempty(c) ? nothing : match_string(m.match,c[end])
+end
+
+function Base.getindex(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Symbol)
+    x = getfield(m,1).sequence
+    for j in x.names[i]
+        c=getindex(m,j)
+        c !== nothing && return c
+    end
+end
+
+match_string(x::SubString,y::UnitRange{<:Integer}) =
+    SubString(x.string,x.offset+y.start,x.offset+y.stop)
+
+match_string(x::Tuple{<:AbstractString,UnitRange{<:Integer}},y::UnitRange{<:Integer}) =
+    let rel = min(x[2].start,x[2].stop)-1
+        SubString(x[1],y.start,y.stop)
+    end
+
+match_string(x::AbstractString,y::UnitRange{<:Integer}) =
+    SubString(x,y.start,y.stop)
+
+function Base.show(io::IO,m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any})
+    x = getfield(m,1).sequence
+    print(io,"ParseMatch(\"",escape_string(m.match),"\"")
+    indnames=Dict( ( i=>k.first for k in pairs(x.names) for i in k.second )... )
+    for i in 1:length(x.captures)
+        print(io, ", ",get(indnames,i,i),"=")
+        if isempty(x.captures[i])
+            print(io,"nothing")
+        else
+            print(io,"\"",match_string(x.match, x.captures[i][end]),"\"")
+        end
+    end
+    print(io,")")
+end
+
 
 export Capture
 """
@@ -587,39 +669,7 @@ JoinSubstring(x::ParserWithCaptures) =
 Transformation{T}(t,x::ParserWithCaptures) where T =
     ParserWithCaptures(Transformation{T}(t,x.parser),x.subroutines,x.names)
  
-function Base.match(parser::ParserTypes,sequence; log=nothing)
-    p = log === nothing ? parser : log_names(parser,log)
-    start,till=1, lastindex(sequence)
-    i = nothing
-    while i===nothing && start <= till+1
-        i = _iterate(p,sequence,till,start,start,nothing)
-        i === nothing && (start = start <= till ? nextind(sequence,start) : start+1)
-    end
-    if i === nothing
-        nothing
-    else
-        ParseMatch(parser,sequence,start,i...)
-    end
-end
 
-"""
-    Base.match(parser::ParserTypes,sequence::AbstractString; log=false)
-
-Plug-in replacement for match(::Regex,sequence).
-"""
-function Base.match(parser::ParserWithCaptures,sequence::AbstractString; kw...)
-    match(parser, SequenceWithCaptures(sequence,parser);kw...)
-end
-
-"""
-    _iterate(p::ParserWithCaptures, sequence::AbstractString)
-
-
-"""
-function _iterate(p::ParserWithCaptures, sequence::AbstractString)
-    sequence = SequenceWithCaptures(sequence,p)
-    _iterate(p, sequence, lastindex(sequence), 1, 1, nothing)
-end
 
 import Base: empty!
 Base.empty!(sequence::SequenceWithCaptures) =
@@ -672,143 +722,6 @@ Base.get!(f::Function,d::NoDict,k) = f()
 
 
 
-"""
-Wrapper type for [`SequenceWithCaptures`](@ref), providing
-`getindex` and `getproperty` behavior like `RegexMatch`.
-
-```jldoctest
-julia> m = match(re"(?<a>so)+ (or)", "soso or")
-ParseMatch("soso or", a="so", 2="or")
-
-julia> m[:a]
-"so"
-
-julia> m[2]
-"or"
-
-julia> m.match, m.captures
-("soso or", SubString{String}["so", "or"])
-
-```
-"""
-@auto_hash_equals struct ParseMatch{P,S,State}
-    parser::P
-    sequence::S
-    start::Int
-    stop::Int
-    state::State
-    function ParseMatch(parser::CombinedParser,s,start::Integer,stop::Integer,state)
-        new{typeof(parser),typeof(s),typeof(state)}(parser,s,start,stop,state)
-    end
-end
-
-
-"""
-    Base.get(x::ParseMatch{<:MatchTuple})
-
-Get the result of a match result.
-
-```jldoctest
-julia> m = match(re"(?<a>so)+ (or)", "soso or")
-ParseMatch("soso or", a="so", 2="or")
-
-julia> get(m)
-"so"
-
-julia> m[2]
-"or"
-
-julia> m.match, m.captures
-("soso or", SubString{String}["so", "or"])
-
-```
-"""
-function Base.get(x::ParseMatch)
-    get(getfield(x,1), getfield(x,2), getfield(x,3), getfield(x,4), getfield(x,3),
-        getfield(x,5))
-end
-
-function Base.getproperty(x::ParseMatch{<:Any,<:AbstractString,<:Any},key::Symbol)
-    if key==:captures
-        AbstractString[ ]
-    elseif key==:match
-        SubString(getfield(x,2),getfield(x,3),prevind(getfield(x,2),getfield(x,4)))
-    end
-end
-
-function Base.show(io::IO,m::ParseMatch{<:Any,<:AbstractString,<:Any})
-    print(io,"ParseMatch(\"",escape_string(m.match),"\"")
-    print(io,")")
-end
-
-
-function Base.getindex(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Integer)
-    m = getfield(x,2)
-    c = m.captures[i]
-    isempty(c) ? nothing : match_string(m.match,c[end])
-end
-
-function Base.getindex(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Symbol)
-    x = getfield(m,2)
-    for j in x.names[i]
-        c=getindex(m,j)
-        c !== nothing && return c
-    end
-end
-
-match_string(x::SubString,y::UnitRange{<:Integer}) =
-    SubString(x.string,x.offset+y.start,x.offset+y.stop)
-
-match_string(x::Tuple{<:AbstractString,UnitRange{<:Integer}},y::UnitRange{<:Integer}) =
-    let rel = min(x[2].start,x[2].stop)-1
-        SubString(x[1],y.start,y.stop)
-    end
-
-match_string(x::AbstractString,y::UnitRange{<:Integer}) =
-    SubString(x,y.start,y.stop)
-
-import Base: getproperty
-function Base.getproperty(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key::Symbol)
-    m = getfield(x,2)
-    start = getfield(x,3)
-    stop = getfield(x,4)
-    if key==:captures
-        [ isempty(c) ? nothing : match_string(m.match,c[end])
-          for c in m.captures ]
-    elseif key==:match
-        SubString(m.match,start,prevind(m,stop))
-    end
-end
-
-function Base.show(io::IO,m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any})
-    x = getfield(m,2)
-    print(io,"ParseMatch(\"",escape_string(m.match),"\"")
-    indnames=Dict( ( i=>k.first for k in pairs(x.names) for i in k.second )... )
-    for i in 1:length(x.captures)
-        print(io, ", ",get(indnames,i,i),"=")
-        if isempty(x.captures[i])
-            print(io,"nothing")
-        else
-            print(io,"\"",match_string(x.match, x.captures[i][end]),"\"")
-        end
-    end
-    print(io,")")
-end
-
-==(pc_m::ParseMatch,pcre_m::RegexMatch) =
-    pcre_m==pc_m
-
-"""
-==(pcre_m::RegexMatch,pc_m::ParseMatch)
-
-equal iif match's value and offset, and captures are equal.
-"""
-function ==(pcre_m::RegexMatch,pc_m::ParseMatch)
-    pcre_m.match==pc_m.match &&
-        pcre_m.match.offset==pc_m.match.offset &&
-        pcre_m.match.ncodeunits==pc_m.match.ncodeunits &&
-        pcre_m.captures==pc_m.captures
-end
 
 
 include("re-parser.jl")

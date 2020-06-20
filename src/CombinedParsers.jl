@@ -167,11 +167,9 @@ state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
 @inline tuple_state(pos_state::Tuple) =
     pos_state[2]
 
-_iterate(parser::AbstractToken, sequence, till, next_i, state) =
-    _iterate(parser, sequence, till, start_index(sequence,next_i,parser,state), next_i, state)
     
 function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state)
-    parser isa CombinedParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, next_i, state)"
+    parser isa CombinedParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))"
     ##@show parser typeof(parser)
     if state === nothing
         r,next_i_ = tryparsenext(parser, sequence, next_i, till)
@@ -243,8 +241,6 @@ Note: `next_i` is the index in `sequence` after `parser` match according to `sta
 such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
 and sequence[start_index(sequence,after,parser,state):prevind(sequence,next_i)] is the matched subsequence.
 """
-_iterate(x::CombinedParser,str,posi, next_i,till,state) =
-    error("implement _iterate(x::$(typeof(x)),str::$(typeof(str)),posi, next_i,till,state::$(typeof(state)))")
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,T} <: CombinedParser{T} end
@@ -261,15 +257,27 @@ end
 regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
 regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
 regex_inner(x::WrappedParser) = regex_inner(x.parser)
-state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
 
 @inline prevind(str,i::Int,parser::W,x) where {W <: WrappedParser} = prevind(str,i,parser.parser,x)
 @inline nextind(str,i::Int,parser::W,x) where {W <: WrappedParser} = nextind(str,i,parser.parser,x)
 
 Base.get(parser::W, sequence, till, after, i, state) where {W <: WrappedParser} = 
     get(parser.parser, sequence, till, after, i, state)
-@inline _iterate(parser::W, sequence, till, posi, next_i, state) where {W <: WrappedParser} =
-    _iterate(parser.parser, sequence, till, posi, next_i, state)
+
+"""
+    _iterate(parser, sequence, till::Int, posi::Int[, nothing])
+
+Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve first match, or nothing.
+"""
+@inline _iterate(parser, sequence, till::Int, posi::Int) =
+    _iterate(parser, sequence,till,posi,posi,nothing)
+@inline _iterate(parser, sequence, till::Int, posi::Int, ::Nothing) =
+    _iterate(parser, sequence,till,posi,posi,nothing)
+
+
+@inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
+    _iterate(parser.parser, sequence, till, posi, after, state)
+
 
 
 export JoinSubstring
@@ -3097,12 +3105,11 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...;kw...) =
             deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
+@inline function _iterate(parser::Atomic, sequence, till, posi, next_i, state::Nothing)
+    _iterate(parser.parser, sequence, till, posi, next_i, state)
+end
 @inline function _iterate(parser::Atomic, sequence, till, posi, next_i, state)
-    if state !== nothing
-        nothing
-    else
-        _iterate(parser.parser, sequence, till, posi, next_i, state)
-    end
+    nothing
 end
 
 Base.get(x::Atomic, a...) =
@@ -3119,91 +3126,7 @@ regex_inner(x::Atomic) = regex_inner(x.parser)
 
 
 
-
-export Parsings
-@auto_hash_equals struct Parsings{P,S}
-    parser::P
-    sequence::S
-    till::Int
-    Parsings(parser,sequence) =
-        new{typeof(parser),typeof(sequence)}(parser,sequence,lastindex(sequence))
-end
-result_type(::Type{<:Parsings{P}}) where P =
-    result_type(P)
-Base.eltype(T::Type{<:Parsings}) =
-    result_type(T)
-Base.IteratorSize(::Type{<:Parsings}) = Base.SizeUnknown()
-
-import Base: iterate
-function Base.iterate(x::Parsings, s=(1,nothing))
-    s_ = _iterate(x.parser,x.sequence,x.till,s...)
-    s_ === nothing && return s_
-    get(x.parser,x.sequence,x.till,tuple_pos(s_),1,tuple_state(s_)), s_
-end
-
-export parse_all
-function parse_all(parser::ParserTypes, sequence::AbstractString)
-    p=Parsings(parser,sequence)
-end
-
-
-
-import Base: tryparse, parse
-"""
-    parse(parser::ParserTypes, str::AbstractString; log=nothing)
-
-Parse a string with a CombinedParser as an instance of `result_type(parser)`.
-
-If `log` is a `Vector{Symbol}`, parser is transformed with `log_names(p, log)`.
-See also [`log_names`](@ref).
-
-```jldoctest
-julia> using TextParse
-
-julia> p = ("Number: "*TextParse.Numeric(Int))[2]
-🗄 Sequence |> map(#31)
-├─ Number\\:\\
-└─ <Int64>
-::Int64
-
-
-julia> parse(p,"Number: 42")
-42
-
-```
-
-"""
-function Base.parse(p::AbstractToken, s; log=nothing)
-    i = tryparse(log !== nothing ? log_names(p,log) : p,s)
-    i === nothing && throw(ArgumentError("no successfull parsing."))
-    i
-end
-
-"""
-    tryparse(parser::ParserTypes, str::AbstractString)
-
-Like `parse`, but returns either a value of `result_type(parser)` or `nothing` if string does not start with with a match.
-"""
-function Base.tryparse(p::AbstractToken, s)
-    i = _iterate(p,s)
-    i === nothing && return nothing
-    get(p,s,lastindex(s),tuple_pos(i),1,tuple_state(i))
-end
-
-export tryparse_pos
-"""
-    tryparse_pos(parser::ParserTypes, str::AbstractString)
-
-Like `parse`, but returns either a tuple of `result_type(parser)` and the position after the match, or `nothing` if string does not start with with a match.
-"""
-function tryparse_pos(p,s)
-    i = _iterate(p,s)
-    i === nothing && return nothing
-    get(p,s,lastindex(s),tuple_pos(i),1,tuple_state(i)),tuple_pos(i)
-end
-
-_iterate(parser,sequence) =
-    _iterate(parser, sequence, lastindex(sequence),1,nothing)
+include("match.jl")
 
 
 
