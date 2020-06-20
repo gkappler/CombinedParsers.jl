@@ -52,6 +52,7 @@ re = Regex(pt.pattern...)
 ## TODO: re"\W" show `UnicodeClass`
 #
 # The pattern makes intense use of backreferences and subroutines.
+# ### Tree display of regex
 # I find it hard to understand the compact captures `(.)`, even in a nested tree display:
 cp = Regcomb(pt.pattern...)
 # Why no backreference `\1`, why no subroutine `(?2)`?
@@ -96,7 +97,7 @@ end
 ( prev_index=seek_word_char(prevind, "two   words", 4),
   next_index=seek_word_char(nextind, "two   words", 4) )
 
-# #### Subtyping `<: CombinedParser`
+# ### Subtyping `<: CombinedParser`
 struct Palimdrome{P} <: CombinedParser{SubString}
     word_char::P
     Palimdrome(x) = new{typeof(x)}(x)
@@ -106,7 +107,7 @@ end
 ## @btime UnicodeClass(:L)
 
 
-# #### Matching
+# ### Matching
 # A custom parser needs a method to determine if there is a match at a position, and its state.
 # How can this be implemented for a palimdrome?
 # There are two strategies:
@@ -114,9 +115,10 @@ end
 # 2. outside-in: start left and right, move positions towards middle until they are at word characters and succeed if left and right positions meet, compare these characters, and proceed to the next positions if the word characters match or fail if there is a mismatch. (This might be [the-fastest-method-of-determining-if-a-string-is-a-palindrome](https://stackoverflow.com/questions/21403782/the-fastest-method-of-determining-if-a-string-is-a-palindrome).  But I figure finding all palimdrome matches in a string is slow because you would be required to test for all possible substrings.)
 # The inside out strategy seems easier and faster.
 
-# #### Matching greedy
+# ### Matching greedy
 # With the inside-out stratedy, the implementation greedily expands over non-word characters.
 # The state of a match will be represented as
+import CombinedParsers: state_type
 CombinedParsers.state_type(::Type{<:Palimdrome}) =
     NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}
 
@@ -128,12 +130,7 @@ Base.nextind(str,i::Int,p::Palimdrome,state) =
     nextind(str,state.right)
 # `prevind` and `nextind` methods for a custom parser are required during the match iteration process.
  
-# Testing initially for a match at `posi` is `_iterate(parser,str,till,posi,after,state::Nothing)`.
-# (Feedback appreciated: Would is be more efficient change the `_iterate` internal API for the first match to arity 4?)
-# The internal API calls (for the center index 18):
-# TODO: state = _iterate(Palimdrome(),s,18)
-# _iterate matches the right part of the palimdrome iif posi at the center of a palimdrome. 
-# - greedily expand status and parsing position over non-word characters.
+# Computing the first match at `posi`tion is done by method dispatch `_iterate(parser::Palimdrome,str,till,posi,after,state::Nothing)`.
 function CombinedParsers._iterate(x::Palimdrome,
                                   str, till,
                                   posi, after,
@@ -158,9 +155,16 @@ function CombinedParsers._iterate(x::Palimdrome,
               (left=left_, center=posi, right=right_))
     end
 end
+
+# (Feedback appreciated: Would is be more efficient change the `_iterate` internal API for the first match to arity 4?)
+# The internal API calls (for the center index 18):
+# TODO: state = _iterate(Palimdrome(),s,18)
+# _iterate matches the right part of the palimdrome iif posi at the center of a palimdrome. 
+# - greedily expand status and parsing position over non-word characters.
 s=pt.test[3].sequence
 state = _iterate(Palimdrome(),s,lastindex(s),18,18,nothing)
 
+# ### `match` and `get`
 # [`_iterate`](@ref) is called when the public API `match` or `parse` is used.
 # Match searches for a center index and then matched the right part of the palimdrome. 
 p = Palimdrome()
@@ -176,7 +180,7 @@ Base.get(x::Palimdrome, str, till, after, posi, state) =
 # The match result is matching the first palimdrome, which is short and simple - but not what we want.
 get(m)
 
-# #### Iterating through matches
+# ### Iterating through matches
 # The longest palimdrome is matched too:
 p = Palimdrome()
 [ get(m) for m in match_all(p,s) ]
@@ -224,13 +228,11 @@ match(re,s)
 # The PCRE pattern includes non-words matches in the padding of palimdromes, a superset of `Palimdrome`.
 # PCRE-equivalent matching can be achieved by combining the stricly matching `Palimdrome` with parsers for the padding.
 padding=Repeat(CharNotIn(p.parser.word_char))
-match_all(p*padding,s)
-
-# `Palimdrome` matches from center to right, like a lookbehind parser.
-match_all(p*padding,s) |> collect
+match_all(p*padding*AtEnd(),s) |> collect
 
 # TODO: Memoization here!
-# And assert AtStart, AtEnd
+# `Palimdrome` matches from center to right, like a lookbehind parser.
+# A prefix parser to the left requires a parser for the left-part coupled by filter:
 palimdrome = filter(
     Sequence(
         2,
@@ -239,4 +241,11 @@ palimdrome = filter(
             posi==state[2][1]
         end
 
+# Now we can assert AtStart
 p = AtStart() * padding * (palimdrome) * padding * AtEnd()
+parse(p,s)
+
+## Next...
+# - match also palimdromes with odd number of letters
+# - elaborate on iteration documentation
+# - comparative benchmarking, conditional on palimdrome length
