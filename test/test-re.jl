@@ -1,7 +1,7 @@
 import CombinedParsers: ParserTypes
 using CombinedParsers.Regexp
 
-import CombinedParsers.Regexp: char, character_base, escape_sequence, escaped_character
+import CombinedParsers.Regexp: char, integer_base, escape_sequence, escaped_character
 @testset "char" begin
     ##@test match(parse(char,with_options(Base.PCRE.CASELESS,"A")) =='a'
     @test parse(char,"A") == CharIn('A')
@@ -10,18 +10,18 @@ import CombinedParsers.Regexp: char, character_base, escape_sequence, escaped_ch
     @test parse(escape_sequence(),raw"\Q[].\E")=="[]."
     ##@btime _iterate(pattern,".")
     ## @btime _iterate(pattern,"\\N")
-    @test parse(character_base(8),"765")==501
-    @test parse(character_base(10),"765")==765
-    @test parse(character_base(16),"765")==1893
-    @test parse(character_base(16),"")==0
-    @test parse(Sequence(v->Char(v[2]),"\\x{",character_base(16),"}"),"\\x{10}") == '\x10'
+    @test parse(integer_base(8),"765")==501
+    @test parse(integer_base(10),"765")==765
+    @test parse(integer_base(16),"765")==1893
+    @test parse(integer_base(16),"")==0
+    @test parse(Sequence(v->Char(v[2]),"\\x{",integer_base(16),"}"),"\\x{10}") == '\x10'
     @test parse(Repeat(escaped_character),raw"\a\t\r\n") == collect("\a\t\r\n")
     @test parse(parser(parse(escaped_character,"\\o{100}")),"@")=='@'
     @test parse(parser(parse(escaped_character,"\\x10")),"\U0010")=='\x10'
     @test parse(parser(parse(escaped_character,"\\x{010}")),"\U0010")=='\x10'
     @test parse(escaped_character,"\\t")==('\t')
     @test parse(escaped_character,"\\x{0065}") == ('e')
-    @test parse(character_base(8,3,3),"100")==64
+    @test parse(integer_base(8,3,3),"100")==64
     match(r"\100","@")
     match(r"\x100","@")
     match(r"\o{100}","@")
