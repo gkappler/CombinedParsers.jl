@@ -210,3 +210,11 @@ end
 p = Atomic(Palimdrome())
 get.(match_all(p,s)) |> collect
 
+
+# `Base.filter` can filter out short palimdromes:
+long_palimdrome = FilterParser(Palimdrome()) do sequence, till, posi, after, state
+    left,posi,right=state
+    right-left+1 > 5
+end
+get(match(long_palimdrome,s))
+

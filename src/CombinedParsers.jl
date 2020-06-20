@@ -279,6 +279,35 @@ Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve fi
     _iterate(parser.parser, sequence, till, posi, after, state)
 
 
+export FilterParser
+"""
+A parser the succeeds ony if wrapped parser succeeds and a predicate function on the position,state tuple
+`.state_filter(sequence, till, posi, r...)`.
+"""
+struct FilterParser{P,T,F} <: WrappedParser{P,T}
+    parser::P
+    state_filter::F
+    FilterParser(f::Function,parser_) =
+        let p = parser(parser_)
+            new{typeof(p), result_type(p),typeof(f)}(p,f)
+        end
+end
+Base.filter(f::Function, x::CombinedParser) =
+    FilterParser(f,x)
+
+@inline function _iterate(parser::W, sequence, till, posi, next_i, state) where {W <: FilterParser}
+    r::Union{Nothing,Tuple{Int,state_type(W)}} = nothing
+    while r === nothing
+        r = _iterate(parser.parser, sequence, till, posi, next_i, state)
+        if r === nothing
+            return nothing
+        elseif !parser.state_filter(sequence, till, posi, r...)
+            next_i,state=r
+            r = nothing
+        end
+    end
+    r
+end
 
 export JoinSubstring
 """
