@@ -52,20 +52,21 @@ re = Regex(pt.pattern...)
 ## TODO: re"\W" show `UnicodeClass`
 #
 # The pattern makes intense use of backreferences and subroutines.
-# I find it hard to understand the compact captures `(.)`, why no backreference `\1`, why no subroutine `(?2)`?, even in a nested tree display:
+# I find it hard to understand the compact captures `(.)`, even in a nested tree display:
 cp = Regcomb(pt.pattern...)
+# Why no backreference `\1`, why no subroutine `(?2)`?
 # Theoretical linguists, I wonder, is the minimum number of capture groups 4, for a regular expression matching palimdromes?
 
 # Matching example 3 is fast
 using BenchmarkTools
-@btime match(re, pt.test[3].sequence)
+@time match(re, pt.test[3].sequence)
 
 # Writing a palimdrome parser should be easier.
 # And with julia compiler it should be faster.
 #
 # In practice `CombinedParsers` [`Regcomb`](@ref) of the regular expression will detect palimdromes too.
 # Palimdrome matching provides an interesting cross-parser performance benchmark.
-@btime match(cp, pt.test[3].sequence)
+@time match(cp, pt.test[3].sequence)
 # `CombinedParsers.Regexp.Subroutine` matching is slow because the current implementation is using state-copies of captures.
 # (TODO: could be a stack?).
 
@@ -141,7 +142,7 @@ function CombinedParsers._iterate(x::Palimdrome,
     while left>0 && right<=till && lowercase(@inbounds str[left])==lowercase(@inbounds str[right])
         ## if we cannot expand, we can succeed with current (left_,right_)
         right_ = right 
-        left_ = left # state to left range, the leftmost index of last match
+        left_ = left
         left =  seek_word_char(
             prevind,str,
             left,till,x.word_char)        
@@ -151,7 +152,6 @@ function CombinedParsers._iterate(x::Palimdrome,
     end
     left, left_, right_, right
     if left_ == right_ 
-        # skip trivial short palimdromes
         nothing
     else
         tuple(nextind(str,right_),
@@ -168,12 +168,8 @@ m = match(p,s)
 
 
 
-# The result of a parsing is the matching substring from left to right.
-## Base.get(x::Palimdrome, str, state) = SubString(str,state...)
-## TODO: dispatch Base.get(x::CombinedParser, str, till::Int, after::Int, posi::Int, state) = Base.get(x, str, after, posi, state)
-## TODO: dispatch Base.get(x::CombinedParser, str, after::Int, posi::Int, state) = Base.get(x, str, posi, state)
-## TODO: dispatch Base.get(x::CombinedParser, str, posi::Int, state) = Base.get(x, str, state)
-## Implementing `Base.get` with the full argument range:
+# The result of a parsing is the matching substring from left to right, 
+# implementing `Base.get` with the full argument range:
 Base.get(x::Palimdrome, str, till, after, posi, state) =
     SubString(str,state.left,state.right)
 
@@ -185,6 +181,14 @@ get(m)
 p = Palimdrome()
 [ get(m) for m in match_all(p,s) ]
 
+
+# To skip trivial short palimdromes we can use `Base.filter` 
+long_palimdrome = filter(Palimdrome()) do sequence, till, posi, after, state
+    state.right-state.left+1 > 5
+end
+get(match(long_palimdrome,s))
+
+# ## Iteration of smaller Sub-palimdromes
 # The set of all palimdromes in a text includes the shorter palimdromes contained in longer ones.
 # Provide a method to iterate the previous state:
 "Shrinking `state` match"
@@ -210,36 +214,29 @@ end
 p = Atomic(Palimdrome())
 get.(match_all(p,s)) |> collect
 
-
-# `Base.filter` can filter out short palimdromes:
-long_palimdrome = FilterParser(Palimdrome()) do sequence, till, posi, after, state
-    left,posi,right=state
-    right-left+1 > 5
-end
-get(match(long_palimdrome,s))
-
-
+# ## Padding and combining
 # Note that the PCRE pattern included outside non-words, specifically the tailing `!`.
 re = Regex(pt.pattern...)
 match(re,s)
-#``CombinedParsers` are designed with iteration in mind, and a small match set reduces computational time when iterating through all matches.
+
+# ``CombinedParsers` are designed with iteration in mind, and a small match set reduces computational time when iterating through all matches.
 # `Palimdrome` matches palimdromes with word-char boundaries.
 # The PCRE pattern includes non-words matches in the padding of palimdromes, a superset of `Palimdrome`.
 # PCRE-equivalent matching can be achieved by combining the stricly matching `Palimdrome` with parsers for the padding.
 padding=Repeat(CharNotIn(p.parser.word_char))
-CombinedParsers.state_type(Palimdrome()*padding|>typeof)
-get.(match_all(p*padding,s)) |> collect
+match_all(p*padding,s)
 
 # `Palimdrome` matches from center to right, like a lookbehind parser.
 match_all(p*padding,s) |> collect
 
-palimdrome = FilterParser(
+# TODO: Memoization here!
+# And assert AtStart, AtEnd
+palimdrome = filter(
     Sequence(
         2,
         Lazy(Repeat(AnyChar())),
         Atomic(Palimdrome()))) do sequence, till, posi, after, state
-            #            @show posi,state
-    posi==state[2][1]
-end
+            posi==state[2][1]
+        end
 
 p = AtStart() * padding * (palimdrome) * padding * AtEnd()

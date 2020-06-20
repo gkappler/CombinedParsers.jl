@@ -20,7 +20,7 @@ Base.IteratorSize(::Type{<:MatchesIterator}) = Base.SizeUnknown()
 
 
 """
-Wrapper type for [`SequenceWithCaptures`](@ref), providing
+Wrapper type for [`CombinedParsers.Regexp.SequenceWithCaptures`](@ref), providing
 `getindex` and `getproperty` behavior like `RegexMatch`.
 
 ```jldoctest
