@@ -457,3 +457,121 @@ function splitter(## R::Type,
     end
     CustomParser(tpn, R)
 end
+
+
+"""
+    integer_base(base,mind=0,maxd=Repeat_max)
+
+Parser matching a integer format on base `base`.
+"""
+function integer_base(base,mind=0,maxd=Repeat_max)
+    dig = if base == 16
+        hex_digit
+    elseif base == 8
+        CharIn('0':'7')
+    elseif base ==10
+        CharIn('0':'9')
+    else
+        error()
+    end
+    Repeat(dig,(mind,maxd)) do v
+        (isempty(v) ? 0 : parse(Int,join(v),base=base))::Int
+    end
+end
+
+"""
+    @pcre_testset
+
+Define `@syntax pcre_test` and `@syntax pcre_tests` for parsing unit test output of the PCRE library.
+The parser is used for testing `CombinedParser` and benchmarking against `Regex`.
+"""
+macro pcre_tests()
+    esc(quote
+        ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
+        charparser = Either(
+            Sequence(
+                '\\',
+                CombinedParsers.Regexp.integer_base(8,1,3)
+            ) do v
+            Char(v[2])
+            end,
+            CombinedParsers.Regexp.escaped_character,
+            AnyChar())
+        
+        
+        unescaped=map(Repeat_until(
+            AnyChar(), Sequence(Repeat(' '),'\n');
+            wrap=JoinSubstring)) do v
+        join(parse(Repeat(charparser),v))
+        end;
+        comment_or_empty = Repeat(
+            JoinSubstring(Either(
+                Sequence(
+                    CombinedParsers.Regexp.at_linestart,
+                    '#',Repeat_until(AnyChar(),'\n')),
+                Sequence(
+                    CombinedParsers.Regexp.at_linestart,
+                    Repeat_until(
+                        CombinedParsers.Regexp.whitespace_char,'\n')))));
+        
+
+
+
+        #    @test parse(unescaped,"A\\123B\n") == "ASB"
+        @syntax pcre_test = begin
+        match_test = Sequence(Repeat1(' '),
+                              :sequence => unescaped,
+                              :expect => Repeat(Sequence(
+                                  Repeat(' '),
+                                  :i => Either(CombinedParsers.Regexp.integer,"MK"),':',
+                                  Repeat(' '),
+                                  :result => unescaped))
+                              );
+
+        Sequence(
+            :pattern => after(CharIn("/'\""),Any) do s
+            Repeat_until(
+                AnyChar(),
+                Sequence(3, NegativeLookbehind('\\'),
+                         s, Repeat_until(
+                             AnyChar(),
+                             Sequence(Repeat(
+                                 CombinedParsers.Regexp.whitespace_char), '\n'),
+                             wrap=JoinSubstring)),
+                true; wrap=JoinSubstring)
+            end,
+            :test => Repeat(match_test),
+            :tests_nomatch => Optional(
+                Sequence(
+                    2,
+                    Optional("\\= Expect no match",
+                             Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)),
+                    Repeat(Sequence(2,
+                                    Repeat1(' '),
+                                    unescaped,
+                                    Optional(Sequence("No match",
+                                                      Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)))
+                                    ))))
+        );
+        end;
+
+        function Base.show(io::IO, x::result_type(pcre_test))
+        print(io, "Pattern: ")
+        printstyled(io,"r(e)\"$(x.pattern[1])\"$(x.pattern[2])\n", color=:underline)
+        println(io, "Test Examples:")
+        for (i,t) in enumerate(x.test)
+        println(io, "   $i. $(t.sequence)")
+        end
+        println(io, "Not Examples:")
+        for (i,t) in enumerate(x.tests_nomatch)
+        println(io, "   $i. $t")
+        end
+        end
+        
+        @syntax pcre_tests = Sequence(
+            Repeat(Sequence(comment_or_empty,
+                            pcre_test)),
+            comment_or_empty,
+            AtEnd());
+        end)
+end

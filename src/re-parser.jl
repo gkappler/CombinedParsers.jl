@@ -75,20 +75,6 @@ bracket_range(start) =
             end
         end)
 
-function character_base(base,mind=0,maxd=Repeat_max)
-    dig = if base == 16
-        hex_digit
-    elseif base == 8
-        CharIn('0':'7')
-    elseif base ==10
-        CharIn('0':'9')
-    else
-        error()
-    end
-    Repeat(dig,(mind,maxd)) do v
-        (isempty(v) ? 0 : parse(Int,join(v),base=base))::Int
-    end
-end
 
 skip_whitespace_on(flags, wrap=identity) =
     with_name(:skip_ws,on_options(
@@ -147,7 +133,7 @@ Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax 
  
 hex_digit = CharIn('A':'F','a':'f','0':'9')
 _integer(maxchar=3) =
-    Sequence(Optional('-'),character_base(10,1,maxchar)) do v
+    Sequence(Optional('-'),integer_base(10,1,maxchar)) do v
         if v[1]===missing
             v[2]
         else
@@ -244,7 +230,7 @@ name = JoinSubstring(
                 #   \ddd      character with octal code ddd, or back reference
                 ## todo: error on \g<ddd>
                 v isa Integer || error("capture group $v not found!")
-                parse(Sequence(character_base(8,1,3),
+                parse(Sequence(integer_base(8,1,3),
                                Repeat(AnyChar())) do v
                       sSequence(parser(Char(v[1])),
                                 v[2]...)
@@ -278,18 +264,18 @@ push!(repeatable,
                  't' => '\t',   #  tab (hex 09)
                  '"' => '"',
                  #   \0dd      character with octal code 0dd
-                 Sequence('0',character_base(8,0,2)) do v; Char(v[2]); end,
+                 Sequence('0',integer_base(8,0,2)) do v; Char(v[2]); end,
                  #   \ddd      character with octal code ddd, or back reference
-                 ## Sequence(character_base(8,3,3), transform=v->(Char(v[1]))),
+                 ## Sequence(integer_base(8,3,3), transform=v->(Char(v[1]))),
                  ## see backreference, if a capture with number (in decimal) is defined
                  #   \o{ddd..} character with octal code ddd..
-                 Sequence('o','{',character_base(8),'}') do v; Char(v[3]); end,
+                 Sequence('o','{',integer_base(8),'}') do v; Char(v[3]); end,
                  #   \xhh      character with hex code hh
-                 Sequence('x','{',character_base(16),'}') do v; Char(v[3]); end,
+                 Sequence('x','{',integer_base(16),'}') do v; Char(v[3]); end,
                  #   \x{hhh..} character with hex code hhh.. (non-JavaScript mode)
-                 Sequence('x',character_base(16,0,2)) do v; Char(v[2]); end,
+                 Sequence('x',integer_base(16,0,2)) do v; Char(v[2]); end,
                  #   \uhhhh    character with hex code hhhh (JavaScript mode only)
-                 Sequence('h',character_base(16,4,4)) do v; Char(v[2]); end,
+                 Sequence('h',integer_base(16,4,4)) do v; Char(v[2]); end,
                  CharNotIn('Q','E')
              ))
 
@@ -328,7 +314,7 @@ bracket_char = let bracket_meta_chars = raw"]\^-"
     Either(
         CharNotIn([ c for c in bracket_meta_chars]),
         "\\b" => '\x08',
-        Sequence('\\',character_base(8,1,3)) do v
+        Sequence('\\',integer_base(8,1,3)) do v
         Char(v[2])
         end,
         escaped_character

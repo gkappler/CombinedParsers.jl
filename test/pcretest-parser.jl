@@ -3,66 +3,7 @@ using CombinedParsers.Regexp
 import CombinedParsers.Regexp: at_linestart, whitespace_char, integer, character_base, escaped_character
 import CombinedParsers.Regexp: pcre_options, with_options, parse_options, @test_pcre
 
-charparser = Either(
-    ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
-    Sequence('\\',character_base(8,1,3)) do v
-    Char(v[2])
-    end,
-    escaped_character,
-    AnyChar())
-
-
-unescaped=map(Repeat_until(
-    AnyChar(), Sequence(Repeat(' '),'\n');
-    wrap=JoinSubstring)) do v
-        join(parse(Repeat(charparser),v))
-    end;
-comment_or_empty = Repeat(
-    JoinSubstring(Either(Sequence(at_linestart,'#',Repeat_until(AnyChar(),'\n')),
-                         Sequence(at_linestart,Repeat_until(whitespace_char,'\n')))));
-
-
-
-
-@test parse(unescaped,"A\\123B\n") == "ASB"
-@with_names begin
-    match_test = Sequence(Repeat1(' '),
-                     :sequence => unescaped,
-                     :expect => Repeat(Sequence(
-                         Repeat(' '),
-                         :i => Either(integer,"MK"),':',
-                         Repeat(' '),
-                         :result => unescaped))
-                     );
-
-    testspec = Sequence(
-        :pattern => after(CharIn("/'\""),Any) do s
-            Repeat_until(
-                AnyChar(),
-                Sequence(3, NegativeLookbehind('\\'),
-                         s, Repeat_until(AnyChar(),
-                                         Sequence(Repeat(whitespace_char), '\n'),
-                                         wrap=JoinSubstring)),
-                true; wrap=JoinSubstring)
-            end,
-        :test => Repeat(match_test),
-        :tests_nomatch => Optional(
-            Sequence(2, Optional("\\= Expect no match",Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)),
-                Repeat(Sequence(2,
-                        Repeat1(' '),
-                        unescaped,
-                        Optional(Sequence("No match",
-                                Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)))
-                        ))))
-    );
-end;
-
-tests_parser = Sequence(Repeat(Sequence(comment_or_empty,
-                           testspec)),
-                   comment_or_empty,
-                   AtEnd());
-
-
+CombinedParsers.Regexp.@pcre_tests ## define parsers for pcre tests
 
 is_expected(pc_match::Nothing,expect) = isempty(expect)
 function is_expected(pc_match,expect)
@@ -135,7 +76,7 @@ end
 
 macro test_pcre_str(x)
     quote
-        for tt in parse(tests_parser,$x)[1]
+        for tt in parse(pcre_tests,$x)[1]
             p =  with_options(parse_options(tt[2].pattern[2]), tt[2].pattern[1])
             @testset "$(tt[2].pattern)" begin
                 @pcre_testset tt[2] true
@@ -161,7 +102,8 @@ import CombinedParsers.Regexp: skip_whitespace_and_comments
                     abc
                  0: \xff
                 """) == (sequence="abc", expect = [(i=0,result="\xff")])
-    @test parse(testspec,
+
+    @test parse(pcre_test,
                 raw"""
                 /^abc$/m
                     abc
@@ -285,7 +227,7 @@ test_pcre"""/abc[\10]de/
 """
     
     @test parse(Repeat(Sequence(comment_or_empty,
-                        testspec)),"""
+                        pcre_test)),"""
                 /a(*F:X)b/
                     abc
                 No match, mark = X

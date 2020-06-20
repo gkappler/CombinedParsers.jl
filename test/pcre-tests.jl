@@ -4,7 +4,7 @@ docdir = joinpath(dirname(pathof(CombinedParsers)),"../docs/src/")
 include(joinpath(testdir, "pcretest-parser.jl"))
 
 tests_string=read(joinpath(testdir,"testoutput1"),String);
-tests = parse(tests_parser, tests_string)[1];
+tests = pcre_tests(tests_string)[1];
 
 tt=tests[14]
 @pcre_testset tt[2] true
