@@ -436,7 +436,7 @@ index(parser::Subroutine,sequence) =
 
 @inline function _iterate(parser::Subroutine, sequence::SequenceWithCaptures, till, posi, next_i, state)
     _iterate(
-        with_log("$(parser.name)", sequence.subroutines[index(parser,sequence)].parser),
+        sequence.subroutines[index(parser,sequence)].parser,
         copy_captures(sequence,parser), till, posi, next_i, state)
 end
 state_type(::Type{<:Subroutine}) = Any
