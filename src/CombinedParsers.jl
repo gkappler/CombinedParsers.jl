@@ -232,7 +232,6 @@ Default method for parser types returning nothing
 """
 Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state) =
     nothing
-state_type(p::Type{<:CombinedParser}) =  error("implement state_type(::Type{$(p)})")
 
 """
     _iterate(parser, sequence, till, posi, next_i, states)
@@ -245,6 +244,7 @@ and sequence[start_index(sequence,after,parser,state):prevind(sequence,next_i)] 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,T} <: CombinedParser{T} end
 
+state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
 import AbstractTrees: children
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
@@ -1988,8 +1988,11 @@ end
         ## TODO: gc happening in next line?
         $(subresult[p]) = _iterate($(part[p]), sequence, till, $(pposi[p]), $(pposi[p+1]), $(substate[p]))
         if $(subresult[p]) === nothing
-            prune_captures(sequence,$(pposi[p]))
-            @goto $(p == 1 ? :theend : subsearch[p-1])
+        $(part[p])
+           prune_captures(sequence,$(pposi[p]))
+        $(substate[p]) = nothing
+        $(pposi[p+1]) = $(pposi[p])
+           @goto $(p == 1 ? :theend : subsearch[p-1])
         else
             $(pposi[p+1]) = $(subresult[p])[1]
             $(substate[p]) = $(subresult[p])[2]

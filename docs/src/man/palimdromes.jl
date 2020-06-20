@@ -218,3 +218,28 @@ long_palimdrome = FilterParser(Palimdrome()) do sequence, till, posi, after, sta
 end
 get(match(long_palimdrome,s))
 
+
+# Note that the PCRE pattern included outside non-words, specifically the tailing `!`.
+re = Regex(pt.pattern...)
+match(re,s)
+#``CombinedParsers` are designed with iteration in mind, and a small match set reduces computational time when iterating through all matches.
+# `Palimdrome` matches palimdromes with word-char boundaries.
+# The PCRE pattern includes non-words matches in the padding of palimdromes, a superset of `Palimdrome`.
+# PCRE-equivalent matching can be achieved by combining the stricly matching `Palimdrome` with parsers for the padding.
+padding=Repeat(CharNotIn(p.parser.word_char))
+CombinedParsers.state_type(Palimdrome()*padding|>typeof)
+get.(match_all(p*padding,s)) |> collect
+
+# `Palimdrome` matches from center to right, like a lookbehind parser.
+match_all(p*padding,s) |> collect
+
+palimdrome = FilterParser(
+    Sequence(
+        2,
+        Lazy(Repeat(AnyChar())),
+        Atomic(Palimdrome()))) do sequence, till, posi, after, state
+            #            @show posi,state
+    posi==state[2][1]
+end
+
+p = AtStart() * padding * (palimdrome) * padding * AtEnd()
