@@ -18,6 +18,11 @@ for f in [ "example-person.jl", "example-number-ranges.jl" ]
                       codefence = "```@repl session" => "```")
 end
 
+for f in [ "example-palimdromes.jl" ]
+    Literate.markdown(joinpath(mandir,f), mandir,
+                      repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs")
+end
+
 makedocs(;
     modules=[CombinedParsers],
     authors="Gregor Kappler",
@@ -38,6 +43,7 @@ makedocs(;
         "Examples" => [
             "Name and addresses" => "man/example-person.md",
             "Number sequences" => "man/example-number-ranges.md",
+            "Palimdrome<:CombinedParsers" => "example-palimdromes.jl",
             "Regular Expressions" => "man/pcre.md",
             "JSON" => "man/json.md",
         ],
