@@ -178,7 +178,8 @@ end
 
 @test_pcre "^aaa(?<!c)b" "aaab"
 
-
-@test _iterate(PositiveLookahead("a"), "aaab") == (1, CombinedParsers.MatchState())
-
-@test get(PositiveLookahead("a"),"aaab",4,1,1,CombinedParsers.MatchState()) == "a"
+m = match(PositiveLookahead("a"), "aaab")
+@test m.start == 1
+@test m.stop == 1
+@test m.state == CombinedParsers.MatchState()
+@test get(m) == "a"
