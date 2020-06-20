@@ -4,37 +4,25 @@ Documentation for `CombinedParsers.jl`'s public interface.
 
 See the Internals section of the manual for internal package docs covering all submodules.
 
-## CombinedParsers
-
+## Matching
 ```@docs
 CombinedParsers
-@syntax
-parser
-convert
+match
+get
+parse
+tryparse
+parse_pos
+tryparse_pos
 ```
 
 ## CombinedParsers.Regexp
-
 ```@docs
 CombinedParsers.Regexp
 CombinedParsers.Regexp.@re_str
-CombinedParsers.Regexp.match
 with_options
-CombinedParsers.Regexp.parse_options
-regex_escape
+CombinedParsers.Regexp.@pcre_tests
 ```
 
-## Parsing, Logging and Side-Effects
-```@docs
-parse
-tryparse
-with_name
-@with_names
-log_names
-with_log
-instrument
-with_effect
-```
 
 ## Transformations
 ```@docs
@@ -45,6 +33,12 @@ JoinSubstring
 ```
 
 ## Parser Constructors
+
+```@docs
+parser
+convert
+```
+
 ### Character Matchers
 ```@docs
 AnyChar
@@ -54,6 +48,7 @@ CharNotIn
 
 ### Combining Parser
 ```@docs
+@syntax
 Either
 (|)(::CombinedParsers.ParserTypes, ::CombinedParsers.ParserTypes)
 push!
@@ -77,6 +72,14 @@ Base.join
 alternate
 ```
 
+### Logging and Side-Effects
+```@docs
+with_name
+@with_names
+log_names
+with_log
+with_effect
+```
 
 ### Assertions
 ```@docs
@@ -90,15 +93,5 @@ NegativeLookahead
 Lookbehind
 PositiveLookbehind
 NegativeLookbehind
-```
-
-## Printing
-```@docs
-regex_string
-CombinedParsers.regex_prefix
-CombinedParsers.regex_inner
-CombinedParsers.regex_suffix
-CombinedParsers.print_constructor
-CombinedParsers.MemoTreeChildren
 ```
 

@@ -2,7 +2,6 @@
 ## Iterating Parsings
 ```@docs
 CombinedParsers._iterate
-CombinedParsers.get
 CombinedParsers.ismatch
 ```
 
@@ -32,15 +31,32 @@ CombinedParsers.LookAround
 CombinedParsers.Transformation
 ```
 
+## Printing
+```@docs
+regex_string
+CombinedParsers.regex_prefix
+CombinedParsers.regex_inner
+CombinedParsers.regex_suffix
+CombinedParsers.print_constructor
+CombinedParsers.MemoTreeChildren
+```
+
+
 ## Regular Expression Types
 ```@docs
+CombinedParsers.Regexp.parse_options
+regex_escape
+CombinedParsers._iterate(::ParserWithCaptures,::SequenceWithCaptures,a...)
+```
+
+```@docs
+CombinedParsers.Regexp.ParserWithCaptures
+CombinedParsers.Regexp.SequenceWithCaptures
 CombinedParsers.Regexp.ParseMatch
 CombinedParsers.Regexp.Capture
 CombinedParsers.Regexp.Backreference
 CombinedParsers.Regexp.Subroutine
 CombinedParsers.Regexp.Conditional
 CombinedParsers.Regexp.DupSubpatternNumbers
-CombinedParsers.Regexp.ParserWithCaptures
-CombinedParsers.Regexp.SequenceWithCaptures
 ```
 
