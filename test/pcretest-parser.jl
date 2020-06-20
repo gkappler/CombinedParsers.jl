@@ -1,6 +1,6 @@
 using Test
 using CombinedParsers.Regexp
-import CombinedParsers.Regexp: at_linestart, whitespace_char, integer, character_base, escaped_character
+import CombinedParsers.Regexp: at_linestart, whitespace_char, integer, escaped_character
 import CombinedParsers.Regexp: pcre_options, with_options, parse_options, @test_pcre
 
 CombinedParsers.Regexp.@pcre_tests ## define parsers for pcre tests
