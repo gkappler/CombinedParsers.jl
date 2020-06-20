@@ -11,7 +11,6 @@ match
 get
 parse
 tryparse
-parse_pos
 tryparse_pos
 ```
 

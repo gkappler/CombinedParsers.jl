@@ -46,7 +46,7 @@ CombinedParsers.MemoTreeChildren
 ```@docs
 CombinedParsers.Regexp.parse_options
 regex_escape
-CombinedParsers._iterate(::ParserWithCaptures,::SequenceWithCaptures,a...)
+CombinedParsers._iterate(::CombinedParsers.Regexp.ParserWithCaptures,::CombinedParsers.Regexp.SequenceWithCaptures,a...)
 ```
 
 ```@docs
