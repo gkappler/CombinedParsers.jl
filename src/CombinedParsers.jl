@@ -168,20 +168,24 @@ function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state
         if isnull(r)
             nothing
         else
-            next_i_,(next_i_-next_i,get(r))
+            next_i_,AbstractTokenState(next_i_-next_i,get(r))
         end
     else
         nothing
     end
 end
 function Base.get(parser::AbstractToken, sequence, till, after, i, state)
-    tuple_state(state)
+    state.result
 end
-@inline function nextind(str,i::Int,parser::AbstractToken{T},x::Tuple{Int,T}) where T
-    i+tuple_pos(x)
+struct AbstractTokenState{R}
+    nc::Int
+    result::R
 end
-@inline function prevind(str,i::Int,parser::AbstractToken{T},x::Tuple{Int,T}) where T
-    i-tuple_pos(x)
+@inline function nextind(str,i::Int,parser::AbstractToken,x::AbstractTokenState)
+    i+x.nc
+end
+@inline function prevind(str,i::Int,parser::AbstractToken,x::AbstractTokenState) 
+    i-x.nc
 end
 
 
