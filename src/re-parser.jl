@@ -49,7 +49,8 @@ vertical_space=(
     '\U2029') # "Paragraph separator"))
 
 
-bsr = Atomic(Either("\r\n",CharIn('\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
+bsr = Atomic(Either("\r\n",
+                    CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
 
 newline = bsr
 inline = !Repeat(CharNotIn(vertical_space))
@@ -163,7 +164,7 @@ pattern = Either(
 # https://www.regular-expressions.info/refcharacters.html
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC4
 char =  Either(
-    CharNotIn([ c for c in meta_chars]),
+    CharNotIn(meta_chars),
     Sequence(2,'\\', CharIn(meta_chars))) do v
         convert(CombinedParser,v)
     end
@@ -178,16 +179,17 @@ escape_sequence(stop=AtEnd()) =
 push!(pattern,
       map(parser, with_name(:escape_sequence, escape_sequence())));
 
-word_char=CharIn(UnicodeClass("L","N"),'_')
+word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
 words = JoinSubstring(Repeat1(CharIn(word_char,whitespace_char))) ## "[[:alpha:] ]+"
 
-non_word=CharNotIn(UnicodeClass("L","N"),'_')
-non_word_ = Either(non_word,AtStart(),AtEnd())
+non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
+non_word = JoinSubstring(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
+non_word_char_ = Either(non_word_char,AtStart(),AtEnd())
 
 word_boundary = Either(
-    Sequence(PositiveLookbehind(word),PositiveLookahead(non_word_)),
-    Sequence(PositiveLookbehind(non_word_),PositiveLookahead(word))
+    Sequence(PositiveLookbehind(word),PositiveLookahead(non_word_char_)),
+    Sequence(PositiveLookbehind(non_word_char_),PositiveLookahead(word))
 )
     
 @with_names simple_assertion =
@@ -279,40 +281,46 @@ push!(repeatable,
                  CharNotIn('Q','E')
              ))
 
-
-@with_names generic_character_type =
-    Sequence(2,
-        '\\',
-        Either(
+chartype_letter_parser = Either(
             # "any decimal digit"),
-            'd' => CharIn('0':'9'),
+            'd' => CharIn("\\d",'0':'9'),
             # "any character that is not a decimal digit"),
-            'D' => CharNotIn('0':'9'),
+            'D' => CharNotIn("\\D",'0':'9'),
             # "any horizontal white space character"),
-            'h' => CharIn(horizontal_space...),
+            'h' => CharIn("\\h",horizontal_space...),
             # "any character that is not a horizontal white space character"),
-            'H' => CharNotIn(horizontal_space...),
+            'H' => CharNotIn("\\H",horizontal_space...),
             # "any white space character"),
-            's' => CharIn(horizontal_space...,vertical_space...),
+            's' => CharIn("\\s",horizontal_space...,vertical_space...),
             # "any character that is not a white space character"),
-            'S' => CharNotIn(horizontal_space...,vertical_space...),
+            'S' => CharNotIn("\\S",horizontal_space...,vertical_space...),
             # "any vertical white space character"),
-            'v' => CharIn(vertical_space...),
+            'v' => CharIn("\\v",vertical_space...),
             # "any character that is not a vertical white space character"),
-            'V' => CharNotIn(vertical_space...),
+            'V' => CharNotIn("\\V",vertical_space...),
             # "any "word" character"),
             'w' => word_char,
             # "any "non-word" character"),
-            'W' => non_word,
+            'W' => non_word_char,
+        )
+
+@with_names generic_character_type =
+    Sequence(2,
+        '\\', Either(
+            chartype_letter_parser,
+            Sequence(2,"p{",
+                     Either(Dict(string(k)=>CharIn("\\p{$k}",UnicodeClass(v[3]))
+                                 for (k,v) in CombinedParsers.unicode_classes)) ,
+                     '}')
+            
         ));
 push!(repeatable,generic_character_type);
-
 
 
 # https://www.regular-expressions.info/posixbrackets.html#class
 bracket_char = let bracket_meta_chars = raw"]\^-"
     Either(
-        CharNotIn([ c for c in bracket_meta_chars]),
+        CharNotIn(bracket_meta_chars),
         "\\b" => '\x08',
         Sequence('\\',integer_base(8,1,3)) do v
         Char(v[2])
