@@ -1343,15 +1343,17 @@ julia> parse(ac, "c")
 ```
 """
 @auto_hash_equals struct CharIn{S} <: NIndexParser{1,Char}
+    pcre::String
     sets::S
-    CharIn(x_) =
-        let x = optimize(CharIn,x_)
-            new{typeof(x)}(x)
-        end
+    CharIn(pcre::String,x::T) where {T<:Union{Char,Set{Char},<:Function,<:UnicodeClass,<:Tuple}}=
+        new{T}(pcre,x)
 end
-
-
-
+CharIn(pcre::String,x_...) =
+    CharIn(pcre, optimize(CharIn,x_...))
+CharIn(chars::String) =
+    CharIn("",chars)
+CharIn(x_...) =
+    CharIn("",x_...)
 
 """
     CharIn(unicode_class::Symbol...)
@@ -1398,7 +1400,7 @@ regex_string_(x::StepRange) =
         x.start*"-"*x.stop
     end
 regex_string_(x::Tuple) = join([regex_string_(s) for s in x])
-regex_string_(x::CharIn) = regex_string_(x.sets)
+regex_string_(x::CharIn) = ( x.pcre =="" ? regex_string_(x.sets) : x.pcre )
 regex_inner(x::CharIn) =
     "["*regex_string_(x)*"]"
 
@@ -1437,14 +1439,19 @@ Stacktrace:
 ```
 """
 @auto_hash_equals struct CharNotIn{S} <: NIndexParser{1,Char}
+    pcre::String
     sets::S
-    CharNotIn(x_) =
-        let x = optimize(CharNotIn,x_)
-            new{typeof(x)}(x)
-        end
+    CharNotIn(pcre::String,x::T) where {T<:Union{Char,Set{Char},Function,UnicodeClass,Tuple}}=
+        new{T}(pcre,x)
 end
+CharNotIn(pcre::String,x_...) =
+    CharNotIn(pcre,optimize(CharNotIn,x_...))
+CharNotIn(chars::String) =
+    CharNotIn("",chars)
+CharNotIn(x_...) =
+    CharNotIn("",x_...)
 result_type(::Type{<:CharNotIn}) = Char
-regex_string_(x::CharNotIn) = "^"*regex_string_(x.sets)
+regex_string_(x::CharNotIn) = ( x.pcre =="" ? regex_string_(x.sets) : x.pcre )
 regex_inner(x::CharNotIn) =
     "[^"*regex_string_(x)*"]"
 _ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
@@ -1467,7 +1474,7 @@ CharNotIn(unicode_classes::Symbol...) =
 end
 
 @inline function _iterate(parser::CharIn, sequence, till, posi, next_i, state::Nothing)
-    next_i>till && return(nothing)
+    next_i>till && return nothing
     @inbounds c,ni = iterate(sequence,next_i)
     !ismatch(c,parser.sets) && return nothing
     return ni, MatchState()
@@ -1475,54 +1482,46 @@ end
 
 
 export CharMatcher
-CharMatcher = Union{Char, AnyChar, CharIn, CharNotIn, UnicodeClass,StepRange{Char,Int},AbstractString}
+BaseCharMatcher = Union{Char, AnyChar, UnicodeClass,StepRange{Char,Int}}
+CharMatcher = Union{CharIn, CharNotIn, BaseCharMatcher}
 
-
-for T in [:CharIn,:CharNotIn]
-    eval(quote
-         $T(x::Union{CharMatcher}...) = $T(tuple( x...))
-         $T(x::$T{Tuple{<:$T}}) = $T(x.sets[1])
-         $T(x::$T) = x #$T(x.sets)
-         $T(x::AbstractString...) = $T( Char[ c for x_ in x for c in x_] )
-         $T(x1::Char,x::Char...) = $T( Char[ x1, ( c for c in x )... ] )
-         $T(x::Union{Missing,CharMatcher}...) = $T((e for e in x if e!==missing)...)
-         end)
+optimize!(charset,otherstuff) =
+    charset,otherstuff
+optimize!(charset::Nothing,otherstuff,x::Char) =
+    x,otherstuff
+optimize!(charset::Char,otherstuff,x::Char) =
+    optimize!(Set{Char}(charset),otherstuff,x)
+function optimize!(charset::Set{Char},otherstuff,x::Char)
+    push!(charset,x)
+    charset,otherstuff
 end
-         
-optimize_(::Type{<:Union{CharIn,CharNotIn}}) =
-    tuple()
-optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::CharIn) =
-    optimize_(CharIn,x1.sets)
-optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1) =
-    error("implement optimize_(::Type{<:Union{CharIn,CharNotIn}}, ::$(typeof(x1)))")
-optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::Union{Function,Char,UnicodeClass,CharNotIn}) =
-    tuple(x1)
-optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::StepRange) =
-    collect(x1)
-optimize_(::Type{<:Union{CharIn,CharNotIn}}, x1::Set{Char}) =
-    x1
-optimize_(T::Type{<:Union{CharIn,CharNotIn}}, x1::Union{<:Vector,<:Tuple}) =
-    optimize_(T,x1...)
-optimize_(T::Type{<:Union{CharIn,CharNotIn}},x1,x...) =
-    Iterators.flatten( Any[
-        optimize_(T,x1), ( optimize_(T,e) for e in x )... ] )
-
-function optimize(T::Type{<:Union{CharIn,CharNotIn}},x1)
-    sets=Any[Set{Char}()]
-    for x in optimize_(T,x1)
-        if x isa Char
-            push!(sets[1],x)
-        else
-            push!(sets,x)
-        end
-    end
-    if isempty(sets[1])
-        popfirst!(sets)
-    elseif length(sets[1])==1
-        sets[1]=first(sets[1])
-    end
-    length(sets)==1 ? sets[1] : tuple(sets...)
+optimize!(charset,otherstuff::Nothing,x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) =
+    optimize!(charset,Any[],x)
+function optimize!(charset,otherstuff::Vector{Any},x::Union{<:Function,<:UnicodeClass,<:CharNotIn})
+    push!(otherstuff,x)
+    charset,otherstuff
 end
+function optimize!(charset,otherstuff,c::CharIn)
+    optimize!(charset,otherstuff,c.sets)
+end
+function optimize!(charset,otherstuff,x::Union{Vector,Tuple,StepRange{Char,Int},Set{Char},<:AbstractString})
+    optimize!(charset,otherstuff,x...)
+end
+function optimize!(charset,otherstuff,x1,x2,x...)
+    optimize!(optimize!(charset,otherstuff,x1)...,x2,x...)
+end
+
+function optimize(::Type{<:Union{CharIn,CharNotIn}},x...)
+    charset,otherstuff = optimize!(nothing,nothing,x...)
+    if otherstuff===nothing
+        charset === nothing ? tuple() : charset
+    elseif charset===nothing
+        tuple(otherstuff...)
+    else
+        tuple(charset,otherstuff...)
+    end
+end
+
 
 export Repeat_stop, Repeat_until
 """
