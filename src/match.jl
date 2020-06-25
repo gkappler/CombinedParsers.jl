@@ -8,10 +8,8 @@ Iterator type for `match_all` and `parse_all`.
     sequence::S
     from::Int
     till::Int
-    MatchesIterator(parser,sequence,from=1) =
-        new{typeof(parser),typeof(sequence)}(
-            parser,sequence,
-            from,lastindex(sequence))
+    MatchesIterator(parser::P,sequence::S,from=1,till=lastindex(sequence)) where {P,S} =
+        new{P,S}(parser,sequence,from,till)
 end
 result_type(::Type{<:MatchesIterator{P}}) where P = result_type(P)
 Base.eltype(T::Type{<:MatchesIterator{P,S}}) where {P,S} =
@@ -43,8 +41,8 @@ julia> m.match, m.captures
     start::Int
     stop::Int
     state::State
-    function ParseMatch(p::MatchesIterator{P,S},start::Integer,stop::Integer,state) where {P,S}
-        new{P,S,typeof(state)}(
+    function ParseMatch(p::MatchesIterator{P,S},start::Integer,stop::Integer,state::ST) where {P,S,ST}
+        new{P,S,Any}( # Any is faster
             p,
             start,stop,state)
     end
@@ -120,26 +118,29 @@ function match_all(parser::ParserTypes, sequence, idx=1; log=nothing)
 end
 
 import Base: iterate
-Base.iterate(x::MatchesIterator) =
-    iterate(x,(x.from,x.from,nothing))
+@inline Base.iterate(x::MatchesIterator) =
+    iterate(x,ParseMatch(x,x.from,x.from,nothing))
+parsematch_tuple(m,start,state) =
+    let r = ParseMatch(m,start,tuple_pos(state),tuple_state(state))
+        return tuple(r,r)
+    end
 function Base.iterate(m::MatchesIterator,
-                      s::Tuple{Int,Int,<:Any})
-    start,stop,state = s
+                      s::ParseMatch)
+    start,stop = s.start, s.stop
     till = m.till
-    state = _iterate(m,start,stop,state)
+    state = _iterate(m,start,stop,s.state)
     while start <= till+1 && state===nothing
         # state = iterate(m.parsings,(start,nothing))
         start > till && break
         start = nextind(m.sequence,start)
         state = _iterate(m,start,start,nothing)
     end
-    if state === nothing
-        nothing
-    else
-        ParseMatch(m,start,state...),  (start,state...)
-    end
+    state === nothing && return nothing
+    parsematch_tuple(m,start,state)
 end
 
+_iterate(p::ParserTypes,s) =
+    _iterate(MatchesIterator(p,s),1,1,nothing)
 _iterate(mi::MatchesIterator,a...) =
     _iterate(mi.parser, mi.sequence, mi.till, a...)
 
