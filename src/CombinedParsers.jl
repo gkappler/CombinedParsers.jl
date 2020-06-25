@@ -111,6 +111,16 @@ and sequence[start_index(sequence,after,parser,state):prevind(sequence,next_i)] 
     end
     return j, MatchState()
 end
+
+@inline function _iterate(parser::Char, sequence, till, posi, next_i, state::Nothing,L=ncodeunits(parser))
+    next_i>till && return nothing
+    if ismatch(sequence[next_i],parser)
+        next_i+L, MatchState()
+    else
+        nothing
+    end
+end
+
 @inline function _iterate(p::Union{<:AbstractString,Char}, sequence, till, posi, next_i, state)
     nothing
 end
@@ -441,10 +451,14 @@ Base.get(x::JoinSubstring, sequence, till, after, i, state) =
     function ConstantParser{N}(x::Char) where N
         new{N,Char,Char}(x)
     end
-    function ConstantParser{N}(x::AbstractString) where N
-        new{N,typeof(x),SubString}(x)
+    function ConstantParser{N}(x::T) where {N,T<:AbstractString}
+        new{N,T,SubString}(x)
+    end
+    function ConstantParser(x::T) where {T<:AbstractString}
+        new{ncodeunits(x),T,SubString}(x)
     end
 end
+
 state_type(p::Type{<:ConstantParser}) = MatchState
 children(x::ConstantParser) = ()
 regex_prefix(x::ConstantParser) = ""
@@ -471,38 +485,13 @@ Base.get(parser::ConstantParser{1,Char}, sequence, till, after, i, state) where 
     sequence[i]
 
 Base.get(parser::ConstantParser{L,<:AbstractString}, sequence, till, after, i, state) where L =
-    parser=="" ? "" : SubString(sequence,i,prevind(sequence,i+L))
+    parser.parser=="" ? "" : SubString(sequence,i,prevind(sequence,i+L))
 
-
-@inline function _iterate(parser::ConstantParser{L,Char}, sequence, till, posi, next_i, state::Nothing) where L
-    next_i>till && return nothing
-    if ismatch(sequence[next_i],parser.parser)
-        next_i+L, MatchState()
-    else
-        nothing
-    end
-end
-
-@inline function _iterate(parser::ConstantParser{L,<:AbstractString}, sequence, till, posi, next_i, state::Nothing) where {L}
+@inline function _iterate(parser::ConstantParser{L}, sequence, till, posi, next_i, state::Nothing) where {L}
     _iterate(parser.parser,sequence,till,posi, next_i,state,L)
 end
 
-@inline function _iterate(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L=ncodeunits(p))
-    till, posi, next_i
-    j::Int = next_i
-    k::Int = 1
-    while k<=L
-        (j > till) && return(nothing)
-        @inbounds pc,k=iterate(p,k)
-        @inbounds sc,j=iterate(sequence,j)
-        !ismatch(sc,pc) && return(nothing)
-    end
-    return j, MatchState()
-end
 
-function _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing)
-    _iterate(parser.parser, sequence, till, posi, next_i, state)
-end
 
 
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
