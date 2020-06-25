@@ -2062,7 +2062,7 @@ function print_constructor(io::IO, x::Lazy)
     print(io, " |> Lazy" )
 end
 
-Repeat_max = 10^6
+const Repeat_max = 10^6
 export Repeat1, Repeat
 """
     Repeat(x)
@@ -2075,26 +2075,27 @@ Parser repeating pattern `x` `min:max` times.
 @auto_hash_equals struct Repeat{P,T} <: WrappedParser{P,T}
     range::UnitRange{Int}
     parser::P
-    Repeat(range::UnitRange{Int},p) =
-        let p_=parser(p)
-            new{typeof(p_),Vector{result_type(p_)}}(range,p_)
-        end
+    Repeat(range::UnitRange{Int},p::P) where {P<:AbstractToken} =
+        new{P,Vector{result_type(P)}}(range,p)
+    Repeat(p::P) where {P<:AbstractToken} =
+        new{P,Vector{result_type(P)}}(0:Repeat_max,p)
 end
-Repeat(min::Integer,max::Integer,parser) =
-    Repeat((min:max),parser)
-Repeat(parser;min::Integer=0,max::Integer=Repeat_max) =
-    Repeat((min:max),parser)
-Repeat(min::Integer,parser) =
-    Repeat((min:Repeat_max),parser)
-Repeat(x::ParserTypes,y::Vararg{ParserTypes}) =
-    Repeat(Sequence(x,y...) )
+Repeat(range::UnitRange{Int},p::ParserTypes...) =
+    Repeat(range,sSequence(p...))
+Repeat(min::Integer,max::Integer,p::ParserTypes...) =
+    Repeat((min:max),p...)
+Repeat(p::ParserTypes...;min::Integer=0,max::Integer=Repeat_max) =
+    Repeat((min:max),p...)
+Repeat(min::Integer,p::ParserTypes...) =
+    Repeat((min:Repeat_max),p...)
+
 """
     Repeat(f::Function,a...)
 
 Abbreviation for `map(f,Repeat(a...))`.
 """
-Repeat(f::Function,a...) =
-    map(f,Repeat(a...))
+Repeat(f::Function,a...;kw...) =
+    map(f,Repeat(a...;kw...))
 
 """
     Repeat1(x)
@@ -2110,8 +2111,6 @@ Abbreviation for `map(f,Repeat1(a...))`.
 """
 Repeat1(f::Function,a...) =
     map(f,Repeat1(a...))
-
-Repeat(x::ParserTypes, minmax::Tuple{<:Integer,<:Integer}=(0,Repeat_max)) = Repeat(minmax...,x)
 
 @deprecate Repeat(minmax::Tuple{<:Integer,<:Integer},x::ParserTypes,y::Vararg{ParserTypes}) Repeat(minmax...,Sequence(x,y...))
 
