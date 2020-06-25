@@ -22,6 +22,15 @@ import Base: ==, hash
 export CombinedParser
 export result_type
 
+"""
+State object for a match that is defined by the parser, sequence and position.
+
+See also [`NCodeuntitsMatchState`](@ref).
+"""
+struct MatchState end
+Base.show(io::IO, ::MatchState) = print(io,"∘")
+
+
 @inline _prevind(str,i,parser,x::Nothing) = i
 @inline _nextind(str,i,parser,x::Nothing) = i
 @inline _prevind(str,i,parser,x) = prevind(str,i,parser,x)
@@ -209,11 +218,6 @@ end
 result_type(x::ParserTypes) = result_type(typeof(x))
 result_type(T::Type{<:Union{Char,AbstractString}}) = T
 result_type(::Type{<:AbstractToken{T}}) where T = T
-
-"""
-State object for a match that is defined by the parser, sequence and position.
-"""
-struct MatchState end
 
 """
 State object representing ncodeunits of match for `prevind`, `nextind`, performance.
@@ -2434,7 +2438,11 @@ end
 
 
 export Optional
+"""
+State type for skipped optional. (Missing was breaking julia).
+"""
 struct None end
+Base.show(io::IO, ::None) = print(io,"n/a")
 """
     Optional(parser;default=defaultvalue(result_type(parser)))
     

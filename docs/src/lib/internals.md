@@ -29,6 +29,8 @@ CombinedParsers.NIndexParser
 CombinedParsers.WrappedParser
 CombinedParsers.LookAround
 CombinedParsers.Transformation
+CombinedParsers.MatchState
+CombinedParsers.None
 ```
 
 ## Printing
