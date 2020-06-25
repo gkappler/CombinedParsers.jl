@@ -31,10 +31,159 @@ struct MatchState end
 Base.show(io::IO, ::MatchState) = print(io,"∘")
 
 
+
+
+
+"Julia types that provide CombinedParser methods result_type, state_type, _iterate, get, nextind, prevind."
+ParserTypes = Union{AbstractToken, AbstractString, Char, Regex}
+## Pair{<:Union{AbstractToken, AbstractString, Char, Regex, Pair},<:Any} }
+export parser
+import Base: convert
+parser(x::AbstractToken) = x
+"""
+    parser(x::Union{AbstractString,Char})
+
+A [`ConstantParser`](@ref) matching `x`.
+"""
+parser(x::Char) =
+    CharIn(x)
+
+"""
+    parser(x::StepRange{Char,<:Integer})
+
+[`CharIn`](@ref) matching x.
+"""
+parser(x::StepRange{Char,<:Integer}) =
+    CharIn(x)
+parser(x::T) where {T<:AbstractString} =
+    ConstantParser2(x)
+    ##Base.ncodeunits(x)(x)
+function Base.convert(::Type{AbstractToken},x)
+    parser(x)
+end
+
+@inline state_type(x::T) where {T<:Union{ParserTypes,AbstractToken}} = state_type(T)
+state_type(x::Type{<:Union{Char,AbstractString}}) = MatchState
+
+result_type(x::Union{ParserTypes,AbstractToken}) = result_type(typeof(x))
+result_type(::Type{<:AbstractToken{T}}) where T = T
+
+
+
+## Base.get(x::Palimdrome, str, state) = SubString(str,state...)
+## TODO: dispatch Base.get(x::CombinedParser, str, till::Int, after::Int, posi::Int, state) = Base.get(x, str, after, posi, state)
+## TODO: dispatch Base.get(x::CombinedParser, str, after::Int, posi::Int, state) = Base.get(x, str, posi, state)
+## TODO: dispatch Base.get(x::CombinedParser, str, posi::Int, state) = Base.get(x, str, state)
+
+"""
+    _iterate(parser, sequence, till::Int, posi::Int[, nothing])
+
+Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve first match, or nothing.
+"""
+@inline _iterate(parser, sequence, till::Int, posi::Int) =
+    _iterate(parser, sequence,till,posi,posi,nothing)
+@inline _iterate(parser, sequence, till::Int, posi::Int, ::Nothing) =
+    _iterate(parser, sequence,till,posi,posi,nothing)
+
+
+
+############################################################
+## CombinedParsers interface for Union{Char,AbstractString}
+
+result_type(T::Type{<:Union{Char,AbstractString}}) = T
+"""
+    _iterate(parser, sequence, till, posi, next_i, states)
+
+Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
+such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
+and sequence[start_index(sequence,after,parser,state):prevind(sequence,next_i)] is the matched subsequence.
+"""
+@inline function _iterate(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L=ncodeunits(p))
+    till, posi, next_i
+    j::Int = next_i
+    k::Int = 1
+    1
+    while k<=L
+        (j > till) && return(nothing)
+        @inbounds pc,k=iterate(p,k)
+        @inbounds sc,j=iterate(sequence,j)
+        !ismatch(sc,pc) && return(nothing)
+    end
+    return j, MatchState()
+end
+@inline function _iterate(p::Union{<:AbstractString,Char}, sequence, till, posi, next_i, state)
+    nothing
+end
+@inline nextind(str,i::Int,parser::Union{AbstractString,Char},x) where L =
+    i+ncodeunits(parser)
+@inline prevind(str,i::Int,parser::Union{AbstractString,Char},x) where L = 
+    i-ncodeunits(parser)
+
+############################################################
+## get methods
+"""
+    Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state)
+
+Default method for parser types returning nothing
+"""
+Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state) =
+    nothing
+##state_type(p::Type{<:CombinedParser}) =  error("implement state_type(::Type{$(p)})")
+
+function Base.get(parser::AbstractString, sequence, till, after, i, state)
+    li = prevind(sequence,after)
+    li<i ? "" : @inbounds SubString(sequence,i,li)
+end
+
+function Base.get(parser::Char, sequence, till, after, i, state)
+    @inbounds sequence[i]
+end
+
+@inline tuple_pos(pos_state::Tuple) =
+    pos_state[1]
+
+@inline tuple_state(pos_state::Tuple) =
+    pos_state[2]
+
+
 @inline _prevind(str,i,parser,x::Nothing) = i
 @inline _nextind(str,i,parser,x::Nothing) = i
 @inline _prevind(str,i,parser,x) = prevind(str,i,parser,x)
 @inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
+
+
+
+
+
+
+############################################################
+## Parsing with AbstractToken
+
+state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
+function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state)
+    parser isa CombinedParser && error("define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))")
+    ##@show parser typeof(parser)
+    if state === nothing
+        r,next_i_ = tryparsenext(parser, sequence, next_i, till)
+        if isnull(r)
+            nothing
+        else
+            next_i_,(next_i_-next_i,get(r))
+        end
+    else
+        nothing
+    end
+end
+function Base.get(parser::AbstractToken, sequence, till, after, i, state)
+    tuple_state(state)
+end
+@inline function nextind(str,i::Int,parser::AbstractToken{T},x::Tuple{Int,T}) where T
+    i+tuple_pos(x)
+end
+@inline function prevind(str,i::Int,parser::AbstractToken{T},x::Tuple{Int,T}) where T
+    i-tuple_pos(x)
+end
+
 
 """
     CombinedParser{T} <: AbstractToken{T}
@@ -52,6 +201,17 @@ See also [`parse`](@ref).
 """
 (x::CombinedParser)(str;kw...) = parse(x,str;kw...)
 (x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
+
+_iterate(parser::CombinedParser, sequence, till, before_i, next_i, state) =
+    error("define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))")
+Base.get(parser::CombinedParser, sequence, till, after, i, state) = 
+    error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
+nextind(str,i::Int,parser::CombinedParser,x) =
+    error("define nextind(str,i::Int,parser::$(typeof(parser)),x)")
+prevind(str,i::Int,parser::CombinedParser,x) =
+    error("define prevind(str,i::Int,parser::$(typeof(parser)),x)")
+
+
 
 """
     LeafParser{T} <: AbstractToken{T}
@@ -114,17 +274,7 @@ deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...;kw...) =
     get!(mem,x) do
         f(x,a...;kw...)
     end
-"Julia types that can convert(AbstractToken,x). TODO: remove"
-ParserTypes = Union{AbstractToken, AbstractString, Char, Regex,
-                    Pair{<:Union{AbstractToken, AbstractString, Char, Regex, Pair},<:Any}}
 
-export parser
-import Base: convert
-"""
-calls `convert(AbstractToken,x)`.
-"""
-parser(x) = Base.convert(AbstractToken, x)
-parser(x::Regex) = x
 
 export regex_string
 """
@@ -165,59 +315,6 @@ Print constructor pipeline in parser tree node.
 print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 
-############################################################
-## Parsing with AbstractToken
-
-state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
-
-@inline tuple_pos(pos_state::Tuple) =
-    pos_state[1]
-
-@inline tuple_state(pos_state::Tuple) =
-    pos_state[2]
-
-    
-function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state)
-    parser isa CombinedParser && @warn "define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))"
-    ##@show parser typeof(parser)
-    if state === nothing
-        r,next_i_ = tryparsenext(parser, sequence, next_i, till)
-        if isnull(r)
-            nothing
-        else
-            next_i_,(next_i_-next_i,get(r))
-        end
-    else
-        nothing
-    end
-end
-
-function Base.get(parser::AbstractToken, sequence, till, after, i, state)
-    tuple_state(state)
-end
-
-@inline function nextind(str,i::Int,parser::AbstractToken,x)
-    parser isa CombinedParser && @warn "define nextind(str,i::Int,parser::$(typeof(parser)),x)"
-    i+tuple_pos(x)
-end
-@inline function prevind(str,i::Int,parser::AbstractToken,x)
-    parser isa CombinedParser && @warn "define prevind(str,i::Int,parser::$(typeof(parser)),x)"
-    i-tuple_pos(x)
-end
-
-function Base.get(parser::CombinedParser, sequence, till, after, i, state)
-    error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
-end
-function nextind(str,i::Int,parser::CombinedParser,x)
-    error("define nextind(str,i::Int,parser::$(typeof(parser)),x)")
-end
-function prevind(str,i::Int,parser::CombinedParser,x)
-    error("define prevind(str,i::Int,parser::$(typeof(parser)),x)")
-end
-
-result_type(x::ParserTypes) = result_type(typeof(x))
-result_type(T::Type{<:Union{Char,AbstractString}}) = T
-result_type(::Type{<:AbstractToken{T}}) where T = T
 
 """
 State object representing ncodeunits of match for `prevind`, `nextind`, performance.
@@ -229,21 +326,8 @@ struct NCodeunitsState{S}
     state::S
 end
 
-"""
-    Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state)
 
-Default method for parser types returning nothing
-"""
-Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state) =
-    nothing
 
-"""
-    _iterate(parser, sequence, till, posi, next_i, states)
-
-Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
-such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
-and sequence[start_index(sequence,after,parser,state):prevind(sequence,next_i)] is the matched subsequence.
-"""
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,T} <: CombinedParser{T} end
@@ -267,18 +351,6 @@ regex_inner(x::WrappedParser) = regex_inner(x.parser)
 
 Base.get(parser::W, sequence, till, after, i, state) where {W <: WrappedParser} = 
     get(parser.parser, sequence, till, after, i, state)
-
-"""
-    _iterate(parser, sequence, till::Int, posi::Int[, nothing])
-
-Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve first match, or nothing.
-"""
-@inline _iterate(parser, sequence, till::Int, posi::Int) =
-    _iterate(parser, sequence,till,posi,posi,nothing)
-@inline _iterate(parser, sequence, till::Int, posi::Int, ::Nothing) =
-    _iterate(parser, sequence,till,posi,posi,nothing)
-
-
 @inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
     _iterate(parser.parser, sequence, till, posi, after, state)
 
@@ -383,25 +455,6 @@ deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
     get!(mem,x) do
         f(x,a...;kw...)
     end
-
-
-"""
-    convert(::Type{AbstractToken},x::Union{AbstractString,Char})
-
-A [`ConstantParser`](@ref) matching `x`.
-"""
-Base.convert(::Type{AbstractToken},x::Char) =
-    ConstantParser{Base.ncodeunits(x)}(x)
-
-"""
-    convert(::Type{AbstractToken},x::StepRange{Char,<:Integer})
-
-[`CharIn`](@ref) matching x.
-"""
-Base.convert(::Type{AbstractToken},x::StepRange{Char,<:Integer}) =
-    CharIn(x)
-Base.convert(::Type{AbstractToken},x::AbstractString) =
-    ConstantParser{Base.ncodeunits(x)}(x)
 
 @inline nextind(str,i::Int,parser::ConstantParser{L},x) where L =
     i+L
@@ -867,7 +920,6 @@ export NamedParser, with_name
             new{typeof(p),result_type(p)}(name,p,doc)
         end
 end
-children(x::NamedParser) = children(x.parser)
 function print_constructor(io::IO,x::NamedParser)
     print_constructor(io,x.parser)
     print(io, " |> with_name(:")
@@ -876,15 +928,15 @@ function print_constructor(io::IO,x::NamedParser)
 end
 
 """
-    convert(::Type{AbstractToken},x::Pair{Symbol, P}) where P
+    parser(x::Pair{Symbol, P}) where P
 
 A parser labelled with name `x.first`.
 Labels are useful in printing and logging.
 
 See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
-Base.convert(::Type{AbstractToken},x::Pair{Symbol, P}) where P =
-    NamedParser(x.first, parser(x.second))
+parser(x::Pair{Symbol, P}) where P =
+    GetParser(NamedParser(x.first, parser(x.second)))
 
 """
     with_name(name::Symbol,x; doc="")
@@ -1112,13 +1164,13 @@ function map_constant(transform, p::AbstractToken)
     Transformation{T}(Constant(transform), p)
 end
 """
-    convert(::Type{AbstractToken},constant::Pair{<:ParserTypes})
+    parser(constant::Pair{<:ParserTypes})
 
 A parser mapping matches of `x.first` to constant `x.second`.
 
 See also: [`map`](@ref), [`map_at`](@ref)
 """
-Base.convert(::Type{AbstractToken},constant::Pair{<:ParserTypes}) =
+parser(constant::Pair{<:ParserTypes}) =
     map_constant(constant.second, parser(constant.first))
 
 function _string(io::IO,x::Constant)
@@ -2915,211 +2967,6 @@ end
         return nothing
     end
     R
-end
-
-
-
-
-
-
-############################################################
-
-
-##import Base: findnext
-
-
-
-# Base.convert(::Type{Nullable{Pair{Symbol, T}}}, x::Pair{Symbol, Nullable{S}}) where {T,S} =
-#     isnull(x.second) ? Nullable{Pair{Symbol, T}}() :
-#     Nullable(x.first => convert(T, x.second.value))
-
-@auto_hash_equals struct Greedy{Ps,A,F<:Function} <: CombinedParser{Any}
-    pairs::Ps
-    alt::A
-    transform::F
-end
-    
-export greedy
-function greedy(tokens...;
-                alt = [],
-                transform=(v,i) -> v)
-    Greedy([tokens...], alt, transform)
-end
-
-function TextParse.tryparsenext(tokf::Greedy, str, i, till, opts=TextParse.default_opts)
-    T = result_type(tokf)
-    sections=tokf.pairs
-    RT(key, value) = if value[2] isa ParserTypes
-        if Missing <: result_type(typeof(key))
-            result_type(typeof(value[2]))
-        else
-            promote_type(result_type(typeof(key)), result_type(typeof(value[2])))
-        end
-    else
-        result_type(typeof(key))
-    end
-    R = Dict([ value[1] => Vector{RT(key,value)}() for (key,value) in sections]...,
-             [ key => Vector{result_type(typeof(value))}() for (key,value) in tokf.alt]...
-             )
-    hist = Any[]
-    last_section = nothing
-    last_content = nothing
-    aggregator = :head
-    function first_match(j)
-        local repval, i__
-        for (key, content) in sections
-            repval, i__ = tryparsenext(key, str, j, till)
-            !isnull(repval) && return key, content, repval, i__
-        end
-        return (first(sections)..., repval, i__)
-    end
-    head = nothing
-    i_ = i ##isnull(1)
-    while true
-        key, content, r, i__ = first_match(i_)
-        save = if isnull(r)
-            cr, ci = if last_content === nothing || last_content === missing
-                Nullable{T}(), i
-            else
-                tryparsenext(last_content, str, i_, till)
-            end
-            ai = 0
-            while ai < lastindex(tokf.alt) && isnull(cr)
-                ai = ai+1
-                cr, ci = tryparsenext(tokf.alt[ai].second, str, i_, till)
-            end
-            if isnull(cr)
-                return Nullable{T}(convert(T, tokf.transform(R,i))), i_
-            elseif ai == 0
-                push!(hist, get(cr))
-                i__ = ci
-                false
-            else
-                aggregator != :head && append!(R[aggregator],hist)
-                hist = [get(cr)]
-                (aggregator, last_content) = tokf.alt[ai]
-                last_section = ai
-            end
-        else
-            if last_section !== nothing
-                append!(R[aggregator],hist)
-            end
-            hist = get(r) !== missing ? [get(r)] : Vector{RT(key,content)}()
-            aggregator, last_content = content
-            last_section = key
-        end
-        i_ = i__
-    end
-    error("unreachable")
-end
-
-
-
-
-
-
-export alternate, alternate_stop
-alternate_stop(x,delim,stop;kw...) =
-    alternate(seq(NegativeLookahead(stop), x; transform=2),
-              seq(NegativeLookahead(stop), delim; transform=2);
-              kw...)
-
-alternate(x::Vector, delim; kw...) = alternate(alt(x...), delim; kw...)
-"""
-optimized repeated alternations of `x``delim`, optionally starting/ending with `delim`. `delim` `is agg`ed as right borders. 
-`delim` can be discarded in agg(result,missing,delim).
-
-if `agg` is nothing, default is to aggregate delim after match is `result_type(delim) <: result_type(x)`, if not missing.
-"""
-function alternate(x::ParserTypes, delim::ParserTypes;
-                   agg = nothing,
-                   kw...)
-    T, S = result_type(typeof(x)), result_type(typeof(delim))
-    af = if agg === nothing
-        if S <: T
-            ( r, xmatch, delimmatch ) -> begin
-                xmatch !== missing && push!(r,xmatch)
-                delimmatch !== missing && push!(r,delimmatch)
-                r::Vector{T}
-            end
-        else
-            ( r, xmatch, delimmatch ) -> begin
-                xmatch !== missing && push!(r,xmatch)
-                r::Vector{T}
-            end 
-        end
-    else
-        agg
-    end
-    function tf(v)
-        ## @show v,i
-        r = T[]
-        if isempty(v[2])
-            af(r,v[1],v[3])
-        else
-            ms = v[2]
-            af(r,v[1],ms[1][1])
-            for i in 2:lastindex(ms)
-                af(r, ms[i-1][2],ms[i][1])
-            end
-            af(r, ms[end][2],v[3])
-        end
-        r::Vector{T}
-    end
-
-    ## todo: factor out this transform condition!!
-    Sequence(tf,
-             Optional(x; default=missing),
-             Repeat(seq(delim, x)),
-             Optional(delim;default=missing))
-end
-
-
-export Repeat_delim
-Repeat_delim(x::AbstractToken{T}, delim::AbstractToken{S}; kw...) where {T,S} =
-    Repeat_delim(promote_type(S,T), x, delim; kw...)
-function Repeat_delim(
-    T::Type, x, delim;
-    log=false,repf=Repeat,
-    transform=(v,i) -> v,
-    transform_each=(v,i) -> v, kw...)
-    x = parser(x)
-    delim = parser(delim)
-    function t(v,i)
-        L = vcat(v...)
-        transform(map(p -> transform_each(p,i),  L  ),i)
-    end
-    seq(Vector{T},
-        Optional(delim; default=T[], log=log),
-        repf(Vector{T},
-             seq(x, delim; log=log); log=log,
-             transform = (v,i) -> vcat([ [x...] for x in v ]...)),
-        Optional(x; default=T[], log=log)
-        ; log=log,
-        ## todo: factor out this transform condition!!
-        transform = (t)
-        , kw...)
-end
-
-
-export Repeat_delim_par
-function Repeat_delim_par(x, delim; repf=Repeat, transform=(v,i) -> v, transform_each=v -> v, kw...)
-    x = parser(x)
-    delim = parser(delim)
-    T = result_type(typeof(x))
-    D = result_type(typeof(delim))
-    seq(Vector{T},
-        Optional(Vector{D}, delim; transform = (v,i) -> D[v]),
-        repf(seq(T, x, delim; 
-                 transform = (v, i) -> v[1]);
-             transform=(v,i) -> v),
-        Optional(Vector{T}, x; transform = (v,i) -> T[v])
-        ; 
-        ## todo: factor out this transform condition!!
-        transform = (v,i)  -> transform(
-            map(p -> transform_each(p),
-                vcat(v[2:end]...)),i)
-        , kw...)
 end
 
 
