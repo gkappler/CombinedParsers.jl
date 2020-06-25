@@ -474,7 +474,7 @@ function integer_base(base,mind=0,maxd=Repeat_max)
     else
         error()
     end
-    Repeat(dig,(mind,maxd)) do v
+    Repeat(mind:maxd,dig) do v
         (isempty(v) ? 0 : parse(Int,join(v),base=base))::Int
     end
 end

@@ -333,9 +333,9 @@ end;
 @with_names bracket=Sequence(
     CombinedParser,
     '[',Optional('^')
-    , Repeat(Either(
+    , Repeat(0,1,Either(
         bracket_range(']'),
-        ']'=>']'),(0,1))
+        ']'=>']'))
     , Repeat(Either(
         Sequence(
             2,
@@ -407,7 +407,7 @@ push!(repeatable,bracket);
     elseif v[3]==(0,1)
         Optional(pat)
     else
-        Repeat(pat,v[3])
+        Repeat(v[3]...,pat)
     end
     if v[5] === missing
         result
