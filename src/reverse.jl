@@ -4,7 +4,7 @@ revert(x::Tuple) = reverse(x)
 revert(x::String) = Reverse(x)
 
 export Reverse
-@auto_hash_equals struct Reverse{V}
+@auto_hash_equals struct Reverse{V}<:AbstractString
     x::V
     lastindex::Int
     Reverse(x) =
@@ -31,12 +31,14 @@ end
 Base.firstindex(x::Reverse) = 1
 Base.lastindex(x::Reverse) = x.lastindex
 Base.getindex(x::Reverse,is::UnitRange) = getindex(x.x,reverse_index(x,is.stop):reverse_index(x,is.start))
-Base.getindex(x::Reverse,i) = getindex(x.x,reverse_index(x,i))
-Base.nextind(x::Reverse,i::Integer) = reverse_index(x,prevind(x.x,reverse_index(x,i)))
-Base.prevind(x::Reverse,i::Integer) = reverse_index(x,nextind(x.x,reverse_index(x,i)))
-Base.nextind(x::Reverse,i::Integer,n::Integer) = reverse_index(x,prevind(x.x,reverse_index(x,i),n))
-Base.prevind(x::Reverse,i::Integer,n::Integer) = reverse_index(x,nextind(x.x,reverse_index(x,i),n))
-Base.iterate(x::Reverse,i) =
+Base.getindex(x::Reverse,i::Int) = getindex(x.x,reverse_index(x,i))
+Base.nextind(x::Reverse,i::Int) = reverse_index(x,prevind(x.x,reverse_index(x,i)))
+Base.prevind(x::Reverse,i::Int) = reverse_index(x,nextind(x.x,reverse_index(x,i)))
+Base.nextind(x::Reverse,i::Int,n::Int) = reverse_index(x,prevind(x.x,reverse_index(x,i),n))
+Base.prevind(x::Reverse,i::Int,n::Int) = reverse_index(x,nextind(x.x,reverse_index(x,i),n))
+Base.iterate(x::Reverse) =
+    iterate(x,1)
+Base.iterate(x::Reverse,i::Int) =
     x[i], nextind(x,i)
 
 export PositiveLookbehind

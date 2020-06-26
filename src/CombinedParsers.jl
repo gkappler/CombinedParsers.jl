@@ -416,6 +416,8 @@ Parser Transformation getting the matched SubString.
         new{typeof(x),state_type(x)}(x)
 end
 Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
+revert(x::JoinSubstring) = JoinSubstring(revert(x.parser))
+
 
 """
     (!)(x::AbstractToken)
