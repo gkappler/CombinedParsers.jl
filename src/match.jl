@@ -42,7 +42,7 @@ julia> m.match, m.captures
     stop::Int
     state::State
     function ParseMatch(p::MatchesIterator{P,S},start::Integer,stop::Integer,state::ST) where {P,S,ST}
-        new{P,S,Any}( # Any is faster
+        new{P,S,ST}(
             p,
             start,stop,state)
     end

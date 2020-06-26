@@ -214,12 +214,12 @@ export set_options, with_options, on_options, map
 """
 A wrapper matching the inner parser on `with_options(set_flags, unset_flags, sequence)`.
 """
-struct ParserOptions{P,T} <: WrappedParser{P,T}
+struct ParserOptions{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     set_flags::UInt32
     unset_flags::UInt32
     ParserOptions(parser,set::UInt32,unset::UInt32) =
-        new{typeof(parser),result_type(parser)}(parser,set,unset)
+        new{typeof(parser),state_type(parser),result_type(parser)}(parser,set,unset)
 end
 deepmap_parser(f::Function,mem::AbstractDict,x::ParserOptions,a...; kw...) =
     get!(mem,x) do
@@ -344,11 +344,11 @@ export on_options
 """
 Parser wrapper sequence with `if_options`.
 """
-struct OnOptionsParser{P,T} <: WrappedParser{P,T}
+struct OnOptionsParser{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     flags::UInt32
     OnOptionsParser(parser,flags::UInt32) =
-        new{typeof(parser),result_type(parser)}(parser,flags)
+        new{typeof(parser),state_type(parser),result_type(parser)}(parser,flags)
 end
 
 function print_constructor(io::IO, x::OnOptionsParser)

@@ -8,12 +8,12 @@ indices of named capture groups in field `names::Dict`.
     implicitly called in [`match`](@ref)
 See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
 """
-@auto_hash_equals struct ParserWithCaptures{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct ParserWithCaptures{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     subroutines::Vector{ParserTypes} ## todo: rename subroutines
     names::Dict{Symbol,Vector{Int}}
     ParserWithCaptures(parser,captures,names) =
-        new{typeof(parser),result_type(parser)}(parser,captures,names)
+        new{typeof(parser),state_type(parser),result_type(parser)}(parser,captures,names)
 end
 function print_constructor(io::IO, x::ParserWithCaptures)
     print_constructor(io,x.parser)
@@ -117,9 +117,10 @@ function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Subrout
     get!(mem,x) do
         index = capture_index(x.name,x.delta,x.index, context)
         if index <= 0 || index>length(context.subroutines)
-            Subroutine{Any}(x.name,Symbol(""),index)
+            Subroutine{Any,Any}(x.name,Symbol(""),index)
         else
-            Subroutine{result_type(context.subroutines[index])}(
+            sr = context.subroutines[index]
+            Subroutine{state_type(sr),result_type(sr)}(
                 x.name,Symbol(""),index)
         end
     end

@@ -63,7 +63,12 @@ function Base.convert(::Type{AbstractToken},x)
 end
 
 @inline state_type(x::T) where {T<:Union{ParserTypes,AbstractToken}} = state_type(T)
-state_type(x::Type{<:Union{Char,AbstractString}}) = MatchState
+@inline state_type(x::Type{<:Union{Char,AbstractString}}) = MatchState
+@inline state_type(::Type{Any}) = Any
+@inline function state_type(T::Type{<:AbstractToken{P}}) where P
+    T <: CombinedParser && error("define state_type(::Type{$T})")
+    NCodeunitsState{P}
+end
 
 result_type(x::Union{ParserTypes,AbstractToken}) = result_type(typeof(x))
 result_type(::Type{<:AbstractToken{T}}) where T = T
@@ -138,7 +143,6 @@ Default method for parser types returning nothing
 """
 Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state) =
     nothing
-##state_type(p::Type{<:CombinedParser}) =  error("implement state_type(::Type{$(p)})")
 
 function Base.get(parser::AbstractString, sequence, till, after, i, state)
     li = prevind(sequence,after)
@@ -169,7 +173,6 @@ end
 ############################################################
 ## Parsing with AbstractToken
 
-state_type(p::Type{<:AbstractToken}) = Tuple{Int,result_type(p)}
 function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state)
     parser isa CombinedParser && error("define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))")
     ##@show parser typeof(parser)
@@ -200,11 +203,12 @@ end
 
 
 """
-    CombinedParser{T} <: AbstractToken{T}
+    CombinedParser{T,S} <: AbstractToken{T}
 
-Abstract parser type for parsers returning matches transformed to `::T`.
+Abstract parser type for parsers returning matches transformed to `::T` and 
+state::`S`.
 """
-abstract type CombinedParser{T} <: AbstractToken{T} end
+abstract type CombinedParser{S,T} <: AbstractToken{T} end
 """
     (x::CombinedParser)(str;kw...)
 
@@ -226,6 +230,8 @@ prevind(str,i::Int,parser::CombinedParser,x) =
     error("define prevind(str,i::Int,parser::$(typeof(parser)),x)")
 
 
+@inline state_type(::Type{<:CombinedParser{S}}) where {S} = S
+state_type(::Type{<:CombinedParser}) = Any
 
 """
     LeafParser{T} <: AbstractToken{T}
@@ -233,7 +239,7 @@ prevind(str,i::Int,parser::CombinedParser,x) =
 Abstract parser type for parsers that have no sub-parser.
 Used for dispatch in [`deepmap_parser`](@ref)
 """
-abstract type LeafParser{T} <: CombinedParser{T} end
+abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
 
 """
@@ -344,9 +350,7 @@ end
 
 
 "Abstract type for parser wrappers, providing default methods"
-abstract type WrappedParser{P,T} <: CombinedParser{T} end
-
-state_type(::Type{<:WrappedParser{P,T}}) where {P,T} = state_type(P)
+abstract type WrappedParser{P,S,T} <: CombinedParser{S,T} end
 import AbstractTrees: children
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
@@ -374,12 +378,12 @@ export FilterParser
 A parser the succeeds ony if wrapped parser succeeds and a predicate function on the position,state tuple
 `.state_filter(sequence, till, posi, r...)`.
 """
-struct FilterParser{P,T,F} <: WrappedParser{P,T}
+struct FilterParser{P,S,F,T} <: WrappedParser{P,S,T}
     parser::P
     state_filter::F
     FilterParser(f::Function,parser_) =
         let p = parser(parser_)
-            new{typeof(p), result_type(p),typeof(f)}(p,f)
+            new{typeof(p),state_type(p),typeof(f),result_type(p)}(p,f)
         end
 end
 Base.filter(f::Function, x::CombinedParser) =
@@ -406,8 +410,10 @@ export JoinSubstring
 
 Parser Transformation getting the matched SubString.
 """
-@auto_hash_equals struct JoinSubstring{P} <: WrappedParser{P,SubString}
+@auto_hash_equals struct JoinSubstring{P,S} <: WrappedParser{P,S,SubString}
     parser::P
+    JoinSubstring(x) =
+        new{typeof(x),state_type(x)}(x)
 end
 Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
 
@@ -446,7 +452,7 @@ Base.get(x::JoinSubstring, sequence, till, after, i, state) =
 
 
 "wrapper for stepping with ncodeunit length."
-@auto_hash_equals struct ConstantParser{N,P,T} <: WrappedParser{T,T}
+@auto_hash_equals struct ConstantParser{N,P,T} <: WrappedParser{T,MatchState,T}
     parser::P
     function ConstantParser{N}(x::Char) where N
         new{N,Char,Char}(x)
@@ -459,7 +465,6 @@ Base.get(x::JoinSubstring, sequence, till, after, i, state) =
     end
 end
 
-state_type(p::Type{<:ConstantParser}) = MatchState
 children(x::ConstantParser) = ()
 regex_prefix(x::ConstantParser) = ""
 print_constructor(io::IO,x::ConstantParser) = print(io,"")
@@ -495,8 +500,7 @@ end
 
 
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
-abstract type NIndexParser{N,T} <: LeafParser{T} end
-state_type(p::Type{<:NIndexParser}) = MatchState
+abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
 @inline prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i
 @inline nextind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
@@ -631,14 +635,13 @@ re"(*FAIL)"
 
 ```
 """
-struct Never <: LeafParser{Never} end
+struct Never <: LeafParser{MatchState,Never} end
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
 _iterate(x::Never,str,posi, next_i,till,state) =
     nothing
 
-state_type(::Type{Never}) = MatchState
 
 export Always
 """
@@ -653,15 +656,14 @@ re""
 
 ```
 """
-struct Always <: LeafParser{Always}
+struct Always <: LeafParser{MatchState,Always}
 end
 Base.show(io::IO,x::Always) = print(io,"re\"\"")
 children(x::Union{Never,Always}) = tuple()
 regex_prefix(x::Always) = ""
 regex_inner(x::Always) = ""
 regex_suffix(x::Always) = ""
-state_type(::Type{Always}) = MatchState
-Base.get(parser::LeafParser{Always}, sequence, till, after, i, state) =
+Base.get(parser::LeafParser{<:Any,Always}, sequence, till, after, i, state) =
     Always()
 _iterate(parser::Always, str, till, posi, next_i, s::Nothing) =
     next_i, MatchState()
@@ -796,12 +798,12 @@ function Base.showerror(io::IO, x::PartialMatchException)
     ##println(io, x.pattern)
 end
 
-@auto_hash_equals struct SideeffectParser{P,T,A} <: WrappedParser{P,T}
+@auto_hash_equals struct SideeffectParser{P,S,T,A} <: WrappedParser{P,S,T}
     parser::P
     args::A
     effect::Function
     SideeffectParser(f::Function, p::AbstractToken,a...) =
-        new{typeof(p),result_type(p),typeof(a)}(p,a,f)
+        new{typeof(p),state_type(p),result_type(p),typeof(a)}(p,a,f)
 end
 children(x::SideeffectParser) = children(x.parser)
 function print_constructor(io::IO,x::SideeffectParser)
@@ -904,13 +906,13 @@ end
 
 
 export NamedParser, with_name
-@auto_hash_equals struct NamedParser{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct NamedParser{P,S,T} <: WrappedParser{P,S,T}
     name::Symbol
     parser::P
     doc::String
     NamedParser(name::Symbol,p_,doc="") =
         let p=parser(p_)
-            new{typeof(p),result_type(p)}(name,p,doc)
+            new{typeof(p),state_type(p),result_type(p)}(name,p,doc)
         end
 end
 function print_constructor(io::IO,x::NamedParser)
@@ -1119,16 +1121,16 @@ export Transformation
 Parser transforming result of a wrapped parser. 
 `a...` is passed as additional arguments to `f` (at front .
 """
-@auto_hash_equals struct Transformation{F,P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Transformation{F,P,S,T} <: WrappedParser{P,S,T}
     transform::F
     parser::P
     Transformation{T}(transform, p_) where {T} =
         let p = parser(p_)
-            new{typeof(transform),typeof(p),T}(transform, p)
+            new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
         end
     Transformation{T}(transform, p_::NamedParser) where {T} =
         let p = p_.parser
-            tp = new{typeof(transform),typeof(p),T}(transform, p)
+            tp = new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
             with_name(p_.name,tp)
         end
 end
@@ -1587,11 +1589,11 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
 
 
 export FlatMap,after
-@auto_hash_equals struct FlatMap{T,P,Q<:Function} <: CombinedParser{T}
+@auto_hash_equals struct FlatMap{P,S,Q<:Function,T} <: CombinedParser{S,T}
     left::P
     right::Q
     function FlatMap{T}(left::P, right::Q) where {T, P, Q<:Function}
-        new{T,P,Q}(left, right)
+        new{P,Tuple{<:Any,<:Any,<:Any},Q,T}(left, right)
     end
 end
 
@@ -1638,8 +1640,6 @@ function Base.get(parser::FlatMap, sequence, till, after, i, state)
               state[3])
 end
 
-
-state_type(p::Type{<:FlatMap{T,P}}) where {T,P} = Tuple{state_type(P),<:Any,<:Any}
 function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
     T = result_type(tokf)
     if state === nothing
@@ -1684,25 +1684,36 @@ end
 
 
 export Sequence
-@auto_hash_equals struct Sequence{T,P<:Tuple} <: CombinedParser{T}
+@auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
     parts::P
-    function Sequence(p...)
-        parts = tuple( ( parser(x) for x = p )... )
-        T = Type[ result_type(typeof(x)) for x in parts ]
-        s = new{Tuple{T...},typeof(parts)}(parts)
-        names = [ t.first=>i
-                  for (i,t) in enumerate(p)
-                  if t isa Pair{Symbol,<:ParserTypes} ]
-        isempty(names) && return s
-        NT= NamedTuple{ tuple( (n.first for n in names)...),
-                        Tuple{ (T[n.second] for n in names)... }}
-        NTn = NamedTuple{ tuple( (n.first for n in names)...) }
-        function transform(v,i)
-            ##@show v
-            NT( tuple( (v[k.second] for k in names )... ))
-        end
-        map_at(transform, NT, s)
+    Sequence(p::ParserTypes...) =
+        new{typeof(p),state_type_tuple(p),result_type(typeof(p))}(p)
+end
+
+
+state_type_tuple(x) = state_type_tuple(typeof(x))
+function state_type_tuple(pts::Type)
+    if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
+        MatchState
+    else
+        Tuple{(state_type(p) for p in fieldtypes(pts))...} #
     end
+end
+
+function Sequence(p...)
+    s = Sequence(( parser(x) for x = p )...)
+    T = Type[ fieldtypes(result_type(s))... ]
+    names = [ t.first=>i
+              for (i,t) in enumerate(p)
+              if t isa Pair{Symbol,<:ParserTypes} ]
+    isempty(names) && return s
+    NT= NamedTuple{ tuple( (n.first for n in names)...),
+                    Tuple{ (T[n.second] for n in names)... }}
+    NTn = NamedTuple{ tuple( (n.first for n in names)...) }
+    function transform(v,i)
+        NT( tuple( (v[k.second] for k in names )... ))
+    end
+    map_at(transform, NT, s)
 end
 
 Base.lastindex(x::Sequence) = lastindex(x.parts)
@@ -1915,16 +1926,6 @@ function prune_captures(sequence,after_i)
 end
 
 
-@generated function state_type(parser::Type{S}) where {S<:Sequence}
-    pts = parser_types(S)
-    if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
-        MatchState
-    else
-        Tuple{(state_type(p) for p in fieldtypes(pts))...} #
-    end
-end
-
-
 Base.getindex(A::MatchState, i::Int) = MatchState()
 Base.setindex!(A::MatchState, ::MatchState, i::Int) = nothing
 Base.setindex!(A::MatchState, v, i::Int) = error("MatchState elements can only be ::MatchState")
@@ -2089,11 +2090,11 @@ a??  |> Optional(default=missing) |> Lazy |> regular expression combinator
 ::Union{Missing, Char}
 ```
 """
-@auto_hash_equals struct Lazy{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Lazy{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     Lazy(p_) =
         let p = parser(p_)
-            new{typeof(p),result_type(p)}(p)
+            new{typeof(p),state_type(p),result_type(p)}(p)
         end
 end
 
@@ -2120,13 +2121,13 @@ export Repeat1, Repeat
 
 Parser repeating pattern `x` `min:max` times.
 """
-@auto_hash_equals struct Repeat{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Repeat{P,S,T} <: WrappedParser{P,S,T}
     range::UnitRange{Int}
     parser::P
     Repeat(range::UnitRange{Int},p::P) where {P<:AbstractToken} =
-        new{P,Vector{result_type(P)}}(range,p)
+        new{P,repeat_state_type(state_type(p)),Vector{result_type(P)}}(range,p)
     Repeat(p::P) where {P<:AbstractToken} =
-        new{P,Vector{result_type(P)}}(0:Repeat_max,p)
+        new{P,repeat_state_type(state_type(p)),Vector{result_type(P)}}(0:Repeat_max,p)
 end
 Repeat(range::UnitRange{Int},p::ParserTypes...) =
     Repeat(range,sSequence(p...))
@@ -2136,6 +2137,10 @@ Repeat(p::ParserTypes...;min::Integer=0,max::Integer=Repeat_max) =
     Repeat((min:max),p...)
 Repeat(min::Integer,p::ParserTypes...) =
     Repeat((min:Repeat_max),p...)
+
+@inline repeat_state_type(::Type{MatchState}) = Int
+@inline repeat_state_type(T::Type) =
+    Vector{T}
 
 """
     Repeat(f::Function,a...)
@@ -2301,9 +2306,6 @@ function Base.get(parser::Repeat, sequence, till, after, i, state::Int)
     r
 end
 
-@inline state_type(::Type{<:Repeat{P}}) where P =
-    emptystate_type(Vector{state_type(P)})
-@inline emptystate_type(::Type{Vector{MatchState}}) = Int
 @inline emptystate(::Type{Int}) = 0
 @inline state_length(parser,state::Int) = state
 @inline pushstate!(state::Int,parser,substate::MatchState) =
@@ -2315,13 +2317,10 @@ end
         MatchState(), state - 1
     end
 
-@inline emptystate_type(::Type{Vector{T}}) where T =
-    Vector{emptystate_type(T)}
-@inline emptystate_type(T::Type) = T
 @inline state_length(parser::Repeat,x::Vector) =
     length(x)
 @inline emptystate(::Type{Vector{T}}) where T =
-    emptystate_type(T)[]
+    T[]
 
 @inline function pushstate!(state::Vector,parser,substate)
     push!(state,substate)
@@ -2502,7 +2501,7 @@ julia> parse(Optional("a", default=42),"b")
 42
 ```
 """
-@auto_hash_equals struct Optional{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Optional{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     default::T
     function Optional(p_;default=defaultvalue(result_type(p_)))
@@ -2511,10 +2510,9 @@ julia> parse(Optional("a", default=42),"b")
         D = typeof(default)
         T_ = promote_type(T,D)
         T_ === Any && ( T_ = Union{T,D} )
-        new{typeof(p),T_}(p, default)
+        new{typeof(p),Union{None,state_type(p)},T_}(p, default)
     end
 end
-state_type(::Type{<:Optional{P}}) where P = Union{None,state_type(P)}##Tuple{Int, promote_type( state_type.(t.options)...) }
 
 
 
@@ -2617,16 +2615,40 @@ julia> parse("a" | "bc","bc")
 
 ```
 """
-struct Either{T,Ps} <: CombinedParser{T}
+struct Either{Ps,S,T} <: CombinedParser{S,T}
     options::Ps
-    Either{T}(p::P) where {T,P<:Union{Vector,Tuple}} =
-        new{T,P}(p::P)
+    Either{T}(p::P) where {T,P<:Union{Vector,Tuple,Trie}} =
+        new{P,either_state_type(P),T}(p::P)
     Either{T}(p::CombinedParser...) where {T} =
-        new{T,Vector{Any}}(Any[p...])
+        new{Vector{Any},either_state_type(CombinedParser),T}(Any[p...])
+either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
+either_state_type(ts::Type{CombinedParser}) = Tuple{Int,Any}
+either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
+either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
+either_state_type(ts...) = Tuple{Int,promote_type(state_type.(ts))}
+function promote_type_union(Ts...)
+    T = promote_type(Ts...)
+    Any <: T ? Union{Ts...} : T
 end
-state_type(::Type{<:Either}) = Pair
-@inline with_state!(x::Nothing,k::Int,s) = Pair(k,s)
-parser_types(::Type{Either{T, P}}) where {T, P} = P
+
+"return tuple(state_type,result_type)"
+function either_types(ts)
+    promote_type_union(result_type.(ts)...)
+end
+
+function Either(x::Vector)
+    parts = [ parser(y) for y in x ]
+    T = either_types(typeof.(parts))
+    Either{T}(parts)
+end
+function Either(x...)
+    parts = [ parser(y) for y in x  ]
+    T = either_types(typeof.(parts))
+    Either{T}(parts)
+end
+
+@inline with_state!(x::Nothing,k::Int,s) = tuple(k,s)
+parser_types(::Type{<:Either{P}}) where {P} = P
 children(x::Either) = x.options
 regex_string(x::Either) = join(regex_string.(x.options),"|")
 regex_prefix(x::Either) = "|"
@@ -2635,13 +2657,7 @@ regex_suffix(x::Either) = "..."
 print_constructor(io::IO,x::Either) = print(io,"Either")
 
 
-function Either(x::ParserTypes...)
-    parts = Any[ parser(y) for y in x ]
-    Ts = ( result_type(typeof(x)) for x in parts )
-    T = promote_type(Ts...)
-    Any <: T && ( T = Union{Ts...} )
-    Either{T}(parts)
-end
+
 
 """
     Either(transform::Function, x::Vararg)
@@ -2969,11 +2985,11 @@ export Atomic
 A parser matching `p`, and failing when required to backtrack
 (behaving like an atomic group in regular expressions).
 """
-@auto_hash_equals struct Atomic{P,T} <: WrappedParser{P,T}
+@auto_hash_equals struct Atomic{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     Atomic(x) =
         let p=parser(x)
-            new{typeof(p),result_type(p)}(p)
+            new{typeof(p),state_type(p),result_type(p)}(p)
         end
 end
 
