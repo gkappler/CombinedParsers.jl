@@ -1577,9 +1577,9 @@ See also [`NegativeLookahead`](@ref)
 """
 Repeat_until(p,until, with_until=false;wrap=identity) =
     if with_until
-        Sequence(map(wrap,Repeat_stop(p,until)), until)
+        Sequence(map(wrap,Atomic(Repeat_stop(p,until))), until)
     else
-        Sequence(1, map(wrap,Repeat_stop(p,until)), until)
+        Sequence(1, map(wrap,Atomic(Repeat_stop(p,until))), until)
     end
 
 @deprecate rep_until(p,until) Repeat_until(p,until)
