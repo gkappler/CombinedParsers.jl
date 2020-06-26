@@ -431,6 +431,9 @@ julia> parse(!Repeat(CharIn(:L)),"abc123")
 
 """
 (!)(x::AbstractToken) = JoinSubstring(x)
+using InternedStrings
+import InternedStrings: intern
+(!)(x::JoinSubstring) = map(InternedStrings.intern, x)
 
 
 deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
