@@ -137,7 +137,7 @@ end
 ############################################################
 ## get methods
 """
-    Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state)
+    Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state)
 
 Default method for parser types returning nothing
 """
@@ -173,32 +173,44 @@ end
 ############################################################
 ## Parsing with AbstractToken
 
+"""
+State object representing ncodeunits of match for `prevind`, `nextind`, performance.
+
+See also [`MatchState`](@ref), [`prevind`](@ref), [`nextind`](@ref).
+"""
+struct NCodeunitsState{S}
+    nc::Int
+    state::S
+end
+NCodeunitsState(posi::Int,after::Int,state) =
+    after, NCodeunitsState(after-posi,state)
+@inline NCodeunitsState{S}(posi::Int,after::Int,state) where S =
+    after, NCodeunitsState{S}(after-posi,state)
+
+@inline function nextind(str,i::Int,parser,x::NCodeunitsState)
+    i+x.nc
+end
+
+@inline function prevind(str,i::Int,parser,x::NCodeunitsState)
+    i-x.nc
+end
+
 function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state)
     parser isa CombinedParser && error("define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))")
-    ##@show parser typeof(parser)
     if state === nothing
         r,next_i_ = tryparsenext(parser, sequence, next_i, till)
         if isnull(r)
             nothing
         else
-            next_i_,AbstractTokenState(next_i_-next_i,get(r))
+            NCodeunitsState(next_i,next_i_,get(r))
         end
     else
         nothing
     end
 end
-function Base.get(parser::AbstractToken, sequence, till, after, i, state)
-    state.result
-end
-struct AbstractTokenState{R}
-    nc::Int
-    result::R
-end
-@inline function nextind(str,i::Int,parser::AbstractToken,x::AbstractTokenState)
-    i+x.nc
-end
-@inline function prevind(str,i::Int,parser::AbstractToken,x::AbstractTokenState) 
-    i-x.nc
+function Base.get(parser::AbstractToken, sequence, till, after, i, state::NCodeunitsState)
+    parser isa CombinedParser && error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
+    state.state
 end
 
 
@@ -219,17 +231,6 @@ See also [`parse`](@ref).
 """
 (x::CombinedParser)(str;kw...) = parse(x,str;kw...)
 (x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
-
-_iterate(parser::CombinedParser, sequence, till, before_i, next_i, state) =
-    error("define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))")
-Base.get(parser::CombinedParser, sequence, till, after, i, state) = 
-    error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
-nextind(str,i::Int,parser::CombinedParser,x) =
-    error("define nextind(str,i::Int,parser::$(typeof(parser)),x)")
-prevind(str,i::Int,parser::CombinedParser,x) =
-    error("define prevind(str,i::Int,parser::$(typeof(parser)),x)")
-
-
 @inline state_type(::Type{<:CombinedParser{S}}) where {S} = S
 state_type(::Type{<:CombinedParser}) = Any
 
@@ -336,18 +337,6 @@ print_constructor(io::IO,x) = print(io, typeof(x).name)
 
 
 
-"""
-State object representing ncodeunits of match for `prevind`, `nextind`, performance.
-
-See also [`MatchState`](@ref), [`prevind`](@ref), [`nextind`](@ref).
-"""
-struct NCodeunitsState{S}
-    nc::Int
-    state::S
-end
-
-
-
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,S,T} <: CombinedParser{S,T} end
@@ -366,6 +355,10 @@ regex_inner(x::WrappedParser) = regex_inner(x.parser)
 
 @inline prevind(str,i::Int,parser::W,x) where {W <: WrappedParser} = prevind(str,i,parser.parser,x)
 @inline nextind(str,i::Int,parser::W,x) where {W <: WrappedParser} = nextind(str,i,parser.parser,x)
+
+@inline nextind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i+x.nc
+@inline prevind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i-x.nc
+
 
 Base.get(parser::W, sequence, till, after, i, state) where {W <: WrappedParser} = 
     get(parser.parser, sequence, till, after, i, state)
