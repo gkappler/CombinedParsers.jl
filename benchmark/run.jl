@@ -123,7 +123,8 @@ results = run(suite, verbose=true,seconds=1)
 
 import Dates
 datetimenow = Dates.format(Dates.now(),"Y-mm-dd_HHhMM")
-resultfile = "benchmark-$datetimenow.json"
+sha1 = parse((!re"[^\n]+"*'\n')[1], read(`git rev-parse HEAD`,String))
+resultfile = "benchmark-$datetimenow-$sha1.json"
 BenchmarkTools.save(joinpath(dirname(pathof(CombinedParsers)),"..","benchmark",resultfile),results)
 
 using StructArrays, DataFrames
