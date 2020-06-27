@@ -1594,6 +1594,11 @@ export FlatMap,after
         new{P,Tuple{<:Any,<:Any,<:Any},Q,T}(left, right)
     end
 end
+flatmap_state(old,ls,rp,rs) = tuple_pos(rs), (ls,rp,tuple_state(rs))
+left_state(state::Tuple) = state[1]
+right_parser(state::Tuple) = state[2]
+right_state(state::Tuple) = state[3]
+
 
 children(x::FlatMap) = ( x.left, x.right )
 function print_constructor(io::IO,x::FlatMap)
@@ -1629,52 +1634,50 @@ regex_inner(x::FlatMap)  = error("regex determined at runtime!")
     end
 
     
-
-
 function Base.get(parser::FlatMap, sequence, till, after, i, state)
     li = nextind(sequence,i,parser.left,tuple_pos(state))
-    get(state[2],sequence, till, after,
-              li,
-              state[3])
+    get(right_parser(state),
+        sequence, till,
+        after, li,
+        right_state(state))
+end
+function _iterate(tokf::FlatMap, str, till, posi, next_i, state::Nothing)
+    posi = next_i
+    lr = _iterate(tokf.left, str, till, posi, next_i, nothing)
+    lr === nothing && return nothing
+    next_i_ = tuple_pos(lr)
+    rightp = tokf.right(get(tokf.left, str, till, next_i_,next_i,tuple_state(lr)))
+    rr = nothing
+    while rr === nothing
+        rr = _iterate(rightp, str, till, next_i_, next_i_, nothing)
+        if rr === nothing
+            lr = _iterate(tokf.left, str, till, posi, next_i_, tuple_state(lr))
+            lr === nothing && return nothing
+            next_i_ = tuple_pos(lr)
+            rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,tuple_state(lr)))
+        else
+            return flatmap_state(nothing,tuple_state(lr), rightp, rr)
+        end
+    end
+    nothing
 end
 
 function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
-    T = result_type(tokf)
-    if state === nothing
-        posi = next_i
-        lr = _iterate(tokf.left, str, till, posi, next_i, nothing)
-        lr === nothing && return nothing
-        next_i_ = tuple_pos(lr)
-        rightp = tokf.right(get(tokf.left, str, till, next_i_,next_i,tuple_state(lr)))
-        rr = nothing
-        while rr === nothing
-            rr = _iterate(rightp, str, till, next_i_, next_i_, nothing)
-            if rr === nothing
-                lr = _iterate(tokf.left, str, till, posi, next_i_, tuple_state(lr))
-                lr === nothing && return nothing
-                next_i_ = tuple_pos(lr)
-                rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,tuple_state(lr)))
-            else
-                return tuple_pos(rr), (tuple_state(lr), rightp, tuple_state(rr))
-            end
-        end
-    else
-        lstate,rightp,rstate = state
-        next_i_=next_i
-        posi_ = start_index(str,next_i_,rightp,rstate)
-        rr = nothing
-        while rr === nothing
-            rr = _iterate(rightp, str, till, posi_, next_i_, rstate)
-            if rr === nothing
-                lr = _iterate(tokf.left, str, till, posi, next_i_, lstate)
-                lr === nothing && return nothing
-                next_i_,lstate = lr
-                @show next_i_,posi,lstate
-                rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,lstate))
-                rstate = nothing
-            else
-                return tuple_pos(rr), (lstate, rightp, tuple_state(rr))
-            end
+    lstate,rightp,rstate = left_state(state), right_parser(state), right_state(state)
+
+    next_i_=next_i
+    posi_ = start_index(str,next_i_,rightp,rstate)
+    rr = nothing
+    while rr === nothing
+        rr = _iterate(rightp, str, till, posi_, next_i_, rstate)
+        if rr === nothing
+            lr = _iterate(tokf.left, str, till, posi, next_i_, lstate)
+            lr === nothing && return nothing
+            next_i_,lstate = lr
+            rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,lstate))
+            rstate = nothing
+        else
+            return flatmap_state(state,lstate, rightp, rr)
         end
     end
 end
