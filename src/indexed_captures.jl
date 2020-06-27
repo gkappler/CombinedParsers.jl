@@ -54,6 +54,7 @@ end
 # _iterate(parser::ParserWithCaptures, sequence::AbstractString, till, next_i, after, state::Nothing) =
 #     _iterate(parser, sequence, till, next_i, next_i, state)
 
+SequenceWithCaptures(x,cs::CombinedParser) = x
 function SequenceWithCaptures(x,cs::ParserWithCaptures)
     ## @show S=typeof(x)
     SequenceWithCaptures(
