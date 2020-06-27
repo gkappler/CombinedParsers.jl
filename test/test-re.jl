@@ -123,7 +123,7 @@ import CombinedParsers.Regexp: alternation
     parse(alternation,
           with_options(Base.PCRE.EXTENDED|Base.PCRE.EXTENDED_MORE,
                        "a {3}bc | d | [a - e]# comment?"))
-    @test parse(seq(AtStart(),alternation,AtEnd(), transform=2),"")==seq()
+    @test parse(Sequence(2,AtStart(),alternation,AtEnd()),"")==Sequence()
 end
 
 import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference, subroutine
