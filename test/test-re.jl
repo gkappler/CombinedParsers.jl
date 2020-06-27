@@ -164,6 +164,8 @@ import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference
 end                 
 
 
+@test_pcre raw"\\\\\"" "\\\"" true
+@test_pcre raw"\"" "\"" true
 
 @testset "look around" begin
     @test_pcre "ab*(?<=ab)c" "abc" true
