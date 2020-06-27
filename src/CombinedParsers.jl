@@ -930,7 +930,7 @@ Labels are useful in printing and logging.
 See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
 parser(x::Pair{Symbol, P}) where P =
-    GetParser(NamedParser(x.first, parser(x.second)))
+    NamedParser(x.first, parser(x.second))
 
 """
     with_name(name::Symbol,x; doc="")
