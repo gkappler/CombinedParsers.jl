@@ -1745,9 +1745,6 @@ end
 
 
 
-parser_types(::Type{Sequence{T, P}}) where {T, P} =
-    P
-
 
 
 print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
@@ -1847,8 +1844,7 @@ end
 # end
 
 
-@generated function get(parser::Sequence, sequence, till::Int, after::Int, posi::Int, states)
-    pts = parser_types(parser)
+@generated function get(parser::Sequence{pts}, sequence, till::Int, after::Int, posi::Int, states) where pts
     fpts = fieldtypes(pts)
     n = length(fpts)
     subresult = Symbol[ gensym(:r) for p in fpts ]
@@ -1949,8 +1945,7 @@ function _iterate_(parser::Sequence, sequence, till, posi, next_i, states)
     error("?")
 end
 
-@generated function _iterate(parser::Sequence, sequence, till, posi, next_i, states)
-    pts = parser_types(parser)
+@generated function _iterate(parser::Sequence{pts}, sequence, till, posi, next_i, states) where pts
     fpts = fieldtypes(pts)
     n = length(fpts)
     subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
