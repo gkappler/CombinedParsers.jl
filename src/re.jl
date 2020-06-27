@@ -63,13 +63,13 @@ with_options(flags::UInt32,x::SequenceWithCaptures) =
     SequenceWithCaptures(with_options(flags,x.match),x)
 @inline Base.lastindex(x::SequenceWithCaptures) =
     lastindex(x.match)
-@inline Base.prevind(x::SequenceWithCaptures,i::Integer,n::Integer) =
+@inline Base.@propagate_inbounds Base.prevind(x::SequenceWithCaptures,i::Integer,n::Integer) =
     prevind(x.match,i,n)
-@inline Base.nextind(x::SequenceWithCaptures,i::Integer,n::Integer) =
+@inline Base.@propagate_inbounds Base.nextind(x::SequenceWithCaptures,i::Integer,n::Integer) =
     nextind(x.match,i,n)
-@inline Base.prevind(x::SequenceWithCaptures,i::Integer) =
+@inline Base.@propagate_inbounds Base.prevind(x::SequenceWithCaptures,i::Integer) =
     prevind(x.match,i)
-@inline Base.nextind(x::SequenceWithCaptures,i::Integer) =
+@inline Base.@propagate_inbounds Base.nextind(x::SequenceWithCaptures,i::Integer) =
     nextind(x.match,i)
 @inline Base.@propagate_inbounds Base.getindex(x::SequenceWithCaptures,i...) =
     getindex(x.match,i...)
