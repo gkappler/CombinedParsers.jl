@@ -166,6 +166,16 @@ Base.nextind(x::WithOptions,i::Int) =
 Base.ncodeunits(x::WithOptions) =
     ncodeunits(x.x)
 
+import ..CombinedParsers: MatchState
+@inline function _iterate(p::WithOptions{Char}, sequence, till, posi, next_i, state::Nothing, nc=0)
+    @inbounds sc,j=iterate(sequence,posi)
+    if ismatch(p,sc)
+        j, MatchState()
+    else
+        nothing
+    end
+end
+
 import ..CombinedParsers: ismatch, _ismatch
 function ismatch(c::WithOptions{Char},p)::Bool
     _ismatch(c.x,p)
