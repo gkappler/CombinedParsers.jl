@@ -230,9 +230,9 @@ set_capture(sequence::AbstractString, index::Int, start, stop) = nothing
 set_capture(sequence::WithOptions, index::Int, start,stop) =
     set_capture(sequence.x,index,start,stop)
 set_capture(sequence::SequenceWithCaptures, index::Int, start,stop) =
-    push!(sequence.captures[index], start:stop)
+    push!((@inbounds sequence.captures[index]), start:stop)
 set_capture(sequence::SequenceWithCaptures{<:Reverse}, index::Int, start,stop) =
-    push!(sequence.captures[index],
+    push!((@inbounds sequence.captures[index]),
           reverse_index(sequence.match,
                         stop):reverse_index(sequence.match,
                                             start))
