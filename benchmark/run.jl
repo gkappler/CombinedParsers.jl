@@ -17,8 +17,7 @@ testfile = joinpath(testpath,"testoutput1")
 tests_string=read(testfile,String);
 tests = pcre_tests(tests_string)[1];
 
-using DataStructures
-ignore_idx = SortedDict{Int,String}(
+ignore_idx = Dict{Int,String}(
     ## 14 => "unicode escape in test parser needs to support \"\\u81\".",
     69 => "because of very long compile time. The complex pattern parses email adresses",
     70 => "because of very long compile time. The complex pattern parses email adresses",

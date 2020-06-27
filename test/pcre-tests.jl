@@ -9,8 +9,7 @@ tests = pcre_tests(tests_string)[1];
 tt=tests[14]
 @pcre_testset tt[2] true
 
-using DataStructures
-ignore_idx = SortedDict{Int,String}(
+ignore_idx = Dict{Int,String}(
     ## 14 => "unicode escape in test parser needs to support \"\\u81\".",
     69 => "because of very long compile time. The complex pattern parses email adresses",
     70 => "because of very long compile time. The complex pattern parses email adresses",
@@ -124,8 +123,8 @@ end
 unsupportednos = Set(
     vcat([ first.(v) for v in values(unsupported) ]...)
 )
-successes = SortedDict()
-failures = SortedDict()
+successes = Dict()
+failures = Dict()
 for ts in testresults.results
     i = parse(Int,ts.description)
     nsuccess = sum([ t isa Pass for t in ts.results ])
@@ -238,7 +237,7 @@ open(joinpath(docdir,"man","pcre-compliance-failed.md"),"w") do io
 ## Skipped
 $(n_patterns.skipped) patterns were skipped for the following reasons:
 """)
-    for (i,r) in ignore_idx
+    for (i,r) in sort(collect(ignore_idx))
         t = tests[i][2]
         pat,opt = t.pattern
         @show lastindex(pat)
@@ -252,7 +251,7 @@ $(n_patterns.skipped) patterns were skipped for the following reasons:
     println(io,"""\n
 ## Failed tests
 """)
-    for (i,(r,n)) in failures
+    for (i,(r,n)) in sort(collect(failures))
         if n>0
             t = tests[i][2]
             println(io,"\n---")
@@ -266,7 +265,7 @@ open(joinpath(docdir,"man","pcre-compliance-succeeded.md"),"w") do io
 # PCRE Compliance
 $n_successes successful tests on $(n_patterns.success) patterns.\n
 """)
-    for (i,(r,n)) in successes
+    for (i,(r,n)) in sort(collect(successes))
         t = tests[i][2]
         println(io,"\n---")
         print_testset(io,"(no $i) succeeded $(r-1) of $(n-1) times:\n",t,testresults.results[i],pad="")
