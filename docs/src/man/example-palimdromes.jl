@@ -245,7 +245,7 @@ palimdrome = filter(
 p = AtStart() * padding * (palimdrome) * padding * AtEnd()
 parse(p,s)
 
-## Next...
+# ## Next...
 # - match also palimdromes with odd number of letters
 # - elaborate on iteration documentation
 # - comparative benchmarking, conditional on palimdrome length
