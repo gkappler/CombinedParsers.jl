@@ -1684,7 +1684,13 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
     end
 end
 
+"""
+    result_type(::Type{T}) where {T<:Tuple}
 
+Internally used for `Sequence` result_type.
+"""
+@generated result_type(::Type{T}) where {T<:Tuple} =
+    Tuple{ (result_type(t) for t in fieldtypes(T))... }
 
 export Sequence
 @auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
