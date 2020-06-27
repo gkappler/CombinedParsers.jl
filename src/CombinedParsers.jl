@@ -56,8 +56,7 @@ parser(x::Char) =
 parser(x::StepRange{Char,<:Integer}) =
     CharIn(x)
 parser(x::T) where {T<:AbstractString} =
-    ConstantParser2(x)
-    ##Base.ncodeunits(x)(x)
+    ConstantParser(x)
 function Base.convert(::Type{AbstractToken},x)
     parser(x)
 end
