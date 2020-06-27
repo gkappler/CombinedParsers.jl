@@ -1960,9 +1960,9 @@ end
     subresult = Symbol[ gensym(:r) for p in fpts ]
     part = Symbol[ gensym(:part) for p in fpts ]
     pposi = Symbol[ gensym(:pos) for p in 1:(n+1) ]
-    substate = Symbol[ gensym(:s) for p in fpts ]
-    init = if states===Nothing
-        [
+    substate,init = if states<:Nothing
+        substate = Symbol[ gensym(:s) for p in fpts ]
+        substate, [
             quote
             $(substate[p]) = nothing
             @inbounds $(part[p]) = parser.parts[$p]
@@ -1970,8 +1970,9 @@ end
             end
             for (p,t) in enumerate(fpts)
         ]
-    elseif states===MatchState
-        [
+    elseif states<:MatchState
+        substate = Symbol[ gensym(:s) for p in fpts ]
+        substate, [
             quote
             $(substate[p]) = MatchState()
             @inbounds $(part[p]) = parser.parts[$p]
@@ -1979,8 +1980,19 @@ end
             end
             for (p,t) in enumerate(fpts)
         ]
-    else
-        [
+    elseif states<:Vector
+        substate = Expr[ Expr(:ref,:states,p)
+                         for p in 1:n ]
+        substate, [
+            quote
+            @inbounds $(part[p]) = parser.parts[$p]
+            $(pposi[p])::Int = 0
+            end
+            for (p,t) in enumerate(fpts)
+        ]
+    else ## Tuple
+        substate = Symbol[ gensym(:s) for p in fpts ]
+        substate, [
             quote
             @inbounds $(substate[p]) = states[$p]
             @inbounds $(part[p]) = parser.parts[$p]
@@ -1998,7 +2010,6 @@ end
         :(Any[ $([ :(($(s))) for s in substate ]...) ] )
     elseif states <: Vector
         quote
-            $( [ :(@inbounds states[$i]=$(substate[i])) for i in 1:n ]...)
             states
         end
     else
@@ -2008,24 +2019,24 @@ end
         quote
         @label $(subsearch[p])
         if iszero($(pposi[p]))
-            $(pposi[p]) = start_index(sequence, $(pposi[p+1]), $(part[p]), $(substate[p]))
+            $(pposi[p]) = start_index(sequence, $(pposi[p+1]), $(part[p]), @inbounds $(substate[p]))
         end
-        if $(substate[p]) === nothing
+        if (@inbounds $(substate[p])) === nothing
             ## if sss[$p] === nothing
             $(pposi[p+1]) = $(pposi[p])
         end
         ## TODO: gc happening in next line?
-        $(subresult[p]) = _iterate($(part[p]), sequence, till, $(pposi[p]), $(pposi[p+1]), $(substate[p]))
+        $(subresult[p]) = _iterate($(part[p]), sequence, till, $(pposi[p]), $(pposi[p+1]), @inbounds $(substate[p]))
         if $(subresult[p]) === nothing
         prune_captures(sequence,$(pposi[p]))
-        $(substate[p]) = nothing
+        @inbounds $(substate[p]) = nothing
         $(pposi[p+1]) = $(pposi[p])
            @goto $(p == 1 ? :theend : subsearch[p-1])
         else
             $(pposi[p+1]) = tuple_pos($(subresult[p]))
-            $(substate[p]) = tuple_state($(subresult[p]))
+            @inbounds $(substate[p]) = tuple_state($(subresult[p]))
         ##$(pposi[p+1]), $(substate[p]) = $(subresult[p])
-            $(if p < length(fpts); (:($((substate[p+1]))=nothing)); end )
+            $(if p < length(fpts); (:(@inbounds $((substate[p+1]))=nothing)); end )
         end
         end
         for (p,t) in enumerate(fpts)
