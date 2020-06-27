@@ -1,6 +1,6 @@
 using CombinedParsers.Regexp
 import CombinedParsers.Regexp: word, non_word
-import CombinedParsers.Regexp: newline, inline, whitespace_maybe
+import CombinedParsers.Regexp: newline, inline, whitespace_maybe, whitespace_horizontal
 
 @testset "CombinedParsers" begin
 @testset "CharIn" begin
@@ -39,7 +39,7 @@ end
 end
 
 @testset "Repeat_until" begin
-    @test parse(Sequence("(", Repeat_until(!Either(Repeat(word),!Repeat(non_word)), ")")),
+    @test parse(Sequence("(", Repeat_until(!!Either(word,non_word), ")")),
                 "(balanced parenthesis)") ==
         ("(",["balanced", " ", "parenthesis"])
 end
@@ -69,13 +69,13 @@ attribute_parser =
                    !re"#[0-9A-Fa-f]{6}")
         ));
 
-attributes = alternate(attribute_parser, whitespace_maybe);
+attributes = join(attribute_parser, whitespace_maybe);
 
 parse(attributes,"a = 1 b=6% font=\"+1asd\"")
 
 
 @testset "continue options of last Either" begin
-    @test parse(attributes, " size=10% class=1") == [ "size"=>"10%", "class"=>"1" ]
+    @test parse(attributes, "size=10% class=1") == [ "size"=>"10%", "class"=>"1" ]
 end
 
 function html(tags::CombinedParser, inner::CombinedParser, attrs=attributes)
@@ -104,7 +104,7 @@ function html(inner::Function, T::Type, tags::CombinedParser, attrs_parser=attri
                 tags,
                 Optional(Sequence(
                     2,
-                    whitespace_maybe,
+                    whitespace_horizontal,
                     attrs_parser,
                     whitespace_maybe)))),
     nested_html)

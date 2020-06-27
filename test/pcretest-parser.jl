@@ -130,7 +130,6 @@ import CombinedParsers.Regexp: skip_whitespace_and_comments
  3: A
 """
 
-    re"(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)\12\123"
 
     
     test_pcre"""
