@@ -145,7 +145,11 @@ end
 
 Method dispatch, resetting `lastindex(context.subroutines)` if `reset_index===true'.
 """
-function deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Either,context,reset_index)
+deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Either{<:Tuple},context,reset_index) =
+    indexed_captures_(mem,x,context,reset_index)
+deepmap_parser(::typeof(indexed_captures_),mem::AbstractDict,x::Either{<:Vector},context,reset_index) =
+    indexed_captures_(mem,x,context,reset_index)
+function indexed_captures_(mem::AbstractDict,x::Either,context,reset_index)
     if reset_index
         idx = lastindex(context.subroutines)
         branches = Any[]
