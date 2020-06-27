@@ -47,12 +47,10 @@ julia> m.match, m.captures
             start,stop,state)
     end
 end
-function ParseMatch(parser::CombinedParser,s,start=1,stop=1,state=nothing)
+function ParseMatch(parser,s,start=1,stop=start,state=nothing)
     ParseMatch(MatchesIterator(parser,s),
                start,stop,state)
 end
-ParseMatch(parser,sequence,idx) =
-    ParseMatch(parser,sequence,idx, idx, nothing)
 result_type(::Type{<:ParseMatch{P}}) where P = result_type(P)
 Base.eltype(T::Type{<:ParseMatch}) = ParseMatch
 Base.IteratorSize(::Type{<:ParseMatch}) = Base.SizeUnknown()

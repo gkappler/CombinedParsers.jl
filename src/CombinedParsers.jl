@@ -207,7 +207,7 @@ function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state
         nothing
     end
 end
-function Base.get(parser::AbstractToken, sequence, till, after, i, state::NCodeunitsState)
+function Base.get(parser::AbstractToken, sequence, till, after, i, state)
     parser isa CombinedParser && error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
     state.state
 end
