@@ -1241,11 +1241,11 @@ Parser transforming result of a wrapped parser.
 See also: [`map`](@ref), [`Transformation`](@ref)
 """
 function map_at(f::Function, Tc::Type, p, a...)
-    T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
+    T = infer_result_type(f,Tc,p,"call map_at(function,type,parts...)",Int,typeof.(a)...)
     Transformation{Tc}((v,i) -> (f((v), i, a...)), p)
 end
 function map_at(f::Function, p, a...)
-    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",Int,typeof.(a)...)
+    T = infer_result_type(f,Any,p,"call map(function,parts...)",Int,typeof.(a)...)
     Transformation{T}((v,i) -> (f(v, i, a...)), p)
 end
 @deprecate instance_at(a...) map_at(a...)
@@ -3026,6 +3026,7 @@ Base.length(x::Tries.Trie) =
     isempty(x.nodes) ? 0 : (length(x.nodes) + (sum)(length.(values(x.nodes))))::Int
 Base.iterate(x::Tries.Trie, a...) =
     iterate(pairs(x), a...)
+
 export Atomic
 """
     Atomic(x)
