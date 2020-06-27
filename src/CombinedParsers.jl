@@ -1704,7 +1704,8 @@ function state_type_tuple(pts::Type)
     if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
         MatchState
     else
-        Tuple{(state_type(p) for p in fieldtypes(pts))...} #
+        ## Tuple{(state_type(p) for p in fieldtypes(pts))...}
+        Vector{Any}
     end
 end
 
