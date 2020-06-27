@@ -172,8 +172,10 @@ UnicodeClass(abbrev::Symbol...) =
     UnicodeClass(tuple((unicode_classes[a][3] for a in abbrev)...))
 UnicodeClass(abbrev::String...) =
     UnicodeClass((Symbol(a) for a in abbrev)...)
-_ismatch(x::Char, set::UnicodeClass{<:Tuple}) =
+_ismatch(x::Char, set::UnicodeClass{<:Tuple})::Bool =
     in_any(Base.Unicode.category_code(x),set.class)
+_ismatch(x::Char, set::UnicodeClass)::Bool =
+    in(Base.Unicode.category_code(x),set.class)
 
 
 function TextParse.tryparsenext(tok::UnicodeClass, str, i, till, opts=TextParse.default_opts)

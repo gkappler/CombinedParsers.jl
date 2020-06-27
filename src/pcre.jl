@@ -167,11 +167,11 @@ Base.ncodeunits(x::WithOptions) =
     ncodeunits(x.x)
 
 import ..CombinedParsers: ismatch, _ismatch
-function ismatch(c::WithOptions{Char},p)
+function ismatch(c::WithOptions{Char},p)::Bool
     _ismatch(c.x,p)
 end
 
-function _ismatch(c,p::WithOptions{Char})
+function _ismatch(c,p::WithOptions{Char})::Bool
     if !iszero(p.flags & Base.PCRE.CASELESS)
         _ismatch(lowercase(c),lowercase(p.x))
     else
