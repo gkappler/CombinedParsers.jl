@@ -150,13 +150,14 @@ at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
 
 # pattern alternatives
 # circumflex and dollar https://www.pcre.org/original/doc/html/pcrepattern.html#SEC6
-pattern = Either(
-    on_options(Base.PCRE.MULTILINE, '^' => at_linestart),
-    '^' => AtStart(),
-    on_options(Base.PCRE.MULTILINE, '$' => at_lineend),
-    on_options(Base.PCRE.DOLLAR_ENDONLY, '$' => AtEnd()),
-    '$' => Either(AtEnd(),
-                  PositiveLookahead(Sequence(2,'\n',AtEnd())))
+pattern = Either{CombinedParser}(
+    Any[ on_options(Base.PCRE.MULTILINE, '^' => at_linestart),
+         parser('^' => AtStart()),
+         on_options(Base.PCRE.MULTILINE, '$' => at_lineend),
+         on_options(Base.PCRE.DOLLAR_ENDONLY, '$' => AtEnd()),
+         parser('$' => Either(AtEnd(),
+                              PositiveLookahead(Sequence(2,'\n',AtEnd()))))
+         ]
 );
 
 # Either allows adding alternatives qith push!, that themselves use the Either object for recursive parsers.
