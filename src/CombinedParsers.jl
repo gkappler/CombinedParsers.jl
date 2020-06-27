@@ -242,6 +242,8 @@ Used for dispatch in [`deepmap_parser`](@ref)
 """
 abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
+deepmap_parser(f::Function,mem::AbstractDict,x::ParserTypes,a...;kw...) =
+    f(x,a...;kw...)
 
 """
     deepmap_parser(f::Function,x::CombinedParser,a...;kw...)
