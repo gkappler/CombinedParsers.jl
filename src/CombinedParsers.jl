@@ -1974,7 +1974,7 @@ end
     else
         [
             quote
-            $(substate[p]) = states[$p]
+            @inbounds $(substate[p]) = states[$p]
             @inbounds $(part[p]) = parser.parts[$p]
             $(pposi[p])::Int = 0
             end
@@ -1983,15 +1983,15 @@ end
     end
 
     ret_state = if state_type(parser) <: MatchState
-        :(R::MatchState = MatchState())
+        :(MatchState())
     elseif state_type(parser) <: Tuple
-        :(R::$(state_type(parser)) = tuple( $([ :(($(s))) for s in substate ]...) ) )
+        :(tuple( $([ :(($(s))) for s in substate ]...) ) )
     elseif states <: Nothing
-        :(R::$(state_type(parser)) = Any[ $([ :(($(s))) for s in substate ]...) ] )
+        :(Any[ $([ :(($(s))) for s in substate ]...) ] )
     elseif states <: Vector
         quote
-            $( [ :(states[$i]=$(substate[i])) for i in 1:n ]...)
-            R::$(state_type(parser)) = states
+            $( [ :(@inbounds states[$i]=$(substate[i])) for i in 1:n ]...)
+            states
         end
     else
         error("invalid state_type")
@@ -2009,14 +2009,13 @@ end
         ## TODO: gc happening in next line?
         $(subresult[p]) = _iterate($(part[p]), sequence, till, $(pposi[p]), $(pposi[p+1]), $(substate[p]))
         if $(subresult[p]) === nothing
-        $(part[p])
-           prune_captures(sequence,$(pposi[p]))
+        prune_captures(sequence,$(pposi[p]))
         $(substate[p]) = nothing
         $(pposi[p+1]) = $(pposi[p])
            @goto $(p == 1 ? :theend : subsearch[p-1])
         else
-            $(pposi[p+1]) = $(subresult[p])[1]
-            $(substate[p]) = $(subresult[p])[2]
+            $(pposi[p+1]) = tuple_pos($(subresult[p]))
+            $(substate[p]) = tuple_state($(subresult[p]))
         ##$(pposi[p+1]), $(substate[p]) = $(subresult[p])
             $(if p < length(fpts); (:($((substate[p+1]))=nothing)); end )
         end
@@ -2024,13 +2023,12 @@ end
         for (p,t) in enumerate(fpts)
     ]
     R = quote
-        $(pposi[end])::Int = next_i
         $(init...)
         $(pposi[1]) = posi
+        $(pposi[end]) = next_i
         states !== nothing && @goto $(subsearch[end])
         $(parseparts...)
-        $ret_state
-        return $(pposi[end]), R
+        return $(pposi[end]), $ret_state
         @label theend
         return nothing
     end
