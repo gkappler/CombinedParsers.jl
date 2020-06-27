@@ -1742,33 +1742,15 @@ function seq(tokens::Vararg{ParserTypes};
     end
 end
 
-Sequence(transform::Integer,tokens::Vararg{ParserTypes}) =
+Sequence(transform::Integer,tokens...) =
     Sequence(Val{transform}(),tokens...)
 
-function Sequence(::Val{transform},tokens::Vararg{ParserTypes}) where {transform}
+function Sequence(::Val{transform},tokens...) where {transform}
     s = Sequence(tokens...)
     map(v -> v[transform], fieldtype(result_type(s),transform), s)
 end
 
 
-function Sequence(T::Type, parts::Vararg;
-             ## log=false,
-             transform=:instance)
-    parts = tuple( ( parser(x) for x = parts )... )
-    if T==NamedTuple
-        fnames = tuple( [ x.name for x in parts if x isa NamedParser ]... )
-        ftypes = [ result_type(typeof(x.parser)) for x in parts if x isa NamedParser ]
-        RT = isempty(fnames) ? T : NamedTuple{fnames, Tuple{ftypes...}}
-    else
-        RT = T
-    end
-    if transform == :instance
-        transform = (v,i) -> instance(RT,Any[ remove_null(x) for x in v ])
-    end
-    map(transform,RT,Sequence(parts...))
-end
-
-@deprecate seq(a...; kw...) Sequence(a...; kw...)
 
 parser_types(::Type{Sequence{T, P}}) where {T, P} =
     P
@@ -1790,8 +1772,8 @@ export sSequence
 sSequence_(x::Sequence) = sSequence_(x.parts...)
 sSequence_(x::Always) = tuple()
 sSequence_() = tuple()
-sSequence_(x1) = tuple(x1)
-sSequence_(x1,x...) = Iterators.flatten( Any[ sSequence_(x1), ( sSequence_(e) for e in x )... ] )
+sSequence_(x1) = tuple(parser(x1))
+sSequence_(x1,x...) = Iterators.flatten( ( sSequence_(x1), Iterators.flatten( ( sSequence_(e) for e in x ) ) ) )
 
 """
     sSequence(x...)
@@ -1818,8 +1800,12 @@ julia> sSequence('a',CharIn("AB")*'b')
 See also [`Sequence`](@ref)
 """
 function sSequence(x...)
-    opts = collect(sSequence_(x...))
-    length(opts)==1 ? opts[1] : Sequence(opts...)
+    sSequence(sSequence_(x...)...)
+end
+
+sSequence(x::AbstractToken) = x
+function sSequence(x::AbstractToken...)
+    Sequence(sSequence_(x...)...)
 end
 
 
