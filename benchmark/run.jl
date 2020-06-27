@@ -15,7 +15,7 @@ include(joinpath(testpath,"pcretest-parser.jl"))
 testfile = joinpath(testpath,"testoutput1")
 @info "loading pcre testset $testfile"
 tests_string=read(testfile,String);
-tests = parse(tests_parser, tests_string)[1];
+tests = pcre_tests(tests_string)[1];
 
 using DataStructures
 ignore_idx = SortedDict{Int,String}(
@@ -122,15 +122,19 @@ end
 
 results = run(suite, verbose=true,seconds=1)
 
+import Dates
+datetimenow = Dates.format(Dates.now(),"Y-mm-dd_HHhMM")
+resultfile = "benchmark-$datetimenow.json"
+BenchmarkTools.save(joinpath(dirname(pathof(CombinedParsers)),"..","benchmark",resultfile),results)
+
 using StructArrays, DataFrames
 StructArray([ (pattern=t[1][1], string = t[1][4], code=t[1][2], trial = t[2])
               for t in leaves(median(results))
               if t[1][3]=="match" ]) |> DataFrame
 
-import Dates
-datetimenow = Dates.format(Dates.now(),"Y-mm-dd_HHhMM")
-resultfile = "benchmark-$datetimenow.json"
-BenchmarkTools.save(joinpath(dirname(pathof(CombinedParsers)),"..","benchmark",resultfile),results)
+results= nothing
+GC.gc()
+
 
 
 
