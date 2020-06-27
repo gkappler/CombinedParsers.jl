@@ -1734,16 +1734,6 @@ Sequence(transform::Function, T::Type, a...) =
 Sequence(transform::Function, a...) =
     map(transform, Sequence(a...))
 
-function seq(tokens::Vararg{ParserTypes};
-             transform=nothing, kw...)
-    if transform isa Integer
-        Sequence(transform,tokens...)
-    elseif transform===nothing
-        Sequence(tokens...)
-    elseif transform isa Function
-        map(transform, s)
-    end
-end
 
 Sequence(transform::Integer,tokens...) =
     Sequence(Val{transform}(),tokens...)
@@ -2605,7 +2595,7 @@ julia> parse("a" | "bc","bc")
 struct Either{Ps,S,T} <: CombinedParser{S,T}
     options::Ps
     Either{T}(p::P) where {T,P<:Union{Vector,Tuple,Trie}} =
-        new{P,either_state_type(P),T}(p::P)
+        new{P,either_state_type(P),T}(p)
     Either{T}(p::CombinedParser...) where {T} =
         new{Vector{Any},either_state_type(CombinedParser),T}(Any[p...])
 either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
@@ -2613,6 +2603,7 @@ either_state_type(ts::Type{CombinedParser}) = Tuple{Int,Any}
 either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
 either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
 either_state_type(ts...) = Tuple{Int,promote_type(state_type.(ts))}
+@inline with_state!(x::Nothing,k::Int,s) = (k,s)
 function promote_type_union(Ts...)
     T = promote_type(Ts...)
     Any <: T ? Union{Ts...} : T
@@ -2634,8 +2625,6 @@ function Either(x...)
     Either{T}(parts)
 end
 
-@inline with_state!(x::Nothing,k::Int,s) = tuple(k,s)
-parser_types(::Type{<:Either{P}}) where {P} = P
 children(x::Either) = x.options
 regex_string(x::Either) = join(regex_string.(x.options),"|")
 regex_prefix(x::Either) = "|"
@@ -2655,11 +2644,7 @@ function Either(transform::Function, x::Vararg)
     map(transform, Either(x...))
 end
 
-
-@deprecate alt(a...) Either(a...)
-
-
-function deepmap_parser(f::Function,mem::AbstractDict,x::Either,a...;kw...)
+function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
     if haskey(mem,x)
         mem[x]
     else
@@ -2669,6 +2654,12 @@ function deepmap_parser(f::Function,mem::AbstractDict,x::Either,a...;kw...)
             push!(r,deepmap_parser(f,mem,p,a...;kw...))
         end
         r
+    end
+end
+
+function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Tuple},a...;kw...)
+    get!(mem,x) do
+        Either{result_type(x)}(tuple( (deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... ))
     end
 end
 
@@ -2777,7 +2768,7 @@ Recursive parsers can be built with `push!` to `Either`.
 
 See also [`pushfirst!`](@ref).
 """
-function Base.push!(x::Either, y)
+function Base.push!(x::Either{<:Vector,<:Any}, y)
     result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     push!(x.options,y)
     x
@@ -2791,7 +2782,7 @@ Recursive parsers can be built with `pushfirst!` to `Either`.
 
 See also [`push!`](@ref).
 """
-function Base.pushfirst!(x::Either, y)
+function Base.pushfirst!(x::Either{<:Vector,<:Any}, y)
     result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     pushfirst!(x.options,y)
     x
@@ -2840,20 +2831,32 @@ end
     Pair(k, s)
 end
 
+@inline function with_state!(x::Tuple,k,s)
+    (k, s)
+end
+
+either_state_option(::Nothing) = 1
+either_state_state(x::Nothing) = nothing
+either_state_option(x::Tuple) = x[1]
+either_state_state(x::Tuple) = x[2]
+either_state_option(x::Union{Pair,MutablePair}) = x.first
+either_state_state(x::Union{Pair,MutablePair}) = x.second
+
 @inline function prevind(str,i::Int,parser::Either,x)
     ## @show i
-    prevind(str,i,(@inbounds parser.options[x.first]),x.second)
+    prevind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
 
 @inline function nextind(str,i::Int,parser::Either,x)
     ## @show i
-    nextind(str,i,(@inbounds parser.options[x.first]),x.second)
+    nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
-
+@inline function nextind(str,i::Int,parser::Either{P,T},x::Tuple{Int,T}) where {P,T}
+    nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
+end
  
 
-@generated function prevind(str,i::Int,parser::Either{<:Any,<:Tuple},x)
-    pts = parser_types(parser)
+@generated function prevind(str,i::Int,parser::Either{pts},x::Union{Pair,MutablePair}) where {pts<:Tuple}
     fpts = fieldtypes(pts)
     parseoptions = [
         quote
@@ -2874,88 +2877,85 @@ end
 
 
 function Base.get(parser::Either, sequence, till, after, i, state)
-    j = state.first
-    lstate = state.second
-    get(parser.options[j],sequence, till, after, i, lstate)
+    get(parser.options[either_state_option(state)],sequence, till, after, i, either_state_state(state))
 end
 
 
-@inline function __iterate_paired(first,sstate::Nothing)
+@inline function __iterate_paired(first,state,sstate::Nothing)
     nothing
 end
 
-@inline function __iterate_paired(first, (next_i_, nstate_))
-    next_i_, with_state!(nothing,first,nstate_)
+@inline function __iterate_paired(first, state, sstate::Tuple)
+    __iterate_paired(first, state, sstate...)
 end
 
-@inline function _iterate_paired(first, t, str, till, posi, next_i, state)
-    __iterate_paired(first, _iterate(t, str, till, posi, next_i, state))
+@inline function __iterate_paired(first, state, next_i_::Int, nstate_)
+    next_i_, with_state!(state,first,nstate_)
 end
 
-function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Nothing)
+function _iterate_paired(first, t, str, till, posi, next_i, state)
+    __iterate_paired(first, state, _iterate(t, str, till, posi, next_i, either_state_state(state)))
+end
+
+function _iterate(t::Either{<:Vector}, str, till, posi, next_i, state::Nothing)
+    r = nothing
     for (j,o) in enumerate(t.options)
-        ( r = _iterate_paired(j,( @inbounds t.options[j] ),str,till,posi, next_i,nothing) )!== nothing && return r
+        r = _iterate_paired(j,o,str,till,posi, next_i,nothing)
+        r!== nothing && return r
     end
     nothing
 end
 
-
-
-function _iterate(t::Either{<:Any,<:Vector}, str, till, posi, next_i, state::Union{Pair,MutablePair})
-    @inbounds opt = t.options[state.first]
-    fromindex = state.first+1
-    posi = _prevind(str,next_i,opt,state.second) ##state[end][1]
-    r = _iterate_paired(state.first,opt,str,till,posi, next_i,state.second)
+function _iterate(t::Either{<:Vector}, str, till, posi, next_i, state)
+    @inbounds opt = t.options[either_state_option(state)]
+    fromindex = either_state_option(state)+1
+    posi = _prevind(str,next_i,opt,either_state_state(state)) ##state[end][1]
+    r = _iterate_paired(either_state_option(state),opt,str,till,posi, next_i,state)
     r !== nothing && return r
     prune_captures(str,posi)
     ##sstate = nothing
     for j in fromindex:length(t.options)
-        @inbounds r = _iterate_paired(j,t.options[j],str,till,posi,posi,nothing)
-        r !== nothing && return r
+        @inbounds r2 = _iterate_paired(j,t.options[j],str,till,posi,posi,nothing)
+        r2 !== nothing && return r2
     end
     nothing
 end
 
 
+function _iterate(parser::Either{<:Tuple}, sequence, till, posi, next_i, state)
+    either_first(parser,posi,next_i,state) do index, option, ni, sstate
+        _iterate_paired(index, option, sequence, till, posi, ni, sstate)
+    end
+end
 
-@generated function _iterate(parser::Either{<:Any,<:Tuple}, sequence, till, posi, next_i, state::Union{Nothing,Pair,MutablePair})
-    pts = parser_types(parser)
+
+
+@generated function either_first(f::Function, parser::Either{pts}, posi, next_i, state) where {pts<:Tuple}
     fpts = fieldtypes(pts)
     subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
     push!(subsearch, gensym(:subsearch))
     subresult = Symbol[ gensym(:r) for p in fpts ]
     part = Symbol[ gensym(:part) for p in fpts ]
-    init = [
-        quote
-        @inbounds $(part[p]) = parser.options[$p]
-        end
-        for (p,t) in enumerate(fpts)
-    ]
+    init = Expr(:(=), Expr(:tuple, part...),:(parser.options))
     parseoptions = [
         quote
         @label $(subsearch[p])
         j > $p && @goto $(subsearch[p+1])
-        $(subresult[p]) = _iterate($(part[p]), sequence, till, posi, next_i_, sstate)
-        $(subresult[p]) !== nothing && return $(subresult[p])[1], with_state!(state, $p,$(subresult[p])[2])
+        $(subresult[p]) = f($p,$(part[p]), next_i_, sstate)
+        $(subresult[p]) !== nothing && return $(subresult[p])# __iterate_paired($p,state, $(subresult[p]))
         next_i_ = posi
         sstate = nothing
         end
         for (p,t) in enumerate(fpts)
     ]
-    init_before = if state <: Nothing
+    init_before = 
         quote
-            j = 1
-            sstate = nothing
+            j = either_state_option(state)
+            sstate = state
         end
-    else
-        quote
-            j = state.first
-            sstate = state.second
-        end
-    end
     R = quote
         next_i_::Int = next_i
-        $(init...)
+        $(init)
         $(init_before)
         $(parseoptions...)
         @label $(subsearch[end])
