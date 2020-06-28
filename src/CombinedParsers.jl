@@ -195,7 +195,10 @@ end
 end
 
 function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state,opts=TextParse.default_opts)
-    parser isa CombinedParser && error("define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))")
+    if parser isa CombinedParser
+        @warn "define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))"
+        return nothing
+    end
     if state === nothing
         r,next_i_ = tryparsenext(parser, sequence, next_i, till,opts)
         if isnull(r)
