@@ -2998,7 +2998,7 @@ end
     R
 end
 
-
+import Tries: nodes, AbstractTrie
 """
     _iterate(p::Trie{Char}, str, till, posi, next_i, ::Nothing)
 
@@ -3009,7 +3009,7 @@ Match char path in `p` greedily, recording shorter matches in state.
     st = st_ = p
     while st !== nothing && ni <= till
         @inbounds c, ni = iterate(str,ni)
-        @inbounds st = get( nodes(st),c, nothing)
+        @inbounds st = get( Tries.nodes(st),c, nothing)
         st === nothing && break
         if get(st) !== missing
             ni_ = ni
@@ -3023,7 +3023,7 @@ Match char path in `p` greedily, recording shorter matches in state.
     end
 end
 
-@inline function _iterate(p::Union{Trie{Char},SubTrie{Char}}, str, till, posi, next_i, state)
+@inline function _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state)
     _iterate(p, str, prevind(str,next_i,2), posi, posi, nothing)
 end
 
@@ -3042,10 +3042,6 @@ end
 
 children(x::Either{<:Trie}) =
     children(x.options)
-Base.length(x::Tries.Trie) =
-    isempty(x.nodes) ? 0 : (length(x.nodes) + (sum)(length.(values(x.nodes))))::Int
-Base.iterate(x::Tries.Trie, a...) =
-    iterate(pairs(x), a...)
 
 export Atomic
 """
