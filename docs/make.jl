@@ -43,7 +43,7 @@ makedocs(;
         "Examples" => [
             "Name and addresses" => "man/example-person.md",
             "Number sequences" => "man/example-number-ranges.md",
-            "Palindrome<:CombinedParsers" => "man/example-palindromes.md",
+            "Palindrome<:CombinedParser" => "man/example-palindromes.md",
             "Regular Expressions" => "man/pcre.md",
             "JSON" => "man/json.md",
         ],

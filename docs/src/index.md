@@ -4,7 +4,7 @@ A package for combining parsers and transforming strings into julia types.
 
 Compose parsers with the functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
 utilize Julia's type inferrence for transformations,
-log conveniently for debugging, and let Julia compile your parser for good performance.
+log conveniently for debugging, and let Julia compile your parser for performance.
 
 
 !!! note
