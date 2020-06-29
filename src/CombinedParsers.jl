@@ -1,5 +1,6 @@
 # TODO:
 # - remove after from get (nextind with state and i)
+# - (Feedback appreciated: Would is be more efficient change the `_iterate` internal API for the first match to arity 4?)
 # - Base.get(parser, sequence, till, after, i, state) to
 #   Base.get(parser, sequence, i, after, till, state) 
 """

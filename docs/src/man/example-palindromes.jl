@@ -124,11 +124,8 @@ STATE = NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}
 RESULT = SubString
 struct Palindrome{P} <: CombinedParser{STATE,RESULT}
     word_char::P
-    Palindrome(x) = new{typeof(x)}(x)
-    ## UnicodeClass(:L) creation currently is slow, but required only once by default.
     Palindrome() = Palindrome(UnicodeClass(:L))
 end
-## @btime UnicodeClass(:L)
 
 # ### Matching
 # With the inside-out stratedy, the implementation greedily expands over non-word characters.
@@ -138,8 +135,9 @@ function CombinedParsers._iterate(x::Palindrome,
                                   posi, after,
                                   state::Nothing)
     right_ = left_ = left = right = posi
-    while left>0 && right<=till && lowercase(@inbounds str[left])==lowercase(@inbounds str[right])
-        ## if we cannot expand, we can succeed with current (left_,right_)
+    while left>0 && right<=till &&
+          lowercase(@inbounds str[left])==lowercase(@inbounds str[right])
+        ## if we cannot expand, (left_,right_) succeeded
         right_ = right 
         left_ = left
         left =  seek_word_char(
@@ -158,20 +156,18 @@ function CombinedParsers._iterate(x::Palindrome,
     end
 end
 # `_iterate` matches the right part of the palindrome if and only if `posi` at the center of a palindrome. 
-# - (Feedback appreciated: Would is be more efficient change the `_iterate` internal API for the first match to arity 4?)
 #
 # The internal API calls (for the center index 18):
-# TODO: state = _iterate(Palindrome(),s,18)
 state = _iterate(Palindrome(),s,lastindex(s),18,18,nothing)
 
-
-# `prevind` and `nextind` methods for a custom parser are used during the match iteration process.
+# ### `prevind` and `nextind`
+# `CombinedParsers` iterates through matches based on the parsing position and state.
+Base.nextind(str,i::Int,p::Palindrome,state) =
+    nextind(str,state.right)
 # Note that for the inside-out strategy the `Palindrome<:CombinedParser` matches from `center` and looks behind until `right`, possibly overlapping with the last match(es).
 # The start index of a palindrome match is its center.
 Base.prevind(str,after::Int,p::Palindrome,state) =
     state.center
-Base.nextind(str,i::Int,p::Palindrome,state) =
-    nextind(str,state.right)
  
 
 # ### `match` and `get`
