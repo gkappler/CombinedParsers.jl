@@ -41,10 +41,10 @@ Although CombinedParsers.jl is a very young package that will be optimized furth
 
 
 The benchmarkin results of the first 100 test patterns in the PCRE test set are summarized in the following, comparing `match(Regex(pattern,flags),s)` with `_iterate(Regcomb(pattern,flags),s)`:
-PCRE benchmarks have a range between 83.0ns to 682.5ns.
-CombinedParsers benchmarks range between 33.0ns to 28515.5ns.
-51.0% of benchmarks are faster with CombinedParsers compared to PCRE.
-The average ratio of `time_Recomb/time_Regex` is 2.73.
+PCRE benchmarks have a range between 86.0ns to 521.0ns.
+CombinedParsers benchmarks range between 34.0ns to 19704.0ns.
+59.0% of benchmarks are faster with CombinedParsers compared to PCRE.
+The average ratio of `time_Recomb/time_Regex` is 1.26.
 
 
 Benchmark timings for regular expression construction and matching comparing `Regex` (x axis) and `Regcomb` (y axis), both on a log10 scale:
@@ -59,7 +59,7 @@ Points represent PCRE an individual benchmark.
 
 
 
-The equal-area-histograms of log10-ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive.
+The histograms of ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive.
 Worst cases are investigated for further optimization [in this IJulia notebook](https://github.com/gkappler/CombinedParsers.jl/blob/master/benchmark/benchmarks.ipynb).
 
 Next steps in optimization are
@@ -68,19 +68,19 @@ Next steps in optimization are
 ## Unsupported
 251 unsupported patterns were omitted for the following reasons:
 
-- `ACCEPT` failed on 16 patterns.
-- `COMMIT` failed on 35 patterns.
-- `PRUNE` failed on 18 patterns.
-- `SKIP` failed on 29 patterns.
-- `THEN` failed on 50 patterns.
-- `\K` failed on 13 patterns.
-- `checking for pattern recursion` failed on 5 patterns.
-- `options aftertext` failed on 12 patterns.
-- `options g` failed on 5 patterns.
-- `options g,aftertext` failed on 7 patterns.
-- `options g,dupnames` failed on 5 patterns.
-- `options gm` failed on 2 patterns.
-- `options imsx,mark` failed on 2 patterns.
-- `options mark` failed on 38 patterns.
-- `options mark,no_start_optimize` failed on 1 patterns.
-- `options x,mark` failed on 13 patterns.
+- `ACCEPT` excluded 16 patterns.
+- `COMMIT` excluded 35 patterns.
+- `PRUNE` excluded 18 patterns.
+- `SKIP` excluded 29 patterns.
+- `THEN` excluded 50 patterns.
+- `\K` excluded 13 patterns.
+- `checking for pattern recursion` excluded 5 patterns.
+- `options aftertext` excluded 12 patterns.
+- `options g` excluded 5 patterns.
+- `options g,aftertext` excluded 7 patterns.
+- `options g,dupnames` excluded 5 patterns.
+- `options gm` excluded 2 patterns.
+- `options imsx,mark` excluded 2 patterns.
+- `options mark` excluded 38 patterns.
+- `options mark,no_start_optimize` excluded 1 patterns.
+- `options x,mark` excluded 13 patterns.

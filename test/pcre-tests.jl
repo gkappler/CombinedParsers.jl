@@ -146,7 +146,11 @@ n_patterns = (
     unsupported = sum(length.(values(unsupported))))
 io=stdout
 
-benchmarks = (range_Regcomb = (33.0, 28515.5), range_Regex = (83.0, 682.5), proportion_better = 0.5093632958801498, mean_ratio = 2.7263015758568434, ratio_mean = 1.2951982070322912)
+benchmarks = [
+    # (range_Regcomb = (33.0, 28515.5), range_Regex = (83.0, 682.5), proportion_better = 0.5093632958801498, mean_ratio = 2.7263015758568434, ratio_mean = 1.2951982070322912)
+    "benchmark-2020-06-29_10h29-4304c235feb678ca0ea7902a1a296dd2dace0ae4.json" =>
+    (range_Regcomb = (34.0, 19704.0), range_Regex = (86.0, 521.0), proportion_better = 0.5917602996254682, mean_ratio = 1.2631184139535836, ratio_mean = 0.8598574284168594)
+][end].second
 
 function print_testset(io,prefix,t,testdef; pad="   ")
     pat,opt = t.pattern
@@ -214,7 +218,7 @@ Points represent PCRE an individual benchmark.
 ### Benchmark ratios histogram:
 ![](log_btime_ratio_histogram.svg)\n\n
 
-The equal-area-histograms of log10-ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive.
+The histograms of ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive.
 Worst cases are investigated for further optimization [in this IJulia notebook](https://github.com/gkappler/CombinedParsers.jl/blob/master/benchmark/benchmarks.ipynb).
 
 Next steps in optimization are
@@ -224,7 +228,7 @@ Next steps in optimization are
 $(n_patterns.unsupported) unsupported patterns were omitted for the following reasons:
 """)
     for (n,r) in sort([ s.first => length(s.second) for s in unsupported ])
-        println(io,"- `$n` failed on $r patterns.")
+        println(io,"- `$n` excluded $r patterns.")
     end
 end
 
