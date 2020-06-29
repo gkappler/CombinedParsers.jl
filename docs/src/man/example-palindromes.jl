@@ -1,20 +1,21 @@
 # # `Palindromes<:CombinedParser`: a Tutorial for writing your combinable Parser
 # Palindromes are an interesting example for parsing because
-# intuitively programmers as well as laymen understand the problem: 
-# the text is identical when read from left to right, as we are used to do,
+# intuitively programmers as well as laymen understand the problem:
+# 
+# **The text is identical when read from left to right, as we are used to do,
 # or when read from right to left in reverse, 
-# when we read only the letters and discard all non-word characters.
+# when we read only the letters and discard all non-word characters.**
 #
-# This example enables you to write your own custom `CombinedParser` based off a minimal template.
-# ## 1. A non-word skipping palindrome regex
-# The PCRE test case contains nice examples of non-trivial palindromes.
-# The tested regular expression matching these palindromes is cryptic and requires arcane reasoning even to the initiated.
-#
+# This example enables you to write and optimize your custom `CombinedParser` based off a minimal template.
 using CombinedParsers
 using CombinedParsers.Regexp
-## defines parsers for pcre tests:
+# # 1. Regular Expression
+# The PCRE test case contains nice examples of non-trivial palindromes.
+#
+## Defines parsers and output for pcre tests:
 CombinedParsers.Regexp.@pcre_tests; 
 
+## The regular expression in the first quoted line is cryptic.
 pt = pcre_test"""
 /^\W*+(?:((.)\W*+(?1)\W*+\2|)|((.)\W*+(?3)\W*+\4|\W*+.\W*+))\W*+$/i
     1221
@@ -45,23 +46,17 @@ No match
 """
 
 
-# It is interesting that this case ignoring PCRE pattern matches palindromes:
+# As to why and how this PCRE pattern matches palindromes requires arcane reasoning even to the initiated:
 re = Regex(pt.pattern...)
 # I figure the expression is hard to construct and come up with.
-# The easy part is that the pattern needs to ignore case and whitespace `\W`.
-## TODO: re"\W" show `UnicodeClass`
-#
+# The easy part is that the pattern needs to ignore case `"i` and whitespace `\W`.
 # The pattern makes intense use of backreferences and subroutines.
-
 # 
 s=pt.test[3].sequence
 match(re, s)
+# The matched captures are purely technical (Pattern 4 is the first character).
 
-# PCRE matching example 3 is fast
-using BenchmarkTools
-@benchmark match(re, s)
-
-# ### Tree display of regex
+# ## Tree display of regex
 # I find it hard to understand the compact captures `(.)`, even in a nested tree display:
 cp = Regcomb(pt.pattern...)
 # Why no backreference `\1`, why no subroutine `(?2)`?
@@ -70,12 +65,17 @@ cp = Regcomb(pt.pattern...)
 # Writing a palindrome parser should be easier.
 # And with julia compiler it should be faster.
 #
+# ## Regular Expression performance
+# PCRE matching example 3 is fast
+using BenchmarkTools
+@benchmark match(re, s)
 # In practice `CombinedParsers` [`Regcomb`](@ref) of the regular expression will detect palindromes too.
 # Palindrome matching provides an interesting cross-parser performance benchmark.
 @benchmark match(cp, s)
 # `CombinedParsers.Regexp.Subroutine` matching is slow because the current implementation is using state-copies of captures.
+# (TODO: Capture Subroutines could be implemented as a stack?).
 
-# ## 2. A non-word skipping `Palindrome<:CombinedParser`
+# # 2. A non-word skipping `Palindrome<:CombinedParser`
 # This example of `Palindrome<:CombinedParser` is a much faster palindrome parser and more interesting and more easy to write.
 # It mimics the human readable palindrome rule that is clear and quite easy to comprehend:
 #
@@ -86,7 +86,7 @@ cp = Regcomb(pt.pattern...)
 # This rule is efficient programming in natural language.
 # After defining the parser, the third part of the example discusses the design of match iteration in `CombinedParsers`.
 #
-# #### Parsing strategy
+# ## Parsing strategy
 # A custom parser needs a method to determine if there is a match and its extent at a position.
 # How can this be implemented for a palindrome?
 # There are two strategies:
@@ -101,7 +101,7 @@ cp = Regcomb(pt.pattern...)
 #    (This might be [the-fastest-method-of-determining-if-a-string-is-a-palindrome](https://stackoverflow.com/questions/21403782/the-fastest-method-of-determining-if-a-string-is-a-palindrome).  But I figure finding all palindrome matches in a string is slow because you would be required to test for all possible substrings.)
 # The inside out strategy seems easier and faster.
 #
-# #### Prerequisite: Skipping whitespace
+# ### Prerequisite: Skipping whitespace
 # For the string `"two   words"`,  from the point of index 4 (`' '` after "from") the next word character after skipping whitespace left and right are indices of 3 (tw`o`) and 7 (`w`ords).
 # In Julia syntax, this is expressed in terms of `direction` (functions `Base.prevind` and `Base.nextind` return next index to left or right), and `word_char::T`, what makes up a word character (provided method `CombinedParser.ismatch(char,parser::T)::Bool`.)
 
@@ -117,7 +117,7 @@ end
 ( prev_index=seek_word_char(prevind, "two   words", 4),
   next_index=seek_word_char(nextind, "two   words", 4) )
 
-# #### Subtyping `<: CombinedParser{STATE,RESULT}`.
+# ## Subtyping `<: CombinedParser{STATE,RESULT}`.
 # Subtyping requires you to define the type of the parsing state (for julia compiler optimizations)
 # and the type of the parsing result.
 STATE = NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}
@@ -127,7 +127,7 @@ struct Palindrome{P} <: CombinedParser{STATE,RESULT}
 end
 Palindrome() = Palindrome(UnicodeClass(:L))
 
-# ### Matching
+# ## Matching: `CombinedParsers._iterate`
 # With the inside-out stratedy, the implementation greedily expands over non-word characters.
 # Computing the first match at `posi`tion is done by this method dispatch
 function CombinedParsers._iterate(x::Palindrome,
@@ -160,7 +160,7 @@ end
 # The internal API calls (for the center index 18):
 state = _iterate(Palindrome(),s,lastindex(s),18,18,nothing)
 
-# ### `prevind` and `nextind`
+# ## `Base.prevind` and `Base.nextind`
 # `CombinedParsers` iterates through matches based on the parsing position and state.
 Base.nextind(str,i::Int,p::Palindrome,state) =
     nextind(str,state.right)
@@ -170,7 +170,7 @@ Base.prevind(str,after::Int,p::Palindrome,state) =
     state.center
  
 
-# ### `match` and `get`
+# ## `match` and `get`
 # [`_iterate`](@ref) is called when the public API `match` or `parse` is used.
 # Match searches for a center index and then matched the `state.center:state.right` part of the palindrome. 
 p = Palindrome()
@@ -185,7 +185,7 @@ Base.get(x::Palindrome, str, till, after, posi, state) =
 # The match result is matching the first palindrome, which is short and simple - but not yet what we want.
 get(m)
 
-# ### Iterating through matches
+# ## Iterating through matches
 # The longest palindrome is matched too:
 p = Palindrome()
 [ get(m) for m in match_all(p,s) ]
@@ -197,7 +197,7 @@ islong(sequence, till, posi, after, state) =
 long_palindrome = filter(islong,Palindrome())
 get(match(long_palindrome,s))
 
-# ## Iteration of smaller Sub-palindromes
+# ### Iteration of smaller Sub-palindromes
 # The set of all palindromes in a text includes the shorter palindromes contained in longer ones.
 # Provide a method to iterate the previous state:
 "Shrinking `state` match"
@@ -248,18 +248,22 @@ fast_palindrome = filter(islong,Palindrome(CharNotIn(tuple(" ,!:"...))))
 # ## Padding and combining
 # Note that the PCRE pattern included outside non-words, specifically the tailing `!`.
 re = Regex(pt.pattern...)
-match(re,s)
+match(re,"  "*s)
 
 # ``CombinedParsers` are designed with iteration in mind, and a small match set reduces computational time when iterating through all matches.
 # `Palindrome` matches palindromes with word-char boundaries.
 # The PCRE pattern includes non-words matches in the padding of palindromes, a superset of `Palindrome`.
 # PCRE-equivalent matching can be achieved by combining the stricly matching `Palindrome` with parsers for the padding.
-padding=Repeat(CharNotIn(p.parser.word_char))
-match(p*padding*AtEnd(),s) |> get
+padding=Repeat(CharNotIn(fast_palindrome.parser.word_char))
+match(fast_palindrome*padding*AtEnd(),s) |> get
 
-# TODO: Memoization here!
-#
 # `Palindrome` matches from center to right, like a lookbehind parser.
+# Padding to the left is not matched:
+match(fast_palindrome*padding*AtEnd(),"  "*s) |> get
+
+# Also, the left part can be parsed separately.
+match(!Repeat(AnyChar())*fast_palindrome*padding*AtEnd(),"  "*s) |> get
+
 # A prefix parser to the left requires a parser for the left-part coupled by filter:
 palindrome = filter(
     Sequence(
@@ -271,12 +275,15 @@ palindrome = filter(
         end
 
 # Now we can express the full pattern
-p = AtStart() * padding * (palindrome) * padding * AtEnd()
-match(p,s)
+p = padding * (palindrome) * padding * AtEnd()
+match(p,"skipped: "*s)
 
-# Or with
-parse(p,s)
-# ## Next...
+# This extra complexity comes at a cost:
+@benchmark match(p,$("skipped: "*s))
+
+
+# # Next...
+# - optimize with memoization
 # - match also palindromes with odd number of letters
 # - elaborate on iteration documentation
 # - comparative benchmarking, conditional on palindrome length
