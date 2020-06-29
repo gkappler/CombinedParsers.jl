@@ -1,5 +1,5 @@
 # # A fast [Trie](https://github.com/gkappler/Tries.jl)-based parser for a collection of literal Strings.
-# Matching any of many words (e.g. names) is slow in PCRE with `|` alternatives.
+# Matching any one of many `String`s (e.g. names) is slow in PCRE with `|` alternatives.
 using Random
 s = [ randstring(10) for _ in 1:1000 ];
 re = Regex(join(s,"|"));
@@ -9,9 +9,10 @@ re = Regex(join(s,"|"));
 #
 # TODO: Benchmark Automa.jl here
 #
-# `CombinedParsers` does not use state machines, but can 
-# `CombinedParsers` provides fast `_iterate` implementation for `Either{Trie{Char}}`,
+# `CombinedParsers` does not use state machines, but 
+# provides fast `_iterate` implementation for `Either{Trie{Char}}`,
 # that is constructed with `Either(::Vector{<:AbstractString})`
+using CombinedParsers
 pc = Either(s);
 @benchmark match(pc,s[end])
 

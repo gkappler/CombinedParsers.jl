@@ -55,10 +55,11 @@ re = Regex(pt.pattern...)
 
 # 
 s=pt.test[3].sequence
+match(re, s)
 
 # PCRE matching example 3 is fast
 using BenchmarkTools
-@time match(re, s)
+@benchmark match(re, s)
 
 # ### Tree display of regex
 # I find it hard to understand the compact captures `(.)`, even in a nested tree display:
@@ -71,9 +72,8 @@ cp = Regcomb(pt.pattern...)
 #
 # In practice `CombinedParsers` [`Regcomb`](@ref) of the regular expression will detect palindromes too.
 # Palindrome matching provides an interesting cross-parser performance benchmark.
-@time match(cp, s)
+@benchmark match(cp, s)
 # `CombinedParsers.Regexp.Subroutine` matching is slow because the current implementation is using state-copies of captures.
-# (TODO: could be a stack?).
 
 # ## 2. A non-word skipping `Palindrome<:CombinedParser`
 # This example of `Palindrome<:CombinedParser` is a much faster palindrome parser and more interesting and more easy to write.
@@ -124,8 +124,8 @@ STATE = NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}
 RESULT = SubString
 struct Palindrome{P} <: CombinedParser{STATE,RESULT}
     word_char::P
-    Palindrome() = Palindrome(UnicodeClass(:L))
 end
+Palindrome() = Palindrome(UnicodeClass(:L))
 
 # ### Matching
 # With the inside-out stratedy, the implementation greedily expands over non-word characters.
@@ -222,6 +222,15 @@ end
 # Note that the greedy-only behaviour was atomic in terms of regular expression, which can be restored with [`Atomic`](@ref)
 p = Atomic(Palindrome())
 get.(match_all(p,s)) |> collect
+
+# ## Performance
+@benchmark match(long_palindrome,s)
+
+# Replacing the `UnicodeClass` matcher (calling `categorycode`) with a fast tuple `==` check shaves off some extra time:
+fast_palindrome = filter(Palindrome(CharNotIn(tuple(" ,!:"...)))) do sequence, till, posi, after, state
+    state.right-state.left+1 > 5
+end
+@benchmark match(fast_palindrome,s)
 
 # ## Padding and combining
 # Note that the PCRE pattern included outside non-words, specifically the tailing `!`.
