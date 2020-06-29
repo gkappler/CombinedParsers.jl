@@ -14,7 +14,6 @@ import Base: (^), (*), (~), (/), (|), (!), cat, get, prevind, nextind
 using Nullables
 using AutoHashEquals
 
-
 using TextParse
 import TextParse: AbstractToken
 import Base: ==, hash
@@ -575,13 +574,6 @@ end
     return ni, MatchState()
 end
 
-
-"""
-Parsers that do not consume any input can inherit this type.
-"""
-abstract type LookAround{T} <: NIndexParser{0,T} end
-children(x::LookAround) = (x.parser,)
-
 export AtStart, AtEnd
 """
     AtStart()
@@ -678,6 +670,15 @@ nextind(str,i::Int,p::Always,x) = i
 
 Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
     print(io,"re\"",regex_string(x),"\"")
+
+
+"""
+Parsers that do not consume any input can inherit this type.
+"""
+abstract type LookAround{T} <: NIndexParser{0,T} end
+children(x::LookAround) = (x.parser,)
+_iterate(t::LookAround, str, till, posi, next_i, state::MatchState) =
+    nothing
 
 export PositiveLookahead
 """
