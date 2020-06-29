@@ -3,6 +3,8 @@
 using Random
 s = [ randstring(10) for _ in 1:1000 ];
 re = Regex(join(s,"|"));
+
+using BenchmarkTools
 @benchmark match(re,s[end])
 
 # A optimized state-machine parser will perform much better.
