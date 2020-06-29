@@ -1855,38 +1855,39 @@ end
 # end
 
 
-@generated function get(parser::Sequence{pts}, sequence, till::Int, after::Int, posi::Int, states) where pts
+@generated function get(parser::Sequence{pts,sts}, sequence, till::Int, after::Int, posi::Int, states) where {pts,sts}
     fpts = fieldtypes(pts)
+    spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
     n = length(fpts)
-    subresult = Symbol[ gensym(:r) for p in fpts ]
-    part = Symbol[ gensym(:part) for p in fpts ]
-    pposi = Symbol[ gensym(:pos) for p in 1:(n+1) ]
-    substate = Symbol[ gensym(:s) for p in fpts ]
-    init = if states===MatchState
+    subresult = Symbol[ gensym(:r) for i in fpts ]
+    part = Symbol[ gensym(:part) for i in fpts ]
+    pposi = Symbol[ gensym(:pos) for i in 1:(n+1) ]
+    substate = Symbol[ gensym(:s) for i in fpts ]
+    init = if states<:MatchState
         [
             quote
-            $(substate[p]) = MatchState()
-            @inbounds $(part[p]) = parser.parts[$p]
-            $(pposi[p])::Int = 0
+            $(substate[i])::MatchState = MatchState()
+            @inbounds $(part[i])::$p = parser.parts[$i]
+            $(pposi[i])::Int = 0
             end
-            for (p,t) in enumerate(fpts)
+            for (i,(t,p)) in enumerate(zip(spts,fpts))
         ]
     else
         [
             quote
-            $(substate[p]) = states[$p]
-            @inbounds $(part[p]) = parser.parts[$p]
-            $(pposi[p])::Int = 0
+            $(substate[i])::$t = states[$i]
+            @inbounds $(part[i])::$p = parser.parts[$i]
+            $(pposi[i])::Int = 0
             end
-            for (p,t) in enumerate(fpts)
+            for (i,(t,p)) in enumerate(zip(spts,fpts))
         ]
     end
     parseparts = [
         quote
-        $(pposi[p+1]) = nextind(sequence,$(pposi[p]),$(part[p]),$(substate[p]))
-        $(subresult[p]) = get($(part[p]),sequence, till, $(pposi[p+1]), $(pposi[p]), $(substate[p]))
+        $(pposi[i+1]) = nextind(sequence,$(pposi[i]),$(part[i]),$(substate[i]))
+        $(subresult[i]) = get($(part[i]),sequence, till, $(pposi[i+1]), $(pposi[i]), $(substate[i]))
         end
-        for (p,t) in enumerate(fpts)
+        for (i,t) in enumerate(fpts)
     ]
     R = quote
         $(pposi[end])::Int = after
@@ -1956,52 +1957,54 @@ function _iterate_(parser::Sequence, sequence, till, posi, next_i, states)
     error("?")
 end
 
-@generated function _iterate(parser::Sequence{pts}, sequence, till, posi, next_i, states) where pts
+@generated function _iterate(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,sts}} where {pts<:Tuple,sts}
     fpts = fieldtypes(pts)
+    spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
     n = length(fpts)
     subsearch = Symbol[ gensym(:subsearch) for p in fpts ]
     subresult = Symbol[ gensym(:r) for p in fpts ]
     part = Symbol[ gensym(:part) for p in fpts ]
     pposi = Symbol[ gensym(:pos) for p in 1:(n+1) ]
     substate,init = if states<:Nothing
-        substate = Symbol[ gensym(:s) for p in fpts ]
+        substate = Symbol[ gensym(:s) for i in fpts ]
         substate, [
             quote
-            $(substate[p]) = nothing
-            @inbounds $(part[p]) = parser.parts[$p]
-            $(pposi[p])::Int = 0
+            $(substate[i])::$t = nothing
+            @inbounds $(part[i])::$p = parser.parts[$i]
+            $(pposi[i])::Int = 0
             end
-            for (p,t) in enumerate(fpts)
+            for (i,(p,t)) in enumerate(zip(fpts,spts))
         ]
     elseif states<:MatchState
-        substate = Symbol[ gensym(:s) for p in fpts ]
+        substate = Symbol[ gensym(:s) for i in fpts ]
         substate, [
             quote
-            $(substate[p]) = MatchState()
-            @inbounds $(part[p]) = parser.parts[$p]
-            $(pposi[p])::Int = 0
+            $(substate[i])::Union{Nothing,MatchState} = MatchState()
+            @inbounds $(part[i])::$p = parser.parts[$i]
+            $(pposi[i])::Int = 0
             end
-            for (p,t) in enumerate(fpts)
+            for (i,(p,t)) in enumerate(zip(fpts,spts))
         ]
     elseif states<:Vector
-        substate = Expr[ Expr(:ref,:states,p)
-                         for p in 1:n ]
+        substate = Expr[ Expr(Symbol("::"), Expr(:ref,:states,i), t) for (i,(p,t)) in enumerate(zip(fpts,spts)) ]
+        ## substate = Symbol[ gensym(:s) for i in fpts ]
         substate, [
             quote
-            @inbounds $(part[p]) = parser.parts[$p]
-            $(pposi[p])::Int = 0
+            ## @inbounds $(substate[i])::$t = states[$i]
+            @inbounds $(part[i])::$p = parser.parts[$i]
+            $(pposi[i])::Int = 0
             end
-            for (p,t) in enumerate(fpts)
+            for (i,(p,t)) in enumerate(zip(fpts,spts))
         ]
     else ## Tuple
-        substate = Symbol[ gensym(:s) for p in fpts ]
+        substate = Symbol[ gensym(:s) for i in fpts ]
         substate, [
             quote
-            @inbounds $(substate[p]) = states[$p]
-            @inbounds $(part[p]) = parser.parts[$p]
-            $(pposi[p])::Int = 0
+            @inbounds $(substate[i])::$t = states[$i]
+            @inbounds $(part[i])::$p = parser.parts[$i]
+            $(pposi[i])::Int = 0
             end
-            for (p,t) in enumerate(fpts)
+            for (i,(p,t)) in enumerate(zip(fpts,spts))
         ]
     end
 
@@ -2013,6 +2016,7 @@ end
         :(Any[ $([ :(($(s))) for s in substate ]...) ] )
     elseif states <: Vector
         quote
+            ## $( [ :(@inbounds states[$i]=$(substate[i])) for i in 1:n ]...)
             states
         end
     else
