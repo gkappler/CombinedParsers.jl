@@ -7,20 +7,19 @@
 #
 # This post explains how a computer can read a text (parsing) with 
 # a simple example, reading a name in a letter, a list of students, or citizens.
-# The post also explains how to program a parser in julia.
+# The post also explains how to program a [`CombinedParser`](@ref) in julia using [`@syntax`](@ref).
 #
 # Let's get to it:
 # These examples represent how a name should be parsed into a Julia `NamedTuple` representation.
+# You can write a program to parse such names and addresses
 using CombinedParsers
 using CombinedParsers.Regexp
-# you can write a program to parse such names and addresses.
+# ## Names
+# can be written in many ways.
 # The example uses parser building blocks:
 import CombinedParsers.Regexp: word, words
 import CombinedParsers.Regexp: whitespace_horizontal, whitespace_maybe, newline
-
-# ## Names
-# can be written in many ways.
-# The way a name is written tn terms of these building blocks, is a
+# A name can be written in terms of these building blocks, 
 @syntax for name in texts
     examples = (
         "Lieber Lorenz,"    => (greeting="Lieber", lastname = missing, name="Lorenz"),
@@ -52,28 +51,28 @@ import CombinedParsers.Regexp: whitespace_horizontal, whitespace_maybe, newline
     end
 end;
 
-# `CombinedParsers.@syntax` defines a string macro for using the syntax parser in your Julia program:
+# `CombinedParsers.@syntax` defines a string macro `name""` for using the syntax parser in your Julia program:
 # See also [`@syntax`](@ref)
 name"Person, Called"
 
-# `CombinedParsers.@syntax` defines a syntax parser to use in your Julia program:
+# `CombinedParsers.@syntax` also defines a syntax parser function `name()` to use in your Julia program:
 name("Best,"*whitespace_maybe, "Best, yours truly")
 
 
 # ## Addresses
-# On a letter, you find the
+# On a letter, you see the
 @syntax for street_address in texts
     examples = "Am Hang 19" => (street="Am Hang", no=19)
-    Sequence(:street => !Repeat(AnyChar()),
+    Sequence(:street => !!Repeat(AnyChar()),
              " ",
              :no =>Numeric(Int))
-end
+end;
 
 # In programming, regular expressions are the standard language for matching sequences of letters, a `String`.
 # The street is a sequence of alphabetical symbols or space (not numbers or `AnyChar()`)
 # can be written concisely as `re"Regex"`:
 @syntax for street_address in texts ## todo: override in Either
-    Sequence(:street => !re"[[:alpha:] ]+", whitespace_horizontal, :no =>Numeric(Int))
+    Sequence(:street => !!re"[[:alpha:] ]+", whitespace_horizontal, :no =>Numeric(Int))
 end;
 
 street_address"Allee 47"
