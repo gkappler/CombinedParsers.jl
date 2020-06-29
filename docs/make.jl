@@ -43,8 +43,8 @@ makedocs(;
             "PCRE Compliance" => "man/pcre-compliance.md",
         ],
         "Examples" => [
-            "Name and addresses" => "man/example-person.md",
-            "Number sequences" => "man/example-number-ranges.md",
+            "What is Parsing? Names..." => "man/example-person.md",
+            "Representations: Number sequences" => "man/example-number-ranges.md",
             "Palindrome<:CombinedParser" => "man/example-palindromes.md",
             "Regular Expressions" => "man/pcre.md",
             "JSON" => "man/json.md",

@@ -25,8 +25,14 @@ parse(!pc,s[end])
 s = [ randstring(10) for _ in 1:10000 ];
 re = Regex(join(s,"|"));
 
-# `CombinedParsers` displays stable performance.
+# `CombinedParsers` displays good time complexity.
 pc = Either(s);
+@benchmark Either(s);
 @benchmark match(pc,s[end])
 
+
 # `Either{Trie{Char}}` can be used to perform fast text search in Julia.
+# # Next
+# - Flesh out text search example.
+# - Parallelization
+# - Relate to Aho-Corasick algorithm.

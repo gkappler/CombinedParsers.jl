@@ -12,7 +12,7 @@ import ..CombinedParsers: Repeat_max
 #(*LIMIT_MATCH=d)
 #(*LIMIT_RECURSION=d)
 whitespace_string = " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B"
-whitespace_char = CharIn(whitespace_string)
+whitespace_char = CharIn("[:space:]",whitespace_string)
 meta_chars = raw"\^$.[|()?*+{"
 
 # The horizontal space characters are:
@@ -132,7 +132,7 @@ end
 Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax ",e.message)
 
  
-hex_digit = CharIn('A':'F','a':'f','0':'9')
+hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
 _integer(maxchar=3) =
     Sequence(Optional('-'),integer_base(10,1,maxchar)) do v
         if v[1]===missing
@@ -342,19 +342,19 @@ end;
             2,
             "[:",
             Either(
-                "alnum" => CharIn(UnicodeClass("L","N")), # Xan
-                "alpha" => CharIn(UnicodeClass("L")),
+                "alnum" => CharIn("[:alnum:]",UnicodeClass("L","N")), # Xan
+                "alpha" => CharIn("[:alpha:]",UnicodeClass("L")),
                 ##"ascii" => CharIn(UnicodeClass("InBasicLatin")),
-                "blank" => CharIn(UnicodeClass("Zs"),'\t'),
-                "cntrl" => CharIn(UnicodeClass("Cc")),
-                "digit" => CharIn(UnicodeClass("Nd")),
-                "graph" => CharNotIn(UnicodeClass("Z","C")),
-                "lower" => CharIn(UnicodeClass("Ll")),
-                "print" => CharIn(UnicodeClass("C")),
-                "punct" => CharIn(UnicodeClass("P")),
-                "space" => CharIn(UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
-                "upper" => CharIn(UnicodeClass("Lu")),
-                "word" => CharIn(UnicodeClass("L","Nl","Nd","Pc")),
+                "blank" => CharIn("[:blank:]",UnicodeClass("Zs"),'\t'),
+                "cntrl" => CharIn("[:cntrl:]",UnicodeClass("Cc")),
+                "digit" => CharIn("[:digit:]",UnicodeClass("Nd")),
+                "graph" => CharNotIn("[:space:]",UnicodeClass("Z","C")),
+                "lower" => CharIn("[:lower:]",UnicodeClass("Ll")),
+                "print" => CharIn("[:print:]",UnicodeClass("C")),
+                "punct" => CharIn("[:punct:]",UnicodeClass("P")),
+                "space" => CharIn("[:space:]",UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
+                "upper" => CharIn("[:upper:]",UnicodeClass("Lu")),
+                "word" => CharIn("[:word:]",UnicodeClass("L","Nl","Nd","Pc")),
                 "xdigit" => hex_digit,
             ),
             ":]"),
