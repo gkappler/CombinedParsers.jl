@@ -1370,6 +1370,8 @@ CharIn(chars::String) =
     CharIn("",chars)
 CharIn(x_...) =
     CharIn("",x_...)
+CharIn(chars::StepRange) =
+    CharIn("$(chars.start)-$(chars.stop)",chars)
 
 """
     CharIn(unicode_class::Symbol...)
@@ -1443,6 +1445,8 @@ CharNotIn(pcre::String,x_...) =
     CharNotIn(pcre,optimize(CharNotIn,x_...))
 CharNotIn(chars::String) =
     CharNotIn("",chars)
+CharNotIn(chars::StepRange) =
+    CharNotIn("$(chars.start)-$(chars.stop)",chars)
 CharNotIn(x_...) =
     CharNotIn("",x_...)
 result_type(::Type{<:CharNotIn}) = Char
