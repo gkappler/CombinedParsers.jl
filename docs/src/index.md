@@ -12,15 +12,22 @@ log conveniently for debugging, and let Julia compile your parser for performanc
 
 ##### Package Features
 
-- Clear syntax integrates grammar and transformations with Julia type inference.
-- Higher-order parsers depending on the parsing state allow for not context-free parsers.
-- All valid parsings can be iterated lazily.
-- Interoperable with [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
-- Parametric parser and state types enable Julia compiler optimizations.
-- Compiled regular expression parsers in pure julia are provided with the `re_str` macro.
-- [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides colored and clearly layed out printing in the REPL.
-- Convenient logging of the parsing process with `NamedParser`s and `SideeffectParser`s.
-- CombinedParsers generalize from strings to parsing any type supporting `getindex`, `nextind`, `prevind` methods.
+- Simplicity
+  - Clear `@syntax` integrates transformations with Julia type inference.
+  - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides colored and clearly layed out printing in the REPL.
+  - Convenient logging of the parsing process with `NamedParser`s and `SideeffectParser`s.
+- Interoperability
+  - [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
+  - Pure Julia regular expression parsers are provided with the `re_str` macro, a plug-in replacement for `Base.@r_str`.
+	Tested on the PCRE pattern test set.
+- Speed
+  - Julia compiler optimizations for parametric parser and state types: write parsers faster than PCRE!
+  - Fast Trie-based scanning
+  - (planned: memoization)
+- Generality
+  - All valid parsings can be iterated lazily.
+  - Higher-order parsers depending on the parsing state allow for not context-free parsers.
+  - CombinedParsers generalize from strings to parsing any sequence type supporting `getindex`, `nextind`, `prevind` methods.
 
 
 ## Getting started
