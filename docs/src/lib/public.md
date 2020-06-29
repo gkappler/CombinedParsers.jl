@@ -68,7 +68,6 @@ Repeat1
 Repeat_stop
 Repeat_until
 Base.join
-alternate
 ```
 
 ### Logging and Side-Effects

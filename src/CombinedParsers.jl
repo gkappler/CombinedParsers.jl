@@ -1061,7 +1061,7 @@ julia> @syntax for us_street_address in street_address
        end
 🗄 Sequence |> map(#38) |> with_name(:us_street_address)
 ├─ TextParse.Numeric{Int64} TextParse.Numeric |> with_name(:no)
-├─ \  
+├─ \\  
 └─ .* AnyChar |> Repeat |> JoinSubstring |> with_name(:street)
 ::NamedTuple{(:no, :street),Tuple{Int64,SubString}}
 
