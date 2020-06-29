@@ -1085,7 +1085,7 @@ macro syntax(block)
             :($within)
         else ## new Either
             quote
-                global $within = Either{result_type($name)}()
+                @syntax $within = Either{Any}()
             end
         end
         body = block.args[2]
