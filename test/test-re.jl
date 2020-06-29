@@ -39,9 +39,9 @@ end
 import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
 @testset "brackets" begin
     @test parse(bracket_char,"a")=='a'
-    @test parse(bracket,"[a-z]")==CharIn('a':'z')
-    @test parse(bracket,with_options(Base.PCRE.EXTENDED_MORE,"[a-z ]"))==CharIn('a':'z')
-    @test parse(bracket,"[\x3f-\x5F]")==CharIn('?':'_')
+    @test parse(bracket,"[a-z]").sets==CharIn('a':'z').sets
+    @test parse(bracket,with_options(Base.PCRE.EXTENDED_MORE,"[a-z ]")).sets==CharIn('a':'z').sets
+    @test parse(bracket,"[\x3f-\x5F]").sets==CharIn('?':'_').sets
     @test parse(parser(']'),"]")==']'
     @test parse(parse(bracket,"[]abc]"),"]")==']'
     @test parse(parse(bracket,"[]-_abc-]"),"]")==']'

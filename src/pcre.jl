@@ -513,7 +513,8 @@ macro pcre_tests()
         unescaped=map(Repeat_until(
             AnyChar(), Sequence(Repeat(' '),'\n');
             wrap=JoinSubstring)) do v
-        parse(!Repeat(charparser),v)
+        ## join Chars after unescaping
+        join(parse(Repeat(charparser),v))
         end;
         parse(unescaped,"abc\n");
         comment_or_empty = Repeat(
