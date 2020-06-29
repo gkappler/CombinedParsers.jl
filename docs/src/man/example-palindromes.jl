@@ -191,10 +191,10 @@ p = Palindrome()
 [ get(m) for m in match_all(p,s) ]
 
 
-# To skip trivial short palindromes we can use `Base.filter` 
-long_palindrome = filter(Palindrome()) do sequence, till, posi, after, state
+# To skip trivial short palindromes we can use `Base.filter`
+islong(sequence, till, posi, after, state) =
     state.right-state.left+1 > 5
-end
+long_palindrome = filter(islong,Palindrome())
 get(match(long_palindrome,s))
 
 # ## Iteration of smaller Sub-palindromes
@@ -223,15 +223,28 @@ end
 p = Atomic(Palindrome())
 get.(match_all(p,s)) |> collect
 
-# ## Performance
+# ## Performance Optimization
 @benchmark match(long_palindrome,s)
 
-# Replacing the `UnicodeClass` matcher (calling `categorycode`) with a fast tuple `==` check shaves off some extra time:
-fast_palindrome = filter(Palindrome(CharNotIn(tuple(" ,!:"...)))) do sequence, till, posi, after, state
-    state.right-state.left+1 > 5
-end
+# After writing a `CombinedParser` 
+## using Profile
+# is recommended to investigate options to optimize.
+## f(n) = for _ in 1:n; match(fast_palindrome,s); end
+## @profile f(10000)
+## Profile.clear()
+## @profile f(1000000)
+## ProfileView.view()
+# ![](profile-palindrome-unicodeclass.png)\n\n
+# `Combinedparsers` was optimized for minimal garbage collection (Red bars indicating garbage collection are in the `f` function).
+#
+# Here, replacing the `UnicodeClass` matcher (calling `categorycode`) with a fast tuple `==` check shaves off some extra time:
+fast_palindrome = filter(islong,Palindrome(CharNotIn(tuple(" ,!:"...))))
 @benchmark match(fast_palindrome,s)
 
+# Note, that `CharNotIn(tuple(" ,!:"...))` is faster than the default `CharNotIn(" ,!:"...)` using `Base.Set` in case of very few `Char`s..
+# Further possible optimization are
+# - Caching prevind, nextind
+# - Memoization
 # ## Padding and combining
 # Note that the PCRE pattern included outside non-words, specifically the tailing `!`.
 re = Regex(pt.pattern...)
