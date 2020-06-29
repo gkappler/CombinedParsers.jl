@@ -507,13 +507,15 @@ macro pcre_tests()
             end,
             CombinedParsers.Regexp.escaped_character,
             AnyChar())
-        
+        ## compile
+        parse(charparser,"a");
         
         unescaped=map(Repeat_until(
             AnyChar(), Sequence(Repeat(' '),'\n');
             wrap=JoinSubstring)) do v
-        join(parse(Repeat(charparser),v))
+        parse(!Repeat(charparser),v)
         end;
+        parse(unescaped,"abc\n");
         comment_or_empty = Repeat(
             JoinSubstring(Either(
                 Sequence(

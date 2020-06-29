@@ -52,22 +52,26 @@ re = Regex(pt.pattern...)
 ## TODO: re"\W" show `UnicodeClass`
 #
 # The pattern makes intense use of backreferences and subroutines.
+
+# 
+s=pt.test[3].sequence
+
+# PCRE matching example 3 is fast
+using BenchmarkTools
+@time match(re, s)
+
 # ### Tree display of regex
 # I find it hard to understand the compact captures `(.)`, even in a nested tree display:
 cp = Regcomb(pt.pattern...)
 # Why no backreference `\1`, why no subroutine `(?2)`?
 # Theoretical linguists, I wonder, is the minimum number of capture groups 4, for a regular expression matching palimdromes?
 
-# Matching example 3 is fast
-using BenchmarkTools
-@time match(re, pt.test[3].sequence)
-
 # Writing a palimdrome parser should be easier.
 # And with julia compiler it should be faster.
 #
 # In practice `CombinedParsers` [`Regcomb`](@ref) of the regular expression will detect palimdromes too.
 # Palimdrome matching provides an interesting cross-parser performance benchmark.
-@time match(cp, pt.test[3].sequence)
+@time match(cp, s)
 # `CombinedParsers.Regexp.Subroutine` matching is slow because the current implementation is using state-copies of captures.
 # (TODO: could be a stack?).
 
@@ -97,8 +101,26 @@ end
 ( prev_index=seek_word_char(prevind, "two   words", 4),
   next_index=seek_word_char(nextind, "two   words", 4) )
 
+# ### Subtyping `<: CombinedParser`: `state_type` and `result_type`.
+# A custom parser needs a method to determine if there is a match and its extent at a position.
+# How can this be implemented for a palimdrome?
+# There are two strategies:
+# 1. inside-out: start at a position as `center`
+#    - expand `left` and `right` from `center` until they are at word characters 
+#    - until word character left does not match word character at right.
+#    - Succeed if a minimal length is met. Fail otherwise.
+# 2. outside-in: start `left` and `right`,
+#    - move positions towards `center` until they are at word characters and
+#    - succeed if left and right positions meet at the center,
+#    - compare these characters, and proceed to the next positions if the word characters match or fail if there is a mismatch.
+#    (This might be [the-fastest-method-of-determining-if-a-string-is-a-palindrome](https://stackoverflow.com/questions/21403782/the-fastest-method-of-determining-if-a-string-is-a-palindrome).  But I figure finding all palimdrome matches in a string is slow because you would be required to test for all possible substrings.)
+# The inside out strategy seems easier and faster.
+# With the inside-out stratedy, the implementation greedily expands over non-word characters.
+# 
+# The state of a match will be represented as `NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}`.
+
 # ### Subtyping `<: CombinedParser`
-struct Palimdrome{P} <: CombinedParser{SubString}
+struct Palimdrome{P} <: CombinedParser{NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}},SubString}
     word_char::P
     Palimdrome(x) = new{typeof(x)}(x)
     ## UnicodeClass(:L) creation currently is slow, but required only once by default.
@@ -106,31 +128,10 @@ struct Palimdrome{P} <: CombinedParser{SubString}
 end
 ## @btime UnicodeClass(:L)
 
-
 # ### Matching
-# A custom parser needs a method to determine if there is a match at a position, and its state.
-# How can this be implemented for a palimdrome?
-# There are two strategies:
-# 1. inside-out:  expand left and right from position until word character left does not match word character at right. Succeed if a minimal length is met. Fail otherwise.
-# 2. outside-in: start left and right, move positions towards middle until they are at word characters and succeed if left and right positions meet, compare these characters, and proceed to the next positions if the word characters match or fail if there is a mismatch. (This might be [the-fastest-method-of-determining-if-a-string-is-a-palindrome](https://stackoverflow.com/questions/21403782/the-fastest-method-of-determining-if-a-string-is-a-palindrome).  But I figure finding all palimdrome matches in a string is slow because you would be required to test for all possible substrings.)
-# The inside out strategy seems easier and faster.
-
 # ### Matching greedy
-# With the inside-out stratedy, the implementation greedily expands over non-word characters.
-# The state of a match will be represented as
-import CombinedParsers: state_type
-CombinedParsers.state_type(::Type{<:Palimdrome}) =
-    NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}
 
-# For the inside-out strategy the `Palimdrome<:CombinedParser` is a parser that looks behind the current index.
-# The start index of a palimdrome match is its center.
-Base.prevind(str,after::Int,p::Palimdrome,state) =
-    state.center
-Base.nextind(str,i::Int,p::Palimdrome,state) =
-    nextind(str,state.right)
-# `prevind` and `nextind` methods for a custom parser are required during the match iteration process.
- 
-# Computing the first match at `posi`tion is done by method dispatch `_iterate(parser::Palimdrome,str,till,posi,after,state::Nothing)`.
+# Computing the first match at `posi`tion is done by this method dispatch
 function CombinedParsers._iterate(x::Palimdrome,
                                   str, till,
                                   posi, after,
@@ -155,14 +156,22 @@ function CombinedParsers._iterate(x::Palimdrome,
               (left=left_, center=posi, right=right_))
     end
 end
-
 # (Feedback appreciated: Would is be more efficient change the `_iterate` internal API for the first match to arity 4?)
 # The internal API calls (for the center index 18):
 # TODO: state = _iterate(Palimdrome(),s,18)
 # _iterate matches the right part of the palimdrome iif posi at the center of a palimdrome. 
 # - greedily expand status and parsing position over non-word characters.
-s=pt.test[3].sequence
 state = _iterate(Palimdrome(),s,lastindex(s),18,18,nothing)
+
+
+# `prevind` and `nextind` methods for a custom parser are used during the match iteration process.
+# Note that for the inside-out strategy the `Palimdrome<:CombinedParser` matches from `center` and looks behind until `right`, possibly overlapping with the last match(es).
+# The start index of a palimdrome match is its center.
+Base.prevind(str,after::Int,p::Palimdrome,state) =
+    state.center
+Base.nextind(str,i::Int,p::Palimdrome,state) =
+    nextind(str,state.right)
+ 
 
 # ### `match` and `get`
 # [`_iterate`](@ref) is called when the public API `match` or `parse` is used.
