@@ -163,11 +163,15 @@ Parse a string with a CombinedParser as an instance of `result_type(parser)`.
 If `log` is a `Vector{Symbol}`, parser is transformed with `log_names(p, log)`.
 See also [`log_names`](@ref).
 
+```@meta
+DocTestFilters = r"map\(.+\)"
+```
+
 ```jldoctest
 julia> using TextParse
 
 julia> p = ("Number: "*TextParse.Numeric(Int))[2]
-🗄 Sequence |> map(#31)
+🗄 Sequence |> map(IndexAt(2))
 ├─ Number\\:\\
 └─ <Int64>
 ::Int64

@@ -1033,20 +1033,39 @@ With `@syntax for name in either; expr; end` the defined parser is [`pushfirst!`
 If `either` is undefined, it will be created.
 If `either == :text || either == Symbol(:)` the parser will be added to `CombinedParser_globals` variable in your module.
 
+```@meta
+DocTestFilters = r"map\(#[^)]+\)"
+```
+
 ```jldoctest
-julia> @syntax german_street_address = Sequence(:street => !Repeat(AnyChar()),
+julia> @syntax for german_street_address in street_address
+            Sequence(:street => !Repeat(AnyChar()),
                  " ",
                  :no =>Numeric(Int))
+       end
+🗄 Sequence |> map(#38) |> with_name(:german_street_address)
+├─ .* AnyChar |> Repeat |> JoinSubstring |> with_name(:street)
+├─ \\
+└─ TextParse.Numeric{Int64} TextParse.Numeric |> with_name(:no)
+::NamedTuple{(:street, :no),Tuple{SubString,Int64}}
 
 julia> german_street_address"Some Avenue 42"
+NamedTuple{(:street, :no),Tuple{SubString,Int64}}(("Some Avenue", 42))
 
-julia> @syntax for german_street_address in street_address; end;
 
 julia> @syntax for us_street_address in street_address
-    Sequence(:no =>Numeric(Int), " ", :street => !Repeat(AnyChar()))
-end;
+            Sequence(:no =>Numeric(Int),
+                     " ",
+                     :street => !Repeat(AnyChar()))
+       end
+🗄 Sequence |> map(#38) |> with_name(:us_street_address)
+├─ TextParse.Numeric{Int64} TextParse.Numeric |> with_name(:no)
+├─ \  
+└─ .* AnyChar |> Repeat |> JoinSubstring |> with_name(:street)
+::NamedTuple{(:no, :street),Tuple{Int64,SubString}}
 
 julia> street_address"50 Oakland Ave"
+NamedTuple{(:no, :street),Tuple{Int64,SubString}}((50, "Oakland Ave"))
 ```
 """
 macro syntax(block)
@@ -1366,17 +1385,9 @@ export regex_escape
 ## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
 """
         regex_escape(s::AbstractString)
-    regular expression metacharacters are escaped along with whitespace.
-    # Examples
-    ```jldoctest
-    julia> regex_escape("Bang!")
-    "Bang\\!"
-    julia> regex_escape("  ( [ { . ? *")
-    "\\ \\ \\(\\ \\[\\ \\{\\ \\.\\ \\?\\ \\*"
-    julia> regex_escape("/^[a-z0-9_-]{3,16}\$/")
-    "/\\^\\[a\\-z0\\-9_\\-\\]\\{3,16\\}\\\$/"
-    ```
-    """
+
+regular expression metacharacters are escaped along with whitespace.
+"""
 function regex_escape(s)
     res = replace(escape_string(string(s)), r"([()[\]{}?*+\-|^\$.&~#\s=!<>|:])" => s"\\\1")
     replace(res, "\0" => "\\0")
@@ -1417,21 +1428,8 @@ Parser matching exactly one character in `x`.
 julia> a_z = CharNotIn('a':'z')
 re"[^a-z]"
 
-julia> parse(a_z, "a")
-ERROR: ArgumentError: no successfull parsing.
-Stacktrace:
- [1] parse(::CharNotIn{Tuple{StepRange{Char,Int64}}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2649
- [2] top-level scope at REPL[19]:1
-
 julia> ac = CharNotIn("ac")
 re"[^ac]"
-
-
-julia> parse(ac, "c")
-ERROR: ArgumentError: no successfull parsing.
-Stacktrace:
- [1] parse(::CharNotIn{Array{Char,1}}, ::String) at /home/gregor/dev/julia/CombinedParsers/src/CombinedParsers.jl:2649
- [2] top-level scope at REPL[19]:1
 
 ```
 """
@@ -1531,7 +1529,7 @@ Returns results of `p`.
 ```jldoctest
 julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄* Sequence |> map(IndexAt(2)) |> Repeat
+├─ 🗄* Sequence |> map(#52) |> Repeat
 │  ├─ (?!🗄) NegativeLookahead
 │  │  └─ b
 │  └─ . AnyChar
@@ -1561,8 +1559,8 @@ To transform the `Repeat_stop(p)` parser head, provide a function(::Vector{resul
 ```jldoctest
 julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄 Sequence |> map(IndexAt(1))
-│  ├─ 🗄* Sequence |> map(IndexAt(2)) |> Repeat
+├─ 🗄 Sequence |> map(#52)
+│  ├─ (?>🗄*) Sequence |> map(#52) |> Repeat |> Atomic
 │  │  ├─ (?!🗄) NegativeLookahead
 │  │  │  └─ b
 │  │  └─ . AnyChar
@@ -2078,11 +2076,11 @@ Lazy `x` repetition matching from greedy to lazy.
 
 ```jldoctest
 julia> re"a+?"
-a+?  |> Repeat |> Lazy |> regular expression combinator
+a+?  |> Repeat |> Lazy
 ::Array{Char,1}
 
 julia> re"a??"
-a??  |> Optional(default=missing) |> Lazy |> regular expression combinator
+a??  |> Optional(default=missing) |> Lazy
 ::Union{Missing, Char}
 ```
 """
@@ -2718,7 +2716,7 @@ julia> Either('a',CharIn("AB")|"bc")
 |🗄... Either
 ├─ a
 └─ |🗄... Either
-   ├─ [AB]
+   ├─ [AB] CharIn
    └─ bc
 ::Union{Char, SubString}
 
@@ -2726,7 +2724,7 @@ julia> Either('a',CharIn("AB")|"bc")
 julia> sEither('a',CharIn("AB")|"bc")
 |🗄... Either
 ├─ a
-├─ [AB]
+├─ [AB] CharIn
 └─ bc
 ::Union{Char, SubString}
 

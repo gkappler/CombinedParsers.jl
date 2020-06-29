@@ -69,10 +69,10 @@ Useful for checks like "must not be preceded by `parser`, don't consume its matc
 
 ```jldoctest
 julia> la=NegativeLookbehind("keep")
-re"(?<!peek)"
+re"(?<!keep)"
 
 julia> parse("peek"*la,"peek")
-("peek", 'p')
+("peek", re"(?<!keep)")
 ```
 """
 @auto_hash_equals struct NegativeLookbehind{P} <: LookAround{NegativeLookbehind{P}}

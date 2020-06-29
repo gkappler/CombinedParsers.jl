@@ -693,13 +693,13 @@ The regex also accepts one or more flags, listed after the ending quote, to chan
 
 ```jldoctest
 julia> re"a|c"i
-|🗄... Either |> regular expression combinator
-├─ [aA] CharIn
+|🗄... Either
+├─ [Aa] CharIn
 └─ [cC] CharIn
 ::Char
 
 julia> re"a+c"
-🗄 Sequence |> regular expression combinator
+🗄 Sequence
 ├─ a+  |> Repeat
 └─ c
 ::Tuple{Array{Char,1},Char}

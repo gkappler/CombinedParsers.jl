@@ -47,10 +47,14 @@ end
 
 TextParse.jl integrates with CombinedParsers.jl both ways.
 
+```@meta
+DocTestFilters = r"map\(.+\)"
+```
+
 ```jldoctest
 
 julia> p = ("Number:" * Repeat(' ') * TextParse.Numeric(Int))[3]
-🗄 Sequence |> map(#37)
+🗄 Sequence |> map(IndexAt(3))
 ├─ Number\\:
 ├─ \\ *  |> Repeat
 └─ <Int64>
