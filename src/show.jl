@@ -16,6 +16,10 @@ children(x::MemoTreeChildren) =
         tuple()
     end
 
+function printnode(io::IO, x::MemoTreeChildren{<:Union{Char,AbstractString}})
+    printstyled(io, regex_string(x.child), bold=true, color=:cyan)
+end
+
 function printnode(io::IO, x::MemoTreeChildren)
     printnode(io, x.child)
     x.descend || isempty(children(x.child)) || printstyled(io, " # branches hidden", color=:light_black)
