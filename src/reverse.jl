@@ -100,21 +100,15 @@ function Lookbehind(does_match::Bool, p)
 end
 @deprecate look_behind(does_match,p) Lookbehind(does_match, p)
 
-function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state)
-    if state === nothing
-        rseq=revert(str)
-        next_i < 1 && return next_i, tuple()
-        r = _iterate(t.parser, rseq, till,
-                     reverse_index(rseq,prevind(str,next_i)), nothing)
-        if r === nothing
-            next_i,tuple()
-        else
-            nothing
-        end
-    elseif state === tuple()
-        nothing
+function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing)
+    rseq=revert(str)
+    next_i < 1 && return next_i, MatchState()
+    r = _iterate(t.parser, rseq, till,
+                 reverse_index(rseq,prevind(str,next_i)), nothing)
+    if r === nothing
+        next_i,MatchState()
     else
-        next_i, tuple()
+        nothing
     end
 end
 
