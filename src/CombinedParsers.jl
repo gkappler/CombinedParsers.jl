@@ -1717,10 +1717,10 @@ end
 
 function Sequence(p...)
     s = Sequence(( parser(x) for x = p )...)
-    T = Type[ fieldtypes(result_type(s))... ]
-    names = [ t.first=>i
+    T = fieldtypes(result_type(s))
+    names = ( t.first=>i
               for (i,t) in enumerate(p)
-              if t isa Pair{Symbol,<:ParserTypes} ]
+              if t isa Pair{Symbol,<:ParserTypes} )
     isempty(names) && return s
     NT= NamedTuple{ tuple( (n.first for n in names)...),
                     Tuple{ (T[n.second] for n in names)... }}
