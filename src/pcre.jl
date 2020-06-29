@@ -525,10 +525,8 @@ macro pcre_tests()
                     CombinedParsers.Regexp.at_linestart,
                     Repeat_until(
                         CombinedParsers.Regexp.whitespace_char,'\n')))));
+        parse(comment_or_empty,"# test");
         
-
-
-
         #    @test parse(unescaped,"A\\123B\n") == "ASB"
         @syntax pcre_test = begin
         match_test = Sequence(Repeat1(' '),

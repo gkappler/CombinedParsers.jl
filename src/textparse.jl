@@ -48,7 +48,7 @@ end
 TextParse.jl integrates with CombinedParsers.jl both ways.
 
 ```@meta
-DocTestFilters = r"map\(.+\)"
+DocTestFilters = r"map\\(.+\\)"
 ```
 
 ```jldoctest

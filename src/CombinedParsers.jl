@@ -1035,7 +1035,7 @@ If `either` is undefined, it will be created.
 If `either == :text || either == Symbol(:)` the parser will be added to `CombinedParser_globals` variable in your module.
 
 ```@meta
-DocTestFilters = r"map\(#[^)]+\)"
+DocTestFilters = r"map\\(#[^)]+\\)"
 ```
 
 ```jldoctest

@@ -164,7 +164,7 @@ If `log` is a `Vector{Symbol}`, parser is transformed with `log_names(p, log)`.
 See also [`log_names`](@ref).
 
 ```@meta
-DocTestFilters = r"map\(.+\)"
+DocTestFilters = r"map\\(.+\\)"
 ```
 
 ```jldoctest
