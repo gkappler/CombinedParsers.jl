@@ -8,11 +8,12 @@ using Literate
 docdir = joinpath(dirname(pathof(CombinedParsers)),"../docs/src/")
 mandir = joinpath(docdir,"man")
 DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
+    using TextParse
     using CombinedParsers
     using CombinedParsers.Regexp
 end; recursive=true)
 
-for f in [ "example-person.jl", "example-number-ranges.jl" ]
+for f in [ "example-person.jl", "example-number-ranges.jl", "example-either-trie.jl" ]
     Literate.markdown(joinpath(mandir,f), mandir,
                       repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs",
                       codefence = "```@repl session" => "```")
@@ -38,6 +39,7 @@ makedocs(;
         "Manual" => [
             "Overview" => "man/guide.md",
             "User Guide" => "man/user.md",
+            "Prefix-Tree Matching" => "man/example-either-trie.md",
             "PCRE Compliance" => "man/pcre-compliance.md",
         ],
         "Examples" => [

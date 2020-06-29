@@ -41,7 +41,7 @@ jobs:
       os: linux
       julia: 1.4
       script:
-        - julia -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
+        - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                                Pkg.instantiate()'
         - julia -e 'using Pkg; Pkg.test(coverage=true)'
       after_success: |
