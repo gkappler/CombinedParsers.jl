@@ -92,11 +92,11 @@ import CombinedParsers.Regexp: quantified, repetition, sequence
 @testset "repetitions and optional" begin
     @test parse(Optional('a'),"b")===missing
     @test parse(Optional('a'),"a")==='a'
-    @test parse(repetition,"{1,}") == (1,Repeat_max)
-    @test parse(repetition,"*") == (0,Repeat_max)
-    @test parse(repetition,"+") == (1,Repeat_max)
-    @test parse(repetition,"{3}") == (3,3)
-    @test parse(repetition,"?") == (0,1)
+    @test parse(repetition,"{1,}") == 1:Repeat_max
+    @test parse(repetition,"*") == 0:Repeat_max
+    @test parse(repetition,"+") == 1:Repeat_max
+    @test parse(repetition,"{3}") == 3:3
+    @test parse(repetition,"?") == 0:1
     @test match(parse(quantified,"a*"),"aaab").match=="aaa"
     @test parse(parse(quantified,"a*?"),"aa")==Char[]
     ## lazy support

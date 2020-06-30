@@ -380,17 +380,21 @@ push!(repeatable,bracket);
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
 @with_names repetition = Either(
-    "+"=>(1,Repeat_max),
-    "*"=>(0,Repeat_max),
-    "?"=>(0,1),
-    Sequence(Tuple{Int,Int},
-        "{",integer,
-        Optional(Sequence(2,",",Optional(integer, default=Repeat_max))),"}") do v
+    '+' => 1:Repeat_max,
+    '*' => 0:Repeat_max,
+    '?' => 0:1,
+    Sequence(
+        '{',
+        integer,
+        Optional(Sequence(
+            2,',',
+            Optional(integer, default=Repeat_max))),
+        '}') do v
     if v[3] isa Missing
-    (v[2],v[2])
+    v[2]:v[2]
     else
-    (v[2],v[3])
-    end::Tuple{Int,Int}
+    v[2]:v[3]
+    end::UnitRange{Int}
     end
 )
 
@@ -398,17 +402,17 @@ push!(repeatable,bracket);
     CombinedParser,
     repeatable,
     skip_whitespace_and_comments, ## for test 1130, preserve in map?
-    Optional(repetition, default=(1,1)),
+    Optional(repetition, default=1:1),
     skip_whitespace_and_comments,
     Optional(map(v->convert(Char,v),CharIn('+','?'))), # possessive quantifier, strip option
 ) do v
     pat = sSequence(v[1],v[2]...)
-    result = if v[3]==(1,1)
+    result = if v[3] == 1:1
         parser(pat)
-    elseif v[3]==(0,1)
+    elseif v[3]==0:1
         Optional(pat)
     else
-        Repeat(v[3]...,pat)
+        Repeat(v[3],pat)
     end
     if v[5] === missing
         result

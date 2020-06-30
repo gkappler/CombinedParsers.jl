@@ -207,18 +207,19 @@ $n_failed failed tests on $(n_patterns.failed) patterns
 The PCRE C backend of `@r_str` has arrived at a widely optimized codebase after decades of improvements.
 Although CombinedParsers.jl is a very young package that will be optimized further, 
 `@re_str` pure Julia Regcomb is competitive with PCRE `@r_str` Regex.\n\n
-The benchmarkin results of the first 100 test patterns in the PCRE test set are summarized in the following, comparing `match(Regex(pattern,flags),s)` with `_iterate(Regcomb(pattern,flags),s)`:
 PCRE benchmarks have a range between $(benchmarks.range_Regex[1])ns to $(benchmarks.range_Regex[2])ns.
 CombinedParsers benchmarks range between $(benchmarks.range_Regcomb[1])ns to $(benchmarks.range_Regcomb[2])ns.
 $(round(benchmarks.proportion_better*100))% of benchmarks are faster with CombinedParsers compared to PCRE.
 The average ratio of `time_Recomb/time_Regex` is $(round(benchmarks.mean_ratio,digits=2)).\n\n
-Benchmark timings for regular expression construction and matching comparing `Regex` (x axis) and `Regcomb` (y axis), both on a log10 scale:\n\n
+These benchmarkin results are for the first 100 test patterns in the PCRE test set, comparing `match(Regex(pattern,flags),s)` with `_iterate(Regcomb(pattern,flags),s)`.
 ![](log_btimes.png)\n\n
-Points represent PCRE an individual benchmark.
+Benchmark timings for regular expression construction and matching comparing `Regex` (x axis) and `Regcomb` (y axis), both on a log10 scale.
+Points represent an individual benchmark for a pattern construction or match.
+Cases with `CombinedParsers` being faster than the C library PCRE are paint green, slower cases are red.
 ### Benchmark ratios histogram:
 ![](log_btime_ratio_histogram.svg)\n\n
 
-The histograms of ratios of `time_Regcomb/time_Regex` shows that `CombinedParser` implementation is competitive.
+The histograms of ratios of `time_Regcomb/time_Regex` on a log scale demonstrate that `CombinedParser` implementation is competitive.
 Worst cases are investigated for further optimization [in this IJulia notebook](https://github.com/gkappler/CombinedParsers.jl/blob/master/benchmark/benchmarks.ipynb).
 
 Next steps in optimization are
