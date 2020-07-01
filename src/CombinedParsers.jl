@@ -921,7 +921,7 @@ with_name(name::Symbol,x; doc="") =
 with_name(name::AbstractString,x; doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),x,doc)
 
-log_names_(x::CombinedParser,a...;kw...) = x
+log_names_(x::ParserTypes,a...;kw...) = x
 function deepmap_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function;kw...)
     get!(mem,x) do
         r = NamedParser(x.name,deepmap_parser(f,mem,x.parser,message;kw...))
