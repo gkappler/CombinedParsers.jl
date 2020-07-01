@@ -31,10 +31,22 @@ end
 Default method for parser types returning nothing
 """
 Base.get(
-    parser::AbstractToken{<:Union{Nothing,Always,NegativeLookahead,AtStart,AtEnd,NegativeLookbehind}},
+    parser::Union{Always,NegativeLookahead,AtStart,AtEnd,NegativeLookbehind},
     sequence, till, after,
     i, state) =
     parser
+
+
+
+"""
+    Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state)
+
+Default method for parser types returning nothing
+"""
+Base.get(::AbstractToken{<:Nothing},
+         sequence, till, after,
+         i, state) =
+             nothing
 
 function Base.get(t::PositiveLookbehind,
                   str, till,
