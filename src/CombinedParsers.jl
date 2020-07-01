@@ -74,11 +74,6 @@ result_type(::Type{<:AbstractToken{T}}) where T = T
 
 
 
-## Base.get(x::Palimdrome, str, state) = SubString(str,state...)
-## TODO: dispatch Base.get(x::CombinedParser, str, till::Int, after::Int, posi::Int, state) = Base.get(x, str, after, posi, state)
-## TODO: dispatch Base.get(x::CombinedParser, str, after::Int, posi::Int, state) = Base.get(x, str, posi, state)
-## TODO: dispatch Base.get(x::CombinedParser, str, posi::Int, state) = Base.get(x, str, state)
-
 """
     _iterate(parser, sequence, till::Int, posi::Int[, nothing])
 
@@ -133,32 +128,6 @@ end
 @inline prevind(str,i::Int,parser::Union{AbstractString,Char},x) where L = 
     i-ncodeunits(parser)
 
-############################################################
-## get methods
-"""
-    Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state)
-
-Default method for parser types returning nothing
-"""
-Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state) =
-    nothing
-
-function Base.get(parser::AbstractString, sequence, till, after, i, state)
-    li = prevind(sequence,after)
-    li<i ? "" : @inbounds SubString(sequence,i,li)
-end
-
-function Base.get(parser::Char, sequence, till, after, i, state)
-    @inbounds sequence[i]
-end
-
-@inline tuple_pos(pos_state::Tuple) =
-    pos_state[1]
-
-@inline tuple_state(pos_state::Tuple) =
-    pos_state[2]
-
-
 @inline _prevind(str,i,parser,x::Nothing) = i
 @inline _nextind(str,i,parser,x::Nothing) = i
 @inline _prevind(str,i,parser,x) = prevind(str,i,parser,x)
@@ -209,10 +178,6 @@ function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state
     else
         nothing
     end
-end
-function Base.get(parser::AbstractToken, sequence, till, after, i, state)
-    parser isa CombinedParser && error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
-    state.state
 end
 
 
@@ -364,8 +329,6 @@ regex_inner(x::WrappedParser) = regex_inner(x.parser)
 @inline prevind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i-x.nc
 
 
-Base.get(parser::W, sequence, till, after, i, state) where {W <: WrappedParser} = 
-    get(parser.parser, sequence, till, after, i, state)
 @inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
     _iterate(parser.parser, sequence, till, posi, after, state)
 
@@ -449,8 +412,6 @@ deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
 export map_match
 map_match(f::Function,p_) =
     map(f, JoinSubstring(parser(p_)))
-Base.get(x::JoinSubstring, sequence, till, after, i, state) =
-    SubString(sequence, i, prevind(sequence,after))
 
 
 "wrapper for stepping with ncodeunit length."
@@ -486,14 +447,6 @@ deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
 @inline prevind(str,i::Int,parser::ConstantParser{L},x) where L = 
     i-L
 
-# Base.get(parser::ConstantParser, sequence, till, after, i, state) = parser.parser
-
-Base.get(parser::ConstantParser{1,Char}, sequence, till, after, i, state) where L =
-    sequence[i]
-
-Base.get(parser::ConstantParser{L,<:AbstractString}, sequence, till, after, i, state) where L =
-    parser.parser=="" ? "" : SubString(sequence,i,prevind(sequence,i+L))
-
 @inline function _iterate(parser::ConstantParser{L}, sequence, till, posi, next_i, state::Nothing) where {L}
     _iterate(parser.parser,sequence,till,posi, next_i,state,L)
 end
@@ -513,10 +466,6 @@ abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
     nextind(str,i,L)
 _iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, posi, next_i, state::MatchState)  =
     nothing
-
-
-Base.get(x::NIndexParser{1,Char}, sequence, till, after, i, state) =
-    sequence[i]
 
 export AnyChar, any
 """
@@ -611,12 +560,7 @@ _iterate(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
 print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
 
-Base.get(parser::Union{AtStart,AtEnd}, sequence, till, after, i, state) =
-    parser
 
-
-
- 
 
 export Never
 """
@@ -658,8 +602,6 @@ children(x::Union{Never,Always}) = tuple()
 regex_prefix(x::Always) = ""
 regex_inner(x::Always) = ""
 regex_suffix(x::Always) = ""
-Base.get(parser::LeafParser{<:Any,Always}, sequence, till, after, i, state) =
-    Always()
 _iterate(parser::Always, str, till, posi, next_i, s::Nothing) =
     next_i, MatchState()
 _iterate(parser::Always, str, till, posi, next_i, s::MatchState) =
@@ -717,9 +659,6 @@ function _iterate(t::PositiveLookahead, str, till, posi, next_i, state::Nothing)
     end
 end
 
-function Base.get(t::PositiveLookahead, str, till, after, i, state)
-    get(t.parser, str, till, after, i, state)
-end
 
 export NegativeLookahead
 """
@@ -753,9 +692,6 @@ function _iterate(t::NegativeLookahead, str, till, posi, next_i, state::Nothing)
     else
         nothing
     end
-end
-function Base.get(parser::NegativeLookahead, sequence, till, after, i, state)
-    parser
 end
 
 export Lookahead
@@ -1131,209 +1067,6 @@ macro syntax(block)
     esc(R)
 end
 
-export Transformation
-"""
-    Transformation{T}(transform::Function, p_) where {T}
-    map_at(f::Function, p, a...)
-    map_at(f::Function, Tc::Type, p, a...)
-    instance(Tc::Type, p::ParserTypes, a...)
-    instance(Tc::Type, p::ParserTypes)
-    Base.map(f::Function, Tc::Type, p::ParserTypes, a...)
-    Base.map(f::Function, p::ParserTypes, a...)
-
-Parser transforming result of a wrapped parser. 
-`a...` is passed as additional arguments to `f` (at front .
-"""
-@auto_hash_equals struct Transformation{F,P,S,T} <: WrappedParser{P,S,T}
-    transform::F
-    parser::P
-    Transformation{T}(transform, p_) where {T} =
-        let p = parser(p_)
-            new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
-        end
-    Transformation{T}(transform, p_::NamedParser) where {T} =
-        let p = p_.parser
-            tp = new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
-            with_name(p_.name,tp)
-        end
-end
-deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
-    get!(mem,x) do
-        Transformation{result_type(x)}(
-            x.transform,
-            deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
-
-
-struct Constant{T}
-    value::T
-end
-
-"""
-    Base.get(parser::Transformation, a...)
-
-Constant value `parser.transform` fallback method.
-"""
-function Base.get(parser::Transformation{<:Constant}, sequence, till, after, i, state)
-    parser.transform.value
-end
-function map_constant(transform, p::AbstractToken)
-    T=typeof(transform)
-    Transformation{T}(Constant(transform), p)
-end
-"""
-    parser(constant::Pair{<:ParserTypes})
-
-A parser mapping matches of `x.first` to constant `x.second`.
-
-See also: [`map`](@ref), [`map_at`](@ref)
-"""
-parser(constant::Pair{<:ParserTypes}) =
-    map_constant(constant.second, parser(constant.first))
-
-function _string(io::IO,x::Constant)
-    print(io,"Constant(")
-    show(io,x.value)
-    print(io,")")
-end
-_string(io::IO,x::Function) = print(io,x)
-children(x::Transformation) = children(x.parser)
-function print_constructor(io::IO,x::Transformation)
-    print_constructor(io,x.parser)
-    print(io," |> map(")
-    _string(io,x.transform)
-    print(io,")")
-end
-
-"""
-    Base.get(parser::Transformation{<:Function}, a...)
-
-Function call `parser.transform(get(parser.parser,a...),i)`.
-"""
-function Base.get(parser::Transformation{<:Function}, sequence, till, after, i, state)
-    v = get(parser.parser, sequence, till, after, i, state)
-    parser.transform(v,i)
-end
-
-export IndexAt
-struct IndexAt{I}
-    i::I
-end
-# @inline Base.getindex(x,i::IndexAt) = getindex(x,i.i...)
-_string(io::IO,x::IndexAt) = print(io,"IndexAt(",x.i,")")
-
-"""
-    Base.get(parser::Transformation{<:IndexAt}, a...)
-
-`getindex(get(parser.parser,a...).parser.transform)`
-"""
-function Base.get(parser::Transformation{IndexAt{I}}, sequence, till, after, i, state) where {I <: Integer}
-    v = get(parser.parser,sequence, till, after, i, state)
-    v[parser.transform.i]
-end
-function Base.get(parser::Transformation{IndexAt{Is}}, sequence, till, after, i, state) where {Is <: Union{Tuple, Vector, UnitRange}}
-    tuple(get(parser.parser,sequence, till, after, i, state)[parser.transform.i]...)
-end
-
-
-function _iterate(parser::Transformation, sequence, till, posi, next_i, state)
-    r = _iterate(parser.parser, sequence, till, posi, next_i, state )
-end
-
-function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...)
-    Ts = Base.return_types(f, tuple(result_type(p),ts...))
-    isempty(Ts) && error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
-    ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
-    T = first(Ts)
-    if T <: Tc
-        T
-    else
-        @warn "type mismatch $f$(tuple(result_type(p),ts...))::$T<:$Tc"
-        Tc
-    end
-end
-
-export map,map_at 
-"""
-    map_at(f::Function, p, a...)
-    map_at(f::Function, Tc::Type, p, a...)
-
-Parser transforming result of a wrapped parser. 
-`a...` is passed as additional arguments to `f`.
-
-See also: [`map`](@ref), [`Transformation`](@ref)
-"""
-function map_at(f::Function, Tc::Type, p, a...)
-    T = infer_result_type(f,Tc,p,"call map_at(function,type,parts...)",Int,typeof.(a)...)
-    Transformation{Tc}((v,i) -> (f((v), i, a...)), p)
-end
-function map_at(f::Function, p, a...)
-    T = infer_result_type(f,Any,p,"call map(function,parts...)",Int,typeof.(a)...)
-    Transformation{T}((v,i) -> (f(v, i, a...)), p)
-end
-@deprecate instance_at(a...) map_at(a...)
-
-export Index
-Index = map_at((v,i) -> i, Always())
-
-import Base: map
-"""
-    map(f::Function, p::AbstractToken, a...)
-
-Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
-
-See also: [`map_at`](@ref), [`Transformation`](@ref)
-"""
-function Base.map(f::Function, p::AbstractToken, a...)
-    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{T}((v,i) -> (f(v, a...)), p)
-end
-
-"""
-    map(T::Type, p::AbstractToken, a...)
-
-Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...)`.
-
-See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
-"""
-function Base.map(Tc::Type, p::AbstractToken, a...)
-    Transformation{Tc}((v,i) -> Tc(a..., v), p)
-end
-
-"""
-    map(index::IndexAt, p::AbstractToken, a...)
-    map(constant, p::AbstractToken, a...)
-
-Parser matching `p`, transforming `p`s parsing results to `getindex(x,index)` or `constant`.
-
-See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
-
-"""
-function Base.map(index::IndexAt{<:Integer}, p::AbstractToken)
-    T=result_type(p)    
-    Transformation{fieldtype(T,index.i)}(index, p)
-end
-function Base.map(index::IndexAt{<:UnitRange}, p::AbstractToken)
-    T=Tuple{fieldtypes(result_type(p))[index.i]...}
-    Transformation{T}(index, p)
-end
-function instance(Tc::Type, p::ParserTypes, a...)
-    Transformation{Tc}((v,i) -> Tc(a..., v), p)
-end
-function instance(Tc::Type, p::ParserTypes)
-    Transformation{Tc}((v,i) -> convert(Tc,v), p)
-end
-function Base.map(f::Function, Tc::Type, p::AbstractToken, a...)
-    T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{Tc}((v,i) -> (f(v, a...)), p)
-end
-Base.map(f::typeof(identity), p::AbstractToken) = p
-
-
-@deprecate map(T::Type, f::Function, p::AbstractToken, a...) map(f,T,p,a...)
-@deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
-
-
 
 import Base: in
 include("unicode.jl")
@@ -1642,13 +1375,6 @@ regex_inner(x::FlatMap)  = error("regex determined at runtime!")
     end
 
     
-function Base.get(parser::FlatMap, sequence, till, after, i, state)
-    li = nextind(sequence,i,parser.left,tuple_pos(state))
-    get(right_parser(state),
-        sequence, till,
-        after, li,
-        right_state(state))
-end
 function _iterate(tokf::FlatMap, str, till, posi, next_i, state::Nothing)
     posi = next_i
     lr = _iterate(tokf.left, str, till, posi, next_i, nothing)
@@ -1843,66 +1569,6 @@ end
     end
     i
 end
-
-# Base.get(parser::Sequence, sequence, till, after, i, state::MatchState) =
-#     get(parser, sequence, till, after, i, ( MatchState() for i in 1:length(parser.parts)) )
-# function Base.get(parser::Sequence, sequence, till::Int, after::Int, i::Int, state)
-#     r = Vector{Any}(undef,length(parser.parts))
-#     i_::Int = i
-#     for (p,s) in enumerate(state)
-#         after_=nextind(sequence,i_,parser.parts[p],s)
-#         r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
-#         i_=after_
-#     end
-#     1
-#     tuple(r...)
-# end
-
-
-@generated function get(parser::Sequence{pts,sts}, sequence, till::Int, after::Int, posi::Int, states) where {pts,sts}
-    fpts = fieldtypes(pts)
-    spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
-    n = length(fpts)
-    subresult = Symbol[ gensym(:r) for i in fpts ]
-    part = Symbol[ gensym(:part) for i in fpts ]
-    pposi = Symbol[ gensym(:pos) for i in 1:(n+1) ]
-    substate = Symbol[ gensym(:s) for i in fpts ]
-    init = if states<:MatchState
-        [
-            quote
-            $(substate[i])::MatchState = MatchState()
-            @inbounds $(part[i])::$p = parser.parts[$i]
-            $(pposi[i])::Int = 0
-            end
-            for (i,(t,p)) in enumerate(zip(spts,fpts))
-        ]
-    else
-        [
-            quote
-            $(substate[i])::$t = states[$i]
-            @inbounds $(part[i])::$p = parser.parts[$i]
-            $(pposi[i])::Int = 0
-            end
-            for (i,(t,p)) in enumerate(zip(spts,fpts))
-        ]
-    end
-    parseparts = [
-        quote
-        $(pposi[i+1]) = nextind(sequence,$(pposi[i]),$(part[i]),$(substate[i]))
-        $(subresult[i]) = get($(part[i]),sequence, till, $(pposi[i+1]), $(pposi[i]), $(substate[i]))
-        end
-        for (i,t) in enumerate(fpts)
-    ]
-    R = quote
-        $(pposi[end])::Int = after
-        $(init...)
-        $(pposi[1]) = posi
-        $(parseparts...)
-        tuple($(subresult...))
-    end
-    R
-end
-
 
 @inline function start_index(sequence,after,parser,state::Nothing)
     after
@@ -2283,28 +1949,6 @@ end
     i
 end
 
-function Base.get(parser::Repeat, sequence, till, after, i, state::Vector)
-    r = Vector{result_type(parser.parser)}(undef,length(state))
-    i_=i
-    for (p,s) in enumerate(state)
-        after_=nextind(sequence,i_,parser.parser,s)
-        @inbounds r[p] = get(parser.parser,sequence, till, after_, i_, s)
-        i_=after_
-    end
-    r
-end
-
-function Base.get(parser::Repeat, sequence, till, after, i, state::Int)
-    r = Vector{result_type(parser.parser)}(undef,state)
-    i_=i
-    s=MatchState()
-    for p in 1:state
-        after_=nextind(sequence,i_,parser.parser,s)
-        @inbounds r[p] = get(parser.parser,sequence, till, after_, i_, s)
-        i_=after_
-    end
-    r
-end
 
 @inline emptystate(::Type{Int}) = 0
 @inline state_length(parser,state::Int) = state
@@ -2551,9 +2195,6 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
 @inline nextind(str,i::Int,parser::Optional,x::None) = i
 
 
-function Base.get(parser::Optional, sequence, till, after, i, state)
-    state === None() ? parser.default : get(parser.parser,sequence, till, after, i, state)
-end
 
 _iterate(t::Optional, str, till, posi, next_i, state::None) =
     nothing
@@ -2918,11 +2559,6 @@ end
 end
 
 
-function Base.get(parser::Either, sequence, till, after, i, state)
-    get(parser.options[either_state_option(state)],sequence, till, after, i, either_state_state(state))
-end
-
-
 @inline function __iterate_paired(first,state,sstate::Nothing)
     nothing
 end
@@ -3039,12 +2675,6 @@ function _iterate(p::Either{<:Trie}, str, till, posi, next_i, state)
     _iterate(p.options, str, till, posi, next_i, state)
 end
 
-
-function Base.get(parser::Either{<:Trie}, sequence, till, after, i, state::NCodeunitsState)
-    get(state.state)
-end
-
-
 @inline nextind(str,i::Int,parser::Either{<:Trie},x::NCodeunitsState)  = i+x.nc
 @inline prevind(str,i::Int,parser::Either{<:Trie},x::NCodeunitsState)  = i-x.nc
 
@@ -3079,9 +2709,6 @@ end
     nothing
 end
 
-Base.get(x::Atomic, a...) =
-    get(x.parser,a...)
-
 function print_constructor(io::IO,x::Atomic)
     print_constructor(io,x.parser)
     print(io, " |> Atomic" )
@@ -3107,6 +2734,7 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Numeric,a...; kw...) = x
 
 include("reverse.jl")
 include("textparse.jl")
+include("get.jl")
 include("re.jl")
 
 

@@ -112,9 +112,6 @@ function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing
     end
 end
 
-function Base.get(parser::NegativeLookbehind, sequence, till, after, i, state)
-    parser
-end
 
 _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
     nothing
@@ -131,10 +128,6 @@ function _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::Nothing
     end
 end
 
-function Base.get(t::PositiveLookbehind, str, till, after, i, state)
-    rseq = revert(str)
-    get(t.parser, rseq, till, after, reverse_index(rseq,prevind(rseq,i)), state)
-end
 
 regex_inner(x::Union{PositiveLookbehind,NegativeLookbehind}) =
     regex_inner(revert(x.parser))
