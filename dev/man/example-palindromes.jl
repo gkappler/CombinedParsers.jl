@@ -9,7 +9,7 @@
 # This example enables you to write and optimize your custom `CombinedParser` based off a minimal template.
 using CombinedParsers
 using CombinedParsers.Regexp
-# # 1. Regular Expression
+# ## 1. Regular Expression
 # The PCRE test case contains nice examples of non-trivial palindromes.
 #
 ## Defines parsers and output for pcre tests:
@@ -56,7 +56,7 @@ s=pt.test[3].sequence
 match(re, s)
 # The matched captures are purely technical (Pattern 4 is the first character).
 
-# ## Tree display of regex
+# ### Tree display of regex
 # I find it hard to understand the compact captures `(.)`, even in a nested tree display:
 cp = Regcomb(pt.pattern...)
 # Why no backreference `\1`, why no subroutine `(?2)`?
@@ -65,7 +65,7 @@ cp = Regcomb(pt.pattern...)
 # Writing a palindrome parser should be easier.
 # And with julia compiler it should be faster.
 #
-# ## Regular Expression performance
+# ### Regular Expression performance
 # PCRE matching example 3 is fast
 using BenchmarkTools
 @benchmark match(re, s)
@@ -75,7 +75,7 @@ using BenchmarkTools
 # `CombinedParsers.Regexp.Subroutine` matching is slow because the current implementation is using state-copies of captures.
 # (TODO: Capture Subroutines could be implemented as a stack?).
 
-# # 2. A non-word skipping `Palindrome<:CombinedParser`
+# ## 2. A non-word skipping `Palindrome<:CombinedParser`
 # This example of `Palindrome<:CombinedParser` is a much faster palindrome parser and more interesting and more easy to write.
 # It mimics the human readable palindrome rule that is clear and quite easy to comprehend:
 #
@@ -86,7 +86,7 @@ using BenchmarkTools
 # This rule is efficient programming in natural language.
 # After defining the parser, the third part of the example discusses the design of match iteration in `CombinedParsers`.
 #
-# ## Parsing strategy
+# ### Parsing strategy
 # A custom parser needs a method to determine if there is a match and its extent at a position.
 # How can this be implemented for a palindrome?
 # There are two strategies:
@@ -101,7 +101,7 @@ using BenchmarkTools
 #    (This might be [the-fastest-method-of-determining-if-a-string-is-a-palindrome](https://stackoverflow.com/questions/21403782/the-fastest-method-of-determining-if-a-string-is-a-palindrome).  But I figure finding all palindrome matches in a string is slow because you would be required to test for all possible substrings.)
 # The inside out strategy seems easier and faster.
 #
-# ### Prerequisite: Skipping whitespace
+# #### Prerequisite: Skipping whitespace
 # For the string `"two   words"`,  from the point of index 4 (`' '` after "from") the next word character after skipping whitespace left and right are indices of 3 (tw`o`) and 7 (`w`ords).
 # In Julia syntax, this is expressed in terms of `direction` (functions `Base.prevind` and `Base.nextind` return next index to left or right), and `word_char::T`, what makes up a word character (provided method `CombinedParser.ismatch(char,parser::T)::Bool`.)
 
@@ -117,7 +117,7 @@ end
 ( prev_index=seek_word_char(prevind, "two   words", 4),
   next_index=seek_word_char(nextind, "two   words", 4) )
 
-# ## Subtyping `<: CombinedParser{STATE,RESULT}`.
+# ### Subtyping `<: CombinedParser{STATE,RESULT}`.
 # Subtyping requires you to define the type of the parsing state (for julia compiler optimizations)
 # and the type of the parsing result.
 STATE = NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}
@@ -127,7 +127,7 @@ struct Palindrome{P} <: CombinedParser{STATE,RESULT}
 end
 Palindrome() = Palindrome(UnicodeClass(:L))
 
-# ## Matching: `CombinedParsers._iterate`
+# ### Matching: `CombinedParsers._iterate`
 # With the inside-out stratedy, the implementation greedily expands over non-word characters.
 # Computing the first match at `posi`tion is done by this method dispatch
 function CombinedParsers._iterate(x::Palindrome,
@@ -160,7 +160,7 @@ end
 # The internal API calls (for the center index 18):
 state = _iterate(Palindrome(),s,lastindex(s),18,18,nothing)
 
-# ## `Base.prevind` and `Base.nextind`
+# ### `Base.prevind` and `Base.nextind`
 # `CombinedParsers` iterates through matches based on the parsing position and state.
 Base.nextind(str,i::Int,p::Palindrome,state) =
     nextind(str,state.right)
@@ -170,7 +170,7 @@ Base.prevind(str,after::Int,p::Palindrome,state) =
     state.center
  
 
-# ## `match` and `get`
+# ### `match` and `get`
 # [`_iterate`](@ref) is called when the public API `match` or `parse` is used.
 # Match searches for a center index and then matched the `state.center:state.right` part of the palindrome. 
 p = Palindrome()
@@ -185,7 +185,7 @@ Base.get(x::Palindrome, str, till, after, posi, state) =
 # The match result is matching the first palindrome, which is short and simple - but not yet what we want.
 get(m)
 
-# ## Iterating through matches
+# ### Iterating through matches
 # The longest palindrome is matched too:
 p = Palindrome()
 [ get(m) for m in match_all(p,s) ]
@@ -197,7 +197,7 @@ islong(sequence, till, posi, after, state) =
 long_palindrome = filter(islong,Palindrome())
 get(match(long_palindrome,s))
 
-# ### Iteration of smaller Sub-palindromes
+# #### Iteration of smaller Sub-palindromes
 # The set of all palindromes in a text includes the shorter palindromes contained in longer ones.
 # Provide a method to iterate the previous state:
 "Shrinking `state` match"
@@ -223,7 +223,7 @@ end
 p = Atomic(Palindrome())
 get.(match_all(p,s)) |> collect
 
-# ## Performance Optimization
+# ### Performance Optimization
 @benchmark match(long_palindrome,s)
 
 # After writing a `CombinedParser` 
@@ -245,7 +245,7 @@ fast_palindrome = filter(islong,Palindrome(CharNotIn(tuple(" ,!:"...))))
 # Further possible optimization are
 # - Caching prevind, nextind
 # - Memoization
-# ## Padding and combining
+# ### Padding and combining
 # Note that the PCRE pattern included outside non-words, specifically the tailing `!`.
 re = Regex(pt.pattern...)
 match(re,"  "*s)
@@ -282,7 +282,7 @@ match(p,"skipped: "*s)
 @benchmark match(p,$("skipped: "*s))
 
 
-# # Next...
+# ## Next...
 # - optimize with memoization
 # - match also palindromes with odd number of letters
 # - elaborate on iteration documentation
