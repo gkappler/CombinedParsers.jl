@@ -27,38 +27,38 @@ for f in [ "example-palindromes.jl" ]
 end
 
 makedocs(;
-    modules=[CombinedParsers],
-    authors="Gregor Kappler",
-    repo="https://github.com/gkappler/CombinedParsers.jl/blob/{commit}{path}#L{line}",
-    sitename="CombinedParsers.jl",
-    format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://gkappler.github.io/CombinedParsers.jl",
-        assets=String[],
-    ),
-    pages=[
-        "Home" => "index.md",
-        "Manual" => [
-            "Overview" => "man/guide.md",
-            "User Guide" => "man/user.md",
-            "Prefix-Tree Matching" => "man/example-either-trie.md",
-            "PCRE Compliance" => "man/pcre-compliance.md",
-        ],
-        "Examples" => [
-            "What is Parsing? Names..." => "man/example-person.md",
-            "Representations: Number sequences" => "man/example-number-ranges.md",
-            "struct Palindrome<:CombinedParser" => "man/example-palindromes.md",
-            "Regular Expressions" => "man/pcre.md",
-            "JSON" => "man/json.md",
-        ],
-        "Library" => Any[
-            "Public" => "lib/public.md",
-            "Regexp" => "lib/regexp.md"
-            "Internals" => "lib/internals.md"
-        ],
-        # "Developer Guide" => "developer.md"
-    ],
-)
+         modules=[CombinedParsers],
+         authors="Gregor Kappler",
+         repo="https://github.com/gkappler/CombinedParsers.jl/blob/{commit}{path}#L{line}",
+         sitename="CombinedParsers.jl",
+         format=Documenter.HTML(;
+                                prettyurls=get(ENV, "CI", "false") == "true",
+                                canonical="https://gkappler.github.io/CombinedParsers.jl",
+                                assets=String[],
+                                ),
+         pages=[
+             "Home" => "index.md",
+             "Manual" => [
+                 "Overview" => "man/guide.md",
+                 "User Guide" => "man/user.md",
+                 "Prefix-Tree Matching" => "man/example-either-trie.md",
+                 "PCRE Compliance" => "man/pcre-compliance.md",
+             ],
+             "Examples" => [
+                 "What is Parsing? Names..." => "man/example-person.md",
+                 "Representations: Number sequences" => "man/example-number-ranges.md",
+                 "Regular Expressions" => "man/pcre.md",
+                 "struct Palindrome<:CombinedParser" => "man/example-palindromes.md",
+                 "JSON" => "man/json.md",
+             ],
+             "Library" => Any[
+                 "Public" => "lib/public.md",
+                 "Regexp" => "lib/regexp.md",
+                 "Internals" => "lib/internals.md"
+             ],
+             # "Developer Guide" => "developer.md"
+         ],
+         )
 
 deploydocs(;
     repo="github.com/gkappler/CombinedParsers.jl",

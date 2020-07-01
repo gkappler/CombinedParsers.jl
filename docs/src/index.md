@@ -63,7 +63,10 @@ evaluate( (0, [ ('+',1), ('+',1) ]) )
 evaluate( (1, [ ('*',2), ('*',3) ]) )
 ```
 
-A term expression has sub terms, e.g. fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`:
+### `TextParse.Numeric(Int)`
+`CombinedParsers` provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
+Combinator constructors are discussed in the [user guide](man/user.md).
+A term expression has sub terms, either fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`, or something in parentheses, which is attended to below:
 ```@example session
 using CombinedParsers
 using TextParse
@@ -117,6 +120,44 @@ The parser representation can be printed as a tree
 term
 ```
 
+# Useful Design
+- WikitextParser.jl is a `CombinedParser` for parsing [wikitext syntax](https://en.wikipedia.org/wiki/Help:Wikitext) quite comprehensibly and representing Wikipedia articles within Julia.
+- OrgmodeParser.jl is a `CombinedParser` for parsing main [org mode](https://orgmode.org/) syntax and representing org files within Julia.
+- CombinedParserTools.jl is currently more or less my own workspace to provide a set of re-useable parsers.
+- Tries.jl is the abstract implementation of the fast prefix-tree matching in `CombinedParsers` (see [docs](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-either-trie/))
+If you want to work with any of these open source packages, I will gladly provide support.
+If you are writing your own recursive `CombinedParser` and seek inspiration, you might find these comprehensive examples interesting.
+(pre-\alpha, so beware, dragons!)
+
+The fast and composable design with
+- parametric immutable matcher types for compiler optimizations with generated functions
+- small `Union{Nothing,T}` instead of Nullable{T}
+- iteration
+is useful for
+- fast db-indexing of text streams (e.g. logging): If you need support indexing logging streams into a (SQL-)Database, the (currently) proprietary TypeGraphs.jl provides `CombinedParsers` plug and play: Table schemas are infered from your parser.
+- fast HTTP-serving of parsed data: If you need support with a parsing server-client infrastructure, the (currently) proprietary GraphQLAlchemy.jl provides `CombinedParsers` plug and play: GraphQL schemas and resolver are infered from your parser.
+- fast out-of core data science/AI on your parsed data: If you need support with storing parsed data in optimized memory-mapped JuliaDB, TypeDB.jl provides `CombinedParsers` plug and play. 
+- fast scientific measurements in a data graph: FilingForest IA.jl provides `CombinedParsers` plug and play: even for recursively nested data.
+All (currently) proprietary packages are default-over-configuration for fast integration, and are in active development.
+
+
+## Optimization Strategy
+CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
+```@contents
+Pages = [
+    "man/pcre-compliance.md",
+]
+Depth = 5
+```
+
+This strategy allows for efficient benchmarking of code optimizations on many Regex and other syntax patterns.
+Explorations for optimization are in git branches:
+```@contents
+Pages = [ "benchmarks/public.md", "benchmarks/internals.md" ]
+Depth = 5
+```
+
+
 Parsing times for Int, operators, brackets are
 ```@repl session
 using BenchmarkTools
@@ -136,24 +177,6 @@ Parsing and transforming (here `eval`)
 compared to Julia 
 ```@example session
 @benchmark eval(Meta.parse("(1+2)/5"))
-```
-
-## Optimization Strategy
-
-
-CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
-```@contents
-Pages = [
-    "man/pcre-compliance.md",
-]
-Depth = 5
-```
-
-This strategy allows for efficient benchmarking of code optimizations on many Regex and other syntax patterns.
-Explorations for optimization are in git branches:
-```@contents
-Pages = [ "benchmarks/public.md", "benchmarks/internals.md" ]
-Depth = 5
 ```
 
 # Acknowledgements
