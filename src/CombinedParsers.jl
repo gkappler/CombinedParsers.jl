@@ -2294,8 +2294,8 @@ struct Either{Ps,S,T} <: CombinedParser{S,T}
     options::Ps
     Either{T}(p::P) where {T,P<:Union{Vector,Tuple,Trie}} =
         new{P,either_state_type(P),T}(p)
-    Either{T}(p::CombinedParser...) where {T} =
-        new{Vector{Any},either_state_type(CombinedParser),T}(Any[p...])
+    Either{T}(p...) where {T} =
+        new{Vector{Any},either_state_type(CombinedParser),T}(Any[parser.(p)...])
     function Either(x::Vector{<:AbstractString})
         P = Trie{Char,Nothing}
         r = P()
@@ -2314,6 +2314,15 @@ struct Either{Ps,S,T} <: CombinedParser{S,T}
         new{P,either_state_type(P),valtype(x)}(r)
     end
 end
+Either(x::Vector) = Either(x...)
+function Either(x...; kw...)
+    parts = [ (parser(y) for y in x)..., (with_name(k,v) for (k,v) in kw)...  ]
+    T = either_types(typeof.(parts))
+    Either{T}(parts)
+end
+function Either(T::Type, x...; kw...)
+    instance(T,Either(x...; kw...))
+end
 either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
 either_state_type(ts::Type{CombinedParser}) = Tuple{Int,Any}
 either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
@@ -2329,17 +2338,6 @@ end
 "return tuple(state_type,result_type)"
 function either_types(ts)
     promote_type_union(result_type.(ts)...)
-end
-
-function Either(x::Vector)
-    parts = [ parser(y) for y in x ]
-    T = either_types(typeof.(parts))
-    Either{T}(parts)
-end
-function Either(x...)
-    parts = [ parser(y) for y in x  ]
-    T = either_types(typeof.(parts))
-    Either{T}(parts)
 end
 
 children(x::Either) = x.options
