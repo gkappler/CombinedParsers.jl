@@ -96,6 +96,7 @@ end
 export flags
 flags(x::WithOptions) = x.flags
 flags(x) = UInt32(0)
+regex_string(x::WithOptions) = WithOptions(regex_escape(x.x),x.flags)
 
 
 """
