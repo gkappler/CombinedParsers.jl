@@ -57,7 +57,7 @@ end
 function Base.get(
     parser::Union{Char,NIndexParser{1,Char},ConstantParser{1,Char}},
     sequence, till,
-    after, i, state)::Char
+    after, i, state)
     @inbounds sequence[i]
 end
 

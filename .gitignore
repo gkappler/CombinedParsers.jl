@@ -5,3 +5,6 @@ benchmark/benchmark-*.json
 docs/build/
 docs/src/man/example-number-ranges.md
 docs/src/man/example-person.md
+docs/src/man/example-either-trie.md
+docs/src/man/example-palindromes.md
+docs/src/man/pcre.md
