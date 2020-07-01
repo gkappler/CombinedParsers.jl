@@ -419,7 +419,7 @@ end
 
 Parser matching a integer format on base `base`.
 """
-function integer_base(base,mind=0,maxd=Repeat_max)
+function integer_base(base=10,mind=0,maxd=Repeat_max)
     dig = if base == 16
         hex_digit
     elseif base == 8
