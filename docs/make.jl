@@ -13,7 +13,6 @@ DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
     using CombinedParsers.Regexp
 end; recursive=true)
 
-doctest(CombinedParsers)
 
 for f in [ "pcre.jl", "example-person.jl", "example-number-ranges.jl", "example-either-trie.jl" ]
     Literate.markdown(joinpath(mandir,f), mandir,
