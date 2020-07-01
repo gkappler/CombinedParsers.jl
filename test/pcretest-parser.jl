@@ -4,6 +4,10 @@ import CombinedParsers.Regexp: at_linestart, whitespace_char, integer, escaped_c
 import CombinedParsers.Regexp: pcre_options, with_options, parse_options, @test_pcre
 
 CombinedParsers.Regexp.@pcre_tests ## define parsers for pcre tests
+export trimstring
+trimstring(x::Nothing) = nothing
+trimstring(x::AbstractString) =
+    replace(x, r"^[ \r\n\t]*|[ \r\n\t]*$" => s"")
 
 is_expected(pc_match::Nothing,expect) = isempty(expect)
 function is_expected(pc_match,expect)
