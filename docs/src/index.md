@@ -121,19 +121,23 @@ term
 ```
 
 # Useful Design
-- WikitextParser.jl is a `CombinedParser` for parsing [wikitext syntax](https://en.wikipedia.org/wiki/Help:Wikitext) quite comprehensibly and representing Wikipedia articles within Julia.
-- OrgmodeParser.jl is a `CombinedParser` for parsing main [org mode](https://orgmode.org/) syntax and representing org files within Julia.
+- WikitextParser.jl is a `CombinedParser` for parsing [wikitext syntax](https://en.wikipedia.org/wiki/Help:Wikitext),
+  quite comprehensibly and representing Wikipedia articles within Julia.
+- OrgmodeParser.jl is a `CombinedParser` for parsing main [org mode](https://orgmode.org/) syntax,
+  representing org files within Julia.
 - CombinedParserTools.jl is currently more or less my own workspace to provide a set of re-useable parsers.
 - Tries.jl is the abstract implementation of the fast prefix-tree matching in `CombinedParsers` (see [docs](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-either-trie/))
-If you want to work with any of these open source packages, I will gladly provide support.
+If you want to work with any of these open source packages, I will gladly provide professional support.
 If you are writing your own recursive `CombinedParser` and seek inspiration, you might find these comprehensive examples interesting.
 (pre-\alpha, so beware, dragons!)
 
-The fast and composable design with
-- parametric immutable matcher types for compiler optimizations with generated functions
-- small `Union{Nothing,T}` instead of Nullable{T}
-- iteration
-is useful for
+The `CombinedParsers` design 
+- is fast due to Julia parametric types, and compiler optimizations with generated functions,
+- its strictly typed parsing defines the domain data types,
+- is composable and optimizable with Julia method dispatch,
+- provides flexible public API for parsing, matching, iteration
+
+Making Julia parametric types central for the parser design allows equal automation of the data pipeline after parsing!
 - fast db-indexing of text streams (e.g. logging): If you need support indexing logging streams into a (SQL-)Database, the (currently) proprietary TypeGraphs.jl provides `CombinedParsers` plug and play: Table schemas are infered from your parser.
 - fast HTTP-serving of parsed data: If you need support with a parsing server-client infrastructure, the (currently) proprietary GraphQLAlchemy.jl provides `CombinedParsers` plug and play: GraphQL schemas and resolver are infered from your parser.
 - fast out-of core data science/AI on your parsed data: If you need support with storing parsed data in optimized memory-mapped JuliaDB, TypeDB.jl provides `CombinedParsers` plug and play. 
