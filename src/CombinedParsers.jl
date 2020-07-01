@@ -1150,7 +1150,7 @@ succeeds if char at cursor is in one of the unicode classes.
 CharIn(unicode_classes::Symbol...) =
     CharIn(UnicodeClass(unicode_classes...))
 
-_ismatch(c,p::CharIn)::Bool = _ismatch(c,p.sets)
+@inline _ismatch(c,p::CharIn)::Bool = _ismatch(c,p.sets)
 
 export regex_escape
 ## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
@@ -1222,7 +1222,7 @@ result_type(::Type{<:CharNotIn}) = Char
 regex_string_(x::CharNotIn) = ( x.pcre =="" ? regex_string_(x.sets) : x.pcre )
 regex_inner(x::CharNotIn) =
     "[^"*regex_string_(x)*"]"
-_ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
+@inline _ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
 
 CharIn(x::Tuple{<:CharNotIn}) = x[1]
 
