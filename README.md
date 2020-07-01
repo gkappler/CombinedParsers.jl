@@ -4,355 +4,159 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://gkappler.github.io/CombinedParsers.jl/dev)
 [![Build Status](https://travis-ci.org/gkappler/CombinedParsers.jl.svg?branch=master)](https://travis-ci.com/github/gkappler/CombinedParsers.jl)
 [![Codecov](https://codecov.io/gh/gkappler/CombinedParsers.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/gkappler/CombinedParsers.jl)
+A package for combining parsers and transforming strings into julia types.
 
-CombinedParsers is a package for parsing into julia types.
-Parsimoneously compose parsers with the functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
-utilize Julia's type inferrence for transformations,
-log conveniently for debugging, and let Julia compile your parser for good performance.
-
-Features:
-- Clear syntax integrates grammar and transformations with Julia type inference.
-- Higher-order parsers depending on the parsing state allow for not context-free parsers.
-- All valid parsings can be iterated lazily.
-- Interoperable with [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParsers.AbstractParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
-- Parametric parser and state types enable Julia compiler optimizations.
-- Compiled regular expression parsers in pure julia are provided with the `re_str` macro.
-- [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides colored and clearly layed out printing in the REPL.
-- Convenient logging of the parsing process with `NamedParser`s and `SideeffectParser`s.
-- CombinedParsers generalize from strings to parsing any type supporting `getindex`, `nextind`, `prevind` methods.
+Compose parsers parsimoneously within a functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
+utilize Julia's type inference for transformations,
+log conveniently for debugging, and let Julia compile your parser for performance.
 
 
-```julia
-"Julia eval for +-*/ operators."
-function eval_ops((l,opr))
-    for (op,val) in opr
-        l = eval( Expr(:call, Symbol(op), l, val))
-    end
-    l::Rational{Int}
-end
+> `CombinedParsers.jl` is currently an α release.	The first official released is prepared for JuliaCon2020.
 
-using TextParse
-@with_names begin
-    number = map(Rational{Int}, TextParse.Numeric(Int))
-    factor = Either(number)  # or expression in parens, see push! below
-    divMul = map(eval_ops,
-                 Sequence( factor, Repeat( CharIn("*/"), factor ) ) )
-    addSub = map(eval_ops,
-		 divMul * Repeat( CharIn("+-") * divMul ) )
-    parens = Sequence(2, "(",addSub,")" )
-    push!(factor, parens)
-    expr = (addSub * AtEnd())[1]
-end;
-parse(log_names(expr), "1/((1+2)*4+3*(5*2))")
+##### Package Features
 
-```
-1//42
-
-[Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
+- Speed
+  - [write parsers faster than `Base.PCRE`](man/pcre-compliance.md), optimized by the Julia compiler for parametric parser and state types.
+  - Fast `@generated function`s for sequences.
+  - Fast Trie-based scanning ([example](man/example-either-trie.md))
+  - Compile with your custom parsing algorithm ([example](man/example-palindromes.md))
+  - (planned: memoization)
+  - (planned: lazy transformations)
+- Simplicity
+  - Clear [`@syntax`](@ref) integrates [`map`](@ref) transformations with Julia [`result_type`](@ref) inference.
+  - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides colored and clearly layed out printing in the REPL.
+  - Convenient logging of the parsing process [`with_name`](@ref)s and [`SideeffectParser`](@ref)s.
+- Interoperability
+  - [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
+  - Pure Julia regular expression parsers are provided with the [`@re_str`](@ref) macro, a plug-in replacement for `Base.@r_str`.
+  - Tested on the [PCRE pattern test set](man/pcre-compliance.md).
+- Generality
+  - UTF8
+  - All valid parsings can be [`Base.iterate`](@ref)d lazily.
+  - Higher-order parsers depending on the parsing state allow for not context-free parsers ([`after`](@ref)).
+  - CombinedParsers generalize from strings to parsing any sequence type supporting `getindex`, `nextind`, `prevind` methods.
 
 
+## Getting started
+The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
+The [User guide](man/user.md) provides a summary of CombinedParsers types.
+Some examples of packages using CombinedParsers can be found on the [Examples](@ref) page.
+See the [Index](@ref main-index) for the complete list of documented functions and types.
 
-### Limitations
-This is an alpha release.
-Collaborations are very welcome!
-
-CombinedParsers.jl was tested against the PCRE C library testset.
-Some tests did not pass: 3130 passed, 123 failed, 0 errored, 0 broken.
-Failing tests are capture related.
-
-
-#### Benchmarks
-Performance is acceptable although optimizations are currently disabled/incomplete.
-```julia
-using BenchmarkTools
-
-## PCRE
-re = r"a*"
-@btime match(re,"a"^3);
-#      146.067 ns (5 allocations: 272 bytes)
-
-
-## CombinedParsers
-pc = re"a*"
-@btime match(pc,"a"^3);
-#      1.049 μs (10 allocations: 480 bytes)
-@btime _iterate(pc,"a"^3);
-#      283.928 ns (5 allocations: 272 bytes)
-```
-
-Preliminary performance tests were even more encouraging, in trivial example above 10x faster than PCRE.
-
-
-### Next Steps
-- [-] Documentation
-- [ ] test coverage
-- [ ] Performance optimizations
-    - generated functions
-    - parsing memoization
-    - backtracking optimization with multiple dispatch on parser and state type.
-- [ ] [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
-- [ ] Publishing packages for parsing wikitext and orgmode markup
-- [ ] error backtracking, stepping & debugging
-
-
-<!-- Implementation Notes: -->
-<!-- - parametric immutable matcher types for compiler optimizations with generated functions (currently inactive) -->
-<!-- - small Union{Nothing,T} instead of Nullable{T} -->
-
-<!-- CombinedParsers is a package by Gregor Kappler. If you use and appreciate CombinedParsers.jl, please support development at patreon. -->
-
-## Getting Started
-
+### Writing Parsers
 Install with
 ```julia
 ] add https://github.com/gkappler/CombinedParsers.jl
 ```
 
-## Writing Parsers
-### Regular expression syntax
-CombinedParsers provides the ```@re_str``` macro as a plug-in replacement for the base Julia ```@r_str``` macro.
+CombinedParsers provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
+Combinator constructors are discussed in the [user guide](man/user.md).
 
-```julia
-# Base Julia PCRE regular expressions
-mr = match(r"reg(ular )?ex(?<a>p(ression)?)?\??"i,"regexp")
+Parsing is reading and transforming a sequence of characters.
+This example reads and evaluates arithmetical terms for rational numbers.
+Subterms can use algebraic operators `+-*/` that will be evaluated with 
+```@repl session
+function evaluate( (start, operation_values) )
+    aggregated_value::Rational{Int} = start
+    for (op,val) in operation_values
+        aggregated_value = eval( Expr(:call, Symbol(op), 
+			              aggregated_value, val
+			              ))
+    end
+    return aggregated_value
+end
+evaluate( (0, [ ('+',1), ('+',1) ]) )
+evaluate( (1, [ ('*',2), ('*',3) ]) )
 ```
-RegexMatch("regexp", 1=nothing, 2="p", 3=nothing)
 
-```julia
+A term expression has sub terms, e.g. fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`:
+```@example session
 using CombinedParsers
-using CombinedParsers.Regexp
-mre = match(re"reg(ular )?ex(?<a>p(ression)?)?\??"i,"regexp")
-```
-ParseMatch("Regular Expression?", 1="ular ", 2="pression", 3="ression")
-
-The ParseMatch type has `getproperty` and `getindex` methods for handling like `RegexMatch`.
-```julia
-mre.match == mr.match
-mre.captures == mr.captures
-mre[2] == mr[2]
-mre[:a] == mr[:a]
-```
-
-The `@re_str` supports the following PCRE features
-- [X] fundamentals: sequences, alternations, repetitions optional, matches
-    (`*`,`+`,`{n}`, `{min,}`, `{min,max}`, `?`)
-- [X] escaped characters and generic character types
-- [X] character ranges (`[]`)
-- [X] non-capturing groups,
-- [X] capturing groups, backreferences, subroutines (all by index, relative index and name)
-- [X] atomic groups
-- [X] lazy repetitions
-- [X] conditional expressions
-- [X] internal and pattern options setting
-- [X] simple assertions (`\A`, `\z`, `\Z`, `\b`, `\B`, `^`, `$`), 
-- [X] lookaheads and lookbehinds
-- [X] comments
-
-CombinedParsers.jl is tested against the PCRE C library testset.
-
-PCRE functionality that is currently not supported:
-- [ ] capture groups in lookbehinds.
-- [ ] ACCEPT, SKIP, COMMIT, THEN, PRUNE, \K
-
-
-### Parsing
-
-```match``` searches for the first match of the Regex in the String and return a `RegexMatch`/`Parsematch` object containing the match and captures, or nothing if the match failed.
-```Base.parse``` methods parse a String into a Julia type.
-A CombinedParser `p` will parse into an instance of `result_type(p)`.
-For parsers defined with the `@re_str` the `result_type`s are nested Tuples and Vectors of SubString, Chars and Missing.
-
-
-```julia
-p = re"(a)*bc?"
-parse(p,"aaab")
-```
-(['a','a','a'],'b',missing)
-
-
-
-## Iterating matches
-```julia
-# Backtracking and listing all matches
-collect(parse_all(re"^(a|ab|b)+$","abab"))
-```
-
-
-```
-4-element Array{Tuple{AtStart,Array{Union{Char, Tuple{Char,Char}},1},AtEnd},1}:
- (^, ['a', 'b', 'a', 'b'], $)    
- (^, ['a', 'b', ('a', 'b')], $)  
- (^, [('a', 'b'), 'a', 'b'], $)  
- (^, [('a', 'b'), ('a', 'b')], $)
+using TextParse
+@syntax subterm = Either{Rational{Int}}(
+	Any[ map(Rational{Int}, TextParse.Numeric(Int)) ])
+nothing # hide
 ```
 
 
 
-### Transformations
-Transform the result of a parsing with `map`.
-```julia
-parse(map(length,re"(ab)*"),"abababab") == 4
-```
-`map` uses julia type inference to infer the `result_type` automatically.
-A supertype `T >: result_type(map(f,p))` can be set as `result_type` with `map(f, T, p)`.
+Terms are sequences of subterms interleaved with operators.
+CombinedParsers.Sequence can be built with operator `*` like Julia string concatenation.
+```@example session
+rational_products = Sequence(
+	evaluate, 
+	subterm, Repeat(
+		Sequence( CharIn("*/"), subterm ) )
+)
 
-Calling `map(::Integer,::AbstractParser)` or `getindex(::AbstractParser)` creates a transforming parser selecting from the result of the parsing.
-```julia
-parse(map(2,re"abc"),"abc") == 'b'
-parse(re"abc"[2],"abc") == 'b'
-```
-
-### Basics
-The simplest parser matches a `String` or `Char` iterator.
-```julia
-parse_a = parser("aa")
-
-parse(parse_a,"aa")
-# "aa"
-
-parse(parse_a,"ab")
-# ArgumentError: expected re"a" in "ab" at index 2 (todo!)
+@syntax term = map(
+    evaluate, 
+    rational_products*Repeat(
+		CharIn("+-") * rational_products
+	)
+);
+nothing # hide
 ```
 
 
-
-#### Character Sets
-```julia
-parse(CharIn('a':'z'),"c") =='c'
-parse(CharIn(isuppercase),"A") =='A'
-parse(CharNotIn('a':'z'),"A") =='A'
-parse(CharNotIn(isuppercase),"c") =='c'
+A subterm can also be a nested term in parenthesis
+```@example session
+@syntax for parenthesis in subterm
+    Sequence(2,"(",term,")")
+end
+nothing # hide
 ```
 
-#### Sequence
-Several parsers can be combined with the `Sequence` constructor and the `*` operator.
-The `result_type` of a `Sequence` is the Tuple of the `result_type`s of its parts.
-```julia
-parse(Sequence(CharIn(isuppercase) * CharIn(islowercase)),"Ab") == ('A','b')
-parse(CharIn(isuppercase) * CharIn(islowercase),"Ab") == ('A','b')
+`@syntax` registers `@term_string` macro for parsing.
+```@repl session
+term"(1+2)/5"
 ```
 
-`getindex` on a sequence creates a transforming parser selecting from the result of the parsing.
-
-Sequence keyword argument constructors transform the parsing into a named tuple.
-```julia
-parse(Sequence(first = CharIn(isuppercase), second = CharIn(islowercase)),"Ab") == 
-	(first='A',second='b')
+The defined `CombinedParser` `term` can be used as a function for colorful logging of the parsing process.
+```@repl session
+term("1/((1+2)*4+3*(5*2))",log = [:parenthesis])
 ```
-
-If some Sequence arguments are <:`Pair{Symbol}`, only those are retained in a NamedTuple.
-```julia
-parse(Sequence(CharIn(isuppercase), :second => CharIn(islowercase)),"Ab") == 
-	(second='b',)
-```
+[Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
 
 
 
-#### Either
-The `|` operator and constructor `Either` try matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
+# Acknowledgements
 
-```julia
-parse(("a"|"ab"),"ab")
-# "a"
-```
+I am thankful for contributions and inspiration from many great packages:
+## [TextParse.jl](https://github.com/queryverse/TextParse.jl)
+> A bunch of fast text parsing tools, used in CSV.jl
 
-Feedback inquiry:
+`CombinedParsers` composes with fast
+[TextParse.jl](https://github.com/queryverse/TextParse.jl) both ways 
+because `CombinedParser <: TextParse.AbstractToken`
+and by providing a method for `TextParse.tryparsenext`,
+(leveraging the supreme Julia compiler, type and package architecture).
 
-#### Assertions
-Parsers that do not advance the parsing position can be used to assert conditions during parsing.
-##### AtStart() and AtEnd()
-The `AtStart()` only succeeds if at the start of the input, and similarly the `AtEnd()` succeeds only at the end of the input.
-By default, `parse` does not need to consume the full input but succeeds with the first match.
-With `AtEnd()` the parser can be forced to consume the full input or fail otherwise.
-```julia
-parse(("a"|"ab")*AtEnd(),"ab")
-# "ab"
-```
+- If you seek support with a dates parser example, please contact me.
+- If you seek support with a CSV example, please contact me (e.g. address text field parsing).
 
-##### Looking around
-A `Lookaround` parser wraps a parser `p`, succeeds if `p` matches without advancing the position, and fails if `p` fails.
-
-
-The `@re_str` macro has a regex parser for lookahead and lookbehind expressions (simplified):
-```julia
-@with_names lookahead=Sequence(
-    2,
-    "(?",
-    Either(Sequence(v->PositiveLookahead(v[2]), "=", alternation),
-           Sequence(v->NegativeLookahead(v[2]), "!", alternation)),
-           Sequence(v->PositiveLookbehind(v[2]), "<=", alternation)),
-           Sequence(v->NegativeLookbehind(v[2]), "<!", alternation)),
-    ")");
-```
-
-#### Repeat
-The `Repeat(p)` constructor creates a new parser repeating its argument zero or more times, and by default transforming to
-`Vector{result_type(p)}`.
-Repeating a specified number of times can be achieved with `Repeat(p,min=1,max=2)`, or `Repeat(1,p)` or `Repeat(1,2,p)`.
-Equivalently the `^` operator can be used similar as for String, e.g. `p^2`, 
-and like in regular expressions `p^(+)`, `p^(*)`.
-
-```julia
-parse(join(parser('a')^(*)," "),"a a") == 
-	['a','a']
-```
-
-#### Optional
-Similar to Repeat, `Optional(p)` creates a parser, repeating 0 or 1 times. 
-The `result_type(Optional(p, default=d))` is `promote_type` (or `Union` type is type promotion results in Any).
-
-```julia
-option = Optional('a') * join(Repeat('b'),"-")
-```
-
-Feedback appreciated:
-
-```julia
-option = ( CharIn('a':'z') | missing ) * join(Repeat('b'),"-")
-```
+## Inspirations
+- The work was strongly inspired by the great Scala [fastparse](https://github.com/lihaoyi/fastparse) package, and also the [elm parser](https://package.elm-lang.org/packages/elm/parser/latest/).
+- [Parsers.jl](https://github.com/JuliaData/Parsers.jl), a collection of parsers for date and primitive types, inspired the [`parse`](@ref) methods.
+- [Automa.jl](https://github.com/BioJulia/Automa.jl), a Julia package for text validation, parsing, and tokenizing based on state machine compiler.  The package compiles deterministic finite automata.  (Currently there is no inter-operation possible, because in `Automa` processing of parsed tokens is done with actions and UTF8 support is lacking).
+- [ParserCombinator.jl](https://github.com/andrewcooke/ParserCombinator.jl) was a great inspiration.
+  Yet I decided for a new design with a focus on transformations and type inference with parametric types, instead of basing this work off `ParserCombinator`, written before 2016 (and fixed for Julia 1.0 in 2018).
+  `CombinedParsers` integrates into the Julia 1.0 Iteration API, small `Union{Nothing,T} where T` types instead of using Nullables, compiler optimizations and generated functions.
+  I want to provide benchmarks comparisons with `ParserCombinator.jl`.
 
 
-#### Lazy repetitions and optional parsers
-Repetition and optional parsers are greedy by default, and can be switched to lazy matching by wrapping in `Lazy(Repeat(p))`.
+# Contributing and Questions
+Contributions are very welcome, as are feature requests and suggestions. Please open an issue if you encounter any problems or would just like to ask a question.
 
+<!-- CombinedParsers is a package by Gregor Kappler. If you use and appreciate CombinedParsers.jl, please support development at patreon. -->
 
-
-
-#### Atomic groups
-Backtracking of a parser `p` can be prevented by wrapping in `Atomic(Repeat(p))`.
-An atomic parser fails if `p` fails or if the first successfull parsing with `p` leads to a failing later in the parsing process.
-
-
-```julia
-parse(Either("a","ab","ac")*AtEnd(),"ab") == ("ab", AtEnd())
-parse(Atomic(Either("a","ab","ac"))*AtEnd(),"ab") ## fails
-```
-
-
-
-## Acknowledgements
-
-The work was inspired by Scala FastParse package and the Julia parsing packages
-##### Parsers.jl
-For date and primitive types.
-##### TextParse
-- used in CSV.jl
-- uses Nullables
-- CombinedParsers.AbstractParser <: TextParse.AbstractToken
-
-##### Automa.jl
-- grammar based state machine compiler
-- no UTF8 support
-
-##### ParserCombinator.jl
-- old source base (pre 2016, fixed for Julia 1.0 in 2018)
-    - using Nullables
-- no iterator API
-- performance 
-    - mutable matcher types
-    - matcher types not parametric
-
-
+## Next Steps
+- [ ] test coverage
+- [ ] Performance optimizations
+    - parsing memoization
+- [ ] [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+- [ ] Publishing packages for parsing wikitext and orgmode markup
+- [ ] error backtracking, stepping & debugging
 
 
 

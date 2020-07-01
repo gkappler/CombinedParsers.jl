@@ -13,7 +13,9 @@ DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
     using CombinedParsers.Regexp
 end; recursive=true)
 
-for f in [ "example-person.jl", "example-number-ranges.jl", "example-either-trie.jl" ]
+doctest(CombinedParsers)
+
+for f in [ "pcre.jl", "example-person.jl", "example-number-ranges.jl", "example-either-trie.jl" ]
     Literate.markdown(joinpath(mandir,f), mandir,
                       repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs",
                       codefence = "```@repl session" => "```")
@@ -45,12 +47,13 @@ makedocs(;
         "Examples" => [
             "What is Parsing? Names..." => "man/example-person.md",
             "Representations: Number sequences" => "man/example-number-ranges.md",
-            "Palindrome<:CombinedParser" => "man/example-palindromes.md",
+            "struct Palindrome<:CombinedParser" => "man/example-palindromes.md",
             "Regular Expressions" => "man/pcre.md",
             "JSON" => "man/json.md",
         ],
         "Library" => Any[
             "Public" => "lib/public.md",
+            "Regexp" => "lib/regexp.md"
             "Internals" => "lib/internals.md"
         ],
         # "Developer Guide" => "developer.md"

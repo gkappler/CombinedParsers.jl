@@ -54,9 +54,7 @@ bsr = Atomic(Either("\r\n",
 
 newline = bsr
 inline = !Repeat(CharNotIn(vertical_space))
-"Zero or more vertical whitespace."
 whitespace_maybe = !Repeat(CharIn(horizontal_space))
-"At least one vertical whitespace."
 whitespace_horizontal = !Repeat1(CharIn(horizontal_space))
 
 
@@ -669,6 +667,11 @@ function Regcomb(x)
     end
 end
 
+"""
+    Regcomb(x::AbstractString,flags::AbstractString)
+
+used in [`@re_str`](@ref).
+"""
 function Regcomb(x::AbstractString,flags::AbstractString)
     o = parse_options(flags)
     Regcomb(with_options(o...,x))

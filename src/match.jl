@@ -16,7 +16,7 @@ Base.eltype(T::Type{<:MatchesIterator{P,S}}) where {P,S} =
     ParseMatch{P,S,state_type(P)}
 Base.IteratorSize(::Type{<:MatchesIterator}) = Base.SizeUnknown()
 
-
+export ParseMatch
 """
 Wrapper type for [`CombinedParsers.Regexp.SequenceWithCaptures`](@ref), providing
 `getindex` and `getproperty` behavior like `RegexMatch`.

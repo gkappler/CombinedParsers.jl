@@ -4,15 +4,8 @@ using CombinedParsers
 using CombinedParsers.Regexp
 ```
 
-## Installation
-Install with
-```julia
-] add https://github.com/gkappler/CombinedParsers.jl
-```
-
-## Regular expression syntax
+## Regular expression `match` and `RegexMatch` syntax
 CombinedParsers.jl provides the `@re_str` macro as a plug-in replacement for the base Julia `@r_str` macro.
-
 Base Julia PCRE regular expressions:
 ```@repl
 pattern = r"(?<a>a|B)+c"
@@ -23,15 +16,18 @@ CombinedParsers.Regexp regular expression:
 ```@repl session
 pattern = re"(?<a>a|B)+c"
 mre = match(pattern,"aBc")
+```
 
-# The ParseMatch type has `getproperty` and `getindex` methods for handling like `RegexMatch`.
+The ParseMatch type has `getproperty` and `getindex` methods for handling like `RegexMatch`.
+```@repl session
 mre.match
 mre.captures
 mre[1]
 mre[:a]
 ```
 
-CombinedParsers.jl is tested and benchmarked against the PCRE C library testset, see [compliance report](pcre-compliance.md).
+!!! note
+    CombinedParsers.jl is tested and benchmarked against the PCRE C library testset, see [compliance report](pcre-compliance.md).
 
 ## Parsing 
 
@@ -64,32 +60,40 @@ end
 ## Performance
 `CombinedParsers` are fast, utilizing parametric types and generated functions in the Julia compiler.
 
-```@repl session
-
+Compared with the Base.Regex (PCRE C implementation)
+```@example session
 using BenchmarkTools
-pattern = r"[aB]+c"
-@btime match(pattern,"aBaBc")
-
-pattern = re"[aB]+c"
-@btime match(pattern,"aBaBc")
+pattern = r"[aB]+c";
+@benchmark match(pattern,"aBaBc")
+```
+`CombinedParsers` are slightly faster in this case,
+[and for many other tested parsers](man/pcre-compliance.md).
+```@example session
+pattern = re"[aB]+c";
+@benchmark match(pattern,"aBaBc")
 ```
 
-Matching Regex captures are supported for compatibility but slow compared with `parse`.
-```@repl session
-
+Matching Regex captures are supported for compatibility
+```@example session
 pattern = r"([aB])+c"
-@btime match(pattern,"aBaBc")
-pattern = re"([aB])+c"
-@btime match(pattern,"aBaBc")
+@benchmark match(pattern,"aBaBc")
+```
+`CombinedParsers.Regexp.Capture`s are slow compared with PCRE,
+```@example session
+pattern = re"([aB])+c";
+@benchmark match(pattern,"aBaBc")
+```
 
-pattern = re"[aB]+c"
+But with `CombinedParsers` you capture more flexibly with transformations anyway.
+```@repl session
+pattern = re"[aB]+c";
 @btime (mre = match(pattern,"aBaBc"))
 @btime get(mre)
 ```
 
 ## Transformations
-Transform the result of a parsing with `map`.
-The `result_type` inferred automatically using julia type inference.
+Transform the result of a parsing with [`map`](@ref).
+The [`result_type`](@ref) is inferred automatically using julia type inference.
 
 ```@repl session
 p = map(length,re"(ab)*")
@@ -102,3 +106,4 @@ parse(map(IndexAt(2),re"abc"),"abc")
 parse(re"abc"[2],"abc")
 ```
 
+Next: The [User guide](user.md) provides a summary of CombinedParsers types.

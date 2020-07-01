@@ -8,34 +8,51 @@ See the Internals section of the manual for internal package docs covering all s
 ```@docs
 CombinedParsers
 match
+CombinedParsers.MatchesIterator
+ParseMatch
+(==)(::RegexMatch,::ParseMatch)
+getindex(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Integer)
+getproperty(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Symbol)
+```
+
+### Parsing
+
+```@docs
 get
 parse
 tryparse
 tryparse_pos
 ```
 
-## CombinedParsers.Regexp
-```@docs
-CombinedParsers.Regexp
-CombinedParsers.Regexp.@re_str
-with_options
-CombinedParsers.Regexp.@pcre_tests
-```
+## Typed Transformation Parsers
 
-
-## Transformations
 ```@docs
+CombinedParsers.state_type
 map
 map_at
 JoinSubstring
+CombinedParsers.Constant
 (!)(::CombinedParsers.AbstractToken)
+CombinedParsers.result_type
 ```
 
 ## Parser Constructors
-
 ```@docs
 parser
 convert
+CombinedParsers.Regexp.@re_str
+```
+
+### useful importable sub-parsers
+```@repl
+using CombinedParsers.Regexp
+import CombinedParsers.Regexp.whitespace_horizontal
+import CombinedParsers.Regexp.whitespace_maybe
+import CombinedParsers.Regexp.word
+```
+
+```@docs
+CombinedParsers.Regexp.integer_base
 ```
 
 ### Character Matchers
@@ -49,6 +66,7 @@ CharNotIn
 ```@docs
 @syntax
 Either
+CombinedParsers.either_types
 (|)(::CombinedParsers.ParserTypes, ::CombinedParsers.ParserTypes)
 push!
 pushfirst!
@@ -61,6 +79,7 @@ Atomic
 ### Repeating
 ```@docs
 Optional
+(|)(::Either, ::Type)
 (|)(::CombinedParsers.AbstractToken{T}, ::Union{T,Missing}) where { T }
 Repeat
 Lazy

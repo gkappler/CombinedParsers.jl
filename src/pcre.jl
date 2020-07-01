@@ -414,61 +414,6 @@ end
 
 
 
-export trimstring
-trimstring(x::Nothing) = nothing
-trimstring(x::AbstractString) =
-    replace(x, r"^[ \r\n\t]*|[ \r\n\t]*$" => s"")
-
-export splitter
-splitter(S, parse; transform_split = v -> tokenize(S, v), kw...) =
-    splitter(Regex(regex_string(S)), parse;
-             transform_split = transform_split, kw...)
-
-function splitter(## R::Type,
-                  split::Transformation{Regex,S},
-                  parse::AbstractToken{T};
-                  log=false,
-                  transform = (v,i) -> v) where {S, T}
-    @warn "todo: using old regex splitting..."
-    transform_split = split.transform ## (v,i) -> v
-    R = promote_type(S,T)
-    function tpn(str, i, n, opts) ## from util.jl:_split
-        ## @show str
-        ## @show R
-        strs = Vector{R}(undef, 0)#[]
-        lstr = str[i:min(end,n)]
-        r = eachmatch(split.parser, lstr)
-        j = 0
-        for m in r
-            if j <= m.match.offset
-                ## m.match.offset  is indexed at 0!!
-                ## @show lstr nextind(lstr,j) m.match.offset m.match
-                before = SubString(lstr,nextind(lstr,j),prevind(lstr, m.match.offset + (transform_split===nothing ? sizeof(m.match) : 1)))
-                log && @info "before" before
-                push!(strs, (tokenize(parse, before))) # , i+nextind(lstr,j))) ## todo pass pos!
-            end
-            if transform_split!==nothing
-                log && @info "split" before
-                push!(strs, ( transform_split(m, i))) # , i+j) )
-            end
-            j = m.match.offset + sizeof(m.match) # =.ncodeunits
-        end
-        ## j = prevind(lstr,j)
-        if j <= n-i
-            after = SubString(str,i+j,min(lastindex(str),n))
-            log && @info "after" after
-            push!(strs,
-                  (tokenize(parse, after))) ## , i+j)) ## todo pass pos!
-        end
-        result = transform(strs,i)
-        ## error()
-        log && @info "split" lstr strs result i j n
-        return Nullable(result), nextind(str,n)
-    end
-    CustomParser(tpn, R)
-end
-
-
 """
     integer_base(base,mind=0,maxd=Repeat_max)
 

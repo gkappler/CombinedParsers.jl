@@ -61,6 +61,11 @@ function Base.convert(::Type{AbstractToken},x)
     parser(x)
 end
 
+"""
+    CombinedParsers.state_type(x::T)
+
+Return the state type of `x`
+"""
 @inline state_type(x::T) where {T<:Union{ParserTypes,AbstractToken}} = state_type(T)
 @inline state_type(x::Type{<:Union{Char,AbstractString}}) = MatchState
 @inline state_type(::Type{Any}) = Any
@@ -88,6 +93,21 @@ Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve fi
 
 ############################################################
 ## CombinedParsers interface for Union{Char,AbstractString}
+"""
+    tuple_pos(pos_state::Tuple)
+
+`pos_state[1]` is position after match in tuple returned by [`_iterate`](@ref).
+"""
+@inline tuple_pos(pos_state::Tuple) =
+    pos_state[1]
+
+"""
+    tuple_state(pos_state::Tuple)
+
+`pos_state[2]` is state of match in tuple returned by [`_iterate`](@ref).
+"""
+@inline tuple_state(pos_state::Tuple) =
+    pos_state[2]
 
 result_type(T::Type{<:Union{Char,AbstractString}}) = T
 """
@@ -496,6 +516,20 @@ _ismatch(c,p::Function)::Bool = p(c)::Bool
 _ismatch(c,p::AnyChar)::Bool = true
 _ismatch(c::Char,p::Union{StepRange,Set})::Bool = c in p
 
+"""
+    _ismatch(x::Char, set::Union{Tuple,Vector})::Bool
+
+`_ismatch(x,set...)` respects boolean logic:
+
+Example:
+```jldoctest
+julia> p = CharNotIn(CharNotIn("ab"));
+
+julia> parse(p,"a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+```
+"""
 function _ismatch(x::Char, set::Union{Tuple,Vector})::Bool
     return _ismatch(x,set...)
 end

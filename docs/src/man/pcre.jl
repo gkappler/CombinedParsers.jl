@@ -1,109 +1,104 @@
-# Parsing Regular Expressions and constructing an equivalent [`CombinedParser`](@ref)
-This guide demonstrates constructing a recursive parser with the 
-**[`push!`](@ref) to [`Either`](@ref)** technique by means of a similified parser for regular expressions. 
-
-This page outlines parts of the `CombinedParser` used in the `re_str` macro.
-`CombinedParsers.jl` is tested and benchmarked against the PCRE C library testset, see [compliance report](pcre-compliance.md).
-
-## Characters and Escaped Characters
-The simplest regular expression pattern is a character matcher.
-```@example session
+# # Regular Expressions [`CombinedParser`](@ref)
+# Parsing is reading by a computer program,
+# formally transforming character sequences 
+# into defined and structured representations.
+#
+# -- name parser slide
+#
+# Representation and Transformation
+#
+# -- number list slide
+#
+# So parsing is a fundamental
+# obstacle before you can begin working with data.
+# Writing parsers is ubiquitous.
+#
+# ## What is a regular expression?
+# Regular expressions and state machines are the most common tools of the parsing trade.
+# Most programmers and data scientists are familiar with regular expressions.
+#
+# A regular expression is a textual representation of a parser program.
+# The syntax of regular expressions is condensed and arcane.
+#
+# Parsing has been a painpoint in all of my work as a developer and a researcher with a focus on text
+# while I accumulated plenty of regular expressions.
+# I still use these regexps at many places and do not want to rewrite all regular expressions I still need.
+# So I wrote a CombinedParser that parses regex, and transforms it into an equivalent julia parser program, 
 using CombinedParsers
+
+# This guide demonstrates constructing a recursive `CombinedParser` with the **[`@syntax`](@ref) or [`push!`](@ref) to [`Either`](@ref)** technique.
+# This page outlines essentials of the [`@re_str`](@ref) macro 
 using CombinedParsers.Regexp
+
+
+# ## Characters and Escaped Characters
+# The simplest regular expression pattern is a character matcher.
 import CombinedParsers.Regexp: meta_chars
-
 char_matcher =  Either(
-    
-    with_name("character", 
-        CharNotIn([ c for c in meta_chars])),
-    
-    with_name("escaped meta", 
-        Sequence(2, # emit unescaped
-            '\\', CharIn(meta_chars)))
-    
+    character = CharNotIn(meta_chars),
+    escaped_meta =  Sequence(
+	2,    # transform: emit unescaped at index
+        '\\', CharIn(meta_chars)
+    )
 )
-```
 
-The `char_matcher` unescapes regex `meta_chars`:
-```@repl session
-parse(char_matcher,"a"; log=true)
-parse(char_matcher,"\\["; log=true)
-```
+# The `char_matcher` unescapes regex `meta_chars`:
+parse(Repeat(char_matcher),raw"a\[b"; log=true)
 
-## Transforming a Parsing
-The parser for escaped and not escaped regular expression characters `char_matcher` emits `Char`s
-```@repl session
-result_type(char_matcher)
-```
+# ## Repeated patterns
+# ### Number of Repetitions: Transforming a Parsing
+# A basic feature of regular expression is whether a repeatable pattern (e.g. a char) is optional `?` (repeated 0 or 1 times), or should be repeated at least once `+`, any times `*`, or `{min,max}` times ([pcre spec](https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17)).
+# The syntax of regex repetitions require mapping such `SubString`s to representions as `UnitRange{Int}`.
+# 
+#
+# Above, the `:escaped_meta` mapped the parsing to emit the unescaped character at the second position in its sequence.
+# Any Julia function can be used for transformations with the `do` syntax after a `CombinedParser` constructor to implicitly call [`map`](@ref) creating a [`Transformation`](@ref) parser.
 
-The Julia [`map`](@ref) method for [`CombinedParser`](@ref) creates a [`Transformation`](@ref) parser.
-The `char_matcher` is transformed to emit an [`CharIn`](@ref) matching the unescaped character:
-```@repl session
-char_matcher_parser = map(CharIn,char_matcher);
-result_type(char_matcher_parser)
-```
-
-A parser for a single character is constructed that can then be used to `parse` that specific `Char`
-```@repl session
-p = parse(char_matcher_parser,"\\[")
-parse(p,"[")
-```
-## Repeated patterns
-
-## Number of Repetitions
-A basic feature of regular expression is whether a repeatable pattern (e.g. a char) is optional `?`, or should be repeated at least once `+`, any times `*`, or `{min,max}` times.
-
-The `Pair` syntax abbreviates [`map`](@ref)ping a match to a constant value.
-The `do` syntax is supported for all CombinedParsers constructors to implicitly call [`map`](@ref).
-```@example session
-import CombinedParsers.Regexp: integer
-
-# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
-@with_names repetition = Either(
-    "?" => (0,1), # == map(v->(0,1), parser("?"))
-    "+" => (1,typemax(Int)),
-    "*" => (0,typemax(Int)),
+import CombinedParsers.Regexp: integer, Repeat_max
+@with_names repetitions = Either(
+    '?' => 0:1, 
+    '+' => 1:Repeat_max,
+    '*' => 0:Repeat_max,
     Sequence(
-        "{", 
-        integer,
-        Optional( Sequence(2,",",
-            Optional(integer, default=typemax(Int)))),
-        "}") do v
-            if v[3] isa Missing
-                (v[2],v[2])
-            else
-                (v[2],v[3])
-            end::Tuple{Int,Int}
+        '{', 
+        :min => integer,
+        :max => Optional(
+	    Sequence(2,
+		     ',', integer | Repeat_max)),
+        '}'
+    ) do v
+    if v.max isa Missing
+    v.min:v.min
+    else
+    v.min:v.max
+    end::UnitRange{Int}
     end
 )
-```
 
-`repetition` parses PCRE repetition syntax into a `(min, max)`:
-```@repl session
-parse(repetition, "?")
-parse(repetition, "*")
-parse(repetition, "+")
-parse(repetition, "{2}")
-parse(repetition, "{5,}")
-```
+# `repetitions` parses PCRE repetitions syntax into a `(min, max)`:
+parse(repetitions, "?")
+parse(repetitions, "*")
+parse(repetitions, "+")
+parse(repetitions, "{2}")
+parse(repetitions, "{5,}")
 
-## [`Either`](@ref)
-Regular expressions can repeat character matchers and other sub-patterns when appending the `repetition` suffix.
-```@example session
-repeatable = Either{CombinedParser}(char_matcher_parser)
-nothing # hide
-```
-We will add capture groups and other sub-patterns to `repeatable` later.
+# ## [`Either`](@ref)
+# Regular expressions can repeat character matchers and other sub-patterns when appending the `repetitions` suffix.
+repeatable = Either{CombinedParser}(
+    map(CharIn,char_matcher),
+    '.' => AnyChar()
+)
+
+# We will add capture groups and other sub-patterns to `repeatable` later.
 
 
 
 
-## Repeatable patterns, [`Optional`](@ref), [`Lazy`](@ref) and [`Atomic`](@ref)
-The CombinedParser to parse a repeated pattern from PCRE syntax
-```@example session
+# ## Repeatable patterns, [`Optional`](@ref), [`Lazy`](@ref) and [`Atomic`](@ref)
+# The CombinedParser to parse a repeated pattern from PCRE syntax
 @with_names quantified=Sequence(
         repeatable,
-        Optional(repetition, default=(1,1)),
+        Optional(repetitions, default=(1,1)),
         Optional(map(v->convert(Char,v),with_name("possessive_quantifier",CharIn('+','?'))))
     ) do v
         pat = v[1]
@@ -112,7 +107,7 @@ The CombinedParser to parse a repeated pattern from PCRE syntax
         elseif v[2]==(0,1)
             Optional(pat)
         else
-            Repeat(pat,v[2])
+            Repeat(v[2],pat)
         end
         if v[3] === missing
             result
@@ -124,107 +119,97 @@ The CombinedParser to parse a repeated pattern from PCRE syntax
             result
         end
     end
-nothing # hide
-```
 
-`quantified` parses PCRE repetition syntax:
-```@repl session
-p = parse(quantified, raw"\++?", log=true)
+# PCRE repetitions syntax can be `quantified`:
+p = quantified(raw"\++?", log=true)
 parse(p, "+++")
-```
 
 
 
-## [`Sequence`](@ref)s and Alternations
-Regular expression patterns can be written in sequence, delimited by `|` for matching either one of several alternatives.
+# ## [`Sequence`](@ref)s and Alternations
+# Regular expression patterns can be written in sequence, delimited by `|` for matching either one of several alternatives.
+subpattern = Either{CombinedParser}(
+    '^' => AtStart(),
+    '$' => AtEnd(),
+    quantified);
+
+@with_names sequence =
+    map( v->sSequence(v...),
+         Repeat( subpattern ));
+p = sequence(raw"\++?$")
+parse(p, "+++")
 
 
-```@example session
-@with_names begin
-    sequence = map( v->sSequence(v...),
-        Repeat( quantified ))
+# The alternation parser transforms a regex string into a parser
+@with_names pattern = join(sequence, '|') do v
+    sEither(v...)::CombinedParser
+end;
 
-    alternation = Sequence(
-        sequence, 
-        Repeat(Sequence(2, '|',sequence))) do v
-            sEither(v[1],v[2]...)::CombinedParser
-        end
-end
-nothing # hide
-```
-
-The alternation parser transforms a regex string into a parser
-```@repl session
-result_type(alternation)
-p = parse(alternation, "ab|c", log=(:sequence, :alternation))
+result_type(pattern)
+p = parse(pattern, "ab|c", log=(:sequence, :pattern))
 parse(p, "c")
-```
 
-## [`Capture`](@ref)s
-Parentheses allow groupings that are repeatable.
-```@example session
+match(r"(\++?|)$", "+++")
+
+# ## [`Capture`](@ref)s
+# Parentheses allow groupings that are repeatable.
 import CombinedParsers.Regexp: name
 
-@with_names begin
-    noncapture_group=Sequence( 2, "(?:",alternation,")")
 
-    capture_group=Sequence("(",alternation,")") do v
-                Capture(v[2])
-    end;
-end
-nothing # hide
-```
-
-The [`push!`](@ref) to [`Either`](@ref) technique allows for the construction of recursive parsers.
-```@example session
+# The [`push!`](@ref) to [`Either`](@ref) technique allows for the construction of recursive parsers.
+@with_names capture_group =
+    map(Capture, Sequence(2, '(', pattern, ')'));
 push!(repeatable,capture_group);
-push!(repeatable,noncapture_group);
-nothing # hide
-```
+
+# Conveniently, the [`@syntax`](@ref) with a `for <name> in <either>` calls `push!`.
+@syntax for noncapture_group in repeatable
+    Sequence(2, '(?:', pattern, ')')
+end;
+
+regcomb = map(ParserWithCaptures,pattern);
+
+match(regcomb("(1a(2b?)*)*0"),"1a1a21a2b22b0")
+match(CombinedParsers.Regexp.Regcomb("(1a(2b?)*)*0"),"1a1a21a2b22b0")
+match(Regex("(1a(2b?)*)*0"),"1a1a21a2b22b0")
+pattern("(1a(2b?)*)*0")("1a1a21a2b22b0")
 
 
-```@repl session
-p = parse(alternation, "(ab|c)+", log=(:capture_group, repeatable))
-parse(p, "cabcabab")
-```
+# ## [`Lookahead`](@ref) and [`Lookbehind`](@ref)
 
 
-## [`Lookahead`](@ref) and [`Lookbehind`](@ref)
+@syntax for lookaround in repeatable
+    Sequence(
+        "(?",
+        :direction => Either(
+            '<' => Lookbehind,
+            Always() => Lookahead),
+        :doesmatch => Either(
+            '=' => true,
+            '!' => false),
+        :pattern => pattern,
+        ')') do v
+            v.direction(v.doesmatch,v.pattern)::CombinedParser
+            ## annotation needed for type inference
+            ## obfuscated by :direction
+        end
+end;
+
+match(pattern("a(?=c|d)."),"abad")
+match(Regex("a(?=c|d)."),"abad")
 
 
-```@example session
-@with_names lookahead=Sequence(
-    2,
-    "(",
-    Either(Sequence(
-            v -> LookAhead(true,v[2]),
-            Either("?=","*positive_lookahead:","*pla:"),
-            alternation),
-        Sequence(
-            v -> LookAhead(false,v[2]),
-            Either("?!","*negative_lookahead:","*nla:"),
-            alternation)),
-    ")");
-@with_names lookbehind=Sequence(
-    2,
-    "(",
-    Either(Sequence(v -> LookBehind(true,v[2]),
-            Either("?<=","*positive_lookbehind:","*plb:"),alternation),
-        Sequence(v -> LookBehind(false,v[2]),
-            Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
-    ")");
-
-pushfirst!(repeatable,lookahead);
-pushfirst!(repeatable,lookbehind);
-
-nothing # hide
-```
-
-## Regular Expression Brackets
-```@example session
-import CombinedParsers.Regexp: bracket
+# ## Regular Expression Brackets
+# The regular expression parser packaged with CombinedParser is widely compliant with the PCRE C library used in Julia `Base.Regex` -- and in more than half the tests actually faster than C
+# [see testing and benchmarking against PCRE tests](pcre-compliance.md).
+import CombinedParsers.Regexp: bracket, ParserWithCaptures
 push!(repeatable,bracket);
-bracket
-```
 
 
+
+# `CombinedParsers.Regexp.@re_str` is tested and benchmarked against the PCRE C library testset (see [compliance report](pcre-compliance.md)).
+
+
+# Syntax is essential, semantics is high-brow.
+# What is the semantics of a regular expression?
+# The semantics of regular expression is a parser program that reads a context free regular language.
+#

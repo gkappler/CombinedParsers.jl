@@ -1,36 +1,36 @@
 # Internal API
 ## Iterating Parsings
 ```@docs
-CombinedParsers._iterate
 CombinedParsers.ismatch
-```
-
-## Rewriting Parsers
-```@docs
-CombinedParsers.deepmap_parser
-```
-
-## Parsing Options
-```@docs
-CombinedParsers.Regexp.ParserOptions
-CombinedParsers.Regexp.FilterOptions
-CombinedParsers.Regexp.WithOptions
-CombinedParsers.Regexp.OnOptionsParser
+CombinedParsers._ismatch
+CombinedParsers._iterate
+CombinedParsers.tuple_pos
+CombinedParsers.tuple_state
 ```
 
 # Internal Types
-## Abstract Parser Types
+## Abstract Parsers
 ```@docs
 CombinedParsers.ParserTypes
 CombinedParsers.CombinedParser
 CombinedParsers.LeafParser
+```
+
+## Wrapped Parsers
+```@docs
+CombinedParsers.FilterParser
 CombinedParsers.ConstantParser
 CombinedParsers.NIndexParser
 CombinedParsers.WrappedParser
-CombinedParsers.LookAround
 CombinedParsers.Transformation
+CombinedParsers.LookAround
+```
+
+## States
+```@docs
 CombinedParsers.MatchState
 CombinedParsers.None
+CombinedParsers.NCodeunitsState
 ```
 
 ## Printing
@@ -44,21 +44,10 @@ CombinedParsers.MemoTreeChildren
 ```
 
 
-## Regular Expression Types
-```@docs
-CombinedParsers.Regexp.parse_options
-regex_escape
-CombinedParsers._iterate(::CombinedParsers.Regexp.ParserWithCaptures,::CombinedParsers.Regexp.SequenceWithCaptures,a...)
-```
 
+## Rewriting Parsers
 ```@docs
-CombinedParsers.Regexp.ParserWithCaptures
-CombinedParsers.Regexp.SequenceWithCaptures
-CombinedParsers.Regexp.ParseMatch
-CombinedParsers.Regexp.Capture
-CombinedParsers.Regexp.Backreference
-CombinedParsers.Regexp.Subroutine
-CombinedParsers.Regexp.Conditional
-CombinedParsers.Regexp.DupSubpatternNumbers
+CombinedParsers.deepmap_parser
+CombinedParsers.Regexp.NoDict
 ```
 
