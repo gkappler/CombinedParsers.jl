@@ -32,7 +32,7 @@ pc = Either(s);
 
 
 # `Either{Trie{Char}}` can be used to perform fast text search in Julia.
-# # Next
+# ### Next steps
 # - Flesh out text search example.
 # - Parallelization
 # - Relate to Aho-Corasick algorithm.
