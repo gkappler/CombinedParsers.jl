@@ -23,7 +23,7 @@ log conveniently for debugging, and let Julia compile your parser for performanc
   - Clear [`@syntax`](@ref) integrates [`map`](@ref) transformations with Julia [`result_type`](@ref) inference.
   - Define without redundancy: parser, memory representation, and instance construction.
     When solely the parser is defined, Julia infers [`result_type`](@ref)(parser) and defines memory layout, 
-	and constructors are compiled for the parsing state from [`Transformation`](@ref)s.
+    and constructors are compiled for the parsing state from [`Transformation`](@ref)s.
   - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides clearly layed out printing in the REPL. [`with_log`](@ref) provides colored logging of the parsing [`with_name`](@ref)s.
 - Interoperability
   - [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
@@ -50,29 +50,23 @@ Install with
 Parsing is reading and transforming a sequence of characters.
 `CombinedParsers` provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
 Combinator constructors are discussed in the [user guide](man/user.md).
-
-This example reads and evaluates arithmetical terms for rational numbers.
-A term expression has sub terms, [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, or a subterm in `parentheses`, added  further below:
 ```julia
 using CombinedParsers
 using TextParse
 ```
 
-Term expressions are sequences of subterms interleaved with operators.
-Sub terms are [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
+This example reads and evaluates arithmetical terms for rational numbers.
+The following defines an evaluating parser for rational number terms as sequences of subterms interleaved with operators.
+Sub-terms are [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
+or a subterm is written as parentheses around a nested term:
 ```julia
 @syntax subterm = Either{Rational{Int}}(TextParse.Numeric(Int));
-## A subterm can also be a nested term in parentheses
 @syntax for parenthesis in subterm
-    mult = evaluate |> join(subterm, CharIn("*/"), infix=:prefix )
-    adds = evaluate |> join(mult,    CharIn("+-"), infix=:prefix )
-    Sequence(2,'(',adds,')')
+    mult         = evaluate |> join(subterm, CharIn("*/"), infix=:prefix )
+    @syntax term = evaluate |> join(mult,    CharIn("+-"), infix=:prefix )
+    Sequence(2,'(',term,')')
 end;
-@syntax term = adds;
 ```
-This `CombinedParser` definition in 5,5 lines is sufficient for doing arithmetics:
-[`Base.join`](@ref)(x,infix; infix=:prefix) is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
-and `f |> parser` is shorthand for [`map`](@ref)`(f,parser)`.
 For parsing, [`@syntax`](@ref) registers a `@term_string` macro for parsing and transforming.
 ```julia
 julia> term"(1+2)/5"
@@ -90,6 +84,10 @@ julia> term("1/((1+2)*4+3*(5*2))",log = [:parenthesis])
 
 ```
 [Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
+
+This `CombinedParser` definition in 5,5 lines is sufficient for doing arithmetics:
+[`Base.join`](@ref)(x,infix; infix=:prefix) is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
+and `f |> parser` is shorthand for [`map`](@ref)`(f,parser)`.
 
 Note: The `evaluate` function definition is detailed in [the full example](man/example-arithmetic.md).
 ```julia
