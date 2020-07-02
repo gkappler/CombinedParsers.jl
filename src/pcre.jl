@@ -30,6 +30,8 @@ pcre_options_parser=Sequence(2,AtStart(),Optional(pcre_options,default=UInt32(0)
 
 Return PCRE option mask parsed from `options`.
 
+Parser for `flags` in [`@re_str`](@ref).
+
 ```jldoctest
 julia> CombinedParsers.Regexp.pcre_options_parser
 🗄 Sequence |> map(#52)

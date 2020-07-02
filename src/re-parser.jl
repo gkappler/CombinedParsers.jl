@@ -670,7 +670,7 @@ end
 """
     Regcomb(x::AbstractString,flags::AbstractString)
 
-used in [`@re_str`](@ref).
+Syntax for `flags` in [`@re_str`](@ref).
 """
 function Regcomb(x::AbstractString,flags::AbstractString)
     o = parse_options(flags)
@@ -712,6 +712,7 @@ julia> re"a+c"
 ::Tuple{Array{Char,1},Char}
 ```
 
+See also [`Regcomb`](@ref), [`parse_options`](@ref).
 """
 macro re_str(x)
     esc(quote
