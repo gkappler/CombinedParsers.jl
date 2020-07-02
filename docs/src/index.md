@@ -97,7 +97,7 @@ evaluate( (1, [ ('*',4), ('/',3) ]) )
 ```
 
 ## Design
-The arithmetic parser can be defined without redundancy.
+The arithmetic parser above was defined without redundancy.
 The `CombinedParsers` design 
 - infers the Julia data types of the parsing domain with [`result_type`](@ref),
 - constructors are compiled for the parsing states,
@@ -105,7 +105,7 @@ The `CombinedParsers` design
 - is composable and optimizable with Julia method dispatch,
 - provides flexible public API for parsing, matching, and iteration.
 
-This design is used in several packages of format-parsers transforming texts into nested julia representations.
+This design is used in several packages providing parsers transforming formats into nested julia representations.
 - OrgmodeParser.jl is a `CombinedParser` for parsing main [org mode](https://orgmode.org/) syntax,
   representing org files within Julia.
 - WikitextParser.jl is a `CombinedParser` for parsing [wikitext syntax](https://en.wikipedia.org/wiki/Help:Wikitext),
@@ -113,7 +113,7 @@ This design is used in several packages of format-parsers transforming texts int
 - CombinedParserTools.jl is currently more or less my own workspace to provide a set of re-useable parsers.
 If you want to work with any of these open source packages, I will gladly provide professional support.
 If you are writing your own recursive `CombinedParser` and seek inspiration, you might find these comprehensive examples interesting.
-(pre-\alpha, so beware, dragons!)
+(pre-α, so beware, dragons!)
 
 
 Making Julia parametric types central for the parser design allows equal automation of the data pipeline after parsing!
@@ -124,17 +124,16 @@ Making Julia parametric types central for the parser design allows equal automat
 All (currently) proprietary packages are default-over-configuration for fast integration, and are in active development.
 
 ## Optimization Strategy
-CombinedParsers.jl is tested against the C PCRE2 library testset.
-This strategy also allows for efficient benchmarking of code optimizations on many patterns, and runtime comparison with C PCRE2.
-C PCRE2 optimized is among the fastest regex libraries ([second behind Rust](https://github.com/mariomka/regex-benchmark/tree/optimized), running [mariomka](https://github.com/mariomka)'s benchmark will position CombinedParser among its competition.
-Explorations for optimization are in git branches.
-> All benchmarks are wrong, but some are useful - [Szilard](https://github.com/szilard), [benchm-ml](https://github.com/szilard/benchm-ml)
+CombinedParsers.jl is tested against the C PCRE2 library testset, and for 58% of patterns, `CombinedParsers`  match faster than `Regex`.
+C PCRE2 optimized is among the fastest regex libraries ([second behind Rust](https://github.com/mariomka/regex-benchmark/tree/optimized), running [mariomka](https://github.com/mariomka)'s benchmark will position CombinedParser among its competition).
 ```@contents
 Pages = [
     "man/pcre-compliance.md",
 ]
 Depth = 5
 ```
+Explorations for optimization are in git branches.
+> All benchmarks are wrong, but some are useful - [Szilard](https://github.com/szilard), [benchm-ml](https://github.com/szilard/benchm-ml)
 
 The package is still young, and optimization is ongoing.
 If you are interested in and able to dive deeper into the Julia memory layout and compiler, I would gladly collaborate on further optimizations:
@@ -149,7 +148,7 @@ If you are interested in and able to dive deeper into the Julia memory layout an
 
 ## Acknowledgements
 
-This package is enabled only due to the Julia's compiler and superior type system.
+This package is enabled only due to Julia's compiler and superior type system.
 Thankfully: a really concise language for powerful computing!
 
 
