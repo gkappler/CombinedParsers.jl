@@ -218,6 +218,8 @@ See also [`parse`](@ref).
 """
 (x::CombinedParser)(str;kw...) = parse(x,str;kw...)
 (x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
+(x::CombinedParser)(f::Function,a...;kw...) = map(f,x,a...;kw...)
+
 @inline state_type(::Type{<:CombinedParser{S}}) where {S} = S
 state_type(::Type{<:CombinedParser}) = Any
 
