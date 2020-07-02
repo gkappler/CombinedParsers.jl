@@ -66,10 +66,10 @@ BenchmarkTools.Trial:
   memory estimate:  2.17 KiB
   allocs estimate:  42
   --------------
-  minimum time:     2.968 μs (0.00% GC)
-  median time:      3.091 μs (0.00% GC)
-  mean time:        3.427 μs (7.35% GC)
-  maximum time:     1.290 ms (99.49% GC)
+  minimum time:     2.971 μs (0.00% GC)
+  median time:      3.184 μs (0.00% GC)
+  mean time:        3.586 μs (8.03% GC)
+  maximum time:     1.456 ms (99.30% GC)
   --------------
   samples:          10000
   evals/sample:     8</code></pre><p>in unfair benchmark-comparison with the more expressive Julia syntax parser</p><pre><code class="language-julia-repl">julia&gt; @benchmark Meta.parse(&quot;(1+2)/5&quot;)
@@ -77,10 +77,10 @@ BenchmarkTools.Trial:
   memory estimate:  496 bytes
   allocs estimate:  11
   --------------
-  minimum time:     58.016 μs (0.00% GC)
-  median time:      59.721 μs (0.00% GC)
-  mean time:        63.487 μs (0.00% GC)
-  maximum time:     2.040 ms (0.00% GC)
+  minimum time:     58.352 μs (0.00% GC)
+  median time:      60.896 μs (0.00% GC)
+  mean time:        68.577 μs (0.00% GC)
+  maximum time:     2.660 ms (0.00% GC)
   --------------
   samples:          10000
   evals/sample:     1</code></pre><p>Parsing and transforming (here <code>eval</code>)</p><pre><code class="language-julia-repl">julia&gt; @benchmark term(&quot;(1+2)/5&quot;)
@@ -88,10 +88,10 @@ BenchmarkTools.Trial:
   memory estimate:  8.67 KiB
   allocs estimate:  160
   --------------
-  minimum time:     138.883 μs (0.00% GC)
-  median time:      142.823 μs (0.00% GC)
-  mean time:        154.021 μs (1.36% GC)
-  maximum time:     10.793 ms (98.11% GC)
+  minimum time:     139.535 μs (0.00% GC)
+  median time:      146.405 μs (0.00% GC)
+  mean time:        168.406 μs (1.45% GC)
+  maximum time:     12.805 ms (96.69% GC)
   --------------
   samples:          10000
   evals/sample:     1</code></pre><p>compared to Julia</p><pre><code class="language-julia-repl">julia&gt; @benchmark eval(Meta.parse(&quot;(1+2)/5&quot;))
@@ -99,10 +99,10 @@ BenchmarkTools.Trial:
   memory estimate:  3.02 KiB
   allocs estimate:  49
   --------------
-  minimum time:     134.758 μs (0.00% GC)
-  median time:      137.974 μs (0.00% GC)
-  mean time:        146.429 μs (0.00% GC)
-  maximum time:     1.924 ms (0.00% GC)
+  minimum time:     135.869 μs (0.00% GC)
+  median time:      140.529 μs (0.00% GC)
+  mean time:        158.492 μs (0.00% GC)
+  maximum time:     2.425 ms (0.00% GC)
   --------------
   samples:          10000
-  evals/sample:     1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-palindromes/">« struct Palindrome&lt;:CombinedParser</a><a class="docs-footer-nextpage" href="../json/">JSON »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 2 July 2020 12:30">Thursday 2 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  evals/sample:     1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-palindromes/">« struct Palindrome&lt;:CombinedParser</a><a class="docs-footer-nextpage" href="../json/">JSON »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 2 July 2020 12:59">Thursday 2 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
