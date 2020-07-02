@@ -100,15 +100,33 @@ Base.getproperty(x::ParseMatch{<:Any,<:AbstractString,Nothing},key::Symbol) =
         _getproperty(x,key)
     end
 
+"""
+ParseMatch iteration has the first match as iterator, the last match as a state.
+(Turned out to be fastest.)
+"""
+parsematch_tuple(m,start,state) =
+    let r = ParseMatch(m,start,tuple_pos(state),tuple_state(state))
+        return tuple(r,r)
+    end
+parsematch_tuple(m,start,state::Nothing) = nothing
+
+"""
+    iterate(m::CombinedParser,s::AbstractString)
+"""
 Base.iterate(m::CombinedParser,s::AbstractString) =
     iterate(ParseMatch(m,s,1,1,nothing))
-function Base.iterate(m::ParseMatch, (posi,after,state)=(m.start,m.stop,m.state))
-    i = _iterate(m.parsings,posi,after, state)
-    i === nothing && return nothing
-    r = ParseMatch(m.parsings,posi,i...)
-    r, (posi,i...)
-end
+import Base: iterate
+"""
+    Base.iterate(x::ParseMatch[, m::ParseMatch=x])
 
+[`_iterate`](@ref)(m).
+"""
+function Base.iterate(x::ParseMatch, m=x)
+    i = _iterate(m)
+    parsematch_tuple(m.parsings,m.start,i)
+end
+_iterate(m::ParseMatch) =
+    _iterate(m.parsings,m.start,m.stop,m.state)
 export match_all
 function match_all(parser::ParserTypes, sequence, idx=1; log=nothing)
     p = (log === nothing || log == false ) ? parser : log_names(parser,log)
@@ -116,12 +134,15 @@ function match_all(parser::ParserTypes, sequence, idx=1; log=nothing)
 end
 
 import Base: iterate
+"""
+    Base.iterate(x::MatchesIterator[, s::ParseMatch=ParseMatch(x,x.from,x.from,nothing)])
+
+Iterate match `s` at current position.
+While no match is found, increase s.start.
+Return first next ParseMatch (as return value and state) or nothing when at `m.till`.
+"""
 @inline Base.iterate(x::MatchesIterator) =
     iterate(x,ParseMatch(x,x.from,x.from,nothing))
-parsematch_tuple(m,start,state) =
-    let r = ParseMatch(m,start,tuple_pos(state),tuple_state(state))
-        return tuple(r,r)
-    end
 function Base.iterate(m::MatchesIterator,
                       s::ParseMatch)
     start,stop = s.start, s.stop
@@ -133,7 +154,6 @@ function Base.iterate(m::MatchesIterator,
         start = nextind(m.sequence,start)
         state = _iterate(m,start,start,nothing)
     end
-    state === nothing && return nothing
     parsematch_tuple(m,start,state)
 end
 
