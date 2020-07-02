@@ -46,7 +46,6 @@ Install with
 ### Example: rational numbers arithmetics
 Parsing is reading and transforming a sequence of characters.
 `CombinedParsers` provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
-Combinator constructors are discussed in the [user guide](man/user.md).
 ```@example session
 using CombinedParsers
 using TextParse
@@ -66,8 +65,8 @@ function evaluate( (start, operation_values) )
     return aggregated_value
 end
 ```
-Sub-terms are [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
-or a subterm is written as parentheses around a nested term:
+Subterms are [`Either`](@ref) integer numbers, `TextParse.Numeric(Int)` converted to `Rational{Int}`,
+or subterms are written as parentheses around a nested term:
 ```@example session
 @syntax subterm = Either{Rational{Int}}(TextParse.Numeric(Int));
 @syntax for parenthesis in subterm
@@ -77,8 +76,12 @@ or a subterm is written as parentheses around a nested term:
 end;
 nothing # hide
 ```
-For parsing, [`@syntax`](@ref) registers a `@term_string` macro for parsing and transforming.
+The [`@syntax`](@ref) definition in 5,5 lines is sufficient for parsing and evaluating arithmetics:
+[`Base.join`](@ref)`(x,infix; infix=:prefix)` is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
+and `f |> parser` is shorthand for [`map`](@ref)`(f,parser)`.
+That's all! [`@syntax`](@ref) registers a `@term_string` macro for parsing and transforming:
 ```@repl session
+result_type(term)
 term"(1+2)/5"
 # The defined `CombinedParser` `term` function 
 # provides optional logging of the parsing process.
@@ -86,9 +89,6 @@ term("1/((1+2)*4+3*(5*2))",log = [:parenthesis])
 ```
 [Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
 
-This [`@syntax`](@ref) definition in 5,5 lines is sufficient for parsing and evaluating arithmetics:
-[`Base.join`](@ref)`(x,infix; infix=:prefix)` is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
-and `f |> parser` is shorthand for [`map`](@ref)`(f,parser)`.
 
 Note: The `evaluate` function definition is detailed in [the full example](man/example-arithmetic.md).
 ```@repl session
