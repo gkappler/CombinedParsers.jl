@@ -14,6 +14,7 @@ Tries = "666c268a-d78f-417b-b45a-09e10b365109"
 [compat]
 AbstractTrees = "0.2.1, 0.3.3"
 AutoHashEquals = "0.2.0"
+InternedStrings = "0.7"
 Nullables = "1.0.0"
 TextParse = "1.0.0"
 Tries = "0.1.2"
