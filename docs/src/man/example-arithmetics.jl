@@ -13,7 +13,6 @@ function evaluate( (start, operation_values) )
 end
 evaluate( (0, [ ('+',1), ('+',1) ]) )
 evaluate( (1, [ ('*',2), ('*',3) ]) )
-# ```
 # The function definition is detailed in [the full example](man/example-arithmetic.md).
 #
 using CombinedParsers
@@ -32,7 +31,7 @@ end;
 # This `CombinedParser` definition in 5,5 lines is sufficient for doing arithmetics:
 # [`Base.join`](@ref)(x,infix; infix=:prefix) is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
 # and `f |> parser` is shorthand for [`map`](@ref)(f,parser)`.
-@syntax term = sums;
+@syntax term = adds;
 # registers a `@term_string` macro for parsing and transforming.
 term"(1+2)/5"
 

@@ -14,28 +14,26 @@ log conveniently for debugging, and let Julia compile your parser for performanc
 
 - Speed
   - [write parsers faster than `Base.PCRE`](man/pcre-compliance.md), optimized by the Julia compiler for parametric parser and state types.
-  - Fast `@generated function`s for sequences.
-  - Fast Trie-based scanning ([example](man/example-either-trie.md))
-  - Compile with your custom parsing algorithm ([example](man/example-palindromes.md))
-  - (planned: memoization)
-  - (planned: lazy transformations)
+  - `@generated function`s, trie-based scanning ([example](man/example-either-trie.md)), compile with your custom parsing algorithm ([example](man/example-palindromes.md))
+  - (planned: memoization, lazy transformations)
 - Simplicity
   - Clear [`@syntax`](@ref) integrates [`map`](@ref) transformations with Julia [`result_type`](@ref) inference.
-  - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides colored and clearly layed out printing in the REPL.
-  - Convenient logging of the parsing process [`with_name`](@ref)s and [`SideeffectParser`](@ref)s.
+  - Define without redundancy: parser, memory representation, and instance construction.
+	When solely the parser is defined, Julia infers [`result_type`](@ref)(parser) and defines memory layout, 
+	and constructors are compiled for the parsing state from [`Transformation`](@ref)s.
+  - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides clearly layed out printing in the REPL. [`with_log`](@ref) provides colored logging of the parsing [`with_name`](@ref)s.
 - Interoperability
   - [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
   - Pure Julia regular expression parsers are provided with the [`@re_str`](@ref) macro, a plug-in replacement for `Base.@r_str`.
-  - Tested on the [PCRE pattern test set](man/pcre-compliance.md).
+    Tested on the [PCRE pattern test set](man/pcre-compliance.md).
 - Generality
-  - UTF8
   - All valid parsings can be [`Base.iterate`](@ref)d lazily.
   - Higher-order parsers depending on the parsing state allow for not context-free parsers ([`after`](@ref)).
-  - CombinedParsers generalize from strings to parsing any sequence type supporting `getindex`, `nextind`, `prevind` methods.
+  - can process UTF8 strings or any sequence type supporting `getindex`, `nextind`, `prevind` methods.
 
 
 ## Getting started
-The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
+- The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
 The [User guide](man/user.md) provides a summary of CombinedParsers types.
 Some examples of packages using CombinedParsers can be found on the [Examples](@ref) page.
 See the [Index](@ref main-index) for the complete list of documented functions and types.
@@ -154,23 +152,11 @@ Making Julia parametric types central for the parser design allows equal automat
 All (currently) proprietary packages are default-over-configuration for fast integration, and are in active development.
 
 
-## Optimization Strategy
-CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
-```@contents
-Pages = [
-    "man/pcre-compliance.md",
-]
-Depth = 5
-```
-
-This strategy allows for efficient benchmarking of code optimizations on many Regex and other syntax patterns.
-Explorations for optimization are in git branches:
-```@contents
-Pages = [ "benchmarks/public.md", "benchmarks/internals.md" ]
-Depth = 5
-```
 
 # Acknowledgements
+
+This package is enabled only due to the Julia's compiler and superior type system.
+Thankfully: a really concise language for powerful computing!
 
 I am thankful for contributions and inspiration from many great packages:
 ## [TextParse.jl](https://github.com/queryverse/TextParse.jl)
@@ -199,6 +185,17 @@ CombinedParsers.tryparsenext
   `CombinedParsers` integrates into the Julia 1.0 Iteration API, small `Union{Nothing,T} where T` types instead of using Nullables, compiler optimizations and generated functions.
   I want to provide benchmarks comparisons with `ParserCombinator.jl`.
 
+# Outline
+## Manual
+```@contents
+Pages = [
+	"man/guide.md",
+	"man/user.md",
+	"man/example-either-trie.md",
+	]
+Depth = 5
+```
+
 ## Examples
 ```@contents
 Pages = [
@@ -211,7 +208,8 @@ Pages = [
 Depth = 5
 ```
 
-# Library Outline
+
+## Library API
 
 ```@contents
 Pages = [ "lib/public.md", "lib/internals.md" ]

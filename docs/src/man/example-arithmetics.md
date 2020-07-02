@@ -21,7 +21,6 @@ evaluate( (0, [ ('+',1), ('+',1) ]) )
 evaluate( (1, [ ('*',2), ('*',3) ]) )
 ```
 
-```
 The function definition is detailed in [the full example](man/example-arithmetic.md).
 
 ```@repl session
@@ -59,7 +58,7 @@ This `CombinedParser` definition in 5,5 lines is sufficient for doing arithmetic
 and `f |> parser` is shorthand for [`map`](@ref)(f,parser)`.
 
 ```@repl session
-@syntax term = sums;
+@syntax term = adds;
 nothing #hide
 ```
 
