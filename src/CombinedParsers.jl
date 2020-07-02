@@ -1878,7 +1878,7 @@ Repeat1(f::Function,a...) =
 import Base.join
 
 """
-    Base.join(x::Repeat,delim)
+    Base.join(x::Repeat,delim, infix=:skip)
 
 Parser matching repeated `x.parser` separated by `delim`.
 ```jldoctest
@@ -1888,18 +1888,33 @@ julia> parse(join(Repeat(AnyChar()),','),"a,b,c")
  'b'
  'c'
 ```
+```jldoctest
+julia> parse(join(Repeat(AnyChar()),',';infix=:prefix),"a,b,c")
+('a', [(',', 'b'), (',', 'c')])
+
+julia> parse(join(Repeat(AnyChar()),',';infix=:suffix),"a,b,c")
+([('a', ','), ('b', ',')], 'c')
+```
 """
-function Base.join(x::Repeat,delim_)
+function Base.join(x::Repeat, delim_; infix=:skip)
     delim = parser(delim_)
-    ## todo: the get function could be optimized
-    ##@show x.range
-    map(x.parser * Repeat(
-        max(0,x.range.start-1),
-        x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1,
-        Sequence(2, delim_,x.parser ))) do (f,r)
-            pushfirst!(r,f)
-            r::result_type(x)
-        end
+    if infix==:prefix
+        Sequence(x.parser, Repeat( Sequence( delim, x.parser ) ))
+    elseif infix==:suffix
+        Sequence(Repeat( Sequence( x.parser, delim ) ), x.parser)
+    elseif infix==:skip
+        ## todo: the get function could be optimized
+        ##@show x.range
+        map(x.parser * Repeat(
+            max(0,x.range.start-1),
+            x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1,
+            Sequence(2, delim,x.parser ))) do (f,r)
+                pushfirst!(r,f)
+                r::result_type(x)
+            end
+    else
+        error("unknown delim=$delim, infix=$infix")
+    end
 end
 
 """
@@ -1907,15 +1922,16 @@ end
 
 Shorthand for `join(Repeat(x),delim)`.
 """
-Base.join(x::CombinedParser,delim) = join(Repeat(x),delim)
+Base.join(x::CombinedParser,delim; kw...) =
+    join(Repeat(x),delim;kw...)
 
 """
     Base.join(f::Function, x::CombinedParser, delim)
 
 Shorthand for `map(f,join(x,delim))`.
 """
-Base.join(f::Function,p::CombinedParser,delim_) =
-    map(f,join(p,delim_))
+Base.join(f::Function,p::CombinedParser,delim_; kw...) =
+    map(f,join(p,delim_; kw...))
 
 function print_constructor(io::IO,x::Repeat)
     print_constructor(io,x.parser)
