@@ -49,7 +49,7 @@ Install with
 Parsing is reading and transforming a sequence of characters.
 This example reads and evaluates arithmetical terms for rational numbers.
 Subterms can use algebraic operators `+-*/` that will be evaluated with 
-```@repl session
+```@setup session
 function evaluate( (start, operation_values) )
     aggregated_value::Rational{Int} = start
     for (op,val) in operation_values
@@ -59,9 +59,12 @@ function evaluate( (start, operation_values) )
     end
     return aggregated_value
 end
+```
+```@repl session
 evaluate( (0, [ ('+',1), ('+',1) ]) )
 evaluate( (1, [ ('*',2), ('*',3) ]) )
 ```
+The function definition is detailed in [the full example](man/example-arithmetic.md).
 
 ### `TextParse.Numeric(Int)`
 `CombinedParsers` provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
@@ -159,28 +162,6 @@ Explorations for optimization are in git branches:
 ```@contents
 Pages = [ "benchmarks/public.md", "benchmarks/internals.md" ]
 Depth = 5
-```
-
-
-Parsing times for Int, operators, brackets are
-```@repl session
-using BenchmarkTools
-@benchmark match(term,"(1+2)/5") 
-```
-
-compared to Julia 
-```@example session
-@benchmark Meta.parse("(1+2)/5")
-```
-
-Parsing and transforming (here `eval`)
-```@example session
-@benchmark term("(1+2)/5") 
-```
-
-compared to Julia 
-```@example session
-@benchmark eval(Meta.parse("(1+2)/5"))
 ```
 
 # Acknowledgements
