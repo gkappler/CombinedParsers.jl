@@ -4,7 +4,7 @@ using CombinedParsers
 using CombinedParsers.Regexp
 ```
 
-## Regular expression `match` and `RegexMatch` syntax
+## `ParseMatch`
 CombinedParsers.jl provides the `@re_str` macro as a plug-in replacement for the base Julia `@r_str` macro.
 Base Julia PCRE regular expressions:
 ```@repl
