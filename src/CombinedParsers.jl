@@ -422,6 +422,11 @@ julia> parse(!Repeat(CharIn(:L)),"abc123")
 (!)(x::AbstractToken) = JoinSubstring(x)
 using InternedStrings
 import InternedStrings: intern
+"""
+    (!)(x::JoinSubstring)
+
+Parser transformating result `v -> InternedStrings.intern(v)`.
+"""
 (!)(x::JoinSubstring) = map(InternedStrings.intern, x)
 
 
@@ -897,6 +902,13 @@ function print_constructor(io::IO,x::NamedParser)
     printstyled(io, x.name, bold=true,color=:red)
     print(io, ")")
 end
+
+"""
+    (!)(x::NamedParser)
+
+Parser transformating result `v -> v=>x.name`.
+"""
+(!)(x::NamedParser) = map(v -> v => x.name, x)
 
 """
     parser(x::Pair{Symbol, P}) where P
