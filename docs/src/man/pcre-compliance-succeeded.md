@@ -10,10 +10,10 @@
 ```
 (no 1) succeeded 4 of 4 times:
 
-- ✓ `the quick brown fox`
-- ✓ `What do you know about the quick brown fox?`
-- ✓ `The quick brown FOX` no match
-- ✓ `What do you know about THE QUICK BROWN FOX?` no match
+- ✅ `the quick brown fox`
+- ✅ `What do you know about the quick brown fox?`
+- ✅ `The quick brown FOX` no match
+- ✅ `What do you know about THE QUICK BROWN FOX?` no match
 
 ---
 
@@ -22,10 +22,10 @@
 ```
 (no 2) succeeded 4 of 4 times:
 
-- ✓ `the quick brown fox`
-- ✓ `The quick brown FOX`
-- ✓ `What do you know about the quick brown fox?`
-- ✓ `What do you know about THE QUICK BROWN FOX?`
+- ✅ `the quick brown fox`
+- ✅ `The quick brown FOX`
+- ✅ `What do you know about the quick brown fox?`
+- ✅ `What do you know about THE QUICK BROWN FOX?`
 
 ---
 
@@ -34,7 +34,7 @@
 ```
 (no 3) succeeded 1 of 1 times:
 
-- ✓ `abcd\t\n\r\f\a\e9;$\\?caxyz`
+- ✅ `abcd\t\n\r\f\a\e9;$\\?caxyz`
 
 ---
 
@@ -43,42 +43,42 @@
 ```
 (no 4) succeeded 36 of 36 times:
 
-- ✓ `abxyzpqrrrabbxyyyypqAzz`
-- ✓ `abxyzpqrrrabbxyyyypqAzz`
-- ✓ `aabxyzpqrrrabbxyyyypqAzz`
-- ✓ `aaabxyzpqrrrabbxyyyypqAzz`
-- ✓ `aaaabxyzpqrrrabbxyyyypqAzz`
-- ✓ `abcxyzpqrrrabbxyyyypqAzz`
-- ✓ `aabcxyzpqrrrabbxyyyypqAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypqAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypqqAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypqqqAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypqqqqAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypqqqqqAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypqqqqqqAzz`
-- ✓ `aaaabcxyzpqrrrabbxyyyypqAzz`
-- ✓ `abxyzzpqrrrabbxyyyypqAzz`
-- ✓ `aabxyzzzpqrrrabbxyyyypqAzz`
-- ✓ `aaabxyzzzzpqrrrabbxyyyypqAzz`
-- ✓ `aaaabxyzzzzpqrrrabbxyyyypqAzz`
-- ✓ `abcxyzzpqrrrabbxyyyypqAzz`
-- ✓ `aabcxyzzzpqrrrabbxyyyypqAzz`
-- ✓ `aaabcxyzzzzpqrrrabbxyyyypqAzz`
-- ✓ `aaaabcxyzzzzpqrrrabbxyyyypqAzz`
-- ✓ `aaaabcxyzzzzpqrrrabbbxyyyypqAzz`
-- ✓ `aaaabcxyzzzzpqrrrabbbxyyyyypqAzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypABzz`
-- ✓ `aaabcxyzpqrrrabbxyyyypABBzz`
-- ✓ `>>>aaabxyzpqrrrabbxyyyypqAzz`
-- ✓ `>aaaabxyzpqrrrabbxyyyypqAzz`
-- ✓ `>>>>abcxyzpqrrrabbxyyyypqAzz`
-- ✓ `abxyzpqrrabbxyyyypqAzz` no match
-- ✓ `abxyzpqrrrrabbxyyyypqAzz` no match
-- ✓ `abxyzpqrrrabxyyyypqAzz` no match
-- ✓ `aaaabcxyzzzzpqrrrabbbxyyyyyypqAzz` no match
-- ✓ `aaaabcxyzzzzpqrrrabbbxyyypqAzz` no match
-- ✓ `aaabcxyzpqrrrabbxyyyypqqqqqqqAzz` no match
+- ✅ `abxyzpqrrrabbxyyyypqAzz`
+- ✅ `abxyzpqrrrabbxyyyypqAzz`
+- ✅ `aabxyzpqrrrabbxyyyypqAzz`
+- ✅ `aaabxyzpqrrrabbxyyyypqAzz`
+- ✅ `aaaabxyzpqrrrabbxyyyypqAzz`
+- ✅ `abcxyzpqrrrabbxyyyypqAzz`
+- ✅ `aabcxyzpqrrrabbxyyyypqAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypqAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypqqAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypqqqAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypqqqqAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypqqqqqAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypqqqqqqAzz`
+- ✅ `aaaabcxyzpqrrrabbxyyyypqAzz`
+- ✅ `abxyzzpqrrrabbxyyyypqAzz`
+- ✅ `aabxyzzzpqrrrabbxyyyypqAzz`
+- ✅ `aaabxyzzzzpqrrrabbxyyyypqAzz`
+- ✅ `aaaabxyzzzzpqrrrabbxyyyypqAzz`
+- ✅ `abcxyzzpqrrrabbxyyyypqAzz`
+- ✅ `aabcxyzzzpqrrrabbxyyyypqAzz`
+- ✅ `aaabcxyzzzzpqrrrabbxyyyypqAzz`
+- ✅ `aaaabcxyzzzzpqrrrabbxyyyypqAzz`
+- ✅ `aaaabcxyzzzzpqrrrabbbxyyyypqAzz`
+- ✅ `aaaabcxyzzzzpqrrrabbbxyyyyypqAzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypABzz`
+- ✅ `aaabcxyzpqrrrabbxyyyypABBzz`
+- ✅ `>>>aaabxyzpqrrrabbxyyyypqAzz`
+- ✅ `>aaaabxyzpqrrrabbxyyyypqAzz`
+- ✅ `>>>>abcxyzpqrrrabbxyyyypqAzz`
+- ✅ `abxyzpqrrabbxyyyypqAzz` no match
+- ✅ `abxyzpqrrrrabbxyyyypqAzz` no match
+- ✅ `abxyzpqrrrabxyyyypqAzz` no match
+- ✅ `aaaabcxyzzzzpqrrrabbbxyyyyyypqAzz` no match
+- ✅ `aaaabcxyzzzzpqrrrabbbxyyypqAzz` no match
+- ✅ `aaabcxyzpqrrrabbxyyyypqqqqqqqAzz` no match
 
 ---
 
@@ -87,11 +87,11 @@
 ```
 (no 5) succeeded 5 of 5 times:
 
-- ✓ `abczz`
-- ✓ `abcabczz`
-- ✓ `zz` no match
-- ✓ `abcabcabczz` no match
-- ✓ `>>abczz` no match
+- ✅ `abczz`
+- ✅ `abcabczz`
+- ✅ `zz` no match
+- ✅ `abcabcabczz` no match
+- ✅ `>>abczz` no match
 
 ---
 
@@ -100,16 +100,16 @@
 ```
 (no 6) succeeded 10 of 10 times:
 
-- ✓ `bc`
-- ✓ `bbc`
-- ✓ `bbbc`
-- ✓ `bac`
-- ✓ `bbac`
-- ✓ `aac`
-- ✓ `abbbbbbbbbbbc`
-- ✓ `bbbbbbbbbbbac`
-- ✓ `aaac` no match
-- ✓ `abbbbbbbbbbbac` no match
+- ✅ `bc`
+- ✅ `bbc`
+- ✅ `bbbc`
+- ✅ `bac`
+- ✅ `bbac`
+- ✅ `aac`
+- ✅ `abbbbbbbbbbbc`
+- ✅ `bbbbbbbbbbbac`
+- ✅ `aaac` no match
+- ✅ `abbbbbbbbbbbac` no match
 
 ---
 
@@ -118,16 +118,16 @@
 ```
 (no 7) succeeded 10 of 10 times:
 
-- ✓ `bc`
-- ✓ `bbc`
-- ✓ `bbbc`
-- ✓ `bac`
-- ✓ `bbac`
-- ✓ `aac`
-- ✓ `abbbbbbbbbbbc`
-- ✓ `bbbbbbbbbbbac`
-- ✓ `aaac` no match
-- ✓ `abbbbbbbbbbbac` no match
+- ✅ `bc`
+- ✅ `bbc`
+- ✅ `bbbc`
+- ✅ `bac`
+- ✅ `bbac`
+- ✅ `aac`
+- ✅ `abbbbbbbbbbbc`
+- ✅ `bbbbbbbbbbbac`
+- ✅ `aaac` no match
+- ✅ `abbbbbbbbbbbac` no match
 
 ---
 
@@ -136,11 +136,11 @@
 ```
 (no 8) succeeded 5 of 5 times:
 
-- ✓ `babc`
-- ✓ `bbabc`
-- ✓ `bababc`
-- ✓ `bababbc` no match
-- ✓ `babababc` no match
+- ✅ `babc`
+- ✅ `bbabc`
+- ✅ `bababc`
+- ✅ `bababbc` no match
+- ✅ `babababc` no match
 
 ---
 
@@ -149,7 +149,7 @@
 ```
 (no 9) succeeded 1 of 1 times:
 
-- ✓ `\x01\x01\e;z`
+- ✅ `\x01\x01\e;z`
 
 ---
 
@@ -158,15 +158,15 @@
 ```
 (no 10) succeeded 9 of 9 times:
 
-- ✓ `athing`
-- ✓ `bthing`
-- ✓ `]thing`
-- ✓ `cthing`
-- ✓ `dthing`
-- ✓ `ething`
-- ✓ `fthing` no match
-- ✓ `[thing` no match
-- ✓ `\\thing` no match
+- ✅ `athing`
+- ✅ `bthing`
+- ✅ `]thing`
+- ✅ `cthing`
+- ✅ `dthing`
+- ✅ `ething`
+- ✅ `fthing` no match
+- ✅ `[thing` no match
+- ✅ `\\thing` no match
 
 ---
 
@@ -175,12 +175,12 @@
 ```
 (no 11) succeeded 6 of 6 times:
 
-- ✓ `]thing`
-- ✓ `cthing`
-- ✓ `dthing`
-- ✓ `ething`
-- ✓ `athing` no match
-- ✓ `fthing` no match
+- ✅ `]thing`
+- ✅ `cthing`
+- ✅ `dthing`
+- ✅ `ething`
+- ✅ `athing` no match
+- ✅ `fthing` no match
 
 ---
 
@@ -189,15 +189,15 @@
 ```
 (no 12) succeeded 9 of 9 times:
 
-- ✓ `fthing`
-- ✓ `[thing`
-- ✓ `\\thing`
-- ✓ `athing` no match
-- ✓ `bthing` no match
-- ✓ `]thing` no match
-- ✓ `cthing` no match
-- ✓ `dthing` no match
-- ✓ `ething` no match
+- ✅ `fthing`
+- ✅ `[thing`
+- ✅ `\\thing`
+- ✅ `athing` no match
+- ✅ `bthing` no match
+- ✅ `]thing` no match
+- ✅ `cthing` no match
+- ✅ `dthing` no match
+- ✅ `ething` no match
 
 ---
 
@@ -206,12 +206,12 @@
 ```
 (no 13) succeeded 6 of 6 times:
 
-- ✓ `athing`
-- ✓ `fthing`
-- ✓ `]thing` no match
-- ✓ `cthing` no match
-- ✓ `dthing` no match
-- ✓ `ething` no match
+- ✅ `athing`
+- ✅ `fthing`
+- ✅ `]thing` no match
+- ✅ `cthing` no match
+- ✅ `dthing` no match
+- ✅ `ething` no match
 
 ---
 
@@ -220,7 +220,7 @@
 ```
 (no 14) succeeded 1 of 1 times:
 
-- ✓ `\u81`
+- ✅ `\u81`
 
 ---
 
@@ -229,7 +229,7 @@
 ```
 (no 15) succeeded 1 of 1 times:
 
-- ✓ `ÿ`
+- ✅ `ÿ`
 
 ---
 
@@ -238,19 +238,19 @@
 ```
 (no 16) succeeded 13 of 13 times:
 
-- ✓ `0`
-- ✓ `1`
-- ✓ `2`
-- ✓ `3`
-- ✓ `4`
-- ✓ `5`
-- ✓ `6`
-- ✓ `7`
-- ✓ `8`
-- ✓ `9`
-- ✓ `10`
-- ✓ `100`
-- ✓ `abc` no match
+- ✅ `0`
+- ✅ `1`
+- ✅ `2`
+- ✅ `3`
+- ✅ `4`
+- ✅ `5`
+- ✅ `6`
+- ✅ `7`
+- ✅ `8`
+- ✅ `9`
+- ✅ `10`
+- ✅ `100`
+- ✅ `abc` no match
 
 ---
 
@@ -259,9 +259,9 @@
 ```
 (no 17) succeeded 3 of 3 times:
 
-- ✓ `enter`
-- ✓ `inter`
-- ✓ `uponter`
+- ✅ `enter`
+- ✅ `inter`
+- ✅ `uponter`
 
 ---
 
@@ -270,9 +270,9 @@
 ```
 (no 18) succeeded 3 of 3 times:
 
-- ✓ `xxx0`
-- ✓ `xxx1234`
-- ✓ `xxx` no match
+- ✅ `xxx0`
+- ✅ `xxx1234`
+- ✅ `xxx` no match
 
 ---
 
@@ -281,11 +281,11 @@
 ```
 (no 19) succeeded 5 of 5 times:
 
-- ✓ `x123`
-- ✓ `x1234`
-- ✓ `xx123`
-- ✓ `123456`
-- ✓ `123` no match
+- ✅ `x123`
+- ✅ `x1234`
+- ✅ `xx123`
+- ✅ `123456`
+- ✅ `123` no match
 
 ---
 
@@ -294,11 +294,11 @@
 ```
 (no 20) succeeded 5 of 5 times:
 
-- ✓ `x123`
-- ✓ `x1234`
-- ✓ `xx123`
-- ✓ `123456`
-- ✓ `123` no match
+- ✅ `x123`
+- ✅ `x1234`
+- ✅ `xx123`
+- ✅ `123456`
+- ✅ `123` no match
 
 ---
 
@@ -307,11 +307,11 @@
 ```
 (no 21) succeeded 5 of 5 times:
 
-- ✓ `abc!pqr=apquxz.ixr.zzz.ac.uk`
-- ✓ `!pqr=apquxz.ixr.zzz.ac.uk` no match
-- ✓ `abc!=apquxz.ixr.zzz.ac.uk` no match
-- ✓ `abc!pqr=apquxz:ixr.zzz.ac.uk` no match
-- ✓ `abc!pqr=apquxz.ixr.zzz.ac.ukk` no match
+- ✅ `abc!pqr=apquxz.ixr.zzz.ac.uk`
+- ✅ `!pqr=apquxz.ixr.zzz.ac.uk` no match
+- ✅ `abc!=apquxz.ixr.zzz.ac.uk` no match
+- ✅ `abc!pqr=apquxz:ixr.zzz.ac.uk` no match
+- ✅ `abc!pqr=apquxz.ixr.zzz.ac.ukk` no match
 
 ---
 
@@ -320,8 +320,8 @@
 ```
 (no 22) succeeded 2 of 2 times:
 
-- ✓ `Well, we need a colon: somewhere`
-- ✓ `Fail without a colon` no match
+- ✅ `Well, we need a colon: somewhere`
+- ✅ `Fail without a colon` no match
 
 ---
 
@@ -330,18 +330,18 @@
 ```
 (no 23) succeeded 12 of 12 times:
 
-- ✓ `0abc`
-- ✓ `abc`
-- ✓ `fed`
-- ✓ `E`
-- ✓ `::`
-- ✓ `5f03:12C0::932e`
-- ✓ `fed def`
-- ✓ `Any old stuff`
-- ✓ `0zzz` no match
-- ✓ `gzzz` no match
-- ✓ `fed ` no match
-- ✓ `Any old rubbish` no match
+- ✅ `0abc`
+- ✅ `abc`
+- ✅ `fed`
+- ✅ `E`
+- ✅ `::`
+- ✅ `5f03:12C0::932e`
+- ✅ `fed def`
+- ✅ `Any old stuff`
+- ✅ `0zzz` no match
+- ✅ `gzzz` no match
+- ✅ `fed ` no match
+- ✅ `Any old rubbish` no match
 
 ---
 
@@ -350,11 +350,11 @@
 ```
 (no 24) succeeded 5 of 5 times:
 
-- ✓ `.1.2.3`
-- ✓ `A.12.123.0`
-- ✓ `.1.2.3333` no match
-- ✓ `1.2.3` no match
-- ✓ `1234.2.3` no match
+- ✅ `.1.2.3`
+- ✅ `A.12.123.0`
+- ✅ `.1.2.3333` no match
+- ✅ `1.2.3` no match
+- ✅ `1234.2.3` no match
 
 ---
 
@@ -363,9 +363,9 @@
 ```
 (no 25) succeeded 3 of 3 times:
 
-- ✓ `1 IN SOA non-sp1 non-sp2(`
-- ✓ `1    IN    SOA    non-sp1    non-sp2   (`
-- ✓ `1IN SOA non-sp1 non-sp2(` no match
+- ✅ `1 IN SOA non-sp1 non-sp2(`
+- ✅ `1    IN    SOA    non-sp1    non-sp2   (`
+- ✅ `1IN SOA non-sp1 non-sp2(` no match
 
 ---
 
@@ -374,13 +374,13 @@
 ```
 (no 26) succeeded 7 of 7 times:
 
-- ✓ `a.`
-- ✓ `Z.`
-- ✓ `2.`
-- ✓ `ab-c.pq-r.`
-- ✓ `sxk.zzz.ac.uk.`
-- ✓ `x-.y-.`
-- ✓ `-abc.peq.` no match
+- ✅ `a.`
+- ✅ `Z.`
+- ✅ `2.`
+- ✅ `ab-c.pq-r.`
+- ✅ `sxk.zzz.ac.uk.`
+- ✅ `x-.y-.`
+- ✅ `-abc.peq.` no match
 
 ---
 
@@ -389,14 +389,14 @@
 ```
 (no 27) succeeded 8 of 8 times:
 
-- ✓ `*.a`
-- ✓ `*.b0-a`
-- ✓ `*.c3-b.c`
-- ✓ `*.c-a.b-c`
-- ✓ `*.0` no match
-- ✓ `*.a-` no match
-- ✓ `*.a-b.c-` no match
-- ✓ `*.c-a.0-c` no match
+- ✅ `*.a`
+- ✅ `*.b0-a`
+- ✅ `*.c3-b.c`
+- ✅ `*.c-a.b-c`
+- ✅ `*.0` no match
+- ✅ `*.a-` no match
+- ✅ `*.a-b.c-` no match
+- ✅ `*.c-a.0-c` no match
 
 ---
 
@@ -405,7 +405,7 @@
 ```
 (no 28) succeeded 1 of 1 times:
 
-- ✓ `abde`
+- ✅ `abde`
 
 ---
 
@@ -414,7 +414,7 @@
 ```
 (no 29) succeeded 1 of 1 times:
 
-- ✓ `abdf`
+- ✅ `abdf`
 
 ---
 
@@ -423,7 +423,7 @@
 ```
 (no 30) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -432,9 +432,9 @@
 ```
 (no 31) succeeded 3 of 3 times:
 
-- ✓ `a.b.c.d`
-- ✓ `A.B.C.D`
-- ✓ `a.b.c.1.2.3.C`
+- ✅ `a.b.c.d`
+- ✅ `A.B.C.D`
+- ✅ `a.b.c.1.2.3.C`
 
 ---
 
@@ -443,10 +443,10 @@
 ```
 (no 32) succeeded 4 of 4 times:
 
-- ✓ `\"1234\"`
-- ✓ `\"abcd\" ;`
-- ✓ `\"\" ; rhubarb`
-- ✓ `\"1234\" : things` no match
+- ✅ `\"1234\"`
+- ✅ `\"abcd\" ;`
+- ✅ `\"\" ; rhubarb`
+- ✅ `\"1234\" : things` no match
 
 ---
 
@@ -455,8 +455,8 @@
 ```
 (no 33) succeeded 2 of 2 times:
 
-- ✓ ``
-- ✓ `A non-empty line` no match
+- ✅ ``
+- ✅ `A non-empty line` no match
 
 ---
 
@@ -465,9 +465,9 @@
 ```
 (no 34) succeeded 3 of 3 times:
 
-- ✓ `ab c`
-- ✓ `abc` no match
-- ✓ `ab cde` no match
+- ✅ `ab c`
+- ✅ `abc` no match
+- ✅ `ab cde` no match
 
 ---
 
@@ -476,9 +476,9 @@
 ```
 (no 35) succeeded 3 of 3 times:
 
-- ✓ `ab c`
-- ✓ `abc` no match
-- ✓ `ab cde` no match
+- ✅ `ab c`
+- ✅ `abc` no match
+- ✅ `ab cde` no match
 
 ---
 
@@ -487,10 +487,10 @@
 ```
 (no 36) succeeded 4 of 4 times:
 
-- ✓ `a bcd`
-- ✓ `a b d`
-- ✓ `abcd` no match
-- ✓ `ab d` no match
+- ✅ `a bcd`
+- ✅ `a b d`
+- ✅ `abcd` no match
+- ✅ `ab d` no match
 
 ---
 
@@ -499,7 +499,7 @@
 ```
 (no 37) succeeded 1 of 1 times:
 
-- ✓ `abcdefhijklm`
+- ✅ `abcdefhijklm`
 
 ---
 
@@ -508,7 +508,7 @@
 ```
 (no 38) succeeded 1 of 1 times:
 
-- ✓ `abcdefhijklm`
+- ✅ `abcdefhijklm`
 
 ---
 
@@ -517,7 +517,7 @@
 ```
 (no 39) succeeded 1 of 1 times:
 
-- ✓ `a+ Z0+\b\n\x1d\x12`
+- ✅ `a+ Z0+\b\n\x1d\x12`
 
 ---
 
@@ -526,7 +526,7 @@
 ```
 (no 40) succeeded 1 of 1 times:
 
-- ✓ `.^$(*+)|{?,?}`
+- ✅ `.^$(*+)|{?,?}`
 
 ---
 
@@ -535,14 +535,14 @@
 ```
 (no 41) succeeded 8 of 8 times:
 
-- ✓ `z`
-- ✓ `az`
-- ✓ `aaaz`
-- ✓ `a`
-- ✓ `aa`
-- ✓ `aaaa`
-- ✓ `a+`
-- ✓ `aa+`
+- ✅ `z`
+- ✅ `az`
+- ✅ `aaaz`
+- ✅ `a`
+- ✅ `aa`
+- ✅ `aaaa`
+- ✅ `a+`
+- ✅ `aa+`
 
 ---
 
@@ -551,14 +551,14 @@
 ```
 (no 42) succeeded 8 of 8 times:
 
-- ✓ `z`
-- ✓ `az`
-- ✓ `aaaz`
-- ✓ `a`
-- ✓ `aa`
-- ✓ `aaaa`
-- ✓ `a+`
-- ✓ `aa+`
+- ✅ `z`
+- ✅ `az`
+- ✅ `aaaz`
+- ✅ `a`
+- ✅ `aa`
+- ✅ `aaaa`
+- ✅ `a+`
+- ✅ `aa+`
 
 ---
 
@@ -567,11 +567,11 @@
 ```
 (no 43) succeeded 5 of 5 times:
 
-- ✓ `az`
-- ✓ `aaaz`
-- ✓ `aa`
-- ✓ `aaaa`
-- ✓ `aa+`
+- ✅ `az`
+- ✅ `aaaz`
+- ✅ `aa`
+- ✅ `aaaa`
+- ✅ `aa+`
 
 ---
 
@@ -580,11 +580,11 @@
 ```
 (no 44) succeeded 5 of 5 times:
 
-- ✓ `az`
-- ✓ `aaaz`
-- ✓ `aa`
-- ✓ `aaaa`
-- ✓ `aa+`
+- ✅ `az`
+- ✅ `aaaz`
+- ✅ `aa`
+- ✅ `aaaa`
+- ✅ `aa+`
 
 ---
 
@@ -593,10 +593,10 @@
 ```
 (no 45) succeeded 4 of 4 times:
 
-- ✓ `1234567890`
-- ✓ `12345678ab`
-- ✓ `12345678__`
-- ✓ `1234567` no match
+- ✅ `1234567890`
+- ✅ `12345678ab`
+- ✅ `12345678__`
+- ✅ `1234567` no match
 
 ---
 
@@ -605,11 +605,11 @@
 ```
 (no 46) succeeded 5 of 5 times:
 
-- ✓ `uoie`
-- ✓ `1234`
-- ✓ `12345`
-- ✓ `aaaaa`
-- ✓ `123456` no match
+- ✅ `uoie`
+- ✅ `1234`
+- ✅ `12345`
+- ✅ `aaaaa`
+- ✅ `123456` no match
 
 ---
 
@@ -618,11 +618,11 @@
 ```
 (no 47) succeeded 5 of 5 times:
 
-- ✓ `uoie`
-- ✓ `1234`
-- ✓ `12345`
-- ✓ `aaaaa`
-- ✓ `123456`
+- ✅ `uoie`
+- ✅ `1234`
+- ✅ `12345`
+- ✅ `aaaaa`
+- ✅ `123456`
 
 ---
 
@@ -631,9 +631,9 @@
 ```
 (no 48) succeeded 3 of 3 times:
 
-- ✓ `abc=abcabc`
-- ✓ `def=defdefdef`
-- ✓ `abc=defdef` no match
+- ✅ `abc=abcabc`
+- ✅ `def=defdefdef`
+- ✅ `abc=defdef` no match
 
 ---
 
@@ -642,8 +642,8 @@
 ```
 (no 49) succeeded 2 of 2 times:
 
-- ✓ `abcdefghijkcda2`
-- ✓ `abcdefghijkkkkcda2`
+- ✅ `abcdefghijkcda2`
+- ✅ `abcdefghijkkkkcda2`
 
 ---
 
@@ -652,9 +652,9 @@
 ```
 (no 50) succeeded 3 of 3 times:
 
-- ✓ `cataract cataract23`
-- ✓ `catatonic catatonic23`
-- ✓ `caterpillar caterpillar23`
+- ✅ `cataract cataract23`
+- ✅ `catatonic catatonic23`
+- ✅ `caterpillar caterpillar23`
 
 ---
 
@@ -663,7 +663,7 @@
 ```
 (no 51) succeeded 1 of 1 times:
 
-- ✓ `From abcd  Mon Sep 01 12:33:02 1997`
+- ✅ `From abcd  Mon Sep 01 12:33:02 1997`
 
 ---
 
@@ -672,9 +672,9 @@
 ```
 (no 52) succeeded 3 of 3 times:
 
-- ✓ `From abcd  Mon Sep 01 12:33:02 1997`
-- ✓ `From abcd  Mon Sep  1 12:33:02 1997`
-- ✓ `From abcd  Sep 01 12:33:02 1997` no match
+- ✅ `From abcd  Mon Sep 01 12:33:02 1997`
+- ✅ `From abcd  Mon Sep  1 12:33:02 1997`
+- ✅ `From abcd  Sep 01 12:33:02 1997` no match
 
 ---
 
@@ -683,8 +683,8 @@
 ```
 (no 53) succeeded 2 of 2 times:
 
-- ✓ `12\n34`
-- ✓ `12\r34`
+- ✅ `12\n34`
+- ✅ `12\r34`
 
 ---
 
@@ -693,7 +693,7 @@
 ```
 (no 54) succeeded 1 of 1 times:
 
-- ✓ `the quick brown\t fox`
+- ✅ `the quick brown\t fox`
 
 ---
 
@@ -702,7 +702,7 @@
 ```
 (no 55) succeeded 1 of 1 times:
 
-- ✓ `foobar is foolish see?`
+- ✅ `foobar is foolish see?`
 
 ---
 
@@ -711,10 +711,10 @@
 ```
 (no 56) succeeded 4 of 4 times:
 
-- ✓ `foobar crowbar etc`
-- ✓ `barrel`
-- ✓ `2barrel`
-- ✓ `A barrel`
+- ✅ `foobar crowbar etc`
+- ✅ `barrel`
+- ✅ `2barrel`
+- ✅ `A barrel`
 
 ---
 
@@ -723,8 +723,8 @@
 ```
 (no 57) succeeded 2 of 2 times:
 
-- ✓ `abc456`
-- ✓ `abc123` no match
+- ✅ `abc456`
+- ✅ `abc123` no match
 
 ---
 
@@ -734,7 +734,7 @@
 ```
 (no 58) succeeded 1 of 1 times:
 
-- ✓ `1234`
+- ✅ `1234`
 
 ---
 
@@ -744,7 +744,7 @@
 ```
 (no 59) succeeded 1 of 1 times:
 
-- ✓ `1234`
+- ✅ `1234`
 
 ---
 
@@ -754,7 +754,7 @@
 ```
 (no 60) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -763,7 +763,7 @@
 ```
 (no 61) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -772,10 +772,10 @@
 ```
 (no 62) succeeded 4 of 4 times:
 
-- ✓ `aaab`
-- ✓ `aaaab`
-- ✓ `aaaaab`
-- ✓ `aaaaaab`
+- ✅ `aaab`
+- ✅ `aaaab`
+- ✅ `aaaaab`
+- ✅ `aaaaaab`
 
 ---
 
@@ -784,8 +784,8 @@
 ```
 (no 63) succeeded 2 of 2 times:
 
-- ✓ `the abc`
-- ✓ `abc` no match
+- ✅ `the abc`
+- ✅ `abc` no match
 
 ---
 
@@ -794,8 +794,8 @@
 ```
 (no 64) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ `the abc` no match
+- ✅ `abc`
+- ✅ `the abc` no match
 
 ---
 
@@ -804,7 +804,7 @@
 ```
 (no 65) succeeded 1 of 1 times:
 
-- ✓ `aabbbbb`
+- ✅ `aabbbbb`
 
 ---
 
@@ -813,7 +813,7 @@
 ```
 (no 66) succeeded 1 of 1 times:
 
-- ✓ `aabbbbb`
+- ✅ `aabbbbb`
 
 ---
 
@@ -822,7 +822,7 @@
 ```
 (no 67) succeeded 1 of 1 times:
 
-- ✓ `aabbbbb`
+- ✅ `aabbbbb`
 
 ---
 
@@ -831,7 +831,7 @@
 ```
 (no 68) succeeded 1 of 1 times:
 
-- ✓ `aabbbbb`
+- ✅ `aabbbbb`
 
 ---
 
@@ -840,8 +840,8 @@
 ```
 (no 71) succeeded 2 of 2 times:
 
-- ✓ `abc\0def\0pqr\0xyz\x000AB`
-- ✓ `abc456 abc\0def\0pqr\0xyz\x000ABCDE`
+- ✅ `abc\0def\0pqr\0xyz\x000AB`
+- ✅ `abc456 abc\0def\0pqr\0xyz\x000ABCDE`
 
 ---
 
@@ -850,8 +850,8 @@
 ```
 (no 72) succeeded 2 of 2 times:
 
-- ✓ `abc\ref\0pqr\x000xyz\x0000AB`
-- ✓ `abc456 abc\ref\0pqr\x000xyz\x0000ABCDE`
+- ✅ `abc\ref\0pqr\x000xyz\x0000AB`
+- ✅ `abc456 abc\ref\0pqr\x000xyz\x0000ABCDE`
 
 ---
 
@@ -860,9 +860,9 @@
 ```
 (no 73) succeeded 3 of 3 times:
 
-- ✓ `\0A`
-- ✓ `\x01B`
-- ✓ `\x1fC`
+- ✅ `\0A`
+- ✅ `\x01B`
+- ✅ `\x1fC`
 
 ---
 
@@ -871,7 +871,7 @@
 ```
 (no 74) succeeded 1 of 1 times:
 
-- ✓ `\0\0\0\0`
+- ✅ `\0\0\0\0`
 
 ---
 
@@ -880,10 +880,10 @@
 ```
 (no 75) succeeded 4 of 4 times:
 
-- ✓ `The A\0\0Z`
-- ✓ `An A\0\0\0Z`
-- ✓ `A\0Z` no match
-- ✓ `A\0\0\0\0Z` no match
+- ✅ `The A\0\0Z`
+- ✅ `An A\0\0\0Z`
+- ✅ `A\0Z` no match
+- ✅ `A\0\0\0\0Z` no match
 
 ---
 
@@ -892,9 +892,9 @@
 ```
 (no 76) succeeded 3 of 3 times:
 
-- ✓ `cowcowbell`
-- ✓ `bell`
-- ✓ `cowbell` no match
+- ✅ `cowcowbell`
+- ✅ `bell`
+- ✅ `cowbell` no match
 
 ---
 
@@ -903,12 +903,12 @@
 ```
 (no 77) succeeded 6 of 6 times:
 
-- ✓ ` abc`
-- ✓ `\fabc`
-- ✓ `\nabc`
-- ✓ `\rabc`
-- ✓ `\tabc`
-- ✓ `abc` no match
+- ✅ ` abc`
+- ✅ `\fabc`
+- ✅ `\nabc`
+- ✅ `\rabc`
+- ✅ `\tabc`
+- ✅ `abc` no match
 
 ---
 
@@ -918,7 +918,7 @@
 ```
 (no 78) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -927,10 +927,10 @@
 ```
 (no 79) succeeded 4 of 4 times:
 
-- ✓ `ab`
-- ✓ `aaaab`
-- ✓ `b`
-- ✓ `acb` no match
+- ✅ `ab`
+- ✅ `aaaab`
+- ✅ `b`
+- ✅ `acb` no match
 
 ---
 
@@ -939,10 +939,10 @@
 ```
 (no 80) succeeded 4 of 4 times:
 
-- ✓ `aab`
-- ✓ `aaaab`
-- ✓ `b`
-- ✓ `ab` no match
+- ✅ `aab`
+- ✅ `aaaab`
+- ✅ `b`
+- ✅ `ab` no match
 
 ---
 
@@ -951,10 +951,10 @@
 ```
 (no 81) succeeded 4 of 4 times:
 
-- ✓ `ab`
-- ✓ `aab`
-- ✓ `b`
-- ✓ `acb` no match
+- ✅ `ab`
+- ✅ `aab`
+- ✅ `b`
+- ✅ `acb` no match
 
 ---
 
@@ -963,11 +963,11 @@
 ```
 (no 82) succeeded 5 of 5 times:
 
-- ✓ `aaab`
-- ✓ `b`
-- ✓ `ab` no match
-- ✓ `aab` no match
-- ✓ `aaaab` no match
+- ✅ `aaab`
+- ✅ `b`
+- ✅ `ab` no match
+- ✅ `aab` no match
+- ✅ `aaaab` no match
 
 ---
 
@@ -976,12 +976,12 @@
 ```
 (no 83) succeeded 6 of 6 times:
 
-- ✓ `aaab`
-- ✓ `aaaab`
-- ✓ `b`
-- ✓ `ab` no match
-- ✓ `aab` no match
-- ✓ `aaaaab` no match
+- ✅ `aaab`
+- ✅ `aaaab`
+- ✅ `b`
+- ✅ `ab` no match
+- ✅ `aab` no match
+- ✅ `aaaaab` no match
 
 ---
 
@@ -990,11 +990,11 @@
 ```
 (no 84) succeeded 5 of 5 times:
 
-- ✓ `abbbbc`
-- ✓ `abbbc`
-- ✓ `abbc`
-- ✓ `abc` no match
-- ✓ `abbbbbc` no match
+- ✅ `abbbbc`
+- ✅ `abbbc`
+- ✅ `abbc`
+- ✅ `abc` no match
+- ✅ `abbbbbc` no match
 
 ---
 
@@ -1003,7 +1003,7 @@
 ```
 (no 85) succeeded 1 of 1 times:
 
-- ✓ `track1.title:TBlah blah blah`
+- ✅ `track1.title:TBlah blah blah`
 
 ---
 
@@ -1012,7 +1012,7 @@
 ```
 (no 86) succeeded 1 of 1 times:
 
-- ✓ `track1.title:TBlah blah blah`
+- ✅ `track1.title:TBlah blah blah`
 
 ---
 
@@ -1021,7 +1021,7 @@
 ```
 (no 87) succeeded 1 of 1 times:
 
-- ✓ `track1.title:TBlah blah blah`
+- ✅ `track1.title:TBlah blah blah`
 
 ---
 
@@ -1030,8 +1030,8 @@
 ```
 (no 88) succeeded 2 of 2 times:
 
-- ✓ `WXY_^abc`
-- ✓ `wxy` no match
+- ✅ `WXY_^abc`
+- ✅ `wxy` no match
 
 ---
 
@@ -1040,10 +1040,10 @@
 ```
 (no 91) succeeded 4 of 4 times:
 
-- ✓ `abc`
-- ✓ `qqq\nabc`
-- ✓ `abc\nzzz`
-- ✓ `qqq\nabc\nzzz`
+- ✅ `abc`
+- ✅ `qqq\nabc`
+- ✅ `abc\nzzz`
+- ✅ `qqq\nabc\nzzz`
 
 ---
 
@@ -1052,10 +1052,10 @@
 ```
 (no 92) succeeded 4 of 4 times:
 
-- ✓ `abc`
-- ✓ `qqq\nabc` no match
-- ✓ `abc\nzzz` no match
-- ✓ `qqq\nabc\nzzz` no match
+- ✅ `abc`
+- ✅ `qqq\nabc` no match
+- ✅ `abc\nzzz` no match
+- ✅ `qqq\nabc\nzzz` no match
 
 ---
 
@@ -1064,12 +1064,12 @@
 ```
 (no 93) succeeded 6 of 6 times:
 
-- ✓ `abc`
-- ✓ `abc\n`
-- ✓ `qqq\nabc` no match
-- ✓ `abc\nzzz` no match
-- ✓ `qqq\nabc\nzzz` no match
-- ✓ `` no match
+- ✅ `abc`
+- ✅ `abc\n`
+- ✅ `qqq\nabc` no match
+- ✅ `abc\nzzz` no match
+- ✅ `qqq\nabc\nzzz` no match
+- ✅ `` no match
 
 ---
 
@@ -1078,7 +1078,7 @@
 ```
 (no 94) succeeded 1 of 1 times:
 
-- ✓ `abc\ndef`
+- ✅ `abc\ndef`
 
 ---
 
@@ -1087,7 +1087,7 @@
 ```
 (no 95) succeeded 1 of 1 times:
 
-- ✓ `abc\ndef` no match
+- ✅ `abc\ndef` no match
 
 ---
 
@@ -1096,8 +1096,8 @@
 ```
 (no 96) succeeded 2 of 2 times:
 
-- ✓ `b::c`
-- ✓ `c::b`
+- ✅ `b::c`
+- ✅ `c::b`
 
 ---
 
@@ -1106,8 +1106,8 @@
 ```
 (no 97) succeeded 2 of 2 times:
 
-- ✓ `az-`
-- ✓ `b` no match
+- ✅ `az-`
+- ✅ `b` no match
 
 ---
 
@@ -1116,8 +1116,8 @@
 ```
 (no 98) succeeded 2 of 2 times:
 
-- ✓ `za-`
-- ✓ `b` no match
+- ✅ `za-`
+- ✅ `b` no match
 
 ---
 
@@ -1126,8 +1126,8 @@
 ```
 (no 99) succeeded 2 of 2 times:
 
-- ✓ `a-z`
-- ✓ `b` no match
+- ✅ `a-z`
+- ✅ `b` no match
 
 ---
 
@@ -1136,7 +1136,7 @@
 ```
 (no 100) succeeded 1 of 1 times:
 
-- ✓ `abcdxyz`
+- ✅ `abcdxyz`
 
 ---
 
@@ -1145,8 +1145,8 @@
 ```
 (no 101) succeeded 2 of 2 times:
 
-- ✓ `12-34`
-- ✓ `aaa` no match
+- ✅ `12-34`
+- ✅ `aaa` no match
 
 ---
 
@@ -1155,7 +1155,7 @@
 ```
 (no 102) succeeded 1 of 1 times:
 
-- ✓ `\\`
+- ✅ `\\`
 
 ---
 
@@ -1164,8 +1164,8 @@
 ```
 (no 103) succeeded 2 of 2 times:
 
-- ✓ `the Zoo`
-- ✓ `Zulu` no match
+- ✅ `the Zoo`
+- ✅ `Zulu` no match
 
 ---
 
@@ -1174,9 +1174,9 @@
 ```
 (no 104) succeeded 3 of 3 times:
 
-- ✓ `abcabc`
-- ✓ `ABCabc`
-- ✓ `abcABC`
+- ✅ `abcabc`
+- ✅ `ABCabc`
+- ✅ `abcABC`
 
 ---
 
@@ -1185,9 +1185,9 @@
 ```
 (no 105) succeeded 3 of 3 times:
 
-- ✓ `abc`
-- ✓ `abc\n`
-- ✓ `abc\ndef` no match
+- ✅ `abc`
+- ✅ `abc\n`
+- ✅ `abc\ndef` no match
 
 ---
 
@@ -1196,7 +1196,7 @@
 ```
 (no 106) succeeded 1 of 1 times:
 
-- ✓ `abcS`
+- ✅ `abcS`
 
 ---
 
@@ -1205,7 +1205,7 @@
 ```
 (no 107) succeeded 1 of 1 times:
 
-- ✓ `abc\u93`
+- ✅ `abc\u93`
 
 ---
 
@@ -1214,7 +1214,7 @@
 ```
 (no 108) succeeded 1 of 1 times:
 
-- ✓ `abcÓ`
+- ✅ `abcÓ`
 
 ---
 
@@ -1223,8 +1223,8 @@
 ```
 (no 109) succeeded 2 of 2 times:
 
-- ✓ `abc@`
-- ✓ `abc@`
+- ✅ `abc@`
+- ✅ `abc@`
 
 ---
 
@@ -1233,13 +1233,13 @@
 ```
 (no 110) succeeded 7 of 7 times:
 
-- ✓ `abc@0`
-- ✓ `abc@0`
-- ✓ `abc@0`
-- ✓ `abc@0`
-- ✓ `abc@0`
-- ✓ `abc@0`
-- ✓ ``
+- ✅ `abc@0`
+- ✅ `abc@0`
+- ✅ `abc@0`
+- ✅ `abc@0`
+- ✅ `abc@0`
+- ✅ `abc@0`
+- ✅ ``
 
 ---
 
@@ -1248,7 +1248,7 @@
 ```
 (no 111) succeeded 1 of 1 times:
 
-- ✓ `ABCDEFGHIHI`
+- ✅ `ABCDEFGHIHI`
 
 ---
 
@@ -1257,8 +1257,8 @@
 ```
 (no 112) succeeded 2 of 2 times:
 
-- ✓ `A8B9C`
-- ✓ `A8B9C\0` no match
+- ✅ `A8B9C`
+- ✅ `A8B9C\0` no match
 
 ---
 
@@ -1267,7 +1267,7 @@
 ```
 (no 113) succeeded 1 of 1 times:
 
-- ✓ `abcdefghijkllS`
+- ✅ `abcdefghijkllS`
 
 ---
 
@@ -1276,7 +1276,7 @@
 ```
 (no 114) succeeded 1 of 1 times:
 
-- ✓ `abcdefghijk\nS`
+- ✅ `abcdefghijk\nS`
 
 ---
 
@@ -1285,7 +1285,7 @@
 ```
 (no 115) succeeded 1 of 1 times:
 
-- ✓ `bc`
+- ✅ `bc`
 
 ---
 
@@ -1294,7 +1294,7 @@
 ```
 (no 116) succeeded 1 of 1 times:
 
-- ✓ `xyz`
+- ✅ `xyz`
 
 ---
 
@@ -1303,7 +1303,7 @@
 ```
 (no 117) succeeded 1 of 1 times:
 
-- ✓ `abc\bde`
+- ✅ `abc\bde`
 
 ---
 
@@ -1312,7 +1312,7 @@
 ```
 (no 118) succeeded 1 of 1 times:
 
-- ✓ `abc\x01de`
+- ✅ `abc\x01de`
 
 ---
 
@@ -1321,7 +1321,7 @@
 ```
 (no 119) succeeded 1 of 1 times:
 
-- ✓ `abc\x01de`
+- ✅ `abc\x01de`
 
 ---
 
@@ -1330,7 +1330,7 @@
 ```
 (no 120) succeeded 1 of 1 times:
 
-- ✓ `a\nb`
+- ✅ `a\nb`
 
 ---
 
@@ -1339,13 +1339,13 @@
 ```
 (no 121) succeeded 7 of 7 times:
 
-- ✓ `baNOTccccd`
-- ✓ `baNOTcccd`
-- ✓ `baNOTccd`
-- ✓ `bacccd`
-- ✓ `anything` no match
-- ✓ `bbc` no match
-- ✓ `baccd` no match
+- ✅ `baNOTccccd`
+- ✅ `baNOTcccd`
+- ✅ `baNOTccd`
+- ✅ `bacccd`
+- ✅ `anything` no match
+- ✅ `bbc` no match
+- ✅ `baccd` no match
 
 ---
 
@@ -1354,8 +1354,8 @@
 ```
 (no 122) succeeded 2 of 2 times:
 
-- ✓ `Abc`
-- ✓ ``
+- ✅ `Abc`
+- ✅ ``
 
 ---
 
@@ -1364,7 +1364,7 @@
 ```
 (no 123) succeeded 1 of 1 times:
 
-- ✓ `Abc`
+- ✅ `Abc`
 
 ---
 
@@ -1373,8 +1373,8 @@
 ```
 (no 124) succeeded 2 of 2 times:
 
-- ✓ `AAAaAbc`
-- ✓ ``
+- ✅ `AAAaAbc`
+- ✅ ``
 
 ---
 
@@ -1383,7 +1383,7 @@
 ```
 (no 125) succeeded 1 of 1 times:
 
-- ✓ `AAAaAbc`
+- ✅ `AAAaAbc`
 
 ---
 
@@ -1392,8 +1392,8 @@
 ```
 (no 126) succeeded 2 of 2 times:
 
-- ✓ `bbb\nccc`
-- ✓ ``
+- ✅ `bbb\nccc`
+- ✅ ``
 
 ---
 
@@ -1402,9 +1402,9 @@
 ```
 (no 127) succeeded 3 of 3 times:
 
-- ✓ `abc`
-- ✓ `abk` no match
-- ✓ `` no match
+- ✅ `abc`
+- ✅ `abk` no match
+- ✅ `` no match
 
 ---
 
@@ -1413,12 +1413,12 @@
 ```
 (no 128) succeeded 6 of 6 times:
 
-- ✓ `abc`
-- ✓ `kbc`
-- ✓ `kabc`
-- ✓ `abk` no match
-- ✓ `akb` no match
-- ✓ `akk` no match
+- ✅ `abc`
+- ✅ `kbc`
+- ✅ `kabc`
+- ✅ `abk` no match
+- ✅ `akb` no match
+- ✅ `akk` no match
 
 ---
 
@@ -1427,10 +1427,10 @@
 ```
 (no 129) succeeded 4 of 4 times:
 
-- ✓ `12345678@a.b.c.d`
-- ✓ `123456789@x.y.z`
-- ✓ `12345678@x.y.uk` no match
-- ✓ `1234567@a.b.c.d` no match
+- ✅ `12345678@a.b.c.d`
+- ✅ `123456789@x.y.z`
+- ✅ `12345678@x.y.uk` no match
+- ✅ `1234567@a.b.c.d` no match
 
 ---
 
@@ -1439,9 +1439,9 @@
 ```
 (no 130) succeeded 3 of 3 times:
 
-- ✓ `aaaaaaaaa`
-- ✓ `aaaaaaaaaa`
-- ✓ `aaaaaaa` no match
+- ✅ `aaaaaaaaa`
+- ✅ `aaaaaaaaaa`
+- ✅ `aaaaaaa` no match
 
 ---
 
@@ -1450,8 +1450,8 @@
 ```
 (no 131) succeeded 2 of 2 times:
 
-- ✓ `aaaabcd`
-- ✓ `aaAabcd`
+- ✅ `aaaabcd`
+- ✅ `aaAabcd`
 
 ---
 
@@ -1460,8 +1460,8 @@
 ```
 (no 132) succeeded 2 of 2 times:
 
-- ✓ `aaaabcd`
-- ✓ `aaAabcd`
+- ✅ `aaaabcd`
+- ✅ `aaAabcd`
 
 ---
 
@@ -1470,8 +1470,8 @@
 ```
 (no 133) succeeded 2 of 2 times:
 
-- ✓ `aaaabcd`
-- ✓ `aaAabcd`
+- ✅ `aaaabcd`
+- ✅ `aaAabcd`
 
 ---
 
@@ -1480,8 +1480,8 @@
 ```
 (no 134) succeeded 2 of 2 times:
 
-- ✓ `aaaabcd`
-- ✓ `aaAabcd`
+- ✅ `aaaabcd`
+- ✅ `aaAabcd`
 
 ---
 
@@ -1490,7 +1490,7 @@
 ```
 (no 136) succeeded 1 of 1 times:
 
-- ✓ `xxxxxxxxxxxPSTAIREISLLxxxxxxxxx`
+- ✅ `xxxxxxxxxxxPSTAIREISLLxxxxxxxxx`
 
 ---
 
@@ -1499,7 +1499,7 @@
 ```
 (no 137) succeeded 1 of 1 times:
 
-- ✓ `xxxxxxxxxxxPSTAIREISLLxxxxxxxxx`
+- ✅ `xxxxxxxxxxxPSTAIREISLLxxxxxxxxx`
 
 ---
 
@@ -1508,10 +1508,10 @@
 ```
 (no 138) succeeded 4 of 4 times:
 
-- ✓ `1.230003938`
-- ✓ `1.875000282`
-- ✓ `1.235`
-- ✓ ``
+- ✅ `1.230003938`
+- ✅ `1.875000282`
+- ✅ `1.235`
+- ✅ ``
 
 ---
 
@@ -1520,10 +1520,10 @@
 ```
 (no 139) succeeded 4 of 4 times:
 
-- ✓ `1.230003938`
-- ✓ `1.875000282`
-- ✓ `1.235` no match
-- ✓ `` no match
+- ✅ `1.230003938`
+- ✅ `1.875000282`
+- ✅ `1.235` no match
+- ✅ `` no match
 
 ---
 
@@ -1532,8 +1532,8 @@
 ```
 (no 141) succeeded 2 of 2 times:
 
-- ✓ `Food is on the foo table`
-- ✓ ``
+- ✅ `Food is on the foo table`
+- ✅ ``
 
 ---
 
@@ -1542,8 +1542,8 @@
 ```
 (no 142) succeeded 2 of 2 times:
 
-- ✓ `The food is under the bar in the barn.`
-- ✓ ``
+- ✅ `The food is under the bar in the barn.`
+- ✅ ``
 
 ---
 
@@ -1552,7 +1552,7 @@
 ```
 (no 143) succeeded 1 of 1 times:
 
-- ✓ `The food is under the bar in the barn.`
+- ✅ `The food is under the bar in the barn.`
 
 ---
 
@@ -1561,8 +1561,8 @@
 ```
 (no 144) succeeded 2 of 2 times:
 
-- ✓ `I have 2 numbers: 53147`
-- ✓ ``
+- ✅ `I have 2 numbers: 53147`
+- ✅ ``
 
 ---
 
@@ -1571,8 +1571,8 @@
 ```
 (no 145) succeeded 2 of 2 times:
 
-- ✓ `I have 2 numbers: 53147`
-- ✓ ``
+- ✅ `I have 2 numbers: 53147`
+- ✅ ``
 
 ---
 
@@ -1581,7 +1581,7 @@
 ```
 (no 146) succeeded 1 of 1 times:
 
-- ✓ `I have 2 numbers: 53147`
+- ✅ `I have 2 numbers: 53147`
 
 ---
 
@@ -1590,7 +1590,7 @@
 ```
 (no 147) succeeded 1 of 1 times:
 
-- ✓ `I have 2 numbers: 53147`
+- ✅ `I have 2 numbers: 53147`
 
 ---
 
@@ -1599,7 +1599,7 @@
 ```
 (no 148) succeeded 1 of 1 times:
 
-- ✓ `I have 2 numbers: 53147`
+- ✅ `I have 2 numbers: 53147`
 
 ---
 
@@ -1608,7 +1608,7 @@
 ```
 (no 149) succeeded 1 of 1 times:
 
-- ✓ `I have 2 numbers: 53147`
+- ✅ `I have 2 numbers: 53147`
 
 ---
 
@@ -1617,7 +1617,7 @@
 ```
 (no 150) succeeded 1 of 1 times:
 
-- ✓ `I have 2 numbers: 53147`
+- ✅ `I have 2 numbers: 53147`
 
 ---
 
@@ -1626,7 +1626,7 @@
 ```
 (no 151) succeeded 1 of 1 times:
 
-- ✓ `I have 2 numbers: 53147`
+- ✅ `I have 2 numbers: 53147`
 
 ---
 
@@ -1635,8 +1635,8 @@
 ```
 (no 152) succeeded 2 of 2 times:
 
-- ✓ `ABC123`
-- ✓ ``
+- ✅ `ABC123`
+- ✅ ``
 
 ---
 
@@ -1645,9 +1645,9 @@
 ```
 (no 153) succeeded 3 of 3 times:
 
-- ✓ `ABC445`
-- ✓ `ABC123` no match
-- ✓ `` no match
+- ✅ `ABC445`
+- ✅ `ABC123` no match
+- ✅ `` no match
 
 ---
 
@@ -1656,14 +1656,14 @@
 ```
 (no 154) succeeded 8 of 8 times:
 
-- ✓ `W46]789`
-- ✓ `-46]789`
-- ✓ `Wall` no match
-- ✓ `Zebra` no match
-- ✓ `42` no match
-- ✓ `[abcd]` no match
-- ✓ `]abcd[` no match
-- ✓ `` no match
+- ✅ `W46]789`
+- ✅ `-46]789`
+- ✅ `Wall` no match
+- ✅ `Zebra` no match
+- ✅ `42` no match
+- ✅ `[abcd]` no match
+- ✅ `]abcd[` no match
+- ✅ `` no match
 
 ---
 
@@ -1672,17 +1672,17 @@
 ```
 (no 155) succeeded 11 of 11 times:
 
-- ✓ `W46]789`
-- ✓ `Wall`
-- ✓ `Zebra`
-- ✓ `Xylophone`
-- ✓ `42`
-- ✓ `[abcd]`
-- ✓ `]abcd[`
-- ✓ `\\backslash`
-- ✓ `-46]789` no match
-- ✓ `well` no match
-- ✓ `` no match
+- ✅ `W46]789`
+- ✅ `Wall`
+- ✅ `Zebra`
+- ✅ `Xylophone`
+- ✅ `42`
+- ✅ `[abcd]`
+- ✅ `]abcd[`
+- ✅ `\\backslash`
+- ✅ `-46]789` no match
+- ✅ `well` no match
+- ✅ `` no match
 
 ---
 
@@ -1691,7 +1691,7 @@
 ```
 (no 156) succeeded 1 of 1 times:
 
-- ✓ `01/01/2000`
+- ✅ `01/01/2000`
 
 ---
 
@@ -1700,8 +1700,8 @@
 ```
 (no 157) succeeded 2 of 2 times:
 
-- ✓ `word cat dog elephant mussel cow horse canary baboon snake shark otherword`
-- ✓ `word cat dog elephant mussel cow horse canary baboon snake shark` no match
+- ✅ `word cat dog elephant mussel cow horse canary baboon snake shark otherword`
+- ✅ `word cat dog elephant mussel cow horse canary baboon snake shark` no match
 
 ---
 
@@ -1710,7 +1710,7 @@
 ```
 (no 158) succeeded 1 of 1 times:
 
-- ✓ `word cat dog elephant mussel cow horse canary baboon snake shark the quick brown fox and the lazy dog and several other words getting close to thirty by now I hope` no match
+- ✅ `word cat dog elephant mussel cow horse canary baboon snake shark the quick brown fox and the lazy dog and several other words getting close to thirty by now I hope` no match
 
 ---
 
@@ -1719,9 +1719,9 @@
 ```
 (no 159) succeeded 3 of 3 times:
 
-- ✓ `bcd`
-- ✓ `abc`
-- ✓ `aab`
+- ✅ `bcd`
+- ✅ `abc`
+- ✅ `aab`
 
 ---
 
@@ -1730,9 +1730,9 @@
 ```
 (no 160) succeeded 3 of 3 times:
 
-- ✓ `bcd`
-- ✓ `abc`
-- ✓ `aab`
+- ✅ `bcd`
+- ✅ `abc`
+- ✅ `aab`
 
 ---
 
@@ -1741,9 +1741,9 @@
 ```
 (no 161) succeeded 3 of 3 times:
 
-- ✓ `bcd`
-- ✓ `abc`
-- ✓ `aab`
+- ✅ `bcd`
+- ✅ `abc`
+- ✅ `aab`
 
 ---
 
@@ -1752,10 +1752,10 @@
 ```
 (no 162) succeeded 4 of 4 times:
 
-- ✓ `bcd`
-- ✓ `abc`
-- ✓ `aab`
-- ✓ `aaa`
+- ✅ `bcd`
+- ✅ `abc`
+- ✅ `aab`
+- ✅ `aaa`
 
 ---
 
@@ -1764,11 +1764,11 @@
 ```
 (no 163) succeeded 5 of 5 times:
 
-- ✓ `bcd`
-- ✓ `abc`
-- ✓ `aab`
-- ✓ `aaa`
-- ✓ `aaaaaaaa`
+- ✅ `bcd`
+- ✅ `abc`
+- ✅ `aab`
+- ✅ `aaa`
+- ✅ `aaaaaaaa`
 
 ---
 
@@ -1777,9 +1777,9 @@
 ```
 (no 164) succeeded 3 of 3 times:
 
-- ✓ `abc`
-- ✓ `aab`
-- ✓ `bcd` no match
+- ✅ `abc`
+- ✅ `aab`
+- ✅ `bcd` no match
 
 ---
 
@@ -1788,9 +1788,9 @@
 ```
 (no 165) succeeded 3 of 3 times:
 
-- ✓ `abc`
-- ✓ `aab`
-- ✓ `bcd` no match
+- ✅ `abc`
+- ✅ `aab`
+- ✅ `bcd` no match
 
 ---
 
@@ -1799,10 +1799,10 @@
 ```
 (no 166) succeeded 4 of 4 times:
 
-- ✓ `abc`
-- ✓ `aab`
-- ✓ `aaa`
-- ✓ `bcd` no match
+- ✅ `abc`
+- ✅ `aab`
+- ✅ `aaa`
+- ✅ `bcd` no match
 
 ---
 
@@ -1811,11 +1811,11 @@
 ```
 (no 167) succeeded 5 of 5 times:
 
-- ✓ `abc`
-- ✓ `aab`
-- ✓ `aaa`
-- ✓ `aaaaaaaa`
-- ✓ `bcd` no match
+- ✅ `abc`
+- ✅ `aab`
+- ✅ `aaa`
+- ✅ `aaaaaaaa`
+- ✅ `bcd` no match
 
 ---
 
@@ -1824,7 +1824,7 @@
 ```
 (no 168) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno`
+- ✅ `borfle\nbib.gif\nno`
 
 ---
 
@@ -1833,7 +1833,7 @@
 ```
 (no 169) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno`
+- ✅ `borfle\nbib.gif\nno`
 
 ---
 
@@ -1842,7 +1842,7 @@
 ```
 (no 170) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno`
+- ✅ `borfle\nbib.gif\nno`
 
 ---
 
@@ -1851,7 +1851,7 @@
 ```
 (no 171) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno`
+- ✅ `borfle\nbib.gif\nno`
 
 ---
 
@@ -1860,8 +1860,8 @@
 ```
 (no 172) succeeded 2 of 2 times:
 
-- ✓ `borfle\nbib.gif\nno`
-- ✓ ``
+- ✅ `borfle\nbib.gif\nno`
+- ✅ ``
 
 ---
 
@@ -1870,7 +1870,7 @@
 ```
 (no 173) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno`
+- ✅ `borfle\nbib.gif\nno`
 
 ---
 
@@ -1879,7 +1879,7 @@
 ```
 (no 174) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno`
+- ✅ `borfle\nbib.gif\nno`
 
 ---
 
@@ -1888,7 +1888,7 @@
 ```
 (no 175) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno`
+- ✅ `borfle\nbib.gif\nno`
 
 ---
 
@@ -1897,8 +1897,8 @@
 ```
 (no 176) succeeded 2 of 2 times:
 
-- ✓ `borfle\nbib.gif\nno`
-- ✓ ``
+- ✅ `borfle\nbib.gif\nno`
+- ✅ ``
 
 ---
 
@@ -1907,7 +1907,7 @@
 ```
 (no 177) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno\n`
+- ✅ `borfle\nbib.gif\nno\n`
 
 ---
 
@@ -1916,7 +1916,7 @@
 ```
 (no 178) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno\n`
+- ✅ `borfle\nbib.gif\nno\n`
 
 ---
 
@@ -1925,7 +1925,7 @@
 ```
 (no 179) succeeded 1 of 1 times:
 
-- ✓ `borfle\nbib.gif\nno\n`
+- ✅ `borfle\nbib.gif\nno\n`
 
 ---
 
@@ -1934,8 +1934,8 @@
 ```
 (no 180) succeeded 2 of 2 times:
 
-- ✓ `borfle\nbib.gif\nno\n`
-- ✓ ``
+- ✅ `borfle\nbib.gif\nno\n`
+- ✅ ``
 
 ---
 
@@ -1944,9 +1944,9 @@
 ```
 (no 181) succeeded 3 of 3 times:
 
-- ✓ `abcde\n1234Xyz`
-- ✓ `BarFoo`
-- ✓ `abcde\nBar` no match
+- ✅ `abcde\n1234Xyz`
+- ✅ `BarFoo`
+- ✅ `abcde\nBar` no match
 
 ---
 
@@ -1955,9 +1955,9 @@
 ```
 (no 182) succeeded 3 of 3 times:
 
-- ✓ `abcde\n1234Xyz`
-- ✓ `BarFoo`
-- ✓ `abcde\nBar`
+- ✅ `abcde\n1234Xyz`
+- ✅ `BarFoo`
+- ✅ `abcde\nBar`
 
 ---
 
@@ -1966,9 +1966,9 @@
 ```
 (no 183) succeeded 3 of 3 times:
 
-- ✓ `abcde\n1234Xyz`
-- ✓ `BarFoo`
-- ✓ `abcde\nBar` no match
+- ✅ `abcde\n1234Xyz`
+- ✅ `BarFoo`
+- ✅ `abcde\nBar` no match
 
 ---
 
@@ -1977,9 +1977,9 @@
 ```
 (no 184) succeeded 3 of 3 times:
 
-- ✓ `abcde\n1234Xyz`
-- ✓ `BarFoo`
-- ✓ `abcde\nBar`
+- ✅ `abcde\n1234Xyz`
+- ✅ `BarFoo`
+- ✅ `abcde\nBar`
 
 ---
 
@@ -1988,9 +1988,9 @@
 ```
 (no 185) succeeded 3 of 3 times:
 
-- ✓ `abcde\n1234Xyz`
-- ✓ `BarFoo`
-- ✓ `abcde\nBar` no match
+- ✅ `abcde\n1234Xyz`
+- ✅ `BarFoo`
+- ✅ `abcde\nBar` no match
 
 ---
 
@@ -1999,9 +1999,9 @@
 ```
 (no 186) succeeded 3 of 3 times:
 
-- ✓ `abcde\n1234Xyz`
-- ✓ `BarFoo`
-- ✓ `abcde\nBar` no match
+- ✅ `abcde\n1234Xyz`
+- ✅ `BarFoo`
+- ✅ `abcde\nBar` no match
 
 ---
 
@@ -2010,8 +2010,8 @@
 ```
 (no 187) succeeded 2 of 2 times:
 
-- ✓ `abc\nB` no match
-- ✓ `` no match
+- ✅ `abc\nB` no match
+- ✅ `` no match
 
 ---
 
@@ -2020,7 +2020,7 @@
 ```
 (no 188) succeeded 1 of 1 times:
 
-- ✓ `abc\nB`
+- ✅ `abc\nB`
 
 ---
 
@@ -2029,8 +2029,8 @@
 ```
 (no 189) succeeded 2 of 2 times:
 
-- ✓ `abc\nB`
-- ✓ ``
+- ✅ `abc\nB`
+- ✅ ``
 
 ---
 
@@ -2039,7 +2039,7 @@
 ```
 (no 190) succeeded 1 of 1 times:
 
-- ✓ `abc\nB`
+- ✅ `abc\nB`
 
 ---
 
@@ -2048,7 +2048,7 @@
 ```
 (no 191) succeeded 1 of 1 times:
 
-- ✓ `abc\nB`
+- ✅ `abc\nB`
 
 ---
 
@@ -2057,7 +2057,7 @@
 ```
 (no 192) succeeded 1 of 1 times:
 
-- ✓ `B\n`
+- ✅ `B\n`
 
 ---
 
@@ -2066,8 +2066,8 @@
 ```
 (no 193) succeeded 2 of 2 times:
 
-- ✓ `123456654321`
-- ✓ ``
+- ✅ `123456654321`
+- ✅ ``
 
 ---
 
@@ -2076,7 +2076,7 @@
 ```
 (no 194) succeeded 1 of 1 times:
 
-- ✓ `123456654321`
+- ✅ `123456654321`
 
 ---
 
@@ -2085,8 +2085,8 @@
 ```
 (no 195) succeeded 2 of 2 times:
 
-- ✓ `123456654321`
-- ✓ ``
+- ✅ `123456654321`
+- ✅ ``
 
 ---
 
@@ -2095,8 +2095,8 @@
 ```
 (no 196) succeeded 2 of 2 times:
 
-- ✓ `abcabcabcabc`
-- ✓ ``
+- ✅ `abcabcabcabc`
+- ✅ ``
 
 ---
 
@@ -2105,8 +2105,8 @@
 ```
 (no 197) succeeded 2 of 2 times:
 
-- ✓ `abcabcabcabc`
-- ✓ ``
+- ✅ `abcabcabcabc`
+- ✅ ``
 
 ---
 
@@ -2115,7 +2115,7 @@
 ```
 (no 198) succeeded 1 of 1 times:
 
-- ✓ `abcabcabcabc`
+- ✅ `abcabcabcabc`
 
 ---
 
@@ -2124,8 +2124,8 @@
 ```
 (no 199) succeeded 2 of 2 times:
 
-- ✓ `n`
-- ✓ `z` no match
+- ✅ `n`
+- ✅ `z` no match
 
 ---
 
@@ -2134,8 +2134,8 @@
 ```
 (no 200) succeeded 2 of 2 times:
 
-- ✓ `abcd`
-- ✓ `abce` no match
+- ✅ `abcd`
+- ✅ `abce` no match
 
 ---
 
@@ -2144,9 +2144,9 @@
 ```
 (no 201) succeeded 3 of 3 times:
 
-- ✓ `abe`
-- ✓ `abcde` no match
-- ✓ `` no match
+- ✅ `abe`
+- ✅ `abcde` no match
+- ✅ `` no match
 
 ---
 
@@ -2155,8 +2155,8 @@
 ```
 (no 202) succeeded 2 of 2 times:
 
-- ✓ `abd`
-- ✓ `abcd` no match
+- ✅ `abd`
+- ✅ `abcd` no match
 
 ---
 
@@ -2165,11 +2165,11 @@
 ```
 (no 203) succeeded 5 of 5 times:
 
-- ✓ `a`
-- ✓ `ab`
-- ✓ `abbbb`
-- ✓ `bbbbb` no match
-- ✓ `` no match
+- ✅ `a`
+- ✅ `ab`
+- ✅ `abbbb`
+- ✅ `bbbbb` no match
+- ✅ `` no match
 
 ---
 
@@ -2178,9 +2178,9 @@
 ```
 (no 204) succeeded 3 of 3 times:
 
-- ✓ `abe`
-- ✓ `ab1e` no match
-- ✓ `` no match
+- ✅ `abe`
+- ✅ `ab1e` no match
+- ✅ `` no match
 
 ---
 
@@ -2189,8 +2189,8 @@
 ```
 (no 205) succeeded 2 of 2 times:
 
-- ✓ `the \"quick\" brown fox`
-- ✓ `\"the \\\"quick\\\" brown fox\"`
+- ✅ `the \"quick\" brown fox`
+- ✅ `\"the \\\"quick\\\" brown fox\"`
 
 ---
 
@@ -2199,7 +2199,7 @@
 ```
 (no 210) succeeded 1 of 1 times:
 
-- ✓ `<TR BGCOLOR='#DBE9E9'><TD align=left valign=top>43.<a href='joblist.cfm?JobID=94 6735&Keyword='>Word Processor<BR>(N-1286)</a></TD><TD align=left valign=top>Lega lstaff.com</TD><TD align=left valign=top>CA - Statewide</TD></TR>`
+- ✅ `<TR BGCOLOR='#DBE9E9'><TD align=left valign=top>43.<a href='joblist.cfm?JobID=94 6735&Keyword='>Word Processor<BR>(N-1286)</a></TD><TD align=left valign=top>Lega lstaff.com</TD><TD align=left valign=top>CA - Statewide</TD></TR>`
 
 ---
 
@@ -2208,9 +2208,9 @@
 ```
 (no 211) succeeded 3 of 3 times:
 
-- ✓ `acb`
-- ✓ `a\nb`
-- ✓ ``
+- ✅ `acb`
+- ✅ `a\nb`
+- ✅ ``
 
 ---
 
@@ -2219,9 +2219,9 @@
 ```
 (no 212) succeeded 3 of 3 times:
 
-- ✓ `acb`
-- ✓ `a\nb` no match
-- ✓ `` no match
+- ✅ `acb`
+- ✅ `a\nb` no match
+- ✅ `` no match
 
 ---
 
@@ -2230,9 +2230,9 @@
 ```
 (no 213) succeeded 3 of 3 times:
 
-- ✓ `acb`
-- ✓ `a\nb`
-- ✓ ``
+- ✅ `acb`
+- ✅ `a\nb`
+- ✅ ``
 
 ---
 
@@ -2241,8 +2241,8 @@
 ```
 (no 214) succeeded 2 of 2 times:
 
-- ✓ `acb`
-- ✓ `a\nb`
+- ✅ `acb`
+- ✅ `a\nb`
 
 ---
 
@@ -2251,11 +2251,11 @@
 ```
 (no 215) succeeded 5 of 5 times:
 
-- ✓ `bac`
-- ✓ `bbac`
-- ✓ `bbbac`
-- ✓ `bbbbac`
-- ✓ `bbbbbac`
+- ✅ `bac`
+- ✅ `bbac`
+- ✅ `bbbac`
+- ✅ `bbbbac`
+- ✅ `bbbbbac`
 
 ---
 
@@ -2264,12 +2264,12 @@
 ```
 (no 216) succeeded 6 of 6 times:
 
-- ✓ `bac`
-- ✓ `bbac`
-- ✓ `bbbac`
-- ✓ `bbbbac`
-- ✓ `bbbbbac`
-- ✓ ``
+- ✅ `bac`
+- ✅ `bbac`
+- ✅ `bbbac`
+- ✅ `bbbbac`
+- ✅ `bbbbbac`
+- ✅ ``
 
 ---
 
@@ -2278,10 +2278,10 @@
 ```
 (no 217) succeeded 4 of 4 times:
 
-- ✓ `abx\n`
-- ✓ `a\nx\n`
-- ✓ `x\nb\n` no match
-- ✓ `` no match
+- ✅ `abx\n`
+- ✅ `a\nx\n`
+- ✅ `x\nb\n` no match
+- ✅ `` no match
 
 ---
 
@@ -2290,8 +2290,8 @@
 ```
 (no 218) succeeded 2 of 2 times:
 
-- ✓ `CD`
-- ✓ ``
+- ✅ `CD`
+- ✅ ``
 
 ---
 
@@ -2300,7 +2300,7 @@
 ```
 (no 219) succeeded 1 of 1 times:
 
-- ✓ `CD`
+- ✅ `CD`
 
 ---
 
@@ -2309,7 +2309,7 @@
 ```
 (no 220) succeeded 1 of 1 times:
 
-- ✓ `ABABAB`
+- ✅ `ABABAB`
 
 ---
 
@@ -2318,8 +2318,8 @@
 ```
 (no 221) succeeded 2 of 2 times:
 
-- ✓ `ABABAB`
-- ✓ ``
+- ✅ `ABABAB`
+- ✅ ``
 
 ---
 
@@ -2328,12 +2328,12 @@
 ```
 (no 222) succeeded 6 of 6 times:
 
-- ✓ `foo`
-- ✓ `catfood`
-- ✓ `arfootle`
-- ✓ `rfoosh`
-- ✓ `barfoo` no match
-- ✓ `towbarfoo` no match
+- ✅ `foo`
+- ✅ `catfood`
+- ✅ `arfootle`
+- ✅ `rfoosh`
+- ✅ `barfoo` no match
+- ✅ `towbarfoo` no match
 
 ---
 
@@ -2342,10 +2342,10 @@
 ```
 (no 223) succeeded 4 of 4 times:
 
-- ✓ `catfood`
-- ✓ `foo` no match
-- ✓ `barfoo` no match
-- ✓ `towbarfoo` no match
+- ✅ `catfood`
+- ✅ `foo` no match
+- ✅ `barfoo` no match
+- ✅ `towbarfoo` no match
 
 ---
 
@@ -2354,10 +2354,10 @@
 ```
 (no 224) succeeded 4 of 4 times:
 
-- ✓ `fooabar`
-- ✓ `bar` no match
-- ✓ `foobbar` no match
-- ✓ `` no match
+- ✅ `fooabar`
+- ✅ `bar` no match
+- ✅ `foobbar` no match
+- ✅ `` no match
 
 ---
 
@@ -2366,11 +2366,11 @@
 ```
 (no 225) succeeded 5 of 5 times:
 
-- ✓ `abc`
-- ✓ `abc\n` no match
-- ✓ `qqq\nabc` no match
-- ✓ `abc\nzzz` no match
-- ✓ `qqq\nabc\nzzz` no match
+- ✅ `abc`
+- ✅ `abc\n` no match
+- ✅ `qqq\nabc` no match
+- ✅ `abc\nzzz` no match
+- ✅ `qqq\nabc\nzzz` no match
 
 ---
 
@@ -2379,8 +2379,8 @@
 ```
 (no 226) succeeded 2 of 2 times:
 
-- ✓ `/this/is/a/very/long/line/in/deed/with/very/many/slashes/in/and/foo`
-- ✓ `/this/is/a/very/long/line/in/deed/with/very/many/slashes/in/it/you/see/` no match
+- ✅ `/this/is/a/very/long/line/in/deed/with/very/many/slashes/in/and/foo`
+- ✅ `/this/is/a/very/long/line/in/deed/with/very/many/slashes/in/it/you/see/` no match
 
 ---
 
@@ -2389,9 +2389,9 @@
 ```
 (no 227) succeeded 3 of 3 times:
 
-- ✓ `1.230003938`
-- ✓ `1.875000282`
-- ✓ `1.235` no match
+- ✅ `1.230003938`
+- ✅ `1.875000282`
+- ✅ `1.235` no match
 
 ---
 
@@ -2400,8 +2400,8 @@
 ```
 (no 228) succeeded 2 of 2 times:
 
-- ✓ `now is the time for all good men to come to the aid of the party`
-- ✓ `this is not a line with only words and spaces!` no match
+- ✅ `now is the time for all good men to come to the aid of the party`
+- ✅ `this is not a line with only words and spaces!` no match
 
 ---
 
@@ -2410,8 +2410,8 @@
 ```
 (no 229) succeeded 2 of 2 times:
 
-- ✓ `12345a`
-- ✓ `12345+`
+- ✅ `12345a`
+- ✅ `12345+`
 
 ---
 
@@ -2420,8 +2420,8 @@
 ```
 (no 230) succeeded 2 of 2 times:
 
-- ✓ `12345a`
-- ✓ `12345+` no match
+- ✅ `12345a`
+- ✅ `12345+` no match
 
 ---
 
@@ -2430,7 +2430,7 @@
 ```
 (no 231) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -2439,7 +2439,7 @@
 ```
 (no 232) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -2448,7 +2448,7 @@
 ```
 (no 233) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -2457,7 +2457,7 @@
 ```
 (no 234) succeeded 1 of 1 times:
 
-- ✓ `aaabbbccc`
+- ✅ `aaabbbccc`
 
 ---
 
@@ -2466,7 +2466,7 @@
 ```
 (no 235) succeeded 1 of 1 times:
 
-- ✓ `aaabbbbccccd`
+- ✅ `aaabbbbccccd`
 
 ---
 
@@ -2475,8 +2475,8 @@
 ```
 (no 236) succeeded 2 of 2 times:
 
-- ✓ `((abc(ade)ufh()()x`
-- ✓ ``
+- ✅ `((abc(ade)ufh()()x`
+- ✅ ``
 
 ---
 
@@ -2485,9 +2485,9 @@
 ```
 (no 237) succeeded 3 of 3 times:
 
-- ✓ `(abc)`
-- ✓ `(abc(def)xyz)`
-- ✓ `((()aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
+- ✅ `(abc)`
+- ✅ `(abc(def)xyz)`
+- ✅ `((()aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
 
 ---
 
@@ -2496,11 +2496,11 @@
 ```
 (no 238) succeeded 5 of 5 times:
 
-- ✓ `ab`
-- ✓ `Ab`
-- ✓ `aB` no match
-- ✓ `AB` no match
-- ✓ `` no match
+- ✅ `ab`
+- ✅ `Ab`
+- ✅ `aB` no match
+- ✅ `AB` no match
+- ✅ `` no match
 
 ---
 
@@ -2509,11 +2509,11 @@
 ```
 (no 239) succeeded 5 of 5 times:
 
-- ✓ `a bcd e`
-- ✓ `a b cd e` no match
-- ✓ `abcd e` no match
-- ✓ `a bcde` no match
-- ✓ `` no match
+- ✅ `a bcd e`
+- ✅ `a b cd e` no match
+- ✅ `abcd e` no match
+- ✅ `a bcde` no match
+- ✅ `` no match
 
 ---
 
@@ -2522,8 +2522,8 @@
 ```
 (no 240) succeeded 2 of 2 times:
 
-- ✓ `a bcde f`
-- ✓ `abcdef` no match
+- ✅ `a bcde f`
+- ✅ `abcdef` no match
 
 ---
 
@@ -2532,15 +2532,15 @@
 ```
 (no 241) succeeded 9 of 9 times:
 
-- ✓ `abc`
-- ✓ `aBc`
-- ✓ `abC` no match
-- ✓ `aBC` no match
-- ✓ `Abc` no match
-- ✓ `ABc` no match
-- ✓ `ABC` no match
-- ✓ `AbC` no match
-- ✓ `` no match
+- ✅ `abc`
+- ✅ `aBc`
+- ✅ `abC` no match
+- ✅ `aBC` no match
+- ✅ `Abc` no match
+- ✅ `ABc` no match
+- ✅ `ABC` no match
+- ✅ `AbC` no match
+- ✅ `` no match
 
 ---
 
@@ -2549,12 +2549,12 @@
 ```
 (no 242) succeeded 6 of 6 times:
 
-- ✓ `abc`
-- ✓ `aBc`
-- ✓ `ABC` no match
-- ✓ `abC` no match
-- ✓ `aBC` no match
-- ✓ `` no match
+- ✅ `abc`
+- ✅ `aBc`
+- ✅ `ABC` no match
+- ✅ `abC` no match
+- ✅ `aBC` no match
+- ✅ `` no match
 
 ---
 
@@ -2563,11 +2563,11 @@
 ```
 (no 243) succeeded 5 of 5 times:
 
-- ✓ `aBc`
-- ✓ `aBBc`
-- ✓ `aBC` no match
-- ✓ `aBBC` no match
-- ✓ `` no match
+- ✅ `aBc`
+- ✅ `aBBc`
+- ✅ `aBC` no match
+- ✅ `aBBC` no match
+- ✅ `` no match
 
 ---
 
@@ -2576,11 +2576,11 @@
 ```
 (no 244) succeeded 5 of 5 times:
 
-- ✓ `abcd`
-- ✓ `abCd`
-- ✓ `aBCd` no match
-- ✓ `abcD` no match
-- ✓ `` no match
+- ✅ `abcd`
+- ✅ `abCd`
+- ✅ `aBCd` no match
+- ✅ `abcD` no match
+- ✅ `` no match
 
 ---
 
@@ -2589,11 +2589,11 @@
 ```
 (no 245) succeeded 5 of 5 times:
 
-- ✓ `more than million`
-- ✓ `more than MILLION`
-- ✓ `more \n than Million`
-- ✓ `MORE THAN MILLION` no match
-- ✓ `more \n than \n million` no match
+- ✅ `more than million`
+- ✅ `more than MILLION`
+- ✅ `more \n than Million`
+- ✅ `MORE THAN MILLION` no match
+- ✅ `more \n than \n million` no match
 
 ---
 
@@ -2602,12 +2602,12 @@
 ```
 (no 246) succeeded 6 of 6 times:
 
-- ✓ `more than million`
-- ✓ `more than MILLION`
-- ✓ `more \n than Million`
-- ✓ `MORE THAN MILLION` no match
-- ✓ `more \n than \n million` no match
-- ✓ `` no match
+- ✅ `more than million`
+- ✅ `more than MILLION`
+- ✅ `more \n than Million`
+- ✅ `MORE THAN MILLION` no match
+- ✅ `more \n than \n million` no match
+- ✅ `` no match
 
 ---
 
@@ -2616,13 +2616,13 @@
 ```
 (no 247) succeeded 7 of 7 times:
 
-- ✓ `abc`
-- ✓ `aBbc`
-- ✓ `aBBc`
-- ✓ `Abc` no match
-- ✓ `abAb` no match
-- ✓ `abbC` no match
-- ✓ `` no match
+- ✅ `abc`
+- ✅ `aBbc`
+- ✅ `aBBc`
+- ✅ `Abc` no match
+- ✅ `abAb` no match
+- ✅ `abbC` no match
+- ✅ `` no match
 
 ---
 
@@ -2631,12 +2631,12 @@
 ```
 (no 248) succeeded 6 of 6 times:
 
-- ✓ `abc`
-- ✓ `aBc`
-- ✓ `Ab` no match
-- ✓ `abC` no match
-- ✓ `aBC` no match
-- ✓ `` no match
+- ✅ `abc`
+- ✅ `aBc`
+- ✅ `Ab` no match
+- ✅ `abC` no match
+- ✅ `aBC` no match
+- ✅ `` no match
 
 ---
 
@@ -2645,11 +2645,11 @@
 ```
 (no 249) succeeded 5 of 5 times:
 
-- ✓ `abxxc`
-- ✓ `aBxxc`
-- ✓ `Abxxc` no match
-- ✓ `ABxxc` no match
-- ✓ `abxxC` no match
+- ✅ `abxxc`
+- ✅ `aBxxc`
+- ✅ `Abxxc` no match
+- ✅ `ABxxc` no match
+- ✅ `abxxC` no match
 
 ---
 
@@ -2658,10 +2658,10 @@
 ```
 (no 250) succeeded 4 of 4 times:
 
-- ✓ `aA`
-- ✓ `bB`
-- ✓ `aB` no match
-- ✓ `bA` no match
+- ✅ `aA`
+- ✅ `bB`
+- ✅ `aB` no match
+- ✅ `bA` no match
 
 ---
 
@@ -2670,11 +2670,11 @@
 ```
 (no 251) succeeded 5 of 5 times:
 
-- ✓ `aa`
-- ✓ `b`
-- ✓ `bb`
-- ✓ `ab` no match
-- ✓ `` no match
+- ✅ `aa`
+- ✅ `b`
+- ✅ `bb`
+- ✅ `ab` no match
+- ✅ `` no match
 
 ---
 
@@ -2683,10 +2683,10 @@
 ```
 (no 252) succeeded 4 of 4 times:
 
-- ✓ `abc:`
-- ✓ `12`
-- ✓ `123`
-- ✓ `xyz` no match
+- ✅ `abc:`
+- ✅ `12`
+- ✅ `123`
+- ✅ `xyz` no match
 
 ---
 
@@ -2695,11 +2695,11 @@
 ```
 (no 253) succeeded 5 of 5 times:
 
-- ✓ `abc:`
-- ✓ `12`
-- ✓ `123` no match
-- ✓ `xyz` no match
-- ✓ `` no match
+- ✅ `abc:`
+- ✅ `12`
+- ✅ `123` no match
+- ✅ `xyz` no match
+- ✅ `` no match
 
 ---
 
@@ -2708,11 +2708,11 @@
 ```
 (no 254) succeeded 5 of 5 times:
 
-- ✓ `foobar`
-- ✓ `cat`
-- ✓ `fcat`
-- ✓ `focat`
-- ✓ `foocat` no match
+- ✅ `foobar`
+- ✅ `cat`
+- ✅ `fcat`
+- ✅ `focat`
+- ✅ `foocat` no match
 
 ---
 
@@ -2721,11 +2721,11 @@
 ```
 (no 255) succeeded 5 of 5 times:
 
-- ✓ `foobar`
-- ✓ `cat`
-- ✓ `fcat`
-- ✓ `focat`
-- ✓ `foocat` no match
+- ✅ `foobar`
+- ✅ `cat`
+- ✅ `fcat`
+- ✅ `focat`
+- ✅ `foocat` no match
 
 ---
 
@@ -2734,10 +2734,10 @@
 ```
 (no 256) succeeded 4 of 4 times:
 
-- ✓ `abcd`
-- ✓ `(abcd)`
-- ✓ `the quick (abcd) fox`
-- ✓ `(abcd`
+- ✅ `abcd`
+- ✅ `(abcd)`
+- ✅ `the quick (abcd) fox`
+- ✅ `(abcd`
 
 ---
 
@@ -2746,10 +2746,10 @@
 ```
 (no 257) succeeded 4 of 4 times:
 
-- ✓ `abcd`
-- ✓ `(abcd)`
-- ✓ `the quick (abcd) fox`
-- ✓ `(abcd`
+- ✅ `abcd`
+- ✅ `(abcd)`
+- ✅ `the quick (abcd) fox`
+- ✅ `(abcd`
 
 ---
 
@@ -2758,10 +2758,10 @@
 ```
 (no 258) succeeded 4 of 4 times:
 
-- ✓ `12`
-- ✓ `12a`
-- ✓ `12aa`
-- ✓ `1234` no match
+- ✅ `12`
+- ✅ `12a`
+- ✅ `12aa`
+- ✅ `1234` no match
 
 ---
 
@@ -2770,13 +2770,13 @@
 ```
 (no 259) succeeded 7 of 7 times:
 
-- ✓ `blah blah`
-- ✓ `BLAH BLAH`
-- ✓ `Blah Blah`
-- ✓ `blaH blaH`
-- ✓ `blah BLAH` no match
-- ✓ `Blah blah` no match
-- ✓ `blaH blah` no match
+- ✅ `blah blah`
+- ✅ `BLAH BLAH`
+- ✅ `Blah Blah`
+- ✅ `blaH blaH`
+- ✅ `blah BLAH` no match
+- ✅ `Blah blah` no match
+- ✅ `blaH blah` no match
 
 ---
 
@@ -2785,13 +2785,13 @@
 ```
 (no 260) succeeded 7 of 7 times:
 
-- ✓ `blah blah`
-- ✓ `BLAH BLAH`
-- ✓ `Blah Blah`
-- ✓ `blaH blaH`
-- ✓ `blah BLAH`
-- ✓ `Blah blah`
-- ✓ `blaH blah`
+- ✅ `blah blah`
+- ✅ `BLAH BLAH`
+- ✅ `Blah Blah`
+- ✅ `blaH blaH`
+- ✅ `blah BLAH`
+- ✅ `Blah blah`
+- ✅ `blaH blah`
 
 ---
 
@@ -2800,8 +2800,8 @@
 ```
 (no 261) succeeded 2 of 2 times:
 
-- ✓ `blah ABLAH`
-- ✓ `blah aBLAH` no match
+- ✅ `blah ABLAH`
+- ✅ `blah aBLAH` no match
 
 ---
 
@@ -2810,10 +2810,10 @@
 ```
 (no 262) succeeded 4 of 4 times:
 
-- ✓ `a`
-- ✓ `aa`
-- ✓ `aaaa`
-- ✓ ``
+- ✅ `a`
+- ✅ `aa`
+- ✅ `aaaa`
+- ✅ ``
 
 ---
 
@@ -2822,10 +2822,10 @@
 ```
 (no 263) succeeded 4 of 4 times:
 
-- ✓ `abc`
-- ✓ `abcabc`
-- ✓ `abcabcabc`
-- ✓ `xyz`
+- ✅ `abc`
+- ✅ `abcabc`
+- ✅ `abcabcabc`
+- ✅ `xyz`
 
 ---
 
@@ -2834,9 +2834,9 @@
 ```
 (no 264) succeeded 3 of 3 times:
 
-- ✓ `a`
-- ✓ `aaaaa`
-- ✓ ``
+- ✅ `a`
+- ✅ `aaaaa`
+- ✅ ``
 
 ---
 
@@ -2845,12 +2845,12 @@
 ```
 (no 265) succeeded 6 of 6 times:
 
-- ✓ `a`
-- ✓ `b`
-- ✓ `ababab`
-- ✓ `aaaabcde`
-- ✓ `bbbb`
-- ✓ ``
+- ✅ `a`
+- ✅ `b`
+- ✅ `ababab`
+- ✅ `aaaabcde`
+- ✅ `bbbb`
+- ✅ ``
 
 ---
 
@@ -2859,10 +2859,10 @@
 ```
 (no 266) succeeded 4 of 4 times:
 
-- ✓ `b`
-- ✓ `bbbb`
-- ✓ `aaa`
-- ✓ ``
+- ✅ `b`
+- ✅ `bbbb`
+- ✅ `aaa`
+- ✅ ``
 
 ---
 
@@ -2871,9 +2871,9 @@
 ```
 (no 267) succeeded 3 of 3 times:
 
-- ✓ `cccc`
-- ✓ `abab`
-- ✓ ``
+- ✅ `cccc`
+- ✅ `abab`
+- ✅ ``
 
 ---
 
@@ -2882,9 +2882,9 @@
 ```
 (no 268) succeeded 3 of 3 times:
 
-- ✓ `a`
-- ✓ `aaaa`
-- ✓ ``
+- ✅ `a`
+- ✅ `aaaa`
+- ✅ ``
 
 ---
 
@@ -2893,11 +2893,11 @@
 ```
 (no 269) succeeded 5 of 5 times:
 
-- ✓ `a`
-- ✓ `b`
-- ✓ `abab`
-- ✓ `baba`
-- ✓ ``
+- ✅ `a`
+- ✅ `b`
+- ✅ `abab`
+- ✅ `baba`
+- ✅ ``
 
 ---
 
@@ -2906,10 +2906,10 @@
 ```
 (no 270) succeeded 4 of 4 times:
 
-- ✓ `b`
-- ✓ `bbbb`
-- ✓ `aaa`
-- ✓ ``
+- ✅ `b`
+- ✅ `bbbb`
+- ✅ `aaa`
+- ✅ ``
 
 ---
 
@@ -2918,10 +2918,10 @@
 ```
 (no 271) succeeded 4 of 4 times:
 
-- ✓ `c`
-- ✓ `cccc`
-- ✓ `baba`
-- ✓ ``
+- ✅ `c`
+- ✅ `cccc`
+- ✅ `baba`
+- ✅ ``
 
 ---
 
@@ -2930,9 +2930,9 @@
 ```
 (no 272) succeeded 3 of 3 times:
 
-- ✓ `a`
-- ✓ `aaabcde`
-- ✓ ``
+- ✅ `a`
+- ✅ `aaabcde`
+- ✅ ``
 
 ---
 
@@ -2941,9 +2941,9 @@
 ```
 (no 273) succeeded 3 of 3 times:
 
-- ✓ `aaaaa`
-- ✓ `aabbaa`
-- ✓ ``
+- ✅ `aaaaa`
+- ✅ `aabbaa`
+- ✅ ``
 
 ---
 
@@ -2952,8 +2952,8 @@
 ```
 (no 274) succeeded 2 of 2 times:
 
-- ✓ `aaaaa`
-- ✓ `aabbaa`
+- ✅ `aaaaa`
+- ✅ `aabbaa`
 
 ---
 
@@ -2962,10 +2962,10 @@
 ```
 (no 275) succeeded 4 of 4 times:
 
-- ✓ `12-sep-98`
-- ✓ `12-09-98`
-- ✓ `sep-12-98` no match
-- ✓ `` no match
+- ✅ `12-sep-98`
+- ✅ `12-09-98`
+- ✅ `sep-12-98` no match
+- ✅ `` no match
 
 ---
 
@@ -2974,10 +2974,10 @@
 ```
 (no 276) succeeded 4 of 4 times:
 
-- ✓ `foobarfoo`
-- ✓ `foobarfootling`
-- ✓ `foobar` no match
-- ✓ `barfoo` no match
+- ✅ `foobarfoo`
+- ✅ `foobarfootling`
+- ✅ `foobar` no match
+- ✅ `barfoo` no match
 
 ---
 
@@ -2986,14 +2986,14 @@
 ```
 (no 277) succeeded 8 of 8 times:
 
-- ✓ `saturday`
-- ✓ `sunday`
-- ✓ `Saturday`
-- ✓ `Sunday`
-- ✓ `SATURDAY`
-- ✓ `SUNDAY`
-- ✓ `SunDay`
-- ✓ ``
+- ✅ `saturday`
+- ✅ `sunday`
+- ✅ `Saturday`
+- ✅ `Sunday`
+- ✅ `SATURDAY`
+- ✅ `SUNDAY`
+- ✅ `SunDay`
+- ✅ ``
 
 ---
 
@@ -3002,14 +3002,14 @@
 ```
 (no 278) succeeded 8 of 8 times:
 
-- ✓ `abcx`
-- ✓ `aBCx`
-- ✓ `bbx`
-- ✓ `BBx`
-- ✓ `abcX` no match
-- ✓ `aBCX` no match
-- ✓ `bbX` no match
-- ✓ `BBX` no match
+- ✅ `abcx`
+- ✅ `aBCx`
+- ✅ `bbx`
+- ✅ `BBx`
+- ✅ `abcX` no match
+- ✅ `aBCX` no match
+- ✅ `bbX` no match
+- ✅ `BBX` no match
 
 ---
 
@@ -3018,14 +3018,14 @@
 ```
 (no 279) succeeded 8 of 8 times:
 
-- ✓ `ac`
-- ✓ `aC`
-- ✓ `bD`
-- ✓ `elephant`
-- ✓ `Europe`
-- ✓ `frog`
-- ✓ `France`
-- ✓ `Africa` no match
+- ✅ `ac`
+- ✅ `aC`
+- ✅ `bD`
+- ✅ `elephant`
+- ✅ `Europe`
+- ✅ `frog`
+- ✅ `France`
+- ✅ `Africa` no match
 
 ---
 
@@ -3034,14 +3034,14 @@
 ```
 (no 280) succeeded 8 of 8 times:
 
-- ✓ `ab`
-- ✓ `aBd`
-- ✓ `xy`
-- ✓ `xY`
-- ✓ `zebra`
-- ✓ `Zambesi`
-- ✓ `aCD` no match
-- ✓ `XY` no match
+- ✅ `ab`
+- ✅ `aBd`
+- ✅ `xy`
+- ✅ `xY`
+- ✅ `zebra`
+- ✅ `Zambesi`
+- ✅ `aCD` no match
+- ✅ `XY` no match
 
 ---
 
@@ -3050,9 +3050,9 @@
 ```
 (no 281) succeeded 3 of 3 times:
 
-- ✓ `foo\nbar`
-- ✓ `bar` no match
-- ✓ `baz\nbar` no match
+- ✅ `foo\nbar`
+- ✅ `bar` no match
+- ✅ `baz\nbar` no match
 
 ---
 
@@ -3061,11 +3061,11 @@
 ```
 (no 282) succeeded 5 of 5 times:
 
-- ✓ `barbaz`
-- ✓ `barbarbaz`
-- ✓ `koobarbaz`
-- ✓ `baz` no match
-- ✓ `foobarbaz` no match
+- ✅ `barbaz`
+- ✅ `barbarbaz`
+- ✅ `koobarbaz`
+- ✅ `baz` no match
+- ✅ `foobarbaz` no match
 
 ---
 
@@ -3074,20 +3074,20 @@
 ```
 (no 283) succeeded 14 of 14 times:
 
-- ✓ `aaaaa`
-- ✓ `aaaaaaa`
-- ✓ `aaaaaaaaaa`
-- ✓ `a` no match
-- ✓ `aa` no match
-- ✓ `aaa` no match
-- ✓ `aaaaaaaa` no match
-- ✓ `aaaaaaaaa` no match
-- ✓ `aaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaaaaa` no match
+- ✅ `aaaaa`
+- ✅ `aaaaaaa`
+- ✅ `aaaaaaaaaa`
+- ✅ `a` no match
+- ✅ `aa` no match
+- ✅ `aaa` no match
+- ✅ `aaaaaaaa` no match
+- ✅ `aaaaaaaaa` no match
+- ✅ `aaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaaaa` no match
 
 ---
 
@@ -3096,22 +3096,22 @@
 ```
 (no 284) succeeded 16 of 16 times:
 
-- ✓ `aaaa`
-- ✓ `aaaaa`
-- ✓ `aaaaaa`
-- ✓ `aaaaaaa`
-- ✓ `aaaaaaaaaa`
-- ✓ `a` no match
-- ✓ `aa` no match
-- ✓ `aaa` no match
-- ✓ `aaaaaaaa` no match
-- ✓ `aaaaaaaaa` no match
-- ✓ `aaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaaaa` no match
-- ✓ `aaaaaaaaaaaaaaaa` no match
+- ✅ `aaaa`
+- ✅ `aaaaa`
+- ✅ `aaaaaa`
+- ✅ `aaaaaaa`
+- ✅ `aaaaaaaaaa`
+- ✅ `a` no match
+- ✅ `aa` no match
+- ✅ `aaa` no match
+- ✅ `aaaaaaaa` no match
+- ✅ `aaaaaaaaa` no match
+- ✅ `aaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaaaa` no match
 
 ---
 
@@ -3120,12 +3120,12 @@
 ```
 (no 285) succeeded 6 of 6 times:
 
-- ✓ `abc`
-- ✓ `xabcy`
-- ✓ `ababc`
-- ✓ `xbc` no match
-- ✓ `axc` no match
-- ✓ `abx` no match
+- ✅ `abc`
+- ✅ `xabcy`
+- ✅ `ababc`
+- ✅ `xbc` no match
+- ✅ `axc` no match
+- ✅ `abx` no match
 
 ---
 
@@ -3134,7 +3134,7 @@
 ```
 (no 286) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3143,9 +3143,9 @@
 ```
 (no 287) succeeded 3 of 3 times:
 
-- ✓ `abc`
-- ✓ `abbc`
-- ✓ `abbbbc`
+- ✅ `abc`
+- ✅ `abbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3154,7 +3154,7 @@
 ```
 (no 288) succeeded 1 of 1 times:
 
-- ✓ `abbbbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3163,7 +3163,7 @@
 ```
 (no 289) succeeded 1 of 1 times:
 
-- ✓ `abbbbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3172,7 +3172,7 @@
 ```
 (no 290) succeeded 1 of 1 times:
 
-- ✓ `abbbbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3181,9 +3181,9 @@
 ```
 (no 291) succeeded 3 of 3 times:
 
-- ✓ `abbc`
-- ✓ `abc` no match
-- ✓ `abq` no match
+- ✅ `abbc`
+- ✅ `abc` no match
+- ✅ `abq` no match
 
 ---
 
@@ -3200,7 +3200,7 @@
 ```
 (no 293) succeeded 1 of 1 times:
 
-- ✓ `abbbbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3209,7 +3209,7 @@
 ```
 (no 294) succeeded 1 of 1 times:
 
-- ✓ `abbbbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3218,7 +3218,7 @@
 ```
 (no 295) succeeded 1 of 1 times:
 
-- ✓ `abbbbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3227,7 +3227,7 @@
 ```
 (no 296) succeeded 1 of 1 times:
 
-- ✓ `abbbbc`
+- ✅ `abbbbc`
 
 ---
 
@@ -3236,8 +3236,8 @@
 ```
 (no 297) succeeded 2 of 2 times:
 
-- ✓ `abq` no match
-- ✓ `abbbbc` no match
+- ✅ `abq` no match
+- ✅ `abbbbc` no match
 
 ---
 
@@ -3246,8 +3246,8 @@
 ```
 (no 298) succeeded 2 of 2 times:
 
-- ✓ `abbc`
-- ✓ `abc`
+- ✅ `abbc`
+- ✅ `abc`
 
 ---
 
@@ -3256,7 +3256,7 @@
 ```
 (no 299) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3273,7 +3273,7 @@
 ```
 (no 301) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3282,7 +3282,7 @@
 ```
 (no 302) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3291,9 +3291,9 @@
 ```
 (no 303) succeeded 3 of 3 times:
 
-- ✓ `abc`
-- ✓ `abbbbc` no match
-- ✓ `abcc` no match
+- ✅ `abc`
+- ✅ `abbbbc` no match
+- ✅ `abcc` no match
 
 ---
 
@@ -3302,7 +3302,7 @@
 ```
 (no 304) succeeded 1 of 1 times:
 
-- ✓ `abcc`
+- ✅ `abcc`
 
 ---
 
@@ -3319,8 +3319,8 @@
 ```
 (no 306) succeeded 2 of 2 times:
 
-- ✓ `aabc`
-- ✓ `aabcd` no match
+- ✅ `aabc`
+- ✅ `aabcd` no match
 
 ---
 
@@ -3329,7 +3329,7 @@
 ```
 (no 307) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3338,7 +3338,7 @@
 ```
 (no 308) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3347,8 +3347,8 @@
 ```
 (no 309) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ `axc`
+- ✅ `abc`
+- ✅ `axc`
 
 ---
 
@@ -3357,7 +3357,7 @@
 ```
 (no 310) succeeded 1 of 1 times:
 
-- ✓ `axyzc`
+- ✅ `axyzc`
 
 ---
 
@@ -3366,9 +3366,9 @@
 ```
 (no 311) succeeded 3 of 3 times:
 
-- ✓ `abd`
-- ✓ `axyzd` no match
-- ✓ `abc` no match
+- ✅ `abd`
+- ✅ `axyzd` no match
+- ✅ `abc` no match
 
 ---
 
@@ -3377,7 +3377,7 @@
 ```
 (no 312) succeeded 1 of 1 times:
 
-- ✓ `ace`
+- ✅ `ace`
 
 ---
 
@@ -3386,7 +3386,7 @@
 ```
 (no 313) succeeded 1 of 1 times:
 
-- ✓ `aac`
+- ✅ `aac`
 
 ---
 
@@ -3395,7 +3395,7 @@
 ```
 (no 314) succeeded 1 of 1 times:
 
-- ✓ `a-`
+- ✅ `a-`
 
 ---
 
@@ -3404,7 +3404,7 @@
 ```
 (no 315) succeeded 1 of 1 times:
 
-- ✓ `a-`
+- ✅ `a-`
 
 ---
 
@@ -3413,7 +3413,7 @@
 ```
 (no 316) succeeded 1 of 1 times:
 
-- ✓ `a]`
+- ✅ `a]`
 
 ---
 
@@ -3422,7 +3422,7 @@
 ```
 (no 317) succeeded 1 of 1 times:
 
-- ✓ `a]b`
+- ✅ `a]b`
 
 ---
 
@@ -3431,9 +3431,9 @@
 ```
 (no 318) succeeded 3 of 3 times:
 
-- ✓ `aed`
-- ✓ `abd` no match
-- ✓ `abd` no match
+- ✅ `aed`
+- ✅ `abd` no match
+- ✅ `abd` no match
 
 ---
 
@@ -3442,7 +3442,7 @@
 ```
 (no 319) succeeded 1 of 1 times:
 
-- ✓ `adc`
+- ✅ `adc`
 
 ---
 
@@ -3451,9 +3451,9 @@
 ```
 (no 320) succeeded 3 of 3 times:
 
-- ✓ `adc`
-- ✓ `a-c`
-- ✓ `a]c` no match
+- ✅ `adc`
+- ✅ `a-c`
+- ✅ `a]c` no match
 
 ---
 
@@ -3462,9 +3462,9 @@
 ```
 (no 321) succeeded 3 of 3 times:
 
-- ✓ `a-`
-- ✓ `-a`
-- ✓ `-a-`
+- ✅ `a-`
+- ✅ `-a`
+- ✅ `-a-`
 
 ---
 
@@ -3473,9 +3473,9 @@
 ```
 (no 322) succeeded 3 of 3 times:
 
-- ✓ `xy` no match
-- ✓ `yz` no match
-- ✓ `xyz` no match
+- ✅ `xy` no match
+- ✅ `yz` no match
+- ✅ `xyz` no match
 
 ---
 
@@ -3484,9 +3484,9 @@
 ```
 (no 323) succeeded 3 of 3 times:
 
-- ✓ `a-` no match
-- ✓ `-a` no match
-- ✓ `-a-` no match
+- ✅ `a-` no match
+- ✅ `-a` no match
+- ✅ `-a-` no match
 
 ---
 
@@ -3495,7 +3495,7 @@
 ```
 (no 324) succeeded 1 of 1 times:
 
-- ✓ `xy`
+- ✅ `xy`
 
 ---
 
@@ -3504,7 +3504,7 @@
 ```
 (no 325) succeeded 1 of 1 times:
 
-- ✓ `yz`
+- ✅ `yz`
 
 ---
 
@@ -3513,7 +3513,7 @@
 ```
 (no 326) succeeded 1 of 1 times:
 
-- ✓ `xyz`
+- ✅ `xyz`
 
 ---
 
@@ -3522,7 +3522,7 @@
 ```
 (no 327) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -3531,8 +3531,8 @@
 ```
 (no 328) succeeded 2 of 2 times:
 
-- ✓ `-`
-- ✓ `a` no match
+- ✅ `-`
+- ✅ `a` no match
 
 ---
 
@@ -3541,7 +3541,7 @@
 ```
 (no 329) succeeded 1 of 1 times:
 
-- ✓ `a b`
+- ✅ `a b`
 
 ---
 
@@ -3550,8 +3550,8 @@
 ```
 (no 330) succeeded 2 of 2 times:
 
-- ✓ `a-b`
-- ✓ `a b` no match
+- ✅ `a-b`
+- ✅ `a b` no match
 
 ---
 
@@ -3560,7 +3560,7 @@
 ```
 (no 331) succeeded 1 of 1 times:
 
-- ✓ `1`
+- ✅ `1`
 
 ---
 
@@ -3569,8 +3569,8 @@
 ```
 (no 332) succeeded 2 of 2 times:
 
-- ✓ `-`
-- ✓ `1` no match
+- ✅ `-`
+- ✅ `1` no match
 
 ---
 
@@ -3579,7 +3579,7 @@
 ```
 (no 333) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -3588,8 +3588,8 @@
 ```
 (no 334) succeeded 2 of 2 times:
 
-- ✓ `-`
-- ✓ `a` no match
+- ✅ `-`
+- ✅ `a` no match
 
 ---
 
@@ -3598,7 +3598,7 @@
 ```
 (no 335) succeeded 1 of 1 times:
 
-- ✓ `a b`
+- ✅ `a b`
 
 ---
 
@@ -3607,8 +3607,8 @@
 ```
 (no 336) succeeded 2 of 2 times:
 
-- ✓ `a-b`
-- ✓ `a b` no match
+- ✅ `a-b`
+- ✅ `a b` no match
 
 ---
 
@@ -3617,7 +3617,7 @@
 ```
 (no 337) succeeded 1 of 1 times:
 
-- ✓ `1`
+- ✅ `1`
 
 ---
 
@@ -3626,8 +3626,8 @@
 ```
 (no 338) succeeded 2 of 2 times:
 
-- ✓ `-`
-- ✓ `1` no match
+- ✅ `-`
+- ✅ `1` no match
 
 ---
 
@@ -3636,8 +3636,8 @@
 ```
 (no 339) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ `abcd`
+- ✅ `abc`
+- ✅ `abcd`
 
 ---
 
@@ -3646,7 +3646,7 @@
 ```
 (no 340) succeeded 1 of 1 times:
 
-- ✓ `def`
+- ✅ `def`
 
 ---
 
@@ -3663,7 +3663,7 @@
 ```
 (no 342) succeeded 1 of 1 times:
 
-- ✓ `a(b`
+- ✅ `a(b`
 
 ---
 
@@ -3672,8 +3672,8 @@
 ```
 (no 343) succeeded 2 of 2 times:
 
-- ✓ `ab`
-- ✓ `a((b`
+- ✅ `ab`
+- ✅ `a((b`
 
 ---
 
@@ -3682,7 +3682,7 @@
 ```
 (no 344) succeeded 1 of 1 times:
 
-- ✓ `a\\b`
+- ✅ `a\\b`
 
 ---
 
@@ -3691,7 +3691,7 @@
 ```
 (no 345) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3700,7 +3700,7 @@
 ```
 (no 346) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3709,7 +3709,7 @@
 ```
 (no 347) succeeded 1 of 1 times:
 
-- ✓ `aabbabc`
+- ✅ `aabbabc`
 
 ---
 
@@ -3718,7 +3718,7 @@
 ```
 (no 348) succeeded 1 of 1 times:
 
-- ✓ `aabbabc`
+- ✅ `aabbabc`
 
 ---
 
@@ -3727,7 +3727,7 @@
 ```
 (no 349) succeeded 1 of 1 times:
 
-- ✓ `abcabc`
+- ✅ `abcabc`
 
 ---
 
@@ -3736,7 +3736,7 @@
 ```
 (no 350) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -3745,7 +3745,7 @@
 ```
 (no 351) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -3754,7 +3754,7 @@
 ```
 (no 352) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -3763,7 +3763,7 @@
 ```
 (no 353) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -3772,7 +3772,7 @@
 ```
 (no 354) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -3781,7 +3781,7 @@
 ```
 (no 355) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -3790,7 +3790,7 @@
 ```
 (no 356) succeeded 1 of 1 times:
 
-- ✓ `cde`
+- ✅ `cde`
 
 ---
 
@@ -3799,7 +3799,7 @@
 ```
 (no 357) succeeded 1 of 1 times:
 
-- ✓ `b` no match
+- ✅ `b` no match
 
 ---
 
@@ -3808,7 +3808,7 @@
 ```
 (no 358) succeeded 1 of 1 times:
 
-- ✓ ``
+- ✅ ``
 
 ---
 
@@ -3817,7 +3817,7 @@
 ```
 (no 359) succeeded 1 of 1 times:
 
-- ✓ `abbbcd`
+- ✅ `abbbcd`
 
 ---
 
@@ -3826,7 +3826,7 @@
 ```
 (no 360) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -3835,7 +3835,7 @@
 ```
 (no 361) succeeded 1 of 1 times:
 
-- ✓ `e`
+- ✅ `e`
 
 ---
 
@@ -3844,7 +3844,7 @@
 ```
 (no 362) succeeded 1 of 1 times:
 
-- ✓ `ef`
+- ✅ `ef`
 
 ---
 
@@ -3853,7 +3853,7 @@
 ```
 (no 363) succeeded 1 of 1 times:
 
-- ✓ `abcdefg`
+- ✅ `abcdefg`
 
 ---
 
@@ -3862,8 +3862,8 @@
 ```
 (no 364) succeeded 2 of 2 times:
 
-- ✓ `xabyabbbz`
-- ✓ `xayabbbz`
+- ✅ `xabyabbbz`
+- ✅ `xayabbbz`
 
 ---
 
@@ -3872,7 +3872,7 @@
 ```
 (no 365) succeeded 1 of 1 times:
 
-- ✓ `abcde`
+- ✅ `abcde`
 
 ---
 
@@ -3881,7 +3881,7 @@
 ```
 (no 366) succeeded 1 of 1 times:
 
-- ✓ `hij`
+- ✅ `hij`
 
 ---
 
@@ -3898,7 +3898,7 @@
 ```
 (no 368) succeeded 1 of 1 times:
 
-- ✓ `abcdef`
+- ✅ `abcdef`
 
 ---
 
@@ -3907,7 +3907,7 @@
 ```
 (no 369) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -3916,7 +3916,7 @@
 ```
 (no 370) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3925,7 +3925,7 @@
 ```
 (no 371) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3934,7 +3934,7 @@
 ```
 (no 372) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -3943,7 +3943,7 @@
 ```
 (no 373) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -3952,7 +3952,7 @@
 ```
 (no 374) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -3961,7 +3961,7 @@
 ```
 (no 375) succeeded 1 of 1 times:
 
-- ✓ `adcdcde`
+- ✅ `adcdcde`
 
 ---
 
@@ -3970,8 +3970,8 @@
 ```
 (no 376) succeeded 2 of 2 times:
 
-- ✓ `abcde` no match
-- ✓ `adcdcde` no match
+- ✅ `abcde` no match
+- ✅ `adcdcde` no match
 
 ---
 
@@ -3980,7 +3980,7 @@
 ```
 (no 377) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -3989,7 +3989,7 @@
 ```
 (no 378) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -3998,7 +3998,7 @@
 ```
 (no 379) succeeded 1 of 1 times:
 
-- ✓ `alpha`
+- ✅ `alpha`
 
 ---
 
@@ -4007,7 +4007,7 @@
 ```
 (no 380) succeeded 1 of 1 times:
 
-- ✓ `abh`
+- ✅ `abh`
 
 ---
 
@@ -4016,11 +4016,11 @@
 ```
 (no 381) succeeded 5 of 5 times:
 
-- ✓ `effgz`
-- ✓ `ij`
-- ✓ `reffgz`
-- ✓ `effg` no match
-- ✓ `bcdd` no match
+- ✅ `effgz`
+- ✅ `ij`
+- ✅ `reffgz`
+- ✅ `effg` no match
+- ✅ `bcdd` no match
 
 ---
 
@@ -4029,7 +4029,7 @@
 ```
 (no 382) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -4038,7 +4038,7 @@
 ```
 (no 383) succeeded 1 of 1 times:
 
-- ✓ `aa`
+- ✅ `aa`
 
 ---
 
@@ -4047,7 +4047,7 @@
 ```
 (no 384) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -4056,8 +4056,8 @@
 ```
 (no 385) succeeded 2 of 2 times:
 
-- ✓ `aa` no match
-- ✓ `uh-uh` no match
+- ✅ `aa` no match
+- ✅ `uh-uh` no match
 
 ---
 
@@ -4066,7 +4066,7 @@
 ```
 (no 386) succeeded 1 of 1 times:
 
-- ✓ `multiple words, yeah`
+- ✅ `multiple words, yeah`
 
 ---
 
@@ -4075,7 +4075,7 @@
 ```
 (no 387) succeeded 1 of 1 times:
 
-- ✓ `abcde`
+- ✅ `abcde`
 
 ---
 
@@ -4084,7 +4084,7 @@
 ```
 (no 388) succeeded 1 of 1 times:
 
-- ✓ `(a, b)`
+- ✅ `(a, b)`
 
 ---
 
@@ -4101,7 +4101,7 @@
 ```
 (no 390) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -4110,7 +4110,7 @@
 ```
 (no 391) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -4119,7 +4119,7 @@
 ```
 (no 392) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -4128,7 +4128,7 @@
 ```
 (no 393) succeeded 1 of 1 times:
 
-- ✓ `abcabc`
+- ✅ `abcabc`
 
 ---
 
@@ -4137,7 +4137,7 @@
 ```
 (no 394) succeeded 1 of 1 times:
 
-- ✓ `abcabc`
+- ✅ `abcabc`
 
 ---
 
@@ -4146,9 +4146,9 @@
 ```
 (no 395) succeeded 3 of 3 times:
 
-- ✓ `a`
-- ✓ `ab`
-- ✓ `x` no match
+- ✅ `a`
+- ✅ `ab`
+- ✅ `x` no match
 
 ---
 
@@ -4157,7 +4157,7 @@
 ```
 (no 396) succeeded 1 of 1 times:
 
-- ✓ `ababbbcbc`
+- ✅ `ababbbcbc`
 
 ---
 
@@ -4166,7 +4166,7 @@
 ```
 (no 398) succeeded 1 of 1 times:
 
-- ✓ `aaaxabaxbaaxbbax`
+- ✅ `aaaxabaxbaaxbbax`
 
 ---
 
@@ -4175,13 +4175,13 @@
 ```
 (no 400) succeeded 7 of 7 times:
 
-- ✓ `ABC`
-- ✓ `XABCY`
-- ✓ `ABABC`
-- ✓ `aaxabxbaxbbx` no match
-- ✓ `XBC` no match
-- ✓ `AXC` no match
-- ✓ `ABX` no match
+- ✅ `ABC`
+- ✅ `XABCY`
+- ✅ `ABABC`
+- ✅ `aaxabxbaxbbx` no match
+- ✅ `XBC` no match
+- ✅ `AXC` no match
+- ✅ `ABX` no match
 
 ---
 
@@ -4190,7 +4190,7 @@
 ```
 (no 401) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4199,8 +4199,8 @@
 ```
 (no 402) succeeded 2 of 2 times:
 
-- ✓ `ABC`
-- ✓ `ABBC`
+- ✅ `ABC`
+- ✅ `ABBC`
 
 ---
 
@@ -4209,7 +4209,7 @@
 ```
 (no 403) succeeded 1 of 1 times:
 
-- ✓ `ABBBBC`
+- ✅ `ABBBBC`
 
 ---
 
@@ -4218,7 +4218,7 @@
 ```
 (no 404) succeeded 1 of 1 times:
 
-- ✓ `ABBBBC`
+- ✅ `ABBBBC`
 
 ---
 
@@ -4227,7 +4227,7 @@
 ```
 (no 405) succeeded 1 of 1 times:
 
-- ✓ `ABBC`
+- ✅ `ABBC`
 
 ---
 
@@ -4236,8 +4236,8 @@
 ```
 (no 406) succeeded 2 of 2 times:
 
-- ✓ `ABC` no match
-- ✓ `ABQ` no match
+- ✅ `ABC` no match
+- ✅ `ABQ` no match
 
 ---
 
@@ -4254,7 +4254,7 @@
 ```
 (no 408) succeeded 1 of 1 times:
 
-- ✓ `ABBBBC`
+- ✅ `ABBBBC`
 
 ---
 
@@ -4263,7 +4263,7 @@
 ```
 (no 409) succeeded 1 of 1 times:
 
-- ✓ `ABBBBC`
+- ✅ `ABBBBC`
 
 ---
 
@@ -4272,7 +4272,7 @@
 ```
 (no 410) succeeded 1 of 1 times:
 
-- ✓ `ABBBBC`
+- ✅ `ABBBBC`
 
 ---
 
@@ -4281,7 +4281,7 @@
 ```
 (no 411) succeeded 1 of 1 times:
 
-- ✓ `ABBBBC`
+- ✅ `ABBBBC`
 
 ---
 
@@ -4290,8 +4290,8 @@
 ```
 (no 412) succeeded 2 of 2 times:
 
-- ✓ `ABQ` no match
-- ✓ `ABBBBC` no match
+- ✅ `ABQ` no match
+- ✅ `ABBBBC` no match
 
 ---
 
@@ -4300,8 +4300,8 @@
 ```
 (no 413) succeeded 2 of 2 times:
 
-- ✓ `ABBC`
-- ✓ `ABC`
+- ✅ `ABBC`
+- ✅ `ABC`
 
 ---
 
@@ -4310,7 +4310,7 @@
 ```
 (no 414) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4327,7 +4327,7 @@
 ```
 (no 416) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4336,7 +4336,7 @@
 ```
 (no 417) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4345,9 +4345,9 @@
 ```
 (no 418) succeeded 3 of 3 times:
 
-- ✓ `ABC`
-- ✓ `ABBBBC` no match
-- ✓ `ABCC` no match
+- ✅ `ABC`
+- ✅ `ABBBBC` no match
+- ✅ `ABCC` no match
 
 ---
 
@@ -4356,7 +4356,7 @@
 ```
 (no 419) succeeded 1 of 1 times:
 
-- ✓ `ABCC`
+- ✅ `ABCC`
 
 ---
 
@@ -4373,7 +4373,7 @@
 ```
 (no 421) succeeded 1 of 1 times:
 
-- ✓ `AABC`
+- ✅ `AABC`
 
 ---
 
@@ -4382,7 +4382,7 @@
 ```
 (no 422) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4391,7 +4391,7 @@
 ```
 (no 423) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4400,8 +4400,8 @@
 ```
 (no 424) succeeded 2 of 2 times:
 
-- ✓ `ABC`
-- ✓ `AXC`
+- ✅ `ABC`
+- ✅ `AXC`
 
 ---
 
@@ -4410,7 +4410,7 @@
 ```
 (no 425) succeeded 1 of 1 times:
 
-- ✓ `AXYZC`
+- ✅ `AXYZC`
 
 ---
 
@@ -4419,8 +4419,8 @@
 ```
 (no 426) succeeded 2 of 2 times:
 
-- ✓ `AABC`
-- ✓ `AXYZD` no match
+- ✅ `AABC`
+- ✅ `AXYZD` no match
 
 ---
 
@@ -4429,7 +4429,7 @@
 ```
 (no 427) succeeded 1 of 1 times:
 
-- ✓ `ABD`
+- ✅ `ABD`
 
 ---
 
@@ -4438,9 +4438,9 @@
 ```
 (no 428) succeeded 3 of 3 times:
 
-- ✓ `ACE`
-- ✓ `ABC` no match
-- ✓ `ABD` no match
+- ✅ `ACE`
+- ✅ `ABC` no match
+- ✅ `ABD` no match
 
 ---
 
@@ -4449,7 +4449,7 @@
 ```
 (no 429) succeeded 1 of 1 times:
 
-- ✓ `AAC`
+- ✅ `AAC`
 
 ---
 
@@ -4458,7 +4458,7 @@
 ```
 (no 430) succeeded 1 of 1 times:
 
-- ✓ `A-`
+- ✅ `A-`
 
 ---
 
@@ -4467,7 +4467,7 @@
 ```
 (no 431) succeeded 1 of 1 times:
 
-- ✓ `A-`
+- ✅ `A-`
 
 ---
 
@@ -4476,7 +4476,7 @@
 ```
 (no 432) succeeded 1 of 1 times:
 
-- ✓ `A]`
+- ✅ `A]`
 
 ---
 
@@ -4485,7 +4485,7 @@
 ```
 (no 433) succeeded 1 of 1 times:
 
-- ✓ `A]B`
+- ✅ `A]B`
 
 ---
 
@@ -4494,7 +4494,7 @@
 ```
 (no 434) succeeded 1 of 1 times:
 
-- ✓ `AED`
+- ✅ `AED`
 
 ---
 
@@ -4503,9 +4503,9 @@
 ```
 (no 435) succeeded 3 of 3 times:
 
-- ✓ `ADC`
-- ✓ `ABD` no match
-- ✓ `A-C` no match
+- ✅ `ADC`
+- ✅ `ABD` no match
+- ✅ `A-C` no match
 
 ---
 
@@ -4514,7 +4514,7 @@
 ```
 (no 436) succeeded 1 of 1 times:
 
-- ✓ `ADC`
+- ✅ `ADC`
 
 ---
 
@@ -4523,8 +4523,8 @@
 ```
 (no 437) succeeded 2 of 2 times:
 
-- ✓ `ABC`
-- ✓ `ABCD`
+- ✅ `ABC`
+- ✅ `ABCD`
 
 ---
 
@@ -4533,7 +4533,7 @@
 ```
 (no 438) succeeded 1 of 1 times:
 
-- ✓ `DEF`
+- ✅ `DEF`
 
 ---
 
@@ -4542,8 +4542,8 @@
 ```
 (no 439) succeeded 2 of 2 times:
 
-- ✓ `A]C` no match
-- ✓ `B` no match
+- ✅ `A]C` no match
+- ✅ `B` no match
 
 ---
 
@@ -4552,7 +4552,7 @@
 ```
 (no 440) succeeded 1 of 1 times:
 
-- ✓ `A(B`
+- ✅ `A(B`
 
 ---
 
@@ -4561,8 +4561,8 @@
 ```
 (no 441) succeeded 2 of 2 times:
 
-- ✓ `AB`
-- ✓ `A((B`
+- ✅ `AB`
+- ✅ `A((B`
 
 ---
 
@@ -4571,8 +4571,8 @@
 ```
 (no 442) succeeded 2 of 2 times:
 
-- ✓ `A\\b`
-- ✓ `a\\B`
+- ✅ `A\\b`
+- ✅ `a\\B`
 
 ---
 
@@ -4581,7 +4581,7 @@
 ```
 (no 443) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4590,7 +4590,7 @@
 ```
 (no 444) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4599,7 +4599,7 @@
 ```
 (no 445) succeeded 1 of 1 times:
 
-- ✓ `AABBABC`
+- ✅ `AABBABC`
 
 ---
 
@@ -4608,7 +4608,7 @@
 ```
 (no 446) succeeded 1 of 1 times:
 
-- ✓ `AABBABC`
+- ✅ `AABBABC`
 
 ---
 
@@ -4617,7 +4617,7 @@
 ```
 (no 447) succeeded 1 of 1 times:
 
-- ✓ `ABCABC`
+- ✅ `ABCABC`
 
 ---
 
@@ -4626,7 +4626,7 @@
 ```
 (no 448) succeeded 1 of 1 times:
 
-- ✓ `ABCABC`
+- ✅ `ABCABC`
 
 ---
 
@@ -4635,7 +4635,7 @@
 ```
 (no 449) succeeded 1 of 1 times:
 
-- ✓ `ABCABC`
+- ✅ `ABCABC`
 
 ---
 
@@ -4644,7 +4644,7 @@
 ```
 (no 450) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -4653,7 +4653,7 @@
 ```
 (no 451) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -4662,7 +4662,7 @@
 ```
 (no 452) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -4671,7 +4671,7 @@
 ```
 (no 453) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -4680,7 +4680,7 @@
 ```
 (no 454) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -4689,7 +4689,7 @@
 ```
 (no 455) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -4698,7 +4698,7 @@
 ```
 (no 456) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -4707,7 +4707,7 @@
 ```
 (no 457) succeeded 1 of 1 times:
 
-- ✓ `CDE`
+- ✅ `CDE`
 
 ---
 
@@ -4716,7 +4716,7 @@
 ```
 (no 458) succeeded 1 of 1 times:
 
-- ✓ `ABBBCD`
+- ✅ `ABBBCD`
 
 ---
 
@@ -4725,7 +4725,7 @@
 ```
 (no 459) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -4734,7 +4734,7 @@
 ```
 (no 460) succeeded 1 of 1 times:
 
-- ✓ `E`
+- ✅ `E`
 
 ---
 
@@ -4743,7 +4743,7 @@
 ```
 (no 461) succeeded 1 of 1 times:
 
-- ✓ `EF`
+- ✅ `EF`
 
 ---
 
@@ -4752,7 +4752,7 @@
 ```
 (no 462) succeeded 1 of 1 times:
 
-- ✓ `ABCDEFG`
+- ✅ `ABCDEFG`
 
 ---
 
@@ -4761,8 +4761,8 @@
 ```
 (no 463) succeeded 2 of 2 times:
 
-- ✓ `XABYABBBZ`
-- ✓ `XAYABBBZ`
+- ✅ `XABYABBBZ`
+- ✅ `XAYABBBZ`
 
 ---
 
@@ -4771,7 +4771,7 @@
 ```
 (no 464) succeeded 1 of 1 times:
 
-- ✓ `ABCDE`
+- ✅ `ABCDE`
 
 ---
 
@@ -4780,7 +4780,7 @@
 ```
 (no 465) succeeded 1 of 1 times:
 
-- ✓ `HIJ`
+- ✅ `HIJ`
 
 ---
 
@@ -4789,7 +4789,7 @@
 ```
 (no 466) succeeded 1 of 1 times:
 
-- ✓ `ABCDE` no match
+- ✅ `ABCDE` no match
 
 ---
 
@@ -4798,7 +4798,7 @@
 ```
 (no 467) succeeded 1 of 1 times:
 
-- ✓ `ABCDEF`
+- ✅ `ABCDEF`
 
 ---
 
@@ -4807,7 +4807,7 @@
 ```
 (no 468) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -4816,7 +4816,7 @@
 ```
 (no 469) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4825,7 +4825,7 @@
 ```
 (no 470) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4834,7 +4834,7 @@
 ```
 (no 471) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -4843,7 +4843,7 @@
 ```
 (no 472) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -4852,7 +4852,7 @@
 ```
 (no 473) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -4861,7 +4861,7 @@
 ```
 (no 474) succeeded 1 of 1 times:
 
-- ✓ `ADCDCDE`
+- ✅ `ADCDCDE`
 
 ---
 
@@ -4878,7 +4878,7 @@
 ```
 (no 476) succeeded 1 of 1 times:
 
-- ✓ `ABC`
+- ✅ `ABC`
 
 ---
 
@@ -4887,7 +4887,7 @@
 ```
 (no 477) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -4896,7 +4896,7 @@
 ```
 (no 478) succeeded 1 of 1 times:
 
-- ✓ `ALPHA`
+- ✅ `ALPHA`
 
 ---
 
@@ -4905,7 +4905,7 @@
 ```
 (no 479) succeeded 1 of 1 times:
 
-- ✓ `ABH`
+- ✅ `ABH`
 
 ---
 
@@ -4914,12 +4914,12 @@
 ```
 (no 480) succeeded 6 of 6 times:
 
-- ✓ `EFFGZ`
-- ✓ `IJ`
-- ✓ `REFFGZ`
-- ✓ `ADCDCDE` no match
-- ✓ `EFFG` no match
-- ✓ `BCDD` no match
+- ✅ `EFFGZ`
+- ✅ `IJ`
+- ✅ `REFFGZ`
+- ✅ `ADCDCDE` no match
+- ✅ `EFFG` no match
+- ✅ `BCDD` no match
 
 ---
 
@@ -4928,7 +4928,7 @@
 ```
 (no 481) succeeded 1 of 1 times:
 
-- ✓ `A`
+- ✅ `A`
 
 ---
 
@@ -4937,7 +4937,7 @@
 ```
 (no 482) succeeded 1 of 1 times:
 
-- ✓ `AA`
+- ✅ `AA`
 
 ---
 
@@ -4946,7 +4946,7 @@
 ```
 (no 483) succeeded 1 of 1 times:
 
-- ✓ `A`
+- ✅ `A`
 
 ---
 
@@ -4955,7 +4955,7 @@
 ```
 (no 484) succeeded 1 of 1 times:
 
-- ✓ `A`
+- ✅ `A`
 
 ---
 
@@ -4964,7 +4964,7 @@
 ```
 (no 485) succeeded 1 of 1 times:
 
-- ✓ `C`
+- ✅ `C`
 
 ---
 
@@ -4973,8 +4973,8 @@
 ```
 (no 486) succeeded 2 of 2 times:
 
-- ✓ `AA` no match
-- ✓ `UH-UH` no match
+- ✅ `AA` no match
+- ✅ `UH-UH` no match
 
 ---
 
@@ -4983,7 +4983,7 @@
 ```
 (no 487) succeeded 1 of 1 times:
 
-- ✓ `MULTIPLE WORDS, YEAH`
+- ✅ `MULTIPLE WORDS, YEAH`
 
 ---
 
@@ -4992,7 +4992,7 @@
 ```
 (no 488) succeeded 1 of 1 times:
 
-- ✓ `ABCDE`
+- ✅ `ABCDE`
 
 ---
 
@@ -5001,7 +5001,7 @@
 ```
 (no 489) succeeded 1 of 1 times:
 
-- ✓ `(A, B)`
+- ✅ `(A, B)`
 
 ---
 
@@ -5018,7 +5018,7 @@
 ```
 (no 491) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -5027,7 +5027,7 @@
 ```
 (no 492) succeeded 1 of 1 times:
 
-- ✓ `ABCD`
+- ✅ `ABCD`
 
 ---
 
@@ -5036,7 +5036,7 @@
 ```
 (no 493) succeeded 1 of 1 times:
 
-- ✓ `AC`
+- ✅ `AC`
 
 ---
 
@@ -5045,7 +5045,7 @@
 ```
 (no 494) succeeded 1 of 1 times:
 
-- ✓ `ABCABC`
+- ✅ `ABCABC`
 
 ---
 
@@ -5054,7 +5054,7 @@
 ```
 (no 495) succeeded 1 of 1 times:
 
-- ✓ `ABCABC`
+- ✅ `ABCABC`
 
 ---
 
@@ -5063,7 +5063,7 @@
 ```
 (no 496) succeeded 1 of 1 times:
 
-- ✓ `abad`
+- ✅ `abad`
 
 ---
 
@@ -5072,7 +5072,7 @@
 ```
 (no 497) succeeded 1 of 1 times:
 
-- ✓ `abad`
+- ✅ `abad`
 
 ---
 
@@ -5081,7 +5081,7 @@
 ```
 (no 498) succeeded 1 of 1 times:
 
-- ✓ `abad`
+- ✅ `abad`
 
 ---
 
@@ -5090,7 +5090,7 @@
 ```
 (no 499) succeeded 1 of 1 times:
 
-- ✓ `ace`
+- ✅ `ace`
 
 ---
 
@@ -5099,7 +5099,7 @@
 ```
 (no 500) succeeded 1 of 1 times:
 
-- ✓ `ace`
+- ✅ `ace`
 
 ---
 
@@ -5108,8 +5108,8 @@
 ```
 (no 501) succeeded 2 of 2 times:
 
-- ✓ `ace`
-- ✓ `acdbcdbe`
+- ✅ `ace`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5118,7 +5118,7 @@
 ```
 (no 502) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5127,7 +5127,7 @@
 ```
 (no 503) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5136,7 +5136,7 @@
 ```
 (no 504) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5145,7 +5145,7 @@
 ```
 (no 505) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5154,7 +5154,7 @@
 ```
 (no 506) succeeded 1 of 1 times:
 
-- ✓ `foobar`
+- ✅ `foobar`
 
 ---
 
@@ -5163,7 +5163,7 @@
 ```
 (no 507) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5172,7 +5172,7 @@
 ```
 (no 508) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5181,7 +5181,7 @@
 ```
 (no 509) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5190,7 +5190,7 @@
 ```
 (no 510) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5199,7 +5199,7 @@
 ```
 (no 511) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5208,7 +5208,7 @@
 ```
 (no 512) succeeded 1 of 1 times:
 
-- ✓ `acdbcdbe`
+- ✅ `acdbcdbe`
 
 ---
 
@@ -5217,7 +5217,7 @@
 ```
 (no 513) succeeded 1 of 1 times:
 
-- ✓ `ace`
+- ✅ `ace`
 
 ---
 
@@ -5226,7 +5226,7 @@
 ```
 (no 514) succeeded 1 of 1 times:
 
-- ✓ `AB`
+- ✅ `AB`
 
 ---
 
@@ -5235,7 +5235,7 @@
 ```
 (no 515) succeeded 1 of 1 times:
 
-- ✓ `.`
+- ✅ `.`
 
 ---
 
@@ -5244,7 +5244,7 @@
 ```
 (no 516) succeeded 1 of 1 times:
 
-- ✓ `<&OUT`
+- ✅ `<&OUT`
 
 ---
 
@@ -5253,10 +5253,10 @@
 ```
 (no 517) succeeded 4 of 4 times:
 
-- ✓ `aaaaaaaaaa`
-- ✓ `AB` no match
-- ✓ `aaaaaaaaa` no match
-- ✓ `aaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaa`
+- ✅ `AB` no match
+- ✅ `aaaaaaaaa` no match
+- ✅ `aaaaaaaaaaa` no match
 
 ---
 
@@ -5265,9 +5265,9 @@
 ```
 (no 518) succeeded 3 of 3 times:
 
-- ✓ `aaaaaaaaaa`
-- ✓ `aaaaaaaaa` no match
-- ✓ `aaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaa`
+- ✅ `aaaaaaaaa` no match
+- ✅ `aaaaaaaaaaa` no match
 
 ---
 
@@ -5276,7 +5276,7 @@
 ```
 (no 519) succeeded 1 of 1 times:
 
-- ✓ `foobar`
+- ✅ `foobar`
 
 ---
 
@@ -5285,9 +5285,9 @@
 ```
 (no 520) succeeded 3 of 3 times:
 
-- ✓ `ab`
-- ✓ `cb` no match
-- ✓ `b` no match
+- ✅ `ab`
+- ✅ `cb` no match
+- ✅ `b` no match
 
 ---
 
@@ -5296,9 +5296,9 @@
 ```
 (no 521) succeeded 3 of 3 times:
 
-- ✓ `ab`
-- ✓ `b`
-- ✓ `b`
+- ✅ `ab`
+- ✅ `b`
+- ✅ `b`
 
 ---
 
@@ -5307,7 +5307,7 @@
 ```
 (no 522) succeeded 1 of 1 times:
 
-- ✓ `aba`
+- ✅ `aba`
 
 ---
 
@@ -5316,7 +5316,7 @@
 ```
 (no 523) succeeded 1 of 1 times:
 
-- ✓ `aba`
+- ✅ `aba`
 
 ---
 
@@ -5325,7 +5325,7 @@
 ```
 (no 525) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -5334,7 +5334,7 @@
 ```
 (no 526) succeeded 1 of 1 times:
 
-- ✓ `aax`
+- ✅ `aax`
 
 ---
 
@@ -5343,7 +5343,7 @@
 ```
 (no 529) succeeded 1 of 1 times:
 
-- ✓ `cab`
+- ✅ `cab`
 
 ---
 
@@ -5352,7 +5352,7 @@
 ```
 (no 530) succeeded 1 of 1 times:
 
-- ✓ `cab`
+- ✅ `cab`
 
 ---
 
@@ -5361,7 +5361,7 @@
 ```
 (no 531) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5370,7 +5370,7 @@
 ```
 (no 532) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5379,7 +5379,7 @@
 ```
 (no 533) succeeded 1 of 1 times:
 
-- ✓ `Ab`
+- ✅ `Ab`
 
 ---
 
@@ -5388,7 +5388,7 @@
 ```
 (no 534) succeeded 1 of 1 times:
 
-- ✓ `Ab`
+- ✅ `Ab`
 
 ---
 
@@ -5397,8 +5397,8 @@
 ```
 (no 535) succeeded 2 of 2 times:
 
-- ✓ `cb` no match
-- ✓ `aB` no match
+- ✅ `cb` no match
+- ✅ `aB` no match
 
 ---
 
@@ -5415,7 +5415,7 @@
 ```
 (no 537) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5424,7 +5424,7 @@
 ```
 (no 538) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5433,7 +5433,7 @@
 ```
 (no 539) succeeded 1 of 1 times:
 
-- ✓ `Ab`
+- ✅ `Ab`
 
 ---
 
@@ -5442,7 +5442,7 @@
 ```
 (no 540) succeeded 1 of 1 times:
 
-- ✓ `Ab`
+- ✅ `Ab`
 
 ---
 
@@ -5451,8 +5451,8 @@
 ```
 (no 541) succeeded 2 of 2 times:
 
-- ✓ `aB` no match
-- ✓ `aB` no match
+- ✅ `aB` no match
+- ✅ `aB` no match
 
 ---
 
@@ -5469,7 +5469,7 @@
 ```
 (no 543) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5478,7 +5478,7 @@
 ```
 (no 544) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5487,7 +5487,7 @@
 ```
 (no 545) succeeded 1 of 1 times:
 
-- ✓ `aB`
+- ✅ `aB`
 
 ---
 
@@ -5496,7 +5496,7 @@
 ```
 (no 546) succeeded 1 of 1 times:
 
-- ✓ `aB`
+- ✅ `aB`
 
 ---
 
@@ -5505,9 +5505,9 @@
 ```
 (no 547) succeeded 3 of 3 times:
 
-- ✓ `aB`
-- ✓ `Ab` no match
-- ✓ `AB` no match
+- ✅ `aB`
+- ✅ `Ab` no match
+- ✅ `AB` no match
 
 ---
 
@@ -5516,7 +5516,7 @@
 ```
 (no 548) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5525,7 +5525,7 @@
 ```
 (no 549) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -5534,7 +5534,7 @@
 ```
 (no 550) succeeded 1 of 1 times:
 
-- ✓ `aB`
+- ✅ `aB`
 
 ---
 
@@ -5543,7 +5543,7 @@
 ```
 (no 551) succeeded 1 of 1 times:
 
-- ✓ `aB`
+- ✅ `aB`
 
 ---
 
@@ -5552,8 +5552,8 @@
 ```
 (no 552) succeeded 2 of 2 times:
 
-- ✓ `AB` no match
-- ✓ `Ab` no match
+- ✅ `AB` no match
+- ✅ `Ab` no match
 
 ---
 
@@ -5570,7 +5570,7 @@
 ```
 (no 554) succeeded 1 of 1 times:
 
-- ✓ `aB`
+- ✅ `aB`
 
 ---
 
@@ -5579,7 +5579,7 @@
 ```
 (no 555) succeeded 1 of 1 times:
 
-- ✓ `aB`
+- ✅ `aB`
 
 ---
 
@@ -5588,8 +5588,8 @@
 ```
 (no 556) succeeded 2 of 2 times:
 
-- ✓ `Ab` no match
-- ✓ `AB` no match
+- ✅ `Ab` no match
+- ✅ `AB` no match
 
 ---
 
@@ -5606,8 +5606,8 @@
 ```
 (no 558) succeeded 2 of 2 times:
 
-- ✓ `AB` no match
-- ✓ `a\nB` no match
+- ✅ `AB` no match
+- ✅ `a\nB` no match
 
 ---
 
@@ -5616,7 +5616,7 @@
 ```
 (no 559) succeeded 1 of 1 times:
 
-- ✓ `a\nB`
+- ✅ `a\nB`
 
 ---
 
@@ -5625,7 +5625,7 @@
 ```
 (no 560) succeeded 1 of 1 times:
 
-- ✓ `cabbbb`
+- ✅ `cabbbb`
 
 ---
 
@@ -5634,7 +5634,7 @@
 ```
 (no 561) succeeded 1 of 1 times:
 
-- ✓ `caaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`
+- ✅ `caaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`
 
 ---
 
@@ -5643,8 +5643,8 @@
 ```
 (no 562) succeeded 2 of 2 times:
 
-- ✓ `Ab4ab`
-- ✓ `ab4Ab`
+- ✅ `Ab4ab`
+- ✅ `ab4Ab`
 
 ---
 
@@ -5653,7 +5653,7 @@
 ```
 (no 563) succeeded 1 of 1 times:
 
-- ✓ `foobar1234baz`
+- ✅ `foobar1234baz`
 
 ---
 
@@ -5662,7 +5662,7 @@
 ```
 (no 564) succeeded 1 of 1 times:
 
-- ✓ `x~~`
+- ✅ `x~~`
 
 ---
 
@@ -5671,7 +5671,7 @@
 ```
 (no 565) succeeded 1 of 1 times:
 
-- ✓ `aaac`
+- ✅ `aaac`
 
 ---
 
@@ -5680,7 +5680,7 @@
 ```
 (no 566) succeeded 1 of 1 times:
 
-- ✓ `aaac`
+- ✅ `aaac`
 
 ---
 
@@ -5689,8 +5689,8 @@
 ```
 (no 567) succeeded 2 of 2 times:
 
-- ✓ `B\nB` no match
-- ✓ `dbcb` no match
+- ✅ `B\nB` no match
+- ✅ `dbcb` no match
 
 ---
 
@@ -5699,7 +5699,7 @@
 ```
 (no 568) succeeded 1 of 1 times:
 
-- ✓ `dbaacb`
+- ✅ `dbaacb`
 
 ---
 
@@ -5716,7 +5716,7 @@
 ```
 (no 570) succeeded 1 of 1 times:
 
-- ✓ `dbaacb`
+- ✅ `dbaacb`
 
 ---
 
@@ -5725,7 +5725,7 @@
 ```
 (no 571) succeeded 1 of 1 times:
 
-- ✓ `cdaccb`
+- ✅ `cdaccb`
 
 ---
 
@@ -5734,13 +5734,13 @@
 ```
 (no 572) succeeded 7 of 7 times:
 
-- ✓ ``
-- ✓ `a`
-- ✓ `ab`
-- ✓ `aaa`
-- ✓ `dbcb` no match
-- ✓ `a--` no match
-- ✓ `aa--` no match
+- ✅ ``
+- ✅ `a`
+- ✅ `ab`
+- ✅ `aaa`
+- ✅ `dbcb` no match
+- ✅ `a--` no match
+- ✅ `aa--` no match
 
 ---
 
@@ -5749,7 +5749,7 @@
 ```
 (no 573) succeeded 1 of 1 times:
 
-- ✓ `a\nb\nc\n`
+- ✅ `a\nb\nc\n`
 
 ---
 
@@ -5758,7 +5758,7 @@
 ```
 (no 574) succeeded 1 of 1 times:
 
-- ✓ `a\nb\nc\n`
+- ✅ `a\nb\nc\n`
 
 ---
 
@@ -5767,7 +5767,7 @@
 ```
 (no 575) succeeded 1 of 1 times:
 
-- ✓ `a\nb\n`
+- ✅ `a\nb\n`
 
 ---
 
@@ -5776,7 +5776,7 @@
 ```
 (no 576) succeeded 1 of 1 times:
 
-- ✓ `a\nb\n`
+- ✅ `a\nb\n`
 
 ---
 
@@ -5785,7 +5785,7 @@
 ```
 (no 577) succeeded 1 of 1 times:
 
-- ✓ `a\nb\n`
+- ✅ `a\nb\n`
 
 ---
 
@@ -5794,7 +5794,7 @@
 ```
 (no 578) succeeded 1 of 1 times:
 
-- ✓ `a\nb\n`
+- ✅ `a\nb\n`
 
 ---
 
@@ -5803,8 +5803,8 @@
 ```
 (no 579) succeeded 2 of 2 times:
 
-- ✓ `a\nb\nc\n`
-- ✓ `a\nb\nc\n`
+- ✅ `a\nb\nc\n`
+- ✅ `a\nb\nc\n`
 
 ---
 
@@ -5813,8 +5813,8 @@
 ```
 (no 580) succeeded 2 of 2 times:
 
-- ✓ `a\nb\nc\n`
-- ✓ `a\nb\nc\n`
+- ✅ `a\nb\nc\n`
+- ✅ `a\nb\nc\n`
 
 ---
 
@@ -5831,8 +5831,8 @@
 ```
 (no 582) succeeded 2 of 2 times:
 
-- ✓ `a\nb\nc\n` no match
-- ✓ `a\nb\nc\n` no match
+- ✅ `a\nb\nc\n` no match
+- ✅ `a\nb\nc\n` no match
 
 ---
 
@@ -5841,7 +5841,7 @@
 ```
 (no 583) succeeded 1 of 1 times:
 
-- ✓ `a\nb\nc\n`
+- ✅ `a\nb\nc\n`
 
 ---
 
@@ -5850,8 +5850,8 @@
 ```
 (no 584) succeeded 2 of 2 times:
 
-- ✓ `a` no match
-- ✓ `a` no match
+- ✅ `a` no match
+- ✅ `a` no match
 
 ---
 
@@ -5860,7 +5860,7 @@
 ```
 (no 585) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -5877,7 +5877,7 @@
 ```
 (no 588) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -5886,11 +5886,11 @@
 ```
 (no 589) succeeded 5 of 5 times:
 
-- ✓ `(blah)`
-- ✓ `blah`
-- ✓ `a` no match
-- ✓ `blah)` no match
-- ✓ `(blah` no match
+- ✅ `(blah)`
+- ✅ `blah`
+- ✅ `a` no match
+- ✅ `blah)` no match
+- ✅ `(blah` no match
 
 ---
 
@@ -5899,10 +5899,10 @@
 ```
 (no 590) succeeded 4 of 4 times:
 
-- ✓ `(blah)`
-- ✓ `blah`
-- ✓ `blah)` no match
-- ✓ `(blah` no match
+- ✅ `(blah)`
+- ✅ `blah`
+- ✅ `blah)` no match
+- ✅ `(blah` no match
 
 ---
 
@@ -5919,7 +5919,7 @@
 ```
 (no 592) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -5928,8 +5928,8 @@
 ```
 (no 593) succeeded 2 of 2 times:
 
-- ✓ `a` no match
-- ✓ `a` no match
+- ✅ `a` no match
+- ✅ `a` no match
 
 ---
 
@@ -5938,7 +5938,7 @@
 ```
 (no 594) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -5947,7 +5947,7 @@
 ```
 (no 595) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -5964,7 +5964,7 @@
 ```
 (no 597) succeeded 1 of 1 times:
 
-- ✓ `one:`
+- ✅ `one:`
 
 ---
 
@@ -5973,7 +5973,7 @@
 ```
 (no 598) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -5982,7 +5982,7 @@
 ```
 (no 599) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -5991,8 +5991,8 @@
 ```
 (no 600) succeeded 2 of 2 times:
 
-- ✓ `aaab` no match
-- ✓ `aaab` no match
+- ✅ `aaab` no match
+- ✅ `aaab` no match
 
 ---
 
@@ -6001,8 +6001,8 @@
 ```
 (no 601) succeeded 2 of 2 times:
 
-- ✓ `abcd`
-- ✓ `xy:z:::abcd`
+- ✅ `abcd`
+- ✅ `xy:z:::abcd`
 
 ---
 
@@ -6011,7 +6011,7 @@
 ```
 (no 602) succeeded 1 of 1 times:
 
-- ✓ `aexycd`
+- ✅ `aexycd`
 
 ---
 
@@ -6020,7 +6020,7 @@
 ```
 (no 603) succeeded 1 of 1 times:
 
-- ✓ `caab`
+- ✅ `caab`
 
 ---
 
@@ -6029,10 +6029,10 @@
 ```
 (no 604) succeeded 4 of 4 times:
 
-- ✓ `abcd`
-- ✓ `xy:z:::abcd`
-- ✓ `abcd:` no match
-- ✓ `abcd:` no match
+- ✅ `abcd`
+- ✅ `xy:z:::abcd`
+- ✅ `abcd:` no match
+- ✅ `abcd:` no match
 
 ---
 
@@ -6041,7 +6041,7 @@
 ```
 (no 605) succeeded 1 of 1 times:
 
-- ✓ `aexycd`
+- ✅ `aexycd`
 
 ---
 
@@ -6058,7 +6058,7 @@
 ```
 (no 607) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -6067,7 +6067,7 @@
 ```
 (no 608) succeeded 1 of 1 times:
 
-- ✓ `a:[b]:`
+- ✅ `a:[b]:`
 
 ---
 
@@ -6076,7 +6076,7 @@
 ```
 (no 609) succeeded 1 of 1 times:
 
-- ✓ `a=[b]=`
+- ✅ `a=[b]=`
 
 ---
 
@@ -6085,7 +6085,7 @@
 ```
 (no 610) succeeded 1 of 1 times:
 
-- ✓ `a.[b].`
+- ✅ `a.[b].`
 
 ---
 
@@ -6094,7 +6094,7 @@
 ```
 (no 611) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -6103,7 +6103,7 @@
 ```
 (no 612) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -6112,7 +6112,7 @@
 ```
 (no 613) succeeded 1 of 1 times:
 
-- ✓ `((abc(ade)ufh()()x`
+- ✅ `((abc(ade)ufh()()x`
 
 ---
 
@@ -6121,8 +6121,8 @@
 ```
 (no 614) succeeded 2 of 2 times:
 
-- ✓ `aaab` no match
-- ✓ `a\nb\n` no match
+- ✅ `aaab` no match
+- ✅ `a\nb\n` no match
 
 ---
 
@@ -6131,7 +6131,7 @@
 ```
 (no 615) succeeded 1 of 1 times:
 
-- ✓ `a\nb\n`
+- ✅ `a\nb\n`
 
 ---
 
@@ -6148,7 +6148,7 @@
 ```
 (no 617) succeeded 1 of 1 times:
 
-- ✓ `a\nb`
+- ✅ `a\nb`
 
 ---
 
@@ -6157,8 +6157,8 @@
 ```
 (no 618) succeeded 2 of 2 times:
 
-- ✓ `a\nb`
-- ✓ ``
+- ✅ `a\nb`
+- ✅ ``
 
 ---
 
@@ -6167,28 +6167,28 @@
 ```
 (no 619) succeeded 22 of 22 times:
 
-- ✓ `a`
-- ✓ `abc`
-- ✓ `a-b`
-- ✓ `0-9`
-- ✓ `a.b`
-- ✓ `5.6.7`
-- ✓ `the.quick.brown.fox`
-- ✓ `a100.b200.300c`
-- ✓ `12-ab.1245`
-- ✓ `` no match
-- ✓ `.a` no match
-- ✓ `-a` no match
-- ✓ `a-` no match
-- ✓ `a.` no match
-- ✓ `a_b` no match
-- ✓ `a.-` no match
-- ✓ `a..` no match
-- ✓ `ab..bc` no match
-- ✓ `the.quick.brown.fox-` no match
-- ✓ `the.quick.brown.fox.` no match
-- ✓ `the.quick.brown.fox_` no match
-- ✓ `the.quick.brown.fox+` no match
+- ✅ `a`
+- ✅ `abc`
+- ✅ `a-b`
+- ✅ `0-9`
+- ✅ `a.b`
+- ✅ `5.6.7`
+- ✅ `the.quick.brown.fox`
+- ✅ `a100.b200.300c`
+- ✅ `12-ab.1245`
+- ✅ `` no match
+- ✅ `.a` no match
+- ✅ `-a` no match
+- ✅ `a-` no match
+- ✅ `a.` no match
+- ✅ `a_b` no match
+- ✅ `a.-` no match
+- ✅ `a..` no match
+- ✅ `ab..bc` no match
+- ✅ `the.quick.brown.fox-` no match
+- ✅ `the.quick.brown.fox.` no match
+- ✅ `the.quick.brown.fox_` no match
+- ✅ `the.quick.brown.fox+` no match
 
 ---
 
@@ -6197,9 +6197,9 @@
 ```
 (no 620) succeeded 3 of 3 times:
 
-- ✓ `alphabetabcd`
-- ✓ `endingwxyz`
-- ✓ `a rather long string that doesn't end with one of them` no match
+- ✅ `alphabetabcd`
+- ✅ `endingwxyz`
+- ✅ `a rather long string that doesn't end with one of them` no match
 
 ---
 
@@ -6208,9 +6208,9 @@
 ```
 (no 621) succeeded 3 of 3 times:
 
-- ✓ `word cat dog elephant mussel cow horse canary baboon snake shark otherword`
-- ✓ `word cat dog elephant mussel cow horse canary baboon snake shark` no match
-- ✓ `` no match
+- ✅ `word cat dog elephant mussel cow horse canary baboon snake shark otherword`
+- ✅ `word cat dog elephant mussel cow horse canary baboon snake shark` no match
+- ✅ `` no match
 
 ---
 
@@ -6219,7 +6219,7 @@
 ```
 (no 622) succeeded 1 of 1 times:
 
-- ✓ `word cat dog elephant mussel cow horse canary baboon snake shark the quick brown fox and the lazy dog and several other words getting close to thirty by now I hope` no match
+- ✅ `word cat dog elephant mussel cow horse canary baboon snake shark the quick brown fox and the lazy dog and several other words getting close to thirty by now I hope` no match
 
 ---
 
@@ -6228,9 +6228,9 @@
 ```
 (no 623) succeeded 3 of 3 times:
 
-- ✓ `999foo`
-- ✓ `123999foo`
-- ✓ `123abcfoo` no match
+- ✅ `999foo`
+- ✅ `123999foo`
+- ✅ `123abcfoo` no match
 
 ---
 
@@ -6239,9 +6239,9 @@
 ```
 (no 624) succeeded 3 of 3 times:
 
-- ✓ `999foo`
-- ✓ `123999foo`
-- ✓ `123abcfoo` no match
+- ✅ `999foo`
+- ✅ `123999foo`
+- ✅ `123abcfoo` no match
 
 ---
 
@@ -6250,9 +6250,9 @@
 ```
 (no 626) succeeded 3 of 3 times:
 
-- ✓ `123abcfoo`
-- ✓ `123456foo`
-- ✓ `123999foo` no match
+- ✅ `123abcfoo`
+- ✅ `123456foo`
+- ✅ `123999foo` no match
 
 ---
 
@@ -6265,9 +6265,9 @@
 ```
 (no 627) succeeded 3 of 3 times:
 
-- ✓ `<a href=abcd xyz`
-- ✓ `<a href=\"abcd xyz pqr\" cats`
-- ✓ `<a href='abcd xyz pqr' cats`
+- ✅ `<a href=abcd xyz`
+- ✅ `<a href=\"abcd xyz pqr\" cats`
+- ✅ `<a href='abcd xyz pqr' cats`
 
 ---
 
@@ -6280,9 +6280,9 @@
 ```
 (no 628) succeeded 3 of 3 times:
 
-- ✓ `<a href=abcd xyz`
-- ✓ `<a href=\"abcd xyz pqr\" cats`
-- ✓ `<a href       =       'abcd xyz pqr' cats`
+- ✅ `<a href=abcd xyz`
+- ✅ `<a href=\"abcd xyz pqr\" cats`
+- ✅ `<a href       =       'abcd xyz pqr' cats`
 
 ---
 
@@ -6295,9 +6295,9 @@
 ```
 (no 629) succeeded 3 of 3 times:
 
-- ✓ `<a href=abcd xyz`
-- ✓ `<a href=\"abcd xyz pqr\" cats`
-- ✓ `<a href       =       'abcd xyz pqr' cats`
+- ✅ `<a href=abcd xyz`
+- ✅ `<a href=\"abcd xyz pqr\" cats`
+- ✅ `<a href       =       'abcd xyz pqr' cats`
 
 ---
 
@@ -6306,7 +6306,7 @@
 ```
 (no 630) succeeded 1 of 1 times:
 
-- ✓ `ZABCDEFG`
+- ✅ `ZABCDEFG`
 
 ---
 
@@ -6315,7 +6315,7 @@
 ```
 (no 631) succeeded 1 of 1 times:
 
-- ✓ `ZABCDEFG`
+- ✅ `ZABCDEFG`
 
 ---
 
@@ -6324,7 +6324,7 @@
 ```
 (no 632) succeeded 1 of 1 times:
 
-- ✓ `ZABCDEFG`
+- ✅ `ZABCDEFG`
 
 ---
 
@@ -6333,7 +6333,7 @@
 ```
 (no 633) succeeded 1 of 1 times:
 
-- ✓ `ZABCDEFG`
+- ✅ `ZABCDEFG`
 
 ---
 
@@ -6342,7 +6342,7 @@
 ```
 (no 634) succeeded 1 of 1 times:
 
-- ✓ `ZABCDEFG`
+- ✅ `ZABCDEFG`
 
 ---
 
@@ -6351,8 +6351,8 @@
 ```
 (no 636) succeeded 2 of 2 times:
 
-- ✓ `> \t\n\f\r\v<`
-- ✓ ``
+- ✅ `> \t\n\f\r\v<`
+- ✅ ``
 
 ---
 
@@ -6361,8 +6361,8 @@
 ```
 (no 637) succeeded 2 of 2 times:
 
-- ✓ `> \t\n\f\r\v<`
-- ✓ ``
+- ✅ `> \t\n\f\r\v<`
+- ✅ ``
 
 ---
 
@@ -6371,8 +6371,8 @@
 ```
 (no 638) succeeded 2 of 2 times:
 
-- ✓ `> \t\n\f\r\v<`
-- ✓ ``
+- ✅ `> \t\n\f\r\v<`
+- ✅ ``
 
 ---
 
@@ -6381,8 +6381,8 @@
 ```
 (no 639) succeeded 2 of 2 times:
 
-- ✓ `> \t\n\f\r\v<`
-- ✓ ``
+- ✅ `> \t\n\f\r\v<`
+- ✅ ``
 
 ---
 
@@ -6391,7 +6391,7 @@
 ```
 (no 640) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -6400,7 +6400,7 @@
 ```
 (no 641) succeeded 1 of 1 times:
 
-- ✓ `a\nxb\n`
+- ✅ `a\nxb\n`
 
 ---
 
@@ -6409,7 +6409,7 @@
 ```
 (no 642) succeeded 1 of 1 times:
 
-- ✓ `a\nxb\n` no match
+- ✅ `a\nxb\n` no match
 
 ---
 
@@ -6418,8 +6418,8 @@
 ```
 (no 643) succeeded 2 of 2 times:
 
-- ✓ `abcabcabc`
-- ✓ ``
+- ✅ `abcabcabc`
+- ✅ ``
 
 ---
 
@@ -6428,7 +6428,7 @@
 ```
 (no 644) succeeded 1 of 1 times:
 
-- ✓ `abc(*+|abc`
+- ✅ `abc(*+|abc`
 
 ---
 
@@ -6437,9 +6437,9 @@
 ```
 (no 645) succeeded 3 of 3 times:
 
-- ✓ `abc abcabc`
-- ✓ `abcabcabc` no match
-- ✓ `` no match
+- ✅ `abc abcabc`
+- ✅ `abcabcabc` no match
+- ✅ `` no match
 
 ---
 
@@ -6450,7 +6450,7 @@
 ```
 (no 646) succeeded 1 of 1 times:
 
-- ✓ `abc#not comment\n    literal`
+- ✅ `abc#not comment\n    literal`
 
 ---
 
@@ -6461,7 +6461,7 @@
 ```
 (no 647) succeeded 1 of 1 times:
 
-- ✓ `abc#not comment\n    literal`
+- ✅ `abc#not comment\n    literal`
 
 ---
 
@@ -6473,7 +6473,7 @@
 ```
 (no 648) succeeded 1 of 1 times:
 
-- ✓ `abc#not comment\n    literal`
+- ✅ `abc#not comment\n    literal`
 
 ---
 
@@ -6484,7 +6484,7 @@
 ```
 (no 649) succeeded 1 of 1 times:
 
-- ✓ `abc#not comment\n    literal`
+- ✅ `abc#not comment\n    literal`
 
 ---
 
@@ -6493,7 +6493,7 @@
 ```
 (no 650) succeeded 1 of 1 times:
 
-- ✓ `abc\\$xyz`
+- ✅ `abc\\$xyz`
 
 ---
 
@@ -6502,7 +6502,7 @@
 ```
 (no 651) succeeded 1 of 1 times:
 
-- ✓ `abc$xyz`
+- ✅ `abc$xyz`
 
 ---
 
@@ -6511,8 +6511,8 @@
 ```
 (no 652) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ `xyzabc` no match
+- ✅ `abc`
+- ✅ `xyzabc` no match
 
 ---
 
@@ -6521,8 +6521,8 @@
 ```
 (no 655) succeeded 2 of 2 times:
 
-- ✓ `XabcdY`
-- ✓ `Xa b c d Y` no match
+- ✅ `XabcdY`
+- ✅ `Xa b c d Y` no match
 
 ---
 
@@ -6531,8 +6531,8 @@
 ```
 (no 656) succeeded 2 of 2 times:
 
-- ✓ `XabcY`
-- ✓ `AxyzB`
+- ✅ `XabcY`
+- ✅ `AxyzB`
 
 ---
 
@@ -6541,8 +6541,8 @@
 ```
 (no 657) succeeded 2 of 2 times:
 
-- ✓ `XabCY`
-- ✓ `XabcY` no match
+- ✅ `XabCY`
+- ✅ `XabcY` no match
 
 ---
 
@@ -6551,12 +6551,12 @@
 ```
 (no 658) succeeded 6 of 6 times:
 
-- ✓ `abCE`
-- ✓ `DE`
-- ✓ `abcE` no match
-- ✓ `abCe` no match
-- ✓ `dE` no match
-- ✓ `De` no match
+- ✅ `abCE`
+- ✅ `DE`
+- ✅ `abcE` no match
+- ✅ `abCe` no match
+- ✅ `dE` no match
+- ✅ `De` no match
 
 ---
 
@@ -6565,8 +6565,8 @@
 ```
 (no 659) succeeded 2 of 2 times:
 
-- ✓ `abc123abc`
-- ✓ `abc123bc`
+- ✅ `abc123abc`
+- ✅ `abc123bc`
 
 ---
 
@@ -6575,9 +6575,9 @@
 ```
 (no 660) succeeded 3 of 3 times:
 
-- ✓ `abc123abc`
-- ✓ `abc123bc`
-- ✓ ``
+- ✅ `abc123abc`
+- ✅ `abc123bc`
+- ✅ ``
 
 ---
 
@@ -6586,8 +6586,8 @@
 ```
 (no 661) succeeded 2 of 2 times:
 
-- ✓ `abc123abc`
-- ✓ `abc123bc`
+- ✅ `abc123abc`
+- ✅ `abc123bc`
 
 ---
 
@@ -6604,20 +6604,20 @@
 ```
 (no 662) succeeded 14 of 14 times:
 
-- ✓ `a123::a123`
-- ✓ `a123:b342::abcd`
-- ✓ `a123:b342::324e:abcd`
-- ✓ `a123:ddde:b342::324e:abcd`
-- ✓ `a123:ddde:b342::324e:dcba:abcd`
-- ✓ `a123:ddde:9999:b342::324e:dcba:abcd`
-- ✓ `1:2:3:4:5:6:7:8` no match
-- ✓ `a123:bce:ddde:9999:b342::324e:dcba:abcd` no match
-- ✓ `a123::9999:b342::324e:dcba:abcd` no match
-- ✓ `abcde:2:3:4:5:6:7:8` no match
-- ✓ `::1` no match
-- ✓ `abcd:fee0:123::` no match
-- ✓ `:1` no match
-- ✓ `1:` no match
+- ✅ `a123::a123`
+- ✅ `a123:b342::abcd`
+- ✅ `a123:b342::324e:abcd`
+- ✅ `a123:ddde:b342::324e:abcd`
+- ✅ `a123:ddde:b342::324e:dcba:abcd`
+- ✅ `a123:ddde:9999:b342::324e:dcba:abcd`
+- ✅ `1:2:3:4:5:6:7:8` no match
+- ✅ `a123:bce:ddde:9999:b342::324e:dcba:abcd` no match
+- ✅ `a123::9999:b342::324e:dcba:abcd` no match
+- ✅ `abcde:2:3:4:5:6:7:8` no match
+- ✅ `::1` no match
+- ✅ `abcd:fee0:123::` no match
+- ✅ `:1` no match
+- ✅ `1:` no match
 
 ---
 
@@ -6626,12 +6626,12 @@
 ```
 (no 663) succeeded 6 of 6 times:
 
-- ✓ `z`
-- ✓ `a`
-- ✓ `-`
-- ✓ `d`
-- ✓ `]`
-- ✓ `b` no match
+- ✅ `z`
+- ✅ `a`
+- ✅ `-`
+- ✅ `d`
+- ✅ `]`
+- ✅ `b` no match
 
 ---
 
@@ -6640,10 +6640,10 @@
 ```
 (no 665) succeeded 4 of 4 times:
 
-- ✓ `REGular`
-- ✓ `regulaer`
-- ✓ `Regex`
-- ✓ `regulär`
+- ✅ `REGular`
+- ✅ `regulaer`
+- ✅ `Regex`
+- ✅ `regulär`
 
 ---
 
@@ -6652,10 +6652,10 @@
 ```
 (no 666) succeeded 4 of 4 times:
 
-- ✓ `Åæåäà`
-- ✓ `Åæåäÿ`
-- ✓ `ÅæåäÀ`
-- ✓ `Åæåäß`
+- ✅ `Åæåäà`
+- ✅ `Åæåäÿ`
+- ✅ `ÅæåäÀ`
+- ✅ `Åæåäß`
 
 ---
 
@@ -6672,7 +6672,7 @@
 ```
 (no 668) succeeded 1 of 1 times:
 
-- ✓ `ab cd defg`
+- ✅ `ab cd defg`
 
 ---
 
@@ -6681,8 +6681,8 @@
 ```
 (no 669) succeeded 2 of 2 times:
 
-- ✓ `ab cddefg`
-- ✓ `abcddefg` no match
+- ✅ `ab cddefg`
+- ✅ `abcddefg` no match
 
 ---
 
@@ -6691,8 +6691,8 @@
 ```
 (no 670) succeeded 2 of 2 times:
 
-- ✓ `foobarX`
-- ✓ `boobarX` no match
+- ✅ `foobarX`
+- ✅ `boobarX` no match
 
 ---
 
@@ -6701,8 +6701,8 @@
 ```
 (no 671) succeeded 2 of 2 times:
 
-- ✓ `offX`
-- ✓ `onyX` no match
+- ✅ `offX`
+- ✅ `onyX` no match
 
 ---
 
@@ -6711,8 +6711,8 @@
 ```
 (no 672) succeeded 2 of 2 times:
 
-- ✓ `onyX`
-- ✓ `offX` no match
+- ✅ `onyX`
+- ✅ `offX` no match
 
 ---
 
@@ -6721,7 +6721,7 @@
 ```
 (no 675) succeeded 1 of 1 times:
 
-- ✓ `bXaX`
+- ✅ `bXaX`
 
 ---
 
@@ -6730,7 +6730,7 @@
 ```
 (no 677) succeeded 1 of 1 times:
 
-- ✓ `bXXaYYaY`
+- ✅ `bXXaYYaY`
 
 ---
 
@@ -6739,9 +6739,9 @@
 ```
 (no 678) succeeded 3 of 3 times:
 
-- ✓ `abc]`
-- ✓ `a,b]`
-- ✓ `[a,b,c]`
+- ✅ `abc]`
+- ✅ `a,b]`
+- ✅ `[a,b,c]`
 
 ---
 
@@ -6750,8 +6750,8 @@
 ```
 (no 679) succeeded 2 of 2 times:
 
-- ✓ `A B`
-- ✓ ``
+- ✅ `A B`
+- ✅ ``
 
 ---
 
@@ -6760,8 +6760,8 @@
 ```
 (no 680) succeeded 2 of 2 times:
 
-- ✓ `A # B`
-- ✓ `#` no match
+- ✅ `A # B`
+- ✅ `#` no match
 
 ---
 
@@ -6770,9 +6770,9 @@
 ```
 (no 681) succeeded 3 of 3 times:
 
-- ✓ `A #include`
-- ✓ `A#include` no match
-- ✓ `A #Include` no match
+- ✅ `A #include`
+- ✅ `A#include` no match
+- ✅ `A #Include` no match
 
 ---
 
@@ -6781,9 +6781,9 @@
 ```
 (no 682) succeeded 3 of 3 times:
 
-- ✓ `aaabbbb`
-- ✓ `aaaa`
-- ✓ `a`
+- ✅ `aaabbbb`
+- ✅ `aaaa`
+- ✅ `a`
 
 ---
 
@@ -6792,9 +6792,9 @@
 ```
 (no 683) succeeded 3 of 3 times:
 
-- ✓ `aaabbbb`
-- ✓ `aaaa`
-- ✓ `a`
+- ✅ `aaabbbb`
+- ✅ `aaaa`
+- ✅ `a`
 
 ---
 
@@ -6803,9 +6803,9 @@
 ```
 (no 684) succeeded 3 of 3 times:
 
-- ✓ `aaabbbb`
-- ✓ `aaaa`
-- ✓ `a`
+- ✅ `aaabbbb`
+- ✅ `aaaa`
+- ✅ `a`
 
 ---
 
@@ -6814,10 +6814,10 @@
 ```
 (no 685) succeeded 4 of 4 times:
 
-- ✓ `aaabbbb`
-- ✓ `aaaa`
-- ✓ `a`
-- ✓ ``
+- ✅ `aaabbbb`
+- ✅ `aaaa`
+- ✅ `a`
+- ✅ ``
 
 ---
 
@@ -6826,9 +6826,9 @@
 ```
 (no 686) succeeded 3 of 3 times:
 
-- ✓ `0a`
-- ✓ `a`
-- ✓ ``
+- ✅ `0a`
+- ✅ `a`
+- ✅ ``
 
 ---
 
@@ -6837,7 +6837,7 @@
 ```
 (no 687) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -6847,7 +6847,7 @@
 ```
 (no 688) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -6856,7 +6856,7 @@
 ```
 (no 689) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -6865,7 +6865,7 @@
 ```
 (no 690) succeeded 1 of 1 times:
 
-- ✓ `abc=xyz\\\npqr`
+- ✅ `abc=xyz\\\npqr`
 
 ---
 
@@ -6874,7 +6874,7 @@
 ```
 (no 691) succeeded 1 of 1 times:
 
-- ✓ `abcd:`
+- ✅ `abcd:`
 
 ---
 
@@ -6883,7 +6883,7 @@
 ```
 (no 692) succeeded 1 of 1 times:
 
-- ✓ `abcd:`
+- ✅ `abcd:`
 
 ---
 
@@ -6892,9 +6892,9 @@
 ```
 (no 694) succeeded 3 of 3 times:
 
-- ✓ `a`
-- ✓ `E` no match
-- ✓ `` no match
+- ✅ `a`
+- ✅ `E` no match
+- ✅ `` no match
 
 ---
 
@@ -6903,10 +6903,10 @@
 ```
 (no 698) succeeded 4 of 4 times:
 
-- ✓ `a`
-- ✓ `]`
-- ✓ `c`
-- ✓ ``
+- ✅ `a`
+- ✅ `]`
+- ✅ `c`
+- ✅ ``
 
 ---
 
@@ -6915,8 +6915,8 @@
 ```
 (no 699) succeeded 2 of 2 times:
 
-- ✓ `a`
-- ✓ `-`
+- ✅ `a`
+- ✅ `-`
 
 ---
 
@@ -6925,7 +6925,7 @@
 ```
 (no 700) succeeded 1 of 1 times:
 
-- ✓ `aaaa`
+- ✅ `aaaa`
 
 ---
 
@@ -6934,7 +6934,7 @@
 ```
 (no 701) succeeded 1 of 1 times:
 
-- ✓ `aaaa`
+- ✅ `aaaa`
 
 ---
 
@@ -6943,7 +6943,7 @@
 ```
 (no 702) succeeded 1 of 1 times:
 
-- ✓ `aaaa`
+- ✅ `aaaa`
 
 ---
 
@@ -6952,7 +6952,7 @@
 ```
 (no 703) succeeded 1 of 1 times:
 
-- ✓ `aaaa`
+- ✅ `aaaa`
 
 ---
 
@@ -6961,9 +6961,9 @@
 ```
 (no 704) succeeded 3 of 3 times:
 
-- ✓ `abbD`
-- ✓ `ccccD`
-- ✓ `D`
+- ✅ `abbD`
+- ✅ `ccccD`
+- ✅ `D`
 
 ---
 
@@ -6972,8 +6972,8 @@
 ```
 (no 705) succeeded 2 of 2 times:
 
-- ✓ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4`
-- ✓ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4`
+- ✅ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
 
 ---
 
@@ -6982,8 +6982,8 @@
 ```
 (no 706) succeeded 2 of 2 times:
 
-- ✓ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4`
-- ✓ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4`
+- ✅ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
 
 ---
 
@@ -6992,8 +6992,8 @@
 ```
 (no 707) succeeded 2 of 2 times:
 
-- ✓ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4`
-- ✓ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
+- ✅ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4`
+- ✅ `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
 
 ---
 
@@ -7002,8 +7002,8 @@
 ```
 (no 709) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ `abc\n` no match
+- ✅ `abc`
+- ✅ `abc\n` no match
 
 ---
 
@@ -7012,8 +7012,8 @@
 ```
 (no 710) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ `abc\n` no match
+- ✅ `abc`
+- ✅ `abc\n` no match
 
 ---
 
@@ -7022,8 +7022,8 @@
 ```
 (no 711) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ `abc\n` no match
+- ✅ `abc`
+- ✅ `abc\n` no match
 
 ---
 
@@ -7032,7 +7032,7 @@
 ```
 (no 712) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -7041,7 +7041,7 @@
 ```
 (no 713) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -7050,7 +7050,7 @@
 ```
 (no 714) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -7059,7 +7059,7 @@
 ```
 (no 715) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -7068,9 +7068,9 @@
 ```
 (no 716) succeeded 3 of 3 times:
 
-- ✓ `a]`
-- ✓ `:]`
-- ✓ ``
+- ✅ `a]`
+- ✅ `:]`
+- ✅ ``
 
 ---
 
@@ -7079,11 +7079,11 @@
 ```
 (no 717) succeeded 5 of 5 times:
 
-- ✓ `a`
-- ✓ `[`
-- ✓ `:`
-- ✓ `]`
-- ✓ `p`
+- ✅ `a`
+- ✅ `[`
+- ✅ `:`
+- ✅ `]`
+- ✅ `p`
 
 ---
 
@@ -7092,7 +7092,7 @@
 ```
 (no 718) succeeded 1 of 1 times:
 
-- ✓ `fooabcfoo` no match
+- ✅ `fooabcfoo` no match
 
 ---
 
@@ -7101,8 +7101,8 @@
 ```
 (no 719) succeeded 2 of 2 times:
 
-- ✓ `adc`
-- ✓ `abc`
+- ✅ `adc`
+- ✅ `abc`
 
 ---
 
@@ -7111,8 +7111,8 @@
 ```
 (no 720) succeeded 2 of 2 times:
 
-- ✓ `adc`
-- ✓ `abc` no match
+- ✅ `adc`
+- ✅ `abc` no match
 
 ---
 
@@ -7121,8 +7121,8 @@
 ```
 (no 721) succeeded 2 of 2 times:
 
-- ✓ `adc`
-- ✓ `abc`
+- ✅ `adc`
+- ✅ `abc`
 
 ---
 
@@ -7131,8 +7131,8 @@
 ```
 (no 722) succeeded 2 of 2 times:
 
-- ✓ `adc`
-- ✓ `abc`
+- ✅ `adc`
+- ✅ `abc`
 
 ---
 
@@ -7141,7 +7141,7 @@
 ```
 (no 723) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -7150,7 +7150,7 @@
 ```
 (no 724) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -7159,7 +7159,7 @@
 ```
 (no 725) succeeded 1 of 1 times:
 
-- ✓ `%ab%`
+- ✅ `%ab%`
 
 ---
 
@@ -7168,10 +7168,10 @@
 ```
 (no 726) succeeded 4 of 4 times:
 
-- ✓ `XabX`
-- ✓ `XAbX`
-- ✓ `CcC`
-- ✓ `XABX` no match
+- ✅ `XabX`
+- ✅ `XAbX`
+- ✅ `CcC`
+- ✅ `XABX` no match
 
 ---
 
@@ -7180,7 +7180,7 @@
 ```
 (no 727) succeeded 1 of 1 times:
 
-- ✓ `\n\v\f\r`
+- ✅ `\n\v\f\r`
 
 ---
 
@@ -7189,7 +7189,7 @@
 ```
 (no 728) succeeded 1 of 1 times:
 
-- ✓ `abc` no match
+- ✅ `abc` no match
 
 ---
 
@@ -7198,7 +7198,7 @@
 ```
 (no 729) succeeded 1 of 1 times:
 
-- ✓ `abc` no match
+- ✅ `abc` no match
 
 ---
 
@@ -7207,8 +7207,8 @@
 ```
 (no 730) succeeded 2 of 2 times:
 
-- ✓ `12abc`
-- ✓ `12ABC`
+- ✅ `12abc`
+- ✅ `12ABC`
 
 ---
 
@@ -7217,8 +7217,8 @@
 ```
 (no 731) succeeded 2 of 2 times:
 
-- ✓ `12abc`
-- ✓ `12ABC`
+- ✅ `12abc`
+- ✅ `12ABC`
 
 ---
 
@@ -7227,9 +7227,9 @@
 ```
 (no 732) succeeded 3 of 3 times:
 
-- ✓ `12abc` no match
-- ✓ `12ABC` no match
-- ✓ `` no match
+- ✅ `12abc` no match
+- ✅ `12ABC` no match
+- ✅ `` no match
 
 ---
 
@@ -7238,8 +7238,8 @@
 ```
 (no 733) succeeded 2 of 2 times:
 
-- ✓ `12abc` no match
-- ✓ `12ABC` no match
+- ✅ `12abc` no match
+- ✅ `12ABC` no match
 
 ---
 
@@ -7248,9 +7248,9 @@
 ```
 (no 734) succeeded 3 of 3 times:
 
-- ✓ `12aXbcX`
-- ✓ `12AXBCX`
-- ✓ `BCX`
+- ✅ `12aXbcX`
+- ✅ `12AXBCX`
+- ✅ `BCX`
 
 ---
 
@@ -7259,10 +7259,10 @@
 ```
 (no 735) succeeded 4 of 4 times:
 
-- ✓ `12aXbcX`
-- ✓ `12AXBCX`
-- ✓ `BCX`
-- ✓ ``
+- ✅ `12aXbcX`
+- ✅ `12AXBCX`
+- ✅ `BCX`
+- ✅ ``
 
 ---
 
@@ -7271,9 +7271,9 @@
 ```
 (no 736) succeeded 3 of 3 times:
 
-- ✓ `12aXbcX`
-- ✓ `12AXBCX`
-- ✓ `BCX`
+- ✅ `12aXbcX`
+- ✅ `12AXBCX`
+- ✅ `BCX`
 
 ---
 
@@ -7282,8 +7282,8 @@
 ```
 (no 737) succeeded 2 of 2 times:
 
-- ✓ `abcdef`
-- ✓ `ABCDEF`
+- ✅ `abcdef`
+- ✅ `ABCDEF`
 
 ---
 
@@ -7292,8 +7292,8 @@
 ```
 (no 738) succeeded 2 of 2 times:
 
-- ✓ `abcdef`
-- ✓ `ABCDEF`
+- ✅ `abcdef`
+- ✅ `ABCDEF`
 
 ---
 
@@ -7302,8 +7302,8 @@
 ```
 (no 739) succeeded 2 of 2 times:
 
-- ✓ `abcdef`
-- ✓ `ABCDEF`
+- ✅ `abcdef`
+- ✅ `ABCDEF`
 
 ---
 
@@ -7312,7 +7312,7 @@
 ```
 (no 740) succeeded 1 of 1 times:
 
-- ✓ `Z`
+- ✅ `Z`
 
 ---
 
@@ -7321,7 +7321,7 @@
 ```
 (no 741) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7330,7 +7330,7 @@
 ```
 (no 742) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7339,7 +7339,7 @@
 ```
 (no 743) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7348,7 +7348,7 @@
 ```
 (no 744) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7357,7 +7357,7 @@
 ```
 (no 745) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7366,7 +7366,7 @@
 ```
 (no 746) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7375,7 +7375,7 @@
 ```
 (no 747) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7384,7 +7384,7 @@
 ```
 (no 748) succeeded 1 of 1 times:
 
-- ✓ `ac`
+- ✅ `ac`
 
 ---
 
@@ -7393,7 +7393,7 @@
 ```
 (no 751) succeeded 1 of 1 times:
 
-- ✓ `aaaabaaabaabab`
+- ✅ `aaaabaaabaabab`
 
 ---
 
@@ -7402,7 +7402,7 @@
 ```
 (no 752) succeeded 1 of 1 times:
 
-- ✓ `aabc` no match
+- ✅ `aabc` no match
 
 ---
 
@@ -7411,7 +7411,7 @@
 ```
 (no 753) succeeded 1 of 1 times:
 
-- ✓ `aabc` no match
+- ✅ `aabc` no match
 
 ---
 
@@ -7420,7 +7420,7 @@
 ```
 (no 754) succeeded 1 of 1 times:
 
-- ✓ `aabc`
+- ✅ `aabc`
 
 ---
 
@@ -7429,7 +7429,7 @@
 ```
 (no 755) succeeded 1 of 1 times:
 
-- ✓ `a`
+- ✅ `a`
 
 ---
 
@@ -7438,7 +7438,7 @@
 ```
 (no 756) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -7447,7 +7447,7 @@
 ```
 (no 757) succeeded 1 of 1 times:
 
-- ✓ `aaaabc` no match
+- ✅ `aaaabc` no match
 
 ---
 
@@ -7456,7 +7456,7 @@
 ```
 (no 758) succeeded 1 of 1 times:
 
-- ✓ `aaaabc` no match
+- ✅ `aaaabc` no match
 
 ---
 
@@ -7465,7 +7465,7 @@
 ```
 (no 759) succeeded 1 of 1 times:
 
-- ✓ `aaaabc`
+- ✅ `aaaabc`
 
 ---
 
@@ -7474,7 +7474,7 @@
 ```
 (no 763) succeeded 1 of 1 times:
 
-- ✓ `xyz`
+- ✅ `xyz`
 
 ---
 
@@ -7483,8 +7483,8 @@
 ```
 (no 764) succeeded 2 of 2 times:
 
-- ✓ `xyz` no match
-- ✓ `` no match
+- ✅ `xyz` no match
+- ✅ `` no match
 
 ---
 
@@ -7493,9 +7493,9 @@
 ```
 (no 765) succeeded 3 of 3 times:
 
-- ✓ `ab`
-- ✓ `bc`
-- ✓ ``
+- ✅ `ab`
+- ✅ `bc`
+- ✅ ``
 
 ---
 
@@ -7504,8 +7504,8 @@
 ```
 (no 766) succeeded 2 of 2 times:
 
-- ✓ `ab`
-- ✓ `bc`
+- ✅ `ab`
+- ✅ `bc`
 
 ---
 
@@ -7514,8 +7514,8 @@
 ```
 (no 767) succeeded 2 of 2 times:
 
-- ✓ `abd`
-- ✓ `zcdxx`
+- ✅ `abd`
+- ✅ `zcdxx`
 
 ---
 
@@ -7524,7 +7524,7 @@
 ```
 (no 768) succeeded 1 of 1 times:
 
-- ✓ `aaaaa`
+- ✅ `aaaaa`
 
 ---
 
@@ -7533,8 +7533,8 @@
 ```
 (no 769) succeeded 2 of 2 times:
 
-- ✓ `abcxyz`
-- ✓ `pqrxyz`
+- ✅ `abcxyz`
+- ✅ `pqrxyz`
 
 ---
 
@@ -7543,9 +7543,9 @@
 ```
 (no 770) succeeded 3 of 3 times:
 
-- ✓ `ggg<<<aaa>>>`
-- ✓ `\\ga` no match
-- ✓ `` no match
+- ✅ `ggg<<<aaa>>>`
+- ✅ `\\ga` no match
+- ✅ `` no match
 
 ---
 
@@ -7554,8 +7554,8 @@
 ```
 (no 771) succeeded 2 of 2 times:
 
-- ✓ `gggagagaxyz`
-- ✓ ``
+- ✅ `gggagagaxyz`
+- ✅ ``
 
 ---
 
@@ -7564,7 +7564,7 @@
 ```
 (no 772) succeeded 1 of 1 times:
 
-- ✓ `aaaa444:::Z`
+- ✅ `aaaa444:::Z`
 
 ---
 
@@ -7573,7 +7573,7 @@
 ```
 (no 773) succeeded 1 of 1 times:
 
-- ✓ `aaaa444:::bbbZ`
+- ✅ `aaaa444:::bbbZ`
 
 ---
 
@@ -7582,8 +7582,8 @@
 ```
 (no 774) succeeded 2 of 2 times:
 
-- ✓ `:xxx:`
-- ✓ ``
+- ✅ `:xxx:`
+- ✅ ``
 
 ---
 
@@ -7592,8 +7592,8 @@
 ```
 (no 775) succeeded 2 of 2 times:
 
-- ✓ `xaabc`
-- ✓ `xabc` no match
+- ✅ `xaabc`
+- ✅ `xabc` no match
 
 ---
 
@@ -7602,8 +7602,8 @@
 ```
 (no 776) succeeded 2 of 2 times:
 
-- ✓ `xabc`
-- ✓ `xaabc` no match
+- ✅ `xabc`
+- ✅ `xaabc` no match
 
 ---
 
@@ -7612,8 +7612,8 @@
 ```
 (no 777) succeeded 2 of 2 times:
 
-- ✓ `xa c`
-- ✓ ``
+- ✅ `xa c`
+- ✅ ``
 
 ---
 
@@ -7622,9 +7622,9 @@
 ```
 (no 778) succeeded 3 of 3 times:
 
-- ✓ `axxbc`
-- ✓ `aAAbc`
-- ✓ `xaabc` no match
+- ✅ `axxbc`
+- ✅ `aAAbc`
+- ✅ `xaabc` no match
 
 ---
 
@@ -7633,9 +7633,9 @@
 ```
 (no 779) succeeded 3 of 3 times:
 
-- ✓ `axxbc`
-- ✓ `aAAbc` no match
-- ✓ `xaabc` no match
+- ✅ `axxbc`
+- ✅ `aAAbc` no match
+- ✅ `xaabc` no match
 
 ---
 
@@ -7644,7 +7644,7 @@
 ```
 (no 780) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -7653,8 +7653,8 @@
 ```
 (no 781) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ ``
+- ✅ `abc`
+- ✅ ``
 
 ---
 
@@ -7663,7 +7663,7 @@
 ```
 (no 782) succeeded 1 of 1 times:
 
-- ✓ `a\nc`
+- ✅ `a\nc`
 
 ---
 
@@ -7672,7 +7672,7 @@
 ```
 (no 783) succeeded 1 of 1 times:
 
-- ✓ `XcccddYX`
+- ✅ `XcccddYX`
 
 ---
 
@@ -7681,7 +7681,7 @@
 ```
 (no 784) succeeded 1 of 1 times:
 
-- ✓ `XcccddYX`
+- ✅ `XcccddYX`
 
 ---
 
@@ -7690,9 +7690,9 @@
 ```
 (no 785) succeeded 3 of 3 times:
 
-- ✓ `aaaaaaa`
-- ✓ `aaaaaa` no match
-- ✓ `aaaaaaaaa` no match
+- ✅ `aaaaaaa`
+- ✅ `aaaaaa` no match
+- ✅ `aaaaaaaaa` no match
 
 ---
 
@@ -7701,7 +7701,7 @@
 ```
 (no 786) succeeded 1 of 1 times:
 
-- ✓ `aaaaaa` no match
+- ✅ `aaaaaa` no match
 
 ---
 
@@ -7710,7 +7710,7 @@
 ```
 (no 787) succeeded 1 of 1 times:
 
-- ✓ `aaaaaa` no match
+- ✅ `aaaaaa` no match
 
 ---
 
@@ -7719,10 +7719,10 @@
 ```
 (no 788) succeeded 4 of 4 times:
 
-- ✓ `X X\n`
-- ✓ `X\tX\v`
-- ✓ `  X\n` no match
-- ✓ `` no match
+- ✅ `X X\n`
+- ✅ `X\tX\v`
+- ✅ `  X\n` no match
+- ✅ `` no match
 
 ---
 
@@ -7731,11 +7731,11 @@
 ```
 (no 789) succeeded 5 of 5 times:
 
-- ✓ `\t  X\n\v\f\r\n`
-- ✓ `\t  \n\v\f\r\n`
-- ✓ `\t  \n\v\f`
-- ✓ `\t  \n\v` no match
-- ✓ `` no match
+- ✅ `\t  X\n\v\f\r\n`
+- ✅ `\t  \n\v\f\r\n`
+- ✅ `\t  \n\v\f`
+- ✅ `\t  \n\v` no match
+- ✅ `` no match
 
 ---
 
@@ -7744,9 +7744,9 @@
 ```
 (no 790) succeeded 3 of 3 times:
 
-- ✓ `XY  ABCDE`
-- ✓ `XY  PQR ST`
-- ✓ ``
+- ✅ `XY  ABCDE`
+- ✅ `XY  PQR ST`
+- ✅ ``
 
 ---
 
@@ -7755,7 +7755,7 @@
 ```
 (no 791) succeeded 1 of 1 times:
 
-- ✓ `XY  AB    PQRS`
+- ✅ `XY  AB    PQRS`
 
 ---
 
@@ -7764,10 +7764,10 @@
 ```
 (no 792) succeeded 4 of 4 times:
 
-- ✓ `>XNNNYZ`
-- ✓ `>  X NYQZ`
-- ✓ `>XYZ` no match
-- ✓ `>  X NY Z` no match
+- ✅ `>XNNNYZ`
+- ✅ `>  X NYQZ`
+- ✅ `>XYZ` no match
+- ✅ `>  X NY Z` no match
 
 ---
 
@@ -7776,8 +7776,8 @@
 ```
 (no 793) succeeded 2 of 2 times:
 
-- ✓ `>XY\nZ\nA\vNN\f`
-- ✓ `>\n\rX\nY\n\vZZZ\nAAA\vNNN\f`
+- ✅ `>XY\nZ\nA\vNN\f`
+- ✅ `>\n\rX\nY\n\vZZZ\nAAA\vNNN\f`
 
 ---
 
@@ -7786,7 +7786,7 @@
 ```
 (no 801) succeeded 1 of 1 times:
 
-- ✓ `ababababbbabZXXXX`
+- ✅ `ababababbbabZXXXX`
 
 ---
 
@@ -7795,9 +7795,9 @@
 ```
 (no 802) succeeded 3 of 3 times:
 
-- ✓ `tom-tom`
-- ✓ `bon-bon`
-- ✓ ``
+- ✅ `tom-tom`
+- ✅ `bon-bon`
+- ✅ ``
 
 ---
 
@@ -7806,7 +7806,7 @@
 ```
 (no 803) succeeded 1 of 1 times:
 
-- ✓ `bacxxx` no match
+- ✅ `bacxxx` no match
 
 ---
 
@@ -7815,11 +7815,11 @@
 ```
 (no 804) succeeded 5 of 5 times:
 
-- ✓ `abcabc`
-- ✓ `xyzxyz`
-- ✓ `abcxyz` no match
-- ✓ `xyzabc` no match
-- ✓ `` no match
+- ✅ `abcabc`
+- ✅ `xyzxyz`
+- ✅ `abcxyz` no match
+- ✅ `xyzabc` no match
+- ✅ `` no match
 
 ---
 
@@ -7828,10 +7828,10 @@
 ```
 (no 805) succeeded 4 of 4 times:
 
-- ✓ `abcabc`
-- ✓ `xyzabc`
-- ✓ `xyzxyz` no match
-- ✓ `` no match
+- ✅ `abcabc`
+- ✅ `xyzabc`
+- ✅ `xyzxyz` no match
+- ✅ `` no match
 
 ---
 
@@ -7840,7 +7840,7 @@
 ```
 (no 806) succeeded 1 of 1 times:
 
-- ✓ `XYabcdY`
+- ✅ `XYabcdY`
 
 ---
 
@@ -7849,7 +7849,7 @@
 ```
 (no 807) succeeded 1 of 1 times:
 
-- ✓ `XYabcdY`
+- ✅ `XYabcdY`
 
 ---
 
@@ -7858,7 +7858,7 @@
 ```
 (no 808) succeeded 1 of 1 times:
 
-- ✓ `XYabcdY`
+- ✅ `XYabcdY`
 
 ---
 
@@ -7867,10 +7867,10 @@
 ```
 (no 809) succeeded 4 of 4 times:
 
-- ✓ `a:aaxyz`
-- ✓ `ab:ababxyz`
-- ✓ `a:axyz` no match
-- ✓ `ab:abxyz` no match
+- ✅ `a:aaxyz`
+- ✅ `ab:ababxyz`
+- ✅ `a:axyz` no match
+- ✅ `ab:abxyz` no match
 
 ---
 
@@ -7879,10 +7879,10 @@
 ```
 (no 810) succeeded 4 of 4 times:
 
-- ✓ `a:aaxyz`
-- ✓ `ab:ababxyz`
-- ✓ `a:axyz` no match
-- ✓ `ab:abxyz` no match
+- ✅ `a:aaxyz`
+- ✅ `ab:ababxyz`
+- ✅ `a:axyz` no match
+- ✅ `ab:abxyz` no match
 
 ---
 
@@ -7891,8 +7891,8 @@
 ```
 (no 811) succeeded 2 of 2 times:
 
-- ✓ `abd`
-- ✓ `ce`
+- ✅ `abd`
+- ✅ `ce`
 
 ---
 
@@ -7901,7 +7901,7 @@
 ```
 (no 812) succeeded 1 of 1 times:
 
-- ✓ `aXaXZ`
+- ✅ `aXaXZ`
 
 ---
 
@@ -7910,7 +7910,7 @@
 ```
 (no 813) succeeded 1 of 1 times:
 
-- ✓ `aXaXZ`
+- ✅ `aXaXZ`
 
 ---
 
@@ -7919,7 +7919,7 @@
 ```
 (no 814) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -7932,7 +7932,7 @@
 ```
 (no 815) succeeded 1 of 1 times:
 
-- ✓ `metcalfe 33`
+- ✅ `metcalfe 33`
 
 ---
 
@@ -7941,11 +7941,11 @@
 ```
 (no 816) succeeded 5 of 5 times:
 
-- ✓ `1.2.3.4`
-- ✓ `131.111.10.206`
-- ✓ `10.0.0.0`
-- ✓ `10.6` no match
-- ✓ `455.3.4.5` no match
+- ✅ `1.2.3.4`
+- ✅ `131.111.10.206`
+- ✅ `10.0.0.0`
+- ✅ `10.6` no match
+- ✅ `455.3.4.5` no match
 
 ---
 
@@ -7954,11 +7954,11 @@
 ```
 (no 817) succeeded 5 of 5 times:
 
-- ✓ `1.2.3.4`
-- ✓ `131.111.10.206`
-- ✓ `10.0.0.0`
-- ✓ `10.6` no match
-- ✓ `455.3.4.5` no match
+- ✅ `1.2.3.4`
+- ✅ `131.111.10.206`
+- ✅ `10.0.0.0`
+- ✅ `10.6` no match
+- ✅ `455.3.4.5` no match
 
 ---
 
@@ -7967,8 +7967,8 @@
 ```
 (no 818) succeeded 2 of 2 times:
 
-- ✓ `now is the time for all good men to come to the aid of the party`
-- ✓ `this is not a line with only words and spaces!` no match
+- ✅ `now is the time for all good men to come to the aid of the party`
+- ✅ `this is not a line with only words and spaces!` no match
 
 ---
 
@@ -7977,8 +7977,8 @@
 ```
 (no 819) succeeded 2 of 2 times:
 
-- ✓ `12345a`
-- ✓ `12345+` no match
+- ✅ `12345a`
+- ✅ `12345+` no match
 
 ---
 
@@ -7987,7 +7987,7 @@
 ```
 (no 820) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -7996,7 +7996,7 @@
 ```
 (no 821) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -8005,7 +8005,7 @@
 ```
 (no 822) succeeded 1 of 1 times:
 
-- ✓ `aaab`
+- ✅ `aaab`
 
 ---
 
@@ -8014,7 +8014,7 @@
 ```
 (no 823) succeeded 1 of 1 times:
 
-- ✓ `((abc(ade)ufh()()x`
+- ✅ `((abc(ade)ufh()()x`
 
 ---
 
@@ -8023,9 +8023,9 @@
 ```
 (no 824) succeeded 3 of 3 times:
 
-- ✓ `(abc)`
-- ✓ `(abc(def)xyz)`
-- ✓ `((()aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
+- ✅ `(abc)`
+- ✅ `(abc(def)xyz)`
+- ✅ `((()aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` no match
 
 ---
 
@@ -8034,10 +8034,10 @@
 ```
 (no 825) succeeded 4 of 4 times:
 
-- ✓ `abc`
-- ✓ `a(b)c`
-- ✓ `a(b(c))d`
-- ✓ `a(b(c)d` no match
+- ✅ `abc`
+- ✅ `a(b)c`
+- ✅ `a(b(c))d`
+- ✅ `a(b(c)d` no match
 
 ---
 
@@ -8046,9 +8046,9 @@
 ```
 (no 826) succeeded 3 of 3 times:
 
-- ✓ `>abc>123<xyz<`
-- ✓ `>abc>1(2)3<xyz<`
-- ✓ `>abc>(1(2)3)<xyz<`
+- ✅ `>abc>123<xyz<`
+- ✅ `>abc>1(2)3<xyz<`
+- ✅ `>abc>(1(2)3)<xyz<`
 
 ---
 
@@ -8057,11 +8057,11 @@
 ```
 (no 827) succeeded 5 of 5 times:
 
-- ✓ `1221`
-- ✓ `Satanoscillatemymetallicsonatas`
-- ✓ `AmanaplanacanalPanama`
-- ✓ `AblewasIereIsawElba`
-- ✓ `Thequickbrownfox` no match
+- ✅ `1221`
+- ✅ `Satanoscillatemymetallicsonatas`
+- ✅ `AmanaplanacanalPanama`
+- ✅ `AblewasIereIsawElba`
+- ✅ `Thequickbrownfox` no match
 
 ---
 
@@ -8070,10 +8070,10 @@
 ```
 (no 828) succeeded 4 of 4 times:
 
-- ✓ `12`
-- ✓ `(((2+2)*-3)-7)`
-- ✓ `-12`
-- ✓ `((2+2)*-3)-7)` no match
+- ✅ `12`
+- ✅ `(((2+2)*-3)-7)`
+- ✅ `-12`
+- ✅ `((2+2)*-3)-7)` no match
 
 ---
 
@@ -8082,10 +8082,10 @@
 ```
 (no 829) succeeded 4 of 4 times:
 
-- ✓ `xyz`
-- ✓ `xxyzxyzz`
-- ✓ `xxyzz` no match
-- ✓ `xxyzxyzxyzz` no match
+- ✅ `xyz`
+- ✅ `xxyzxyzz`
+- ✅ `xxyzz` no match
+- ✅ `xxyzxyzxyzz` no match
 
 ---
 
@@ -8094,8 +8094,8 @@
 ```
 (no 831) succeeded 2 of 2 times:
 
-- ✓ `aaaaaa` no match
-- ✓ `` no match
+- ✅ `aaaaaa` no match
+- ✅ `` no match
 
 ---
 
@@ -8104,7 +8104,7 @@
 ```
 (no 832) succeeded 1 of 1 times:
 
-- ✓ `aaabccc` no match
+- ✅ `aaabccc` no match
 
 ---
 
@@ -8113,11 +8113,11 @@
 ```
 (no 840) succeeded 5 of 5 times:
 
-- ✓ `1221`
-- ✓ `Satan, oscillate my metallic sonatas!`
-- ✓ `A man, a plan, a canal: Panama!`
-- ✓ `Able was I ere I saw Elba.`
-- ✓ `The quick brown fox` no match
+- ✅ `1221`
+- ✅ `Satan, oscillate my metallic sonatas!`
+- ✅ `A man, a plan, a canal: Panama!`
+- ✅ `Able was I ere I saw Elba.`
+- ✅ `The quick brown fox` no match
 
 ---
 
@@ -8126,14 +8126,14 @@
 ```
 (no 841) succeeded 8 of 8 times:
 
-- ✓ `a`
-- ✓ `aba`
-- ✓ `aabaa`
-- ✓ `abcdcba`
-- ✓ `pqaabaaqp`
-- ✓ `ablewasiereisawelba`
-- ✓ `rhubarb` no match
-- ✓ `the quick brown fox` no match
+- ✅ `a`
+- ✅ `aba`
+- ✅ `aabaa`
+- ✅ `abcdcba`
+- ✅ `pqaabaaqp`
+- ✅ `ablewasiereisawelba`
+- ✅ `rhubarb` no match
+- ✅ `the quick brown fox` no match
 
 ---
 
@@ -8142,9 +8142,9 @@
 ```
 (no 842) succeeded 3 of 3 times:
 
-- ✓ `baz`
-- ✓ `caz` no match
-- ✓ `` no match
+- ✅ `baz`
+- ✅ `caz` no match
+- ✅ `` no match
 
 ---
 
@@ -8153,9 +8153,9 @@
 ```
 (no 843) succeeded 3 of 3 times:
 
-- ✓ `zbaaz`
-- ✓ `aaa` no match
-- ✓ `` no match
+- ✅ `zbaaz`
+- ✅ `aaa` no match
+- ✅ `` no match
 
 ---
 
@@ -8164,7 +8164,7 @@
 ```
 (no 844) succeeded 1 of 1 times:
 
-- ✓ `baz`
+- ✅ `baz`
 
 ---
 
@@ -8173,11 +8173,11 @@
 ```
 (no 845) succeeded 5 of 5 times:
 
-- ✓ `abcabc`
-- ✓ `defdef`
-- ✓ `abcdef` no match
-- ✓ `defabc` no match
-- ✓ `` no match
+- ✅ `abcabc`
+- ✅ `defdef`
+- ✅ `abcdef` no match
+- ✅ `defabc` no match
+- ✅ `` no match
 
 ---
 
@@ -8186,10 +8186,10 @@
 ```
 (no 846) succeeded 4 of 4 times:
 
-- ✓ `abcabc`
-- ✓ `defabc`
-- ✓ `defdef` no match
-- ✓ `abcdef` no match
+- ✅ `abcabc`
+- ✅ `defabc`
+- ✅ `defdef` no match
+- ✅ `abcdef` no match
 
 ---
 
@@ -8198,9 +8198,9 @@
 ```
 (no 847) succeeded 3 of 3 times:
 
-- ✓ `a\"aaaaa`
-- ✓ `b\"aaaaa`
-- ✓ `b\"11111` no match
+- ✅ `a\"aaaaa`
+- ✅ `b\"aaaaa`
+- ✅ `b\"11111` no match
 
 ---
 
@@ -8209,9 +8209,9 @@
 ```
 (no 848) succeeded 3 of 3 times:
 
-- ✓ `ABCD`
-- ✓ `CCD`
-- ✓ `CAD` no match
+- ✅ `ABCD`
+- ✅ `CCD`
+- ✅ `CAD` no match
 
 ---
 
@@ -8220,11 +8220,11 @@
 ```
 (no 849) succeeded 5 of 5 times:
 
-- ✓ `CCD`
-- ✓ `BCD`
-- ✓ `ABCD` no match
-- ✓ `CAD` no match
-- ✓ `BAD` no match
+- ✅ `CCD`
+- ✅ `BCD`
+- ✅ `ABCD` no match
+- ✅ `CAD` no match
+- ✅ `BAD` no match
 
 ---
 
@@ -8233,7 +8233,7 @@
 ```
 (no 851) succeeded 1 of 1 times:
 
-- ✓ `BAC`
+- ✅ `BAC`
 
 ---
 
@@ -8242,7 +8242,7 @@
 ```
 (no 852) succeeded 1 of 1 times:
 
-- ✓ `BAAC`
+- ✅ `BAAC`
 
 ---
 
@@ -8251,7 +8251,7 @@
 ```
 (no 853) succeeded 1 of 1 times:
 
-- ✓ `(ab(cd)ef)`
+- ✅ `(ab(cd)ef)`
 
 ---
 
@@ -8260,8 +8260,8 @@
 ```
 (no 863) succeeded 2 of 2 times:
 
-- ✓ `a(b)c`
-- ✓ `a(b(c)d)e`
+- ✅ `a(b)c`
+- ✅ `a(b(c)d)e`
 
 ---
 
@@ -8270,9 +8270,9 @@
 ```
 (no 864) succeeded 3 of 3 times:
 
-- ✓ `0`
-- ✓ `00`
-- ✓ `0000`
+- ✅ `0`
+- ✅ `00`
+- ✅ `0000`
 
 ---
 
@@ -8281,9 +8281,9 @@
 ```
 (no 865) succeeded 3 of 3 times:
 
-- ✓ `0`
-- ✓ `00`
-- ✓ `0000`
+- ✅ `0`
+- ✅ `00`
+- ✅ `0000`
 
 ---
 
@@ -8292,7 +8292,7 @@
 ```
 (no 881) succeeded 1 of 1 times:
 
-- ✓ `bac`
+- ✅ `bac`
 
 ---
 
@@ -8301,12 +8301,12 @@
 ```
 (no 888) succeeded 6 of 6 times:
 
-- ✓ `aa`
-- ✓ `aA`
-- ✓ `ab` no match
-- ✓ `aB` no match
-- ✓ `Ba` no match
-- ✓ `ba` no match
+- ✅ `aa`
+- ✅ `aA`
+- ✅ `ab` no match
+- ✅ `aB` no match
+- ✅ `Ba` no match
+- ✅ `ba` no match
 
 ---
 
@@ -8315,8 +8315,8 @@
 ```
 (no 889) succeeded 2 of 2 times:
 
-- ✓ `aaaaaaX`
-- ✓ `aaaaaa` no match
+- ✅ `aaaaaaX`
+- ✅ `aaaaaa` no match
 
 ---
 
@@ -8325,8 +8325,8 @@
 ```
 (no 890) succeeded 2 of 2 times:
 
-- ✓ `aaaaaaX`
-- ✓ `aaaaaa`
+- ✅ `aaaaaaX`
+- ✅ `aaaaaa`
 
 ---
 
@@ -8335,9 +8335,9 @@
 ```
 (no 891) succeeded 3 of 3 times:
 
-- ✓ `aaaaX`
-- ✓ `YZ`
-- ✓ `aaaa` no match
+- ✅ `aaaaX`
+- ✅ `YZ`
+- ✅ `aaaa` no match
 
 ---
 
@@ -8346,9 +8346,9 @@
 ```
 (no 892) succeeded 3 of 3 times:
 
-- ✓ `aaaaX`
-- ✓ `YZ`
-- ✓ `aaaa` no match
+- ✅ `aaaaX`
+- ✅ `YZ`
+- ✅ `aaaa` no match
 
 ---
 
@@ -8357,9 +8357,9 @@
 ```
 (no 893) succeeded 3 of 3 times:
 
-- ✓ `aaaaX`
-- ✓ `aaaa` no match
-- ✓ `YZ` no match
+- ✅ `aaaaX`
+- ✅ `aaaa` no match
+- ✅ `YZ` no match
 
 ---
 
@@ -8368,9 +8368,9 @@
 ```
 (no 894) succeeded 3 of 3 times:
 
-- ✓ `aaaaX`
-- ✓ `aaaa` no match
-- ✓ `YZ` no match
+- ✅ `aaaaX`
+- ✅ `aaaa` no match
+- ✅ `YZ` no match
 
 ---
 
@@ -8379,8 +8379,8 @@
 ```
 (no 895) succeeded 2 of 2 times:
 
-- ✓ `aaaaX`
-- ✓ `YZ`
+- ✅ `aaaaX`
+- ✅ `YZ`
 
 ---
 
@@ -8389,8 +8389,8 @@
 ```
 (no 896) succeeded 2 of 2 times:
 
-- ✓ `aaaaX`
-- ✓ `YZ`
+- ✅ `aaaaX`
+- ✅ `YZ`
 
 ---
 
@@ -8399,9 +8399,9 @@
 ```
 (no 897) succeeded 3 of 3 times:
 
-- ✓ `aaaaX`
-- ✓ `aaa` no match
-- ✓ `YZ` no match
+- ✅ `aaaaX`
+- ✅ `aaa` no match
+- ✅ `YZ` no match
 
 ---
 
@@ -8410,9 +8410,9 @@
 ```
 (no 898) succeeded 3 of 3 times:
 
-- ✓ `aaaaX`
-- ✓ `aaa` no match
-- ✓ `YZ` no match
+- ✅ `aaaaX`
+- ✅ `aaa` no match
+- ✅ `YZ` no match
 
 ---
 
@@ -8421,9 +8421,9 @@
 ```
 (no 899) succeeded 3 of 3 times:
 
-- ✓ `b`
-- ✓ `ab`
-- ✓ `aab`
+- ✅ `b`
+- ✅ `ab`
+- ✅ `aab`
 
 ---
 
@@ -8432,8 +8432,8 @@
 ```
 (no 900) succeeded 2 of 2 times:
 
-- ✓ `ab` no match
-- ✓ `aab` no match
+- ✅ `ab` no match
+- ✅ `aab` no match
 
 ---
 
@@ -8442,8 +8442,8 @@
 ```
 (no 901) succeeded 2 of 2 times:
 
-- ✓ `ab` no match
-- ✓ `aab` no match
+- ✅ `ab` no match
+- ✅ `aab` no match
 
 ---
 
@@ -8452,7 +8452,7 @@
 ```
 (no 902) succeeded 1 of 1 times:
 
-- ✓ `b`
+- ✅ `b`
 
 ---
 
@@ -8461,7 +8461,7 @@
 ```
 (no 903) succeeded 1 of 1 times:
 
-- ✓ `foo(bar(baz)+baz(bop))`
+- ✅ `foo(bar(baz)+baz(bop))`
 
 ---
 
@@ -8470,7 +8470,7 @@
 ```
 (no 905) succeeded 1 of 1 times:
 
-- ✓ `ba`
+- ✅ `ba`
 
 ---
 
@@ -8479,7 +8479,7 @@
 ```
 (no 906) succeeded 1 of 1 times:
 
-- ✓ `ba`
+- ✅ `ba`
 
 ---
 
@@ -8488,7 +8488,7 @@
 ```
 (no 907) succeeded 1 of 1 times:
 
-- ✓ `ba`
+- ✅ `ba`
 
 ---
 
@@ -8497,7 +8497,7 @@
 ```
 (no 908) succeeded 1 of 1 times:
 
-- ✓ `ba`
+- ✅ `ba`
 
 ---
 
@@ -8506,7 +8506,7 @@
 ```
 (no 909) succeeded 1 of 1 times:
 
-- ✓ `beetle`
+- ✅ `beetle`
 
 ---
 
@@ -8515,8 +8515,8 @@
 ```
 (no 911) succeeded 2 of 2 times:
 
-- ✓ `aaaab`
-- ✓ ``
+- ✅ `aaaab`
+- ✅ ``
 
 ---
 
@@ -8525,7 +8525,7 @@
 ```
 (no 912) succeeded 1 of 1 times:
 
-- ✓ `aaaab` no match
+- ✅ `aaaab` no match
 
 ---
 
@@ -8534,7 +8534,7 @@
 ```
 (no 915) succeeded 1 of 1 times:
 
-- ✓ `backgammon`
+- ✅ `backgammon`
 
 ---
 
@@ -8543,8 +8543,8 @@
 ```
 (no 916) succeeded 2 of 2 times:
 
-- ✓ `abc\ndef`
-- ✓ ``
+- ✅ `abc\ndef`
+- ✅ ``
 
 ---
 
@@ -8553,7 +8553,7 @@
 ```
 (no 917) succeeded 1 of 1 times:
 
-- ✓ `abc\ndef`
+- ✅ `abc\ndef`
 
 ---
 
@@ -8562,8 +8562,8 @@
 ```
 (no 956) succeeded 2 of 2 times:
 
-- ✓ `xcd`
-- ✓ `acd`
+- ✅ `xcd`
+- ✅ `acd`
 
 ---
 
@@ -8572,7 +8572,7 @@
 ```
 (no 961) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -8581,7 +8581,7 @@
 ```
 (no 986) succeeded 1 of 1 times:
 
-- ✓ `hello world test`
+- ✅ `hello world test`
 
 ---
 
@@ -8590,7 +8590,7 @@
 ```
 (no 987) succeeded 1 of 1 times:
 
-- ✓ `hello world test` no match
+- ✅ `hello world test` no match
 
 ---
 
@@ -8599,7 +8599,7 @@
 ```
 (no 989) succeeded 1 of 1 times:
 
-- ✓ `aac`
+- ✅ `aac`
 
 ---
 
@@ -8608,7 +8608,7 @@
 ```
 (no 990) succeeded 1 of 1 times:
 
-- ✓ `aac`
+- ✅ `aac`
 
 ---
 
@@ -8617,7 +8617,7 @@
 ```
 (no 991) succeeded 1 of 1 times:
 
-- ✓ `aba`
+- ✅ `aba`
 
 ---
 
@@ -8626,7 +8626,7 @@
 ```
 (no 992) succeeded 1 of 1 times:
 
-- ✓ `aba`
+- ✅ `aba`
 
 ---
 
@@ -8635,7 +8635,7 @@
 ```
 (no 993) succeeded 1 of 1 times:
 
-- ✓ `aab`
+- ✅ `aab`
 
 ---
 
@@ -8644,7 +8644,7 @@
 ```
 (no 994) succeeded 1 of 1 times:
 
-- ✓ `aab`
+- ✅ `aab`
 
 ---
 
@@ -8653,7 +8653,7 @@
 ```
 (no 995) succeeded 1 of 1 times:
 
-- ✓ `aab` no match
+- ✅ `aab` no match
 
 ---
 
@@ -8662,8 +8662,8 @@
 ```
 (no 996) succeeded 2 of 2 times:
 
-- ✓ `alphabetabcd`
-- ✓ `endingwxyz`
+- ✅ `alphabetabcd`
+- ✅ `endingwxyz`
 
 ---
 
@@ -8672,8 +8672,8 @@
 ```
 (no 997) succeeded 2 of 2 times:
 
-- ✓ `alphabetabcd`
-- ✓ `endingwxyz`
+- ✅ `alphabetabcd`
+- ✅ `endingwxyz`
 
 ---
 
@@ -8682,8 +8682,8 @@
 ```
 (no 998) succeeded 2 of 2 times:
 
-- ✓ `abcdfooxyz` no match
-- ✓ `` no match
+- ✅ `abcdfooxyz` no match
+- ✅ `` no match
 
 ---
 
@@ -8692,7 +8692,7 @@
 ```
 (no 999) succeeded 1 of 1 times:
 
-- ✓ `abcdfooxyz`
+- ✅ `abcdfooxyz`
 
 ---
 
@@ -8701,9 +8701,9 @@
 ```
 (no 1036) succeeded 3 of 3 times:
 
-- ✓ `abd`
-- ✓ `abc`
-- ✓ ``
+- ✅ `abd`
+- ✅ `abc`
+- ✅ ``
 
 ---
 
@@ -8712,7 +8712,7 @@
 ```
 (no 1038) succeeded 1 of 1 times:
 
-- ✓ `abceabd`
+- ✅ `abceabd`
 
 ---
 
@@ -8721,7 +8721,7 @@
 ```
 (no 1042) succeeded 1 of 1 times:
 
-- ✓ `a` no match
+- ✅ `a` no match
 
 ---
 
@@ -8730,7 +8730,7 @@
 ```
 (no 1080) succeeded 1 of 1 times:
 
-- ✓ `ba`
+- ✅ `ba`
 
 ---
 
@@ -8739,8 +8739,8 @@
 ```
 (no 1086) succeeded 2 of 2 times:
 
-- ✓ `1234`
-- ✓ `123` no match
+- ✅ `1234`
+- ✅ `123` no match
 
 ---
 
@@ -8749,8 +8749,8 @@
 ```
 (no 1087) succeeded 2 of 2 times:
 
-- ✓ `aaaa`
-- ✓ `aaa` no match
+- ✅ `aaaa`
+- ✅ `aaa` no match
 
 ---
 
@@ -8759,8 +8759,8 @@
 ```
 (no 1088) succeeded 2 of 2 times:
 
-- ✓ `aaaa`
-- ✓ `aaa` no match
+- ✅ `aaaa`
+- ✅ `aaa` no match
 
 ---
 
@@ -8769,8 +8769,8 @@
 ```
 (no 1089) succeeded 2 of 2 times:
 
-- ✓ `aaaa`
-- ✓ `aaa` no match
+- ✅ `aaaa`
+- ✅ `aaa` no match
 
 ---
 
@@ -8779,8 +8779,8 @@
 ```
 (no 1090) succeeded 2 of 2 times:
 
-- ✓ `aaaa`
-- ✓ `aaa` no match
+- ✅ `aaaa`
+- ✅ `aaa` no match
 
 ---
 
@@ -8789,8 +8789,8 @@
 ```
 (no 1091) succeeded 2 of 2 times:
 
-- ✓ `foofoo`
-- ✓ `barbar`
+- ✅ `foofoo`
+- ✅ `barbar`
 
 ---
 
@@ -8799,10 +8799,10 @@
 ```
 (no 1092) succeeded 4 of 4 times:
 
-- ✓ `AfooA`
-- ✓ `AbarA`
-- ✓ `Afoofoo` no match
-- ✓ `Abarbar` no match
+- ✅ `AfooA`
+- ✅ `AbarA`
+- ✅ `Afoofoo` no match
+- ✅ `Abarbar` no match
 
 ---
 
@@ -8811,7 +8811,7 @@
 ```
 (no 1093) succeeded 1 of 1 times:
 
-- ✓ `1 IN SOA non-sp1 non-sp2(`
+- ✅ `1 IN SOA non-sp1 non-sp2(`
 
 ---
 
@@ -8820,9 +8820,9 @@
 ```
 (no 1094) succeeded 3 of 3 times:
 
-- ✓ `Ax`
-- ✓ `BAxy`
-- ✓ ``
+- ✅ `Ax`
+- ✅ `BAxy`
+- ✅ ``
 
 ---
 
@@ -8831,7 +8831,7 @@
 ```
 (no 1095) succeeded 1 of 1 times:
 
-- ✓ `A\0Z`
+- ✅ `A\0Z`
 
 ---
 
@@ -8840,7 +8840,7 @@
 ```
 (no 1096) succeeded 1 of 1 times:
 
-- ✓ `ASB`
+- ✅ `ASB`
 
 ---
 
@@ -8849,8 +8849,8 @@
 ```
 (no 1097) succeeded 2 of 2 times:
 
-- ✓ `aaaab`
-- ✓ ``
+- ✅ `aaaab`
+- ✅ ``
 
 ---
 
@@ -8860,8 +8860,8 @@
 ```
 (no 1098) succeeded 2 of 2 times:
 
-- ✓ `aaaab`
-- ✓ ``
+- ✅ `aaaab`
+- ✅ ``
 
 ---
 
@@ -8872,8 +8872,8 @@
 ```
 (no 1099) succeeded 2 of 2 times:
 
-- ✓ `aaaab`
-- ✓ ``
+- ✅ `aaaab`
+- ✅ ``
 
 ---
 
@@ -8882,7 +8882,7 @@
 ```
 (no 1100) succeeded 1 of 1 times:
 
-- ✓ `aaaab`
+- ✅ `aaaab`
 
 ---
 
@@ -8891,7 +8891,7 @@
 ```
 (no 1101) succeeded 1 of 1 times:
 
-- ✓ `aaaab`
+- ✅ `aaaab`
 
 ---
 
@@ -8900,7 +8900,7 @@
 ```
 (no 1107) succeeded 1 of 1 times:
 
-- ✓ `acb` no match
+- ✅ `acb` no match
 
 ---
 
@@ -8909,7 +8909,7 @@
 ```
 (no 1108) succeeded 1 of 1 times:
 
-- ✓ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
+- ✅ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
 
 ---
 
@@ -8918,7 +8918,7 @@
 ```
 (no 1109) succeeded 1 of 1 times:
 
-- ✓ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
+- ✅ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
 
 ---
 
@@ -8927,7 +8927,7 @@
 ```
 (no 1110) succeeded 1 of 1 times:
 
-- ✓ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
+- ✅ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
 
 ---
 
@@ -8936,7 +8936,7 @@
 ```
 (no 1111) succeeded 1 of 1 times:
 
-- ✓ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
+- ✅ `NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED`
 
 ---
 
@@ -8945,7 +8945,7 @@
 ```
 (no 1112) succeeded 1 of 1 times:
 
-- ✓ `test test`
+- ✅ `test test`
 
 ---
 
@@ -8954,10 +8954,10 @@
 ```
 (no 1118) succeeded 4 of 4 times:
 
-- ✓ `acl`
-- ✓ `bdl`
-- ✓ `adl`
-- ✓ `bcl`
+- ✅ `acl`
+- ✅ `bdl`
+- ✅ `adl`
+- ✅ `bcl`
 
 ---
 
@@ -8966,7 +8966,7 @@
 ```
 (no 1119) succeeded 1 of 1 times:
 
-- ✓ `\vabc`
+- ✅ `\vabc`
 
 ---
 
@@ -8975,7 +8975,7 @@
 ```
 (no 1120) succeeded 1 of 1 times:
 
-- ✓ `aa]]`
+- ✅ `aa]]`
 
 ---
 
@@ -8984,7 +8984,7 @@
 ```
 (no 1121) succeeded 1 of 1 times:
 
-- ✓ `aa]]`
+- ✅ `aa]]`
 
 ---
 
@@ -8993,7 +8993,7 @@
 ```
 (no 1122) succeeded 1 of 1 times:
 
-- ✓ `AaaB`
+- ✅ `AaaB`
 
 ---
 
@@ -9002,8 +9002,8 @@
 ```
 (no 1123) succeeded 2 of 2 times:
 
-- ✓ `AaaB`
-- ✓ ``
+- ✅ `AaaB`
+- ✅ ``
 
 ---
 
@@ -9012,8 +9012,8 @@
 ```
 (no 1124) succeeded 2 of 2 times:
 
-- ✓ `A8B`
-- ✓ `A9B`
+- ✅ `A8B`
+- ✅ `A9B`
 
 ---
 
@@ -9022,8 +9022,8 @@
 ```
 (no 1125) succeeded 2 of 2 times:
 
-- ✓ `abd`
-- ✓ `xyd`
+- ✅ `abd`
+- ✅ `xyd`
 
 ---
 
@@ -9032,7 +9032,7 @@
 ```
 (no 1127) succeeded 1 of 1 times:
 
-- ✓ `aaa`
+- ✅ `aaa`
 
 ---
 
@@ -9057,7 +9057,7 @@
 ```
 (no 1130) succeeded 1 of 1 times:
 
-- ✓ `baaaaaaaaac`
+- ✅ `baaaaaaaaac`
 
 ---
 
@@ -9066,7 +9066,7 @@
 ```
 (no 1131) succeeded 1 of 1 times:
 
-- ✓ `xx`
+- ✅ `xx`
 
 ---
 
@@ -9075,7 +9075,7 @@
 ```
 (no 1132) succeeded 1 of 1 times:
 
-- ✓ `A8B9C`
+- ✅ `A8B9C`
 
 ---
 
@@ -9084,7 +9084,7 @@
 ```
 (no 1133) succeeded 1 of 1 times:
 
-- ✓ `\u85\u85`
+- ✅ `\u85\u85`
 
 ---
 
@@ -9093,7 +9093,7 @@
 ```
 (no 1134) succeeded 1 of 1 times:
 
-- ✓ `abcd`
+- ✅ `abcd`
 
 ---
 
@@ -9102,8 +9102,8 @@
 ```
 (no 1135) succeeded 2 of 2 times:
 
-- ✓ `aaaaaa`
-- ✓ `bb`
+- ✅ `aaaaaa`
+- ✅ `bb`
 
 ---
 
@@ -9112,9 +9112,9 @@
 ```
 (no 1136) succeeded 3 of 3 times:
 
-- ✓ `aaaaaa`
-- ✓ `baaa`
-- ✓ `bb` no match
+- ✅ `aaaaaa`
+- ✅ `baaa`
+- ✅ `bb` no match
 
 ---
 
@@ -9123,8 +9123,8 @@
 ```
 (no 1137) succeeded 2 of 2 times:
 
-- ✓ `xaaa`
-- ✓ `xbc`
+- ✅ `xaaa`
+- ✅ `xbc`
 
 ---
 
@@ -9133,8 +9133,8 @@
 ```
 (no 1138) succeeded 2 of 2 times:
 
-- ✓ `aaaaaa`
-- ✓ `bb`
+- ✅ `aaaaaa`
+- ✅ `bb`
 
 ---
 
@@ -9143,8 +9143,8 @@
 ```
 (no 1139) succeeded 2 of 2 times:
 
-- ✓ `aaaccccaaa`
-- ✓ `bccccb`
+- ✅ `aaaccccaaa`
+- ✅ `bccccb`
 
 ---
 
@@ -9153,7 +9153,7 @@
 ```
 (no 1141) succeeded 1 of 1 times:
 
-- ✓ `acX`
+- ✅ `acX`
 
 ---
 
@@ -9162,8 +9162,8 @@
 ```
 (no 1142) succeeded 2 of 2 times:
 
-- ✓ `bbbb`
-- ✓ `baaab` no match
+- ✅ `bbbb`
+- ✅ `baaab` no match
 
 ---
 
@@ -9172,7 +9172,7 @@
 ```
 (no 1143) succeeded 1 of 1 times:
 
-- ✓ `   Fred:099`
+- ✅ `   Fred:099`
 
 ---
 
@@ -9181,7 +9181,7 @@
 ```
 (no 1144) succeeded 1 of 1 times:
 
-- ✓ `  X`
+- ✅ `  X`
 
 ---
 
@@ -9190,7 +9190,7 @@
 ```
 (no 1145) succeeded 1 of 1 times:
 
-- ✓ `aabc`
+- ✅ `aabc`
 
 ---
 
@@ -9199,7 +9199,7 @@
 ```
 (no 1146) succeeded 1 of 1 times:
 
-- ✓ `ZaAAZX`
+- ✅ `ZaAAZX`
 
 ---
 
@@ -9216,7 +9216,7 @@
 ```
 (no 1148) succeeded 1 of 1 times:
 
-- ✓ `s09-H`
+- ✅ `s09-H`
 
 ---
 
@@ -9225,7 +9225,7 @@
 ```
 (no 1149) succeeded 1 of 1 times:
 
-- ✓ `s09-H`
+- ✅ `s09-H`
 
 ---
 
@@ -9234,7 +9234,7 @@
 ```
 (no 1150) succeeded 1 of 1 times:
 
-- ✓ `aaaa`
+- ✅ `aaaa`
 
 ---
 
@@ -9255,7 +9255,7 @@
 ```
 (no 1153) succeeded 1 of 1 times:
 
-- ✓ `123`
+- ✅ `123`
 
 ---
 
@@ -9267,9 +9267,9 @@
 ```
 (no 1154) succeeded 3 of 3 times:
 
-- ✓ `AZ123Z`
-- ✓ `AZ12Z` no match
-- ✓ `` no match
+- ✅ `AZ123Z`
+- ✅ `AZ12Z` no match
+- ✅ `` no match
 
 ---
 
@@ -9278,9 +9278,9 @@
 ```
 (no 1155) succeeded 3 of 3 times:
 
-- ✓ `acb`
-- ✓ `aab` no match
-- ✓ `` no match
+- ✅ `acb`
+- ✅ `aab` no match
+- ✅ `` no match
 
 ---
 
@@ -9289,7 +9289,7 @@
 ```
 (no 1156) succeeded 1 of 1 times:
 
-- ✓ `abababababababababababM`
+- ✅ `abababababababababababM`
 
 ---
 
@@ -9298,7 +9298,7 @@
 ```
 (no 1157) succeeded 1 of 1 times:
 
-- ✓ `abababM`
+- ✅ `abababM`
 
 ---
 
@@ -9307,7 +9307,7 @@
 ```
 (no 1158) succeeded 1 of 1 times:
 
-- ✓ `bbak`
+- ✅ `bbak`
 
 ---
 
@@ -9316,7 +9316,7 @@
 ```
 (no 1159) succeeded 1 of 1 times:
 
-- ✓ `bbak`
+- ✅ `bbak`
 
 ---
 
@@ -9325,7 +9325,7 @@
 ```
 (no 1160) succeeded 1 of 1 times:
 
-- ✓ `ababbalbbadabak`
+- ✅ `ababbalbbadabak`
 
 ---
 
@@ -9334,8 +9334,8 @@
 ```
 (no 1161) succeeded 2 of 2 times:
 
-- ✓ `Ab`
-- ✓ `Ac`
+- ✅ `Ab`
+- ✅ `Ac`
 
 ---
 
@@ -9344,8 +9344,8 @@
 ```
 (no 1162) succeeded 2 of 2 times:
 
-- ✓ `Ab`
-- ✓ `Ac`
+- ✅ `Ab`
+- ✅ `Ac`
 
 ---
 
@@ -9354,11 +9354,11 @@
 ```
 (no 1163) succeeded 5 of 5 times:
 
-- ✓ `a`
-- ✓ `aba`
-- ✓ `abcba`
-- ✓ `ababa`
-- ✓ `abcdcba`
+- ✅ `a`
+- ✅ `aba`
+- ✅ `abcba`
+- ✅ `ababa`
+- ✅ `abcdcba`
 
 ---
 
@@ -9367,14 +9367,14 @@
 ```
 (no 1164) succeeded 8 of 8 times:
 
-- ✓ `a`
-- ✓ `aba`
-- ✓ `abba`
-- ✓ `abcba`
-- ✓ `ababa`
-- ✓ `abccba`
-- ✓ `abcdcba`
-- ✓ `abcddcba`
+- ✅ `a`
+- ✅ `aba`
+- ✅ `abba`
+- ✅ `abcba`
+- ✅ `ababa`
+- ✅ `abccba`
+- ✅ `abcdcba`
+- ✅ `abcddcba`
 
 ---
 
@@ -9383,7 +9383,7 @@
 ```
 (no 1165) succeeded 1 of 1 times:
 
-- ✓ `bab`
+- ✅ `bab`
 
 ---
 
@@ -9392,8 +9392,8 @@
 ```
 (no 1166) succeeded 2 of 2 times:
 
-- ✓ `abcba`
-- ✓ ``
+- ✅ `abcba`
+- ✅ ``
 
 ---
 
@@ -9402,7 +9402,7 @@
 ```
 (no 1167) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -9411,7 +9411,7 @@
 ```
 (no 1168) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -9420,7 +9420,7 @@
 ```
 (no 1171) succeeded 1 of 1 times:
 
-- ✓ `a123a`
+- ✅ `a123a`
 
 ---
 
@@ -9460,18 +9460,18 @@
 ```
 (no 1172) succeeded 12 of 12 times:
 
-- ✓ `Alan Other <user@dom.ain>`
-- ✓ `<user@dom.ain>`
-- ✓ `user@dom.ain`
-- ✓ `user@[]`
-- ✓ `user@[domain literal]`
-- ✓ `user@[domain literal with \"[square brackets\"] inside]`
-- ✓ `\"A. Other\" <user.1234@dom.ain> (a comment)`
-- ✓ `A. Other <user.1234@dom.ain> (a comment)`
-- ✓ `\"/s=user/ou=host/o=place/prmd=uu.yy/admd= /c=gb/\"@x400-re.lay`
-- ✓ `A missing angle <user@some.where` no match
-- ✓ `The quick brown fox` no match
-- ✓ `` no match
+- ✅ `Alan Other <user@dom.ain>`
+- ✅ `<user@dom.ain>`
+- ✅ `user@dom.ain`
+- ✅ `user@[]`
+- ✅ `user@[domain literal]`
+- ✅ `user@[domain literal with \"[square brackets\"] inside]`
+- ✅ `\"A. Other\" <user.1234@dom.ain> (a comment)`
+- ✅ `A. Other <user.1234@dom.ain> (a comment)`
+- ✅ `\"/s=user/ou=host/o=place/prmd=uu.yy/admd= /c=gb/\"@x400-re.lay`
+- ✅ `A missing angle <user@some.where` no match
+- ✅ `The quick brown fox` no match
+- ✅ `` no match
 
 ---
 
@@ -9480,7 +9480,7 @@
 ```
 (no 1174) succeeded 1 of 1 times:
 
-- ✓ `< >`
+- ✅ `< >`
 
 ---
 
@@ -9489,7 +9489,7 @@
 ```
 (no 1175) succeeded 1 of 1 times:
 
-- ✓ `< >` no match
+- ✅ `< >` no match
 
 ---
 
@@ -9498,8 +9498,8 @@
 ```
 (no 1176) succeeded 2 of 2 times:
 
-- ✓ `< >` no match
-- ✓ `` no match
+- ✅ `< >` no match
+- ✅ `` no match
 
 ---
 
@@ -9508,7 +9508,7 @@
 ```
 (no 1177) succeeded 1 of 1 times:
 
-- ✓ `< >`
+- ✅ `< >`
 
 ---
 
@@ -9517,7 +9517,7 @@
 ```
 (no 1178) succeeded 1 of 1 times:
 
-- ✓ `12-24`
+- ✅ `12-24`
 
 ---
 
@@ -9526,8 +9526,8 @@
 ```
 (no 1182) succeeded 2 of 2 times:
 
-- ✓ `aa`
-- ✓ `a`
+- ✅ `aa`
+- ✅ `a`
 
 ---
 
@@ -9536,10 +9536,10 @@
 ```
 (no 1183) succeeded 4 of 4 times:
 
-- ✓ `abaa`
-- ✓ `aba`
-- ✓ `baa`
-- ✓ `ba`
+- ✅ `abaa`
+- ✅ `aba`
+- ✅ `baa`
+- ✅ `ba`
 
 ---
 
@@ -9548,10 +9548,10 @@
 ```
 (no 1184) succeeded 4 of 4 times:
 
-- ✓ `abaa`
-- ✓ `aba`
-- ✓ `baa`
-- ✓ `ba`
+- ✅ `abaa`
+- ✅ `aba`
+- ✅ `baa`
+- ✅ `ba`
 
 ---
 
@@ -9560,10 +9560,10 @@
 ```
 (no 1185) succeeded 4 of 4 times:
 
-- ✓ `abaa`
-- ✓ `aba`
-- ✓ `baa`
-- ✓ `ba`
+- ✅ `abaa`
+- ✅ `aba`
+- ✅ `baa`
+- ✅ `ba`
 
 ---
 
@@ -9572,9 +9572,9 @@
 ```
 (no 1186) succeeded 3 of 3 times:
 
-- ✓ `b`
-- ✓ `ab`
-- ✓ `aaab`
+- ✅ `b`
+- ✅ `ab`
+- ✅ `aaab`
 
 ---
 
@@ -9583,7 +9583,7 @@
 ```
 (no 1187) succeeded 1 of 1 times:
 
-- ✓ `aab`
+- ✅ `aab`
 
 ---
 
@@ -9592,8 +9592,8 @@
 ```
 (no 1202) succeeded 2 of 2 times:
 
-- ✓ `abc` no match
-- ✓ `` no match
+- ✅ `abc` no match
+- ✅ `` no match
 
 ---
 
@@ -9602,7 +9602,7 @@
 ```
 (no 1203) succeeded 1 of 1 times:
 
-- ✓ `abc` no match
+- ✅ `abc` no match
 
 ---
 
@@ -9611,9 +9611,9 @@
 ```
 (no 1212) succeeded 3 of 3 times:
 
-- ✓ `aBCDE F`
-- ✓ `aBCDEF` no match
-- ✓ `AbCDe f` no match
+- ✅ `aBCDE F`
+- ✅ `aBCDEF` no match
+- ✅ `AbCDe f` no match
 
 ---
 
@@ -9622,8 +9622,8 @@
 ```
 (no 1213) succeeded 2 of 2 times:
 
-- ✓ `abcfoobarxyz`
-- ✓ `abcfooba` no match
+- ✅ `abcfoobarxyz`
+- ✅ `abcfooba` no match
 
 ---
 
@@ -9632,8 +9632,8 @@
 ```
 (no 1214) succeeded 2 of 2 times:
 
-- ✓ `abcfoobarxyz`
-- ✓ ``
+- ✅ `abcfoobarxyz`
+- ✅ ``
 
 ---
 
@@ -9642,8 +9642,8 @@
 ```
 (no 1215) succeeded 2 of 2 times:
 
-- ✓ `foobarbaz`
-- ✓ `abcfoobar`
+- ✅ `foobarbaz`
+- ✅ `abcfoobar`
 
 ---
 
@@ -9652,9 +9652,9 @@
 ```
 (no 1216) succeeded 3 of 3 times:
 
-- ✓ `foobarbaz`
-- ✓ `abcfoobar`
-- ✓ ``
+- ✅ `foobarbaz`
+- ✅ `abcfoobar`
+- ✅ ``
 
 ---
 
@@ -9663,8 +9663,8 @@
 ```
 (no 1217) succeeded 2 of 2 times:
 
-- ✓ `abcfoobar`
-- ✓ `abcbarfoo` no match
+- ✅ `abcfoobar`
+- ✅ `abcbarfoo` no match
 
 ---
 
@@ -9673,9 +9673,9 @@
 ```
 (no 1218) succeeded 3 of 3 times:
 
-- ✓ `abcfoobar`
-- ✓ `abcbarfoo` no match
-- ✓ `` no match
+- ✅ `abcfoobar`
+- ✅ `abcbarfoo` no match
+- ✅ `` no match
 
 ---
 
@@ -9684,11 +9684,11 @@
 ```
 (no 1219) succeeded 5 of 5 times:
 
-- ✓ `abcfoobar`
-- ✓ `bazfoobar`
-- ✓ `abcbazfoobar`
-- ✓ `foobazfoobar`
-- ✓ ``
+- ✅ `abcfoobar`
+- ✅ `bazfoobar`
+- ✅ `abcbazfoobar`
+- ✅ `foobazfoobar`
+- ✅ ``
 
 ---
 
@@ -9697,11 +9697,11 @@
 ```
 (no 1220) succeeded 5 of 5 times:
 
-- ✓ `abcfoobar`
-- ✓ `bazfoobar`
-- ✓ `abcbazfoobar`
-- ✓ `foobazfoobar`
-- ✓ ``
+- ✅ `abcfoobar`
+- ✅ `bazfoobar`
+- ✅ `abcbazfoobar`
+- ✅ `foobazfoobar`
+- ✅ ``
 
 ---
 
@@ -9710,8 +9710,8 @@
 ```
 (no 1221) succeeded 2 of 2 times:
 
-- ✓ `abcbarfoo`
-- ✓ `abcfoobar` no match
+- ✅ `abcbarfoo`
+- ✅ `abcfoobar` no match
 
 ---
 
@@ -9720,9 +9720,9 @@
 ```
 (no 1222) succeeded 3 of 3 times:
 
-- ✓ `abcbarfoo`
-- ✓ `abcfoobar` no match
-- ✓ `` no match
+- ✅ `abcbarfoo`
+- ✅ `abcfoobar` no match
+- ✅ `` no match
 
 ---
 
@@ -9731,10 +9731,10 @@
 ```
 (no 1223) succeeded 4 of 4 times:
 
-- ✓ `abcfoobaz`
-- ✓ `abcbarbaz`
-- ✓ `abcfoobar` no match
-- ✓ `` no match
+- ✅ `abcfoobaz`
+- ✅ `abcbarbaz`
+- ✅ `abcfoobar` no match
+- ✅ `` no match
 
 ---
 
@@ -9743,10 +9743,10 @@
 ```
 (no 1224) succeeded 4 of 4 times:
 
-- ✓ `abcfoobaz`
-- ✓ `abcbarbaz`
-- ✓ `abcfoobar` no match
-- ✓ `` no match
+- ✅ `abcfoobaz`
+- ✅ `abcbarbaz`
+- ✅ `abcfoobar` no match
+- ✅ `` no match
 
 ---
 
@@ -9755,8 +9755,8 @@
 ```
 (no 1225) succeeded 2 of 2 times:
 
-- ✓ `aaab`
-- ✓ `aaaa` no match
+- ✅ `aaab`
+- ✅ `aaaa` no match
 
 ---
 
@@ -9765,8 +9765,8 @@
 ```
 (no 1226) succeeded 2 of 2 times:
 
-- ✓ `pokus.`
-- ✓ ``
+- ✅ `pokus.`
+- ✅ ``
 
 ---
 
@@ -9775,7 +9775,7 @@
 ```
 (no 1227) succeeded 1 of 1 times:
 
-- ✓ `pokus.`
+- ✅ `pokus.`
 
 ---
 
@@ -9784,7 +9784,7 @@
 ```
 (no 1228) succeeded 1 of 1 times:
 
-- ✓ `pokus.`
+- ✅ `pokus.`
 
 ---
 
@@ -9793,7 +9793,7 @@
 ```
 (no 1229) succeeded 1 of 1 times:
 
-- ✓ `pokus.`
+- ✅ `pokus.`
 
 ---
 
@@ -9802,7 +9802,7 @@
 ```
 (no 1230) succeeded 1 of 1 times:
 
-- ✓ `pokus.hokus`
+- ✅ `pokus.hokus`
 
 ---
 
@@ -9811,7 +9811,7 @@
 ```
 (no 1233) succeeded 1 of 1 times:
 
-- ✓ `abc` no match
+- ✅ `abc` no match
 
 ---
 
@@ -9820,8 +9820,8 @@
 ```
 (no 1234) succeeded 2 of 2 times:
 
-- ✓ `abc` no match
-- ✓ `` no match
+- ✅ `abc` no match
+- ✅ `` no match
 
 ---
 
@@ -9830,7 +9830,7 @@
 ```
 (no 1235) succeeded 1 of 1 times:
 
-- ✓ `aaaa` no match
+- ✅ `aaaa` no match
 
 ---
 
@@ -9839,7 +9839,7 @@
 ```
 (no 1236) succeeded 1 of 1 times:
 
-- ✓ `abc` no match
+- ✅ `abc` no match
 
 ---
 
@@ -9848,8 +9848,8 @@
 ```
 (no 1237) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ ``
+- ✅ `abc`
+- ✅ ``
 
 ---
 
@@ -9858,8 +9858,8 @@
 ```
 (no 1238) succeeded 2 of 2 times:
 
-- ✓ `abc`
-- ✓ ``
+- ✅ `abc`
+- ✅ ``
 
 ---
 
@@ -9868,7 +9868,7 @@
 ```
 (no 1242) succeeded 1 of 1 times:
 
-- ✓ `ab`
+- ✅ `ab`
 
 ---
 
@@ -9877,7 +9877,7 @@
 ```
 (no 1243) succeeded 1 of 1 times:
 
-- ✓ `abc`
+- ✅ `abc`
 
 ---
 
@@ -9886,8 +9886,8 @@
 ```
 (no 1244) succeeded 2 of 2 times:
 
-- ✓ `aaaa`
-- ✓ `aaaaaa`
+- ✅ `aaaa`
+- ✅ `aaaaaa`
 
 ---
 
@@ -9896,7 +9896,7 @@
 ```
 (no 1245) succeeded 1 of 1 times:
 
-- ✓ `111133X`
+- ✅ `111133X`
 
 ---
 
@@ -9905,12 +9905,12 @@
 ```
 (no 1247) succeeded 6 of 6 times:
 
-- ✓ `The quick brown fox jumps over the lazy dog.`
-- ✓ `Jackdaws love my big sphinx of quartz.`
-- ✓ `Pack my box with five dozen liquor jugs.`
-- ✓ `The quick brown fox jumps over the lazy cat.` no match
-- ✓ `Hackdaws love my big sphinx of quartz.` no match
-- ✓ `Pack my fox with five dozen liquor jugs.` no match
+- ✅ `The quick brown fox jumps over the lazy dog.`
+- ✅ `Jackdaws love my big sphinx of quartz.`
+- ✅ `Pack my box with five dozen liquor jugs.`
+- ✅ `The quick brown fox jumps over the lazy cat.` no match
+- ✅ `Hackdaws love my big sphinx of quartz.` no match
+- ✅ `Pack my fox with five dozen liquor jugs.` no match
 
 ---
 
@@ -9919,7 +9919,7 @@
 ```
 (no 1248) succeeded 1 of 1 times:
 
-- ✓ `AXYZ` no match
+- ✅ `AXYZ` no match
 
 ---
 
@@ -9928,7 +9928,7 @@
 ```
 (no 1249) succeeded 1 of 1 times:
 
-- ✓ `AXYZ`
+- ✅ `AXYZ`
 
 ---
 
@@ -9937,7 +9937,7 @@
 ```
 (no 1250) succeeded 1 of 1 times:
 
-- ✓ `AXYZ`
+- ✅ `AXYZ`
 
 ---
 
@@ -9946,7 +9946,7 @@
 ```
 (no 1251) succeeded 1 of 1 times:
 
-- ✓ `AXYZ`
+- ✅ `AXYZ`
 
 ---
 
@@ -9955,4 +9955,4 @@
 ```
 (no 1252) succeeded 1 of 1 times:
 
-- ✓ `word`
+- ✅ `word`

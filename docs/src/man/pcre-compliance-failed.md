@@ -141,7 +141,7 @@ parse(r"(|\1xxx)+", "xxx")
 /(([a-c])b*?\2){3}/
 ```
 (no 397) failed  0 of 1 times:
-- ✕ `ababbbcbc`
+- ❌ `ababbbcbc`
 
 ---
 
@@ -149,7 +149,7 @@ parse(r"(|\1xxx)+", "xxx")
 /((\3|b)\2(a)){2,}/
 ```
 (no 399) failed  0 of 1 times:
-- ✕ `bbaababbabaaaaabbaaaabba`
+- ❌ `bbaababbabaaaaabbaaaabba`
 
 ---
 
@@ -157,7 +157,7 @@ parse(r"(|\1xxx)+", "xxx")
 /()?(?(1)b|a)/
 ```
 (no 586) failed  0 of 1 times:
-- ✕ `a`
+- ❌ `a`
 
 ---
 
@@ -165,8 +165,8 @@ parse(r"(|\1xxx)+", "xxx")
 /(?:(?(1)\1a|b)(X|Y))+/
 ```
 (no 676) failed  0 of 2 times:
-- ✕ `bXXaYYaY`
-- ✓ `bXYaXXaX`
+- ❌ `bXXaYYaY`
+- ✅ `bXYaXXaX`
 
 ---
 
@@ -181,9 +181,9 @@ parse(r"(|\1xxx)+", "xxx")
 /^[a-\Ec]/
 ```
 (no 695) failed  1 of 3 times:
-- ✕ `b`
-- ✕ `-` no match
-- ✓ `E` no match
+- ❌ `b`
+- ❌ `-` no match
+- ✅ `E` no match
 
 ---
 
@@ -191,9 +191,9 @@ parse(r"(|\1xxx)+", "xxx")
 /^[a\E\E-\Ec]/
 ```
 (no 696) failed  1 of 3 times:
-- ✕ `b`
-- ✕ `-` no match
-- ✓ `E` no match
+- ❌ `b`
+- ❌ `-` no match
+- ✅ `E` no match
 
 ---
 
@@ -201,9 +201,9 @@ parse(r"(|\1xxx)+", "xxx")
 /^[\E\Qa\E-\Qz\E]+/
 ```
 (no 697) failed  1 of 3 times:
-- ✕ `b`
-- ✕ `-` no match
-- ✓ `` no match
+- ❌ `b`
+- ❌ `-` no match
+- ✅ `` no match
 
 ---
 
@@ -260,9 +260,9 @@ parse(r"(|\1xxx)+", "xxx")
 /^(?=.*(?=(([A-Z]).*(?(1)\1)))(?!.+\2)){26}/i
 ```
 (no 1246) failed  5 of 6 times:
-- ✕ `The quick brown fox jumps over the lazy dog.`
-- ✕ `Jackdaws love my big sphinx of quartz.`
-- ✕ `Pack my box with five dozen liquor jugs.`
-- ✕ `The quick brown fox jumps over the lazy cat.` no match
-- ✕ `Hackdaws love my big sphinx of quartz.` no match
-- ✕ `Pack my fox with five dozen liquor jugs.` no match
+- ❌ `The quick brown fox jumps over the lazy dog.`
+- ❌ `Jackdaws love my big sphinx of quartz.`
+- ❌ `Pack my box with five dozen liquor jugs.`
+- ❌ `The quick brown fox jumps over the lazy cat.` no match
+- ❌ `Hackdaws love my big sphinx of quartz.` no match
+- ❌ `Pack my fox with five dozen liquor jugs.` no match

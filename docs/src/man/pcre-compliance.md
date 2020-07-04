@@ -1,23 +1,23 @@
 # Compliance with the PCRE test set
 !!! note 
     PCRE features supported by `@re_str` 
-    - ✓ sequences, alternations (`|`), repetitions (`*`,`+`,`{n}`, `{min,}`, `{min,max}`), optional matches (`?`)
-    - ✓ escaped characters and generic character types
-    - ✓ character ranges (`[]`)
-    - ✓ non-capturing groups
-    - ✓ capturing groups, backreferences, subroutines (all by index, relative index and name)
-    - ✓ simple assertions (`\A`, `\z`, `\Z`, `\b`, `\B`, `^`, `$`)
-    - ✓ lookaheads and lookbehinds
-    - ✓ atomic groups
-    - ✓ lazy repetitions
-    - ✓ conditional expressions
-    - ✓ internal and pattern options setting
-    - ✓ comments
+    - ✅ sequences, alternations (`|`), repetitions (`*`,`+`,`{n}`, `{min,}`, `{min,max}`), optional matches (`?`)
+    - ✅ escaped characters and generic character types
+    - ✅ character ranges (`[]`)
+    - ✅ non-capturing groups
+    - ✅ capturing groups, backreferences, subroutines (all by index, relative index and name)
+    - ✅ simple assertions (`\A`, `\z`, `\Z`, `\b`, `\B`, `^`, `$`)
+    - ✅ lookaheads and lookbehinds
+    - ✅ atomic groups
+    - ✅ lazy repetitions
+    - ✅ conditional expressions
+    - ✅ internal and pattern options setting
+    - ✅ comments
 !!! warning 
     PCRE functionality that is currently not supported:
-    - ✕ Capture groups in lookbehinds.
-    - ✕ Lookaheads within lookbehinds.
-    - ✕ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \K
+    - ❌ Capture groups in lookbehinds.
+    - ❌ Lookaheads within lookbehinds.
+    - ❌ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \K
 ```@setup session
 using CombinedParsers
 using CombinedParsers.Regexp
