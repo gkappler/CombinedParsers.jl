@@ -14,10 +14,12 @@ module CombinedParsers
 import Base: (^), (*), (~), (/), (|), (!), cat, get, prevind, nextind
 using Nullables
 using AutoHashEquals
+import Base: ==, hash
 
 using TextParse
 import TextParse: AbstractToken
-import Base: ==, hash
+export Numeric
+Numeric = TextParse.Numeric
 
 export CombinedParser
 export result_type
@@ -78,7 +80,7 @@ result_type(x::Union{ParserTypes,AbstractToken}) = result_type(typeof(x))
 result_type(::Type{<:AbstractToken{T}}) where T = T
 
 
-
+export _iterate
 """
     _iterate(parser, sequence, till::Int, posi::Int[, nothing])
 
@@ -2787,10 +2789,6 @@ include("match.jl")
 
 
 
-export _iterate
-
-export Numeric
-Numeric = TextParse.Numeric
 
 deepmap_parser(f::Function,mem::AbstractDict,x::Numeric,a...; kw...) = x
 
