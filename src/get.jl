@@ -275,6 +275,7 @@ function _string(io::IO,x::Constant)
     print(io,")")
 end
 _string(io::IO,x::Function) = print(io,x)
+_string(io::IO,x::Type) = print(io,x)
 children(x::Transformation) = children(x.parser)
 function print_constructor(io::IO,x::Transformation)
     print_constructor(io,x.parser)
@@ -286,11 +287,19 @@ end
 """
     Base.get(parser::Transformation{<:Function}, a...)
 
-Function call `parser.transform(get(parser.parser,a...),i)`.
+Function call `parser.transform(get(parser.parser,a...))`.
 """
 function Base.get(parser::Transformation{<:Function}, sequence, till, after, i, state)
     v = get(parser.parser, sequence, till, after, i, state)
-    parser.transform(v,i)
+        parser.transform(v)
+"""
+    Base.get(parser::Transformation{<:Type}, a...)
+
+Function call `parser.transform(get(parser.parser,a...))`.
+"""
+function Base.get(parser::Transformation{<:Type}, sequence, till, after, i, state)
+    v = get(parser.parser, sequence, till, after, i, state)
+    parser.transform(v)
 end
 
 export IndexAt
@@ -331,25 +340,8 @@ function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::Abstract
     end
 end
 
-export map,map_at 
-"""
-    map_at(f::Function, p, a...)
-    map_at(f::Function, Tc::Type, p, a...)
 
-Parser transforming result of a wrapped parser. 
-`a...` is passed as additional arguments to `f`.
 
-See also: [`map`](@ref), [`Transformation`](@ref)
-"""
-function map_at(f::Function, Tc::Type, p, a...)
-    T = infer_result_type(f,Tc,p,"call map_at(function,type,parts...)",Int,typeof.(a)...)
-    Transformation{Tc}((v,i) -> (f((v), i, a...)), p)
-end
-function map_at(f::Function, p, a...)
-    T = infer_result_type(f,Any,p,"call map(function,parts...)",Int,typeof.(a)...)
-    Transformation{T}((v,i) -> (f(v, i, a...)), p)
-end
-@deprecate instance_at(a...) map_at(a...)
 
 export Index
 Index = map_at((v,i) -> i, Always())
@@ -364,7 +356,7 @@ See also: [`map_at`](@ref), [`Transformation`](@ref)
 """
 function Base.map(f::Function, p::AbstractToken, a...)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{T}((v,i) -> (f(v, a...)), p)
+    Transformation{T}(isempty(a) ? f : v -> f(v, a...), p)
 end
 
 """
@@ -375,7 +367,7 @@ Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...
 See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
 """
 function Base.map(Tc::Type, p::AbstractToken, a...)
-    Transformation{Tc}((v,i) -> Tc(a..., v), p)
+    Transformation{Tc}(isempty(a) ? Tc : v -> Tc(a..., v), p)
 end
 
 """
@@ -398,14 +390,14 @@ end
 ##instance(Tc::Type, p::ParserTypes, a...)
 ##    instance(Tc::Type, p::ParserTypes)
 function instance(Tc::Type, p::ParserTypes, a...)
-    Transformation{Tc}((v,i) -> Tc(a..., v), p)
+    Transformation{Tc}((v) -> Tc(a..., v), p)
 end
 function instance(Tc::Type, p::ParserTypes)
-    Transformation{Tc}((v,i) -> convert(Tc,v), p)
+    Transformation{Tc}((v) -> convert(Tc,v), p)
 end
 function Base.map(f::Function, Tc::Type, p::AbstractToken, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{Tc}((v,i) -> (f(v, a...)), p)
+    Transformation{Tc}(isempty(a) ? f : v -> f(v, a...), p)
 end
 Base.map(f::typeof(identity), p::AbstractToken) = p
 

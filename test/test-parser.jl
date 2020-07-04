@@ -57,8 +57,8 @@ end
 end
 
 attribute_parser =
-    map_at(
-        (v,i) -> (lowercase(v[1]) => "$(v[5])")::Pair{String,String},
+    map(
+        (v) -> (lowercase(v[1]) => "$(v[5])")::Pair{String,String},
         Sequence(
             !Repeat1(word), whitespace_maybe,"=", whitespace_maybe,
             Either(Sequence(2,"\"", Repeat_until(AnyChar(),"\"",wrap=JoinSubstring)),
@@ -88,7 +88,7 @@ function html(inner::Function, T::Type, tags::CombinedParser, attrs_parser=attri
     A = eltype(result_type(attrs_parser))
     function nested_html(x,)
         (tag,attrs) = x
-        Either{Any}(map_at("/>") do v,i
+        Either{Any}(map(parser("/>")) do v
                     (tag=tag, attrs=attrs, children=T[])
                     end,
                     Sequence(">",
