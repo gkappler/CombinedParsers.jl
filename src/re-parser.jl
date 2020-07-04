@@ -65,12 +65,12 @@ bracket_range(start) =
         skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
         bracket_char) do v
             if v[1] isa WithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
-                cs = convert(Char,v[1]):convert(Char,v[5])
-                CharIn(unique([ ( lowercase(x) for x in cs )...,
-                                ( uppercase(x) for x in cs )... ]))
+              cs = convert(Char,v[1]):convert(Char,v[5])
+              CharIn("$(v[1])-$(v[5])",unique([ ( lowercase(x) for x in cs )...,
+                                                ( uppercase(x) for x in cs )... ]))
             else
                 cs = convert(Char,v[1]):convert(Char,v[5])
-                CharIn(cs)
+                CharIn("$(v[1])-$(v[5])",cs)
             end
         end)
 
