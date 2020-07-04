@@ -327,12 +327,20 @@ function _iterate(parser::Transformation, sequence, till, posi, next_i, state)
     r = _iterate(parser.parser, sequence, till, posi, next_i, state )
 end
 
-function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...)
+"""
+    infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...; throw_empty_union=true)
+
+Used by Parser Transformations to infer result type of a parser.
+Throws error if type inference fails, if throw_empty_union=true.
+"""
+function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...; throw_empty_union=true)
     Ts = Base.return_types(f, tuple(result_type(p),ts...))
     isempty(Ts) && error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     T = first(Ts)
-    if T <: Tc
+    if throw_empty_union && T <: Union{}
+        error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
+    elseif T <: Tc
         T
     else
         @warn "type mismatch $f$(tuple(result_type(p),ts...))::$T<:$Tc"
@@ -354,8 +362,10 @@ Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)
 
 See also: [`map_at`](@ref), [`Transformation`](@ref)
 """
-function Base.map(f::Function, p::AbstractToken, a...)
-    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...)
+function Base.map(f::Function, p::AbstractToken, a...;
+                  throw_empty_union=true)
+    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...;
+                          throw_empty_union=throw_empty_union)
     Transformation{T}(isempty(a) ? f : v -> f(v, a...), p)
 end
 

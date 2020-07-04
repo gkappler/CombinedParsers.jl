@@ -196,7 +196,7 @@ word_boundary = Either(
         '\\',
         Either(
             'A' => AtStart(),
-            map_at('G') do v,i
+            map(parser('G')) do v
             @warn "limited \\G support: ignoring pcre2 startoffset"
             AtStart()
             end,
@@ -423,7 +423,14 @@ push!(repeatable,bracket);
     end
 end;
 push!(pattern, quantified)
-pushfirst!(pattern,map(parser("\\K")) do v throw(UnsupportedError(v)); end);
+throw_unsupported(p) =
+    map(v -> throw(UnsupportedError(v)), p;
+        throw_empty_union=false)
+throw_unsupported(p,s) =
+    map(v -> throw(UnsupportedError(s)), p;
+        throw_empty_union=false)
+
+pushfirst!(pattern,throw_unsupported(parser("\\K")));
 
 # Sequences and Alternation
 @with_names sequence = Repeat(Sequence(
@@ -578,14 +585,23 @@ push!(repeatable,resetting_capture_numbers);
 
 
 @with_names condition = Either(
-    Sequence(2,'(',Either(integer,
-                  "DEFINE",
-                          Sequence('R',Either(integer,Sequence(2,'&',name),Always())) do v
-                          throw(UnsupportedError("checking for pattern recursion"))
-                          end,
-                  Sequence(2,'\'',name,'\''),
-                  Sequence(2,'<',name,'>'),
-                  name),
+    Sequence(
+        2,
+        '(',
+        Either(
+            integer,
+            "DEFINE",
+            throw_unsupported(
+                Sequence(
+                    'R',
+                    Either(
+                        integer,
+                        Sequence(2,'&',name),
+                        Always())), 
+                "checking for pattern recursion"),
+            Sequence(2,'\'',name,'\''),
+            Sequence(2,'<',name,'>'),
+            name),
         ')'),
     lookbehind,
     lookahead)
@@ -634,15 +650,27 @@ push!(repeatable,sequence_with_options);
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC27
 @with_names backtrack_control = Sequence(
     2,"(*",
-    Either(Sequence("ACCEPT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("ACCEPT")); end,
+    Either(
+        throw_unsupported(
+            Sequence("ACCEPT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            "ACCEPT"),
         Sequence(Either("FAIL","F"),Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; Never(); end,
-        Sequence("PRUNE",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("PRUNE")); end,
-        Sequence("SKIP",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("SKIP")); end,
+        throw_unsupported(
+            Sequence("PRUNE",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            "PRUNE"),
+        throw_unsupported(
+            Sequence("SKIP",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            "SKIP"),
         Sequence(Optional(parser("MARK")),':',
-            JoinSubstring(Repeat_stop(AnyChar(),parser(')')))) do v; with_log(v[3],Always()); end,
-        Sequence("COMMIT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("COMMIT")); end,
-        Sequence("THEN",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; throw(UnsupportedError("THEN")); end,
-        ),
+                 JoinSubstring(Repeat_stop(AnyChar(),parser(')')))) do v;
+        with_log(v[3],Always());
+        end,
+        throw_unsupported(
+            Sequence("COMMIT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            "COMMIT"),
+        throw_unsupported(
+            Sequence("THEN",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            "THEN")),
     ")");
 push!(pattern,backtrack_control);
 
