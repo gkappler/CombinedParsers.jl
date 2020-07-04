@@ -77,7 +77,7 @@ end;
 nothing # hide
 ```
 The [`@syntax`](@ref) definition in 5,5 lines is sufficient for parsing and evaluating arithmetics:
-[`Base.join`](@ref)`(x,infix; infix=:prefix)` is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
+[`Base.join`](@ref)`(x,infix; infix=:prefix)` is shorthand for [`Sequence`](@ref)`(x ,`[`Repeat`](@ref)`( infix * x  ))`,
 and `f |> parser` is shorthand for [`map`](@ref)`(f,parser)`.
 That's all! [`@syntax`](@ref) registers a `@term_string` macro for parsing and transforming:
 ```@repl session
