@@ -291,7 +291,8 @@ Function call `parser.transform(get(parser.parser,a...))`.
 """
 function Base.get(parser::Transformation{<:Function}, sequence, till, after, i, state)
     v = get(parser.parser, sequence, till, after, i, state)
-        parser.transform(v)
+    parser.transform(v)
+end
 """
     Base.get(parser::Transformation{<:Type}, a...)
 
@@ -351,8 +352,8 @@ end
 
 
 
-export Index
-Index = map_at((v,i) -> i, Always())
+# export Index
+# Index = map_at((v,i) -> i, Always())
 
 import Base: map
 """
