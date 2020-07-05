@@ -20,43 +20,23 @@ using CombinedParsers.Regexp
 import CombinedParsers.Regexp: word, words
 import CombinedParsers.Regexp: whitespace_horizontal, whitespace_maybe, newline
 # A name can be written in terms of these building blocks, 
-@syntax for name in texts
-    examples = (
-        "Lieber Lorenz,"    => (greeting="Lieber", lastname = missing, name="Lorenz"),
-        "Namen, Vornamen"   => (greeting=missing, lastname = "Namen", name="Vornamen"),
-        "Vornamen    Namen" => (greeting=missing, lastname = "Namen", name="Vornamen")
+@syntax name = 
+    Either( 
+        Sequence(
+            :lastname => word,
+            re" *, *", # comma separating preceding lastname
+            :name     => words),
+        Sequence(
+            v -> (lastname = v[3], name= v[1]),
+            words, *(" "), word)
     )
-    Sequence(
-        whitespace_maybe,
-        !Either(
-            "Hi",re"Lieber?", re"Sehr geehrter?",
-            "Herzliche Grüße,\n*",
-            "" => missing),
-        whitespace_maybe,
-        Either( 
-            Sequence(
-                :lastname => word,
-                re" *, *", # comma separating preceding lastname
-                :name     => words),
-            Sequence(
-                :name     => words,
-                *(" "),     # spaces
-                :lastname => word)
-        ) ## todo: remove :person, splice NamedTuple
-    ) do v
-        ( greeting = v[2],
-          name = v[4].name,
-          lastname = v[4].lastname
-          )
-    end
-end;
 
 # `CombinedParsers.@syntax` defines a string macro `name""` for using the syntax parser in your Julia program:
 # See also [`@syntax`](@ref)
 name"Person, Called"
 
 # `CombinedParsers.@syntax` also defines a syntax parser function `name()` to use in your Julia program:
-name("Best,"*whitespace_maybe, "Best, yours truly")
+(re"Best, *" * name)("Best, yours truly")
 
 
 # ## Addresses
