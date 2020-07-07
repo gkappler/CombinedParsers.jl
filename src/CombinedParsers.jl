@@ -2756,6 +2756,7 @@ _optimize(x,a...) = x
 deepmap_parser(::typeof(_optimize),dict::AbstractDict,x::SideeffectParser) = x.parser
 
 include("memoize.jl")
+include("caseless.jl")
 end # module
 
 
