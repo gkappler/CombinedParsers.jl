@@ -318,6 +318,10 @@ See [`regex_string`](@ref)
 """
 regex_inner(x::AbstractToken) = "$(typeof(x))"
 
+regex_prefix(x::AbstractString) = ""
+regex_suffix(x::AbstractString) = ""
+regex_inner(x::AbstractString) = ""
+
 regex_prefix(x::CombinedParser) = ""
 regex_suffix(x::CombinedParser) = ""
 regex_inner(x::CombinedParser) = ""
