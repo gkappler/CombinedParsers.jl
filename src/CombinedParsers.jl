@@ -2301,7 +2301,6 @@ defaultvalue(V::Type{<:CombinedParser}) = Always()
 
 
 
-using Tries 
 export alt, Either
 """
     Either(parsers...)
@@ -2324,27 +2323,10 @@ julia> parse("a" | "bc","bc")
 """
 struct Either{Ps,S,T} <: CombinedParser{S,T}
     options::Ps
-    Either{T}(p::P) where {T,P<:Union{Vector,Tuple,Trie}} =
+    Either{T}(p::P) where {T,P} =
         new{P,either_state_type(P),T}(p)
     Either{T}(p...) where {T} =
         new{Vector{Any},either_state_type(CombinedParser),T}(Any[parser.(p)...])
-    function Either(x::Vector{<:AbstractString})
-        P = Trie{Char,Nothing}
-        r = P()
-        for e in x
-            r[e...] = nothing
-        end
-        new{P,either_state_type(P),String}(r)
-    end
-
-    function Either(x::Dict)
-        P = Trie{Char,valtype(x)}
-        r=P()
-        for (e,v) in pairs(x)
-            r[e...] = v
-        end
-        new{P,either_state_type(P),valtype(x)}(r)
-    end
 end
 Either(x::Vector) = Either(x...)
 function Either(x...; kw...)
@@ -2360,7 +2342,6 @@ either_state_type(ts::Type{CombinedParser}) = Tuple{Int,Any}
 either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
 either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
 either_state_type(ts...) = Tuple{Int,promote_type(state_type.(ts))}
-either_state_type(T::Type{<:Trie}) = NCodeunitsState{T}
 @inline with_state!(x::Nothing,k::Int,s) = (k,s)
 function promote_type_union(Ts...)
     T = promote_type(Ts...)
@@ -2706,44 +2687,7 @@ end
     R
 end
 
-import Tries: nodes, AbstractTrie
-"""
-    _iterate(p::Trie{Char}, str, till, posi, next_i, ::Nothing)
-
-Match char path in `p` greedily, recording shorter matches in state.
-"""
-@inline function _iterate(p::Union{Trie{Char},SubTrie{Char}}, str, till, posi, next_i, state::Nothing)
-    ni = ni_ = posi
-    st = st_ = p
-    while st !== nothing && ni <= till
-        @inbounds c, ni = iterate(str,ni)
-        @inbounds st = get( Tries.nodes(st),c, nothing)
-        st === nothing && break
-        if get(st) !== missing
-            ni_ = ni
-            st_ = st
-        end
-    end
-    if get(st_) !== missing
-        return ni_, NCodeunitsState(ni_-posi,st_)
-    else
-        return nothing
-    end
-end
-
-@inline function _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state)
-    _iterate(p, str, prevind(str,next_i,2), posi, posi, nothing)
-end
-
-function _iterate(p::Either{<:Trie}, str, till, posi, next_i, state)
-    _iterate(p.options, str, till, posi, next_i, state)
-end
-
-@inline nextind(str,i::Int,parser::Either{<:Trie},x::NCodeunitsState)  = i+x.nc
-@inline prevind(str,i::Int,parser::Either{<:Trie},x::NCodeunitsState)  = i-x.nc
-
-children(x::Either{<:Trie}) =
-    children(x.options)
+include("trie.jl")
 
 export Atomic
 """
