@@ -850,10 +850,10 @@ with_log(s::AbstractString,p_, delta_char::Integer=5;nomatch=false) =
 
 function log_effect(s,start,after,state,log,delta)
     if state === nothing
-        printstyled("no match ",
+        printstyled("no match @$(start)-$(after) ",
                     bold=true,color=:underline)
     else
-        printstyled("   match ";
+        printstyled("   match @$(start)-$(after) ";
                     bold=true,color=:green)
     end
     print(log)
@@ -864,13 +864,16 @@ function log_effect(s,start,after,state,log,delta)
     else
         "",""
     end
+    if lastindex(matched)>100
+        matched=matched[1:nextind(matched,1,20)]*"[...]"*matched[prevind(matched,end,20):end]
+    end
     printstyled(before)
     printstyled(matched; bold=true,color=:green)
     if state === nothing 
-        printstyled(escape_string(s[after:min(end,after+delta)]),
+        printstyled(escape_string(s[after:min(end,nextind(s,after,delta))]),
                     bold=true,color=:underline)
-    else
-        printstyled(escape_string(s[after:min(end,after+delta)]),
+    elseif after<=lastindex(s)
+        printstyled(escape_string(s[after:min(end,nextind(s,after,delta))]),
                     color=:yellow)
     end
     println()
