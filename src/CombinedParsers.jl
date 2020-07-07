@@ -2310,8 +2310,6 @@ defaultvalue(V::Type{<:CombinedParser}) = Always()
 
 export alt, Either
 """
-    Either(parsers...)
-    
 Parser that tries matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
 
 This parser has no custom `==` and `hash` methods because it can recurse.
@@ -2330,74 +2328,27 @@ julia> parse("a" | "bc","bc")
 """
 struct Either{Ps,S,T} <: CombinedParser{S,T}
     options::Ps
-    Either{T}(p::P) where {T,P} =
-        new{P,either_state_type(P),T}(p)
-    Either{T}(p...) where {T} =
-        new{Vector{Any},either_state_type(CombinedParser),T}(Any[parser.(p)...])
+    Either{S,T}(p::P) where {S,T,P} =
+        new{P,S,T}(p)
 end
-Either(x::Vector) = Either(x...)
+Either(p::P) where P = 
+    Either{either_state_type(p),either_result_type(p)}(p)
+Either{T}(p) where T = 
+    Either{either_state_type(typeof(p)),T}(p)
+
+Either{T}(p...) where {T} =
+    Either{either_state_type(Vector{Any}),T}(Any[parser.(p)...])
 function Either(x...; kw...)
-    parts = [ (parser(y) for y in x)..., (with_name(k,v) for (k,v) in kw)...  ]
-    T = either_types(typeof.(parts))
-    Either{T}(parts)
+    Either(Any[ (parser(y) for y in x)..., (with_name(k,v) for (k,v) in kw)...  ])
 end
-function Either(T::Type, x...; kw...)
-    instance(T,Either(x...; kw...))
-end
-either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
-either_state_type(ts::Type{CombinedParser}) = Tuple{Int,Any}
-either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
-either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
-either_state_type(ts...) = Tuple{Int,promote_type(state_type.(ts))}
-@inline with_state!(x::Nothing,k::Int,s) = (k,s)
-function promote_type_union(Ts...)
-    T = promote_type(Ts...)
-    Any <: T ? Union{Ts...} : T
-end
-
-"return tuple(state_type,result_type)"
-function either_types(ts)
-    promote_type_union(result_type.(ts)...)
-end
-
-children(x::Either) = x.options
-regex_string(x::Either) = join(regex_string.(x.options),"|")
-regex_prefix(x::Either) = "|"
-regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
-regex_suffix(x::Either) = "..."
-print_constructor(io::IO,x::Either) = print(io,"Either")
-
-
-
-
 """
     Either(transform::Function, x::Vararg)
 
 abbreviation for `map(transform, Either(x...))`.
 """
-function Either(transform::Function, x::Vararg)
-    map(transform, Either(x...))
+function Either(transform::Function, x...; kw...)
+    map(transform, Either(x...;kw...))
 end
-
-function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
-    if haskey(mem,x)
-        mem[x]
-    else
-        mem[x] = r = Either{result_type(x)}(Any[])
-        ## f(x,a...)
-        for p in x.options
-            push!(r,deepmap_parser(f,mem,p,a...;kw...))
-        end
-        r
-    end
-end
-
-function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Tuple},a...;kw...)
-    get!(mem,x) do
-        Either{result_type(x)}(tuple( (deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... ))
-    end
-end
-
 
 export sEither
 sEither_(x::Either) = sEither_(x.options...)
@@ -2434,6 +2385,50 @@ See also [`Either`](@ref)
 function sEither(x...)
     opts = collect(sEither_(x...))
     length(opts)==1 ? opts[1] : Either(opts...)
+end
+
+
+either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
+either_state_type(ts::Type{<:CombinedParser}) = Tuple{Int,Any}
+either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
+either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
+either_state_type(ts::Type...) = Tuple{Int,promote_type(state_type.(ts))}
+either_state_type(x) = either_state_type(typeof(x))
+@inline with_state!(x::Nothing,k::Int,s) = (k,s)
+function promote_type_union(Ts...)
+    T = promote_type(Ts...)
+    Any <: T ? Union{Ts...} : T
+end
+
+"return tuple(state_type,result_type)"
+function either_result_type(ts)
+    promote_type_union(result_type.(ts)...)
+end
+
+children(x::Either) = x.options
+regex_string(x::Either) = join(regex_string.(x.options),"|")
+regex_prefix(x::Either) = "|"
+regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
+regex_suffix(x::Either) = "..."
+print_constructor(io::IO,x::Either) = print(io,"Either")
+
+function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
+    if haskey(mem,x)
+        mem[x]
+    else
+        mem[x] = r = Either{result_type(x)}(Any[])
+        ## f(x,a...)
+        for p in x.options
+            push!(r,deepmap_parser(f,mem,p,a...;kw...))
+        end
+        r
+    end
+end
+
+function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Tuple},a...;kw...)
+    get!(mem,x) do
+        Either{result_type(x)}(tuple( (deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... ))
+    end
 end
 
 
