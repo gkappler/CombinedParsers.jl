@@ -12,6 +12,12 @@ end
     _iterate(parser.parser, sequence,till,posi,after,state)
 end
 
+deepmap_parser(f::Function,mem::AbstractDict,x::MemoizingParser,a...;kw...) =
+    get!(mem,x) do
+        MemoizingParser(deepmap_parser(f,mem,x.parser,a...;kw...))
+    end
+
+
 export WithMemory
 """
 A lazy element transformation type (e.g. AbstractString), 
@@ -29,7 +35,7 @@ struct WithMemory{S,M} <: AbstractString
     end
 end
 function WithMemory(x)
-    WithMemory(x,IdDict())
+    WithMemory(x,Dict())
 end
 Base.show(io::IO, x::WithMemory) =
     print(io,x.x)
