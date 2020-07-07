@@ -176,6 +176,8 @@ NCodeunitsState(posi::Int,after::Int,state) =
     after, NCodeunitsState(after-posi,state)
 @inline NCodeunitsState{S}(posi::Int,after::Int,state) where S =
     after, NCodeunitsState{S}(after-posi,state)
+Base.convert(::Type{NCodeunitsState{T}}, x::NCodeunitsState{S}) where {S,T} =
+    NCodeunitsState{T}(x.nc, convert(T,x.state))
 
 @inline function nextind(str,i::Int,parser,x::NCodeunitsState)
     i+x.nc
