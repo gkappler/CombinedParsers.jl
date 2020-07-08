@@ -246,7 +246,7 @@ Used for [`log_names`](@ref).
 
 Calls `deepmap_parser(f,IdDict(),x,a...)`.
 """
-deepmap_parser(f::Function,x::CombinedParser,a...;kw...) =
+deepmap_parser(f::Function,x::ParserTypes,a...;kw...) =
     deepmap_parser(f,IdDict(),x,a...;kw...)
 
 """
