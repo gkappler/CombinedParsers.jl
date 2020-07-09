@@ -14,31 +14,30 @@ log conveniently for debugging, and let Julia compile your parser for performanc
 > `CombinedParsers.jl` is currently an α release.	The first official released is prepared for JuliaCon2020.
 
 ## Package Features
-
 - Speed
-  - [write parsers faster than `Base.PCRE`](man/pcre-compliance.md), optimized by the Julia compiler for parametric parser and state types.
-  - `@generated function`s, trie-based scanning ([example](man/example-either-trie.md)), compile with your custom parsing algorithm ([example](man/example-palindromes.md))
+  - [write parsers faster than `Base.PCRE`](https://gkappler.github.io/CombinedParsers.jl/dev/man/pcre-compliance), optimized by the Julia compiler for parametric parser and state types.
+  - `@generated function`s, trie-based scanning ([example](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-either-trie.md)), compile with your custom parsing algorithm ([example](man/example-palindromes))
   - (planned: memoization, lazy transformations)
 - Simplicity
-  - Clear [`@syntax`](@ref) integrates [`map`](@ref) transformations with Julia [`result_type`](@ref) inference.
+  - Clear `@syntax` integrates `map` transformations with Julia `result_type` inference.
   - Define without redundancy: parser, memory representation, and instance construction.
-    When solely the parser is defined, Julia infers [`result_type`](@ref)(parser) and defines memory layout, 
-    and constructors are compiled for the parsing state from [`Transformation`](@ref)s.
-  - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides clearly layed out printing in the REPL. [`with_log`](@ref) provides colored logging of the parsing [`with_name`](@ref)s.
+    When solely the parser is defined, Julia infers `result_type`(parser) and defines memory layout, 
+    and constructors are compiled for the parsing state from `Transformation`s.
+  - [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides clearly layed out printing in the REPL. `with_log` provides colored logging of the parsing `with_name`s.
 - Interoperability
   - [TextParse.jl](https://github.com/queryverse/TextParse.jl): existing `TextParse.AbstractToken` implementations can be used with CombinedParsers. `CombinedParser` provide `TextParse.tryparsenext` and can be used e.g. in CSV.jl.
-  - Pure Julia regular expression parsers are provided with the [`@re_str`](@ref) macro, a plug-in replacement for `Base.@r_str`.
-    Tested on the [PCRE pattern test set](man/pcre-compliance.md).
+  - Pure Julia regular expression parsers are provided with the `@re_str` macro, a plug-in replacement for `Base.@r_str`.
+    Tested on the [PCRE pattern test set](https://gkappler.github.io/CombinedParsers.jl/dev/man/pcre-compliance).
 - Generality
-  - All valid parsings can be [`Base.iterate`](@ref)d lazily.
-  - Higher-order parsers depending on the parsing state allow for not context-free parsers ([`after`](@ref)).
+  - All valid parsings can be `Base.iterate`d lazily.
+  - Higher-order parsers depending on the parsing state allow for not context-free parsers (`after`).
   - can process UTF8 strings or any sequence type supporting `getindex`, `nextind`, `prevind` methods.
 
 
 ## Getting started
-- The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
-The [User guide](man/user.md) provides a summary of CombinedParsers types and constructors.
-Some examples of packages using CombinedParsers can be found on the [Examples](@ref) page.
+- The Overview provides a tutorial explaining how to get started using CombinedParsers.
+The [User guide](https://gkappler.github.io/CombinedParsers.jl/dev/man/user) provides a summary of CombinedParsers types and constructors.
+Some examples of packages using CombinedParsers can be found on the Examples page.
 See the [Index](@ref main-index) for the complete list of documented functions and types.
 
 Install with
@@ -49,7 +48,7 @@ Install with
 ### Example: rational numbers arithmetics
 Parsing is reading and transforming a sequence of characters.
 `CombinedParsers` provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
-Combinator constructors are discussed in the [user guide](man/user.md).
+Combinator constructors are discussed in the [user guide](https://gkappler.github.io/CombinedParsers.jl/dev/man/user).
 ```julia
 using CombinedParsers
 using TextParse
@@ -57,7 +56,7 @@ using TextParse
 
 This example reads and evaluates arithmetical terms for rational numbers.
 The following defines an evaluating parser for rational number terms as sequences of subterms interleaved with operators.
-Sub-terms are [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
+Sub-terms are `Either` fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
 or a subterm is written as parentheses around a nested term:
 ```julia
 @syntax subterm = Either{Rational{Int}}(TextParse.Numeric(Int));
@@ -67,7 +66,7 @@ or a subterm is written as parentheses around a nested term:
     Sequence(2,'(',term,')')
 end;
 ```
-For parsing, [`@syntax`](@ref) registers a `@term_string` macro for parsing and transforming.
+For parsing, `@syntax` registers a `@term_string` macro for parsing and transforming.
 ```julia
 julia> term"(1+2)/5"
 3//5
@@ -86,10 +85,10 @@ julia> term("1/((1+2)*4+3*(5*2))",log = [:parenthesis])
 [Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
 
 This `CombinedParser` definition in 5,5 lines is sufficient for doing arithmetics:
-[`Base.join`](@ref)(x,infix; infix=:prefix) is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
-and `f |> parser` is shorthand for [`map`](@ref)`(f,parser)`.
+`Base.join`(x,infix; infix=:prefix) is shorthand for `x ``*`` ``Repeat``( infix * x  )`,
+and `f |> parser` is shorthand for `map``(f,parser)`.
 
-Note: The `evaluate` function definition is detailed in [the full example](man/example-arithmetic.md).
+Note: The `evaluate` function definition is detailed in [the full example](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-arithmetic).
 ```julia
 julia> evaluate( (0, [ ('+',1), ('-',2) ]) )
 -1//1
@@ -162,7 +161,7 @@ and by providing a method for `TextParse.tryparsenext`,
 
 ### Inspirations
 - The work was strongly inspired by the great Scala [fastparse](https://github.com/lihaoyi/fastparse) package, and also the [elm parser](https://package.elm-lang.org/packages/elm/parser/latest/).
-- [Parsers.jl](https://github.com/JuliaData/Parsers.jl), a collection of parsers for date and primitive types, inspired the [`parse`](@ref) methods.
+- [Parsers.jl](https://github.com/JuliaData/Parsers.jl), a collection of parsers for date and primitive types, inspired the `parse` methods.
 - [Automa.jl](https://github.com/BioJulia/Automa.jl), a Julia package for text validation, parsing, and tokenizing based on state machine compiler.  The package compiles deterministic finite automata.  (Currently there is no inter-operation possible, because in `Automa` processing of parsed tokens is done with actions and UTF8 support is lacking).
 - [ParserCombinator.jl](https://github.com/andrewcooke/ParserCombinator.jl) was a great inspiration.
   Yet I decided for a new design with a focus on transformations and type inference with parametric types, instead of basing this work off `ParserCombinator`, written before 2016 (and fixed for Julia 1.0 in 2018).
