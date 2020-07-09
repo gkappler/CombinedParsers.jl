@@ -12,13 +12,13 @@ BenchmarkTools.Trial:
   memory estimate:  256 bytes
   allocs estimate:  5
   --------------
-  minimum time:     2.080 μs (0.00% GC)
-  median time:      2.110 μs (0.00% GC)
-  mean time:        2.160 μs (0.00% GC)
-  maximum time:     7.201 μs (0.00% GC)
+  minimum time:     1.938 μs (0.00% GC)
+  median time:      1.973 μs (0.00% GC)
+  mean time:        2.024 μs (0.00% GC)
+  maximum time:     5.313 μs (0.00% GC)
   --------------
   samples:          10000
-  evals/sample:     9</code></pre><p>A optimized state-machine parser will perform much better.</p><p>TODO: Benchmark Automa.jl here</p><p><code>CombinedParsers</code> does not use state machines, but provides fast <code>_iterate</code> implementation for <code>Either{Trie{Char}}</code>, that is constructed with <code>Either(::Vector{&lt;:AbstractString})</code></p><pre><code class="language-julia-repl">julia&gt; using CombinedParsers
+  evals/sample:     10</code></pre><p>A optimized state-machine parser will perform much better.</p><p>TODO: Benchmark Automa.jl here</p><p><code>CombinedParsers</code> does not use state machines, but provides fast <code>_iterate</code> implementation for <code>Either{Trie{Char}}</code>, that is constructed with <code>Either(::Vector{&lt;:AbstractString})</code></p><pre><code class="language-julia-repl">julia&gt; using CombinedParsers
 
 julia&gt; pc = Either(s);
 
@@ -27,14 +27,14 @@ BenchmarkTools.Trial:
   memory estimate:  272 bytes
   allocs estimate:  8
   --------------
-  minimum time:     187.876 ns (0.00% GC)
-  median time:      200.320 ns (0.00% GC)
-  mean time:        253.494 ns (18.57% GC)
-  maximum time:     12.454 μs (97.78% GC)
+  minimum time:     177.177 ns (0.00% GC)
+  median time:      187.692 ns (0.00% GC)
+  mean time:        240.059 ns (19.35% GC)
+  maximum time:     11.327 μs (98.10% GC)
   --------------
   samples:          10000
-  evals/sample:     685</code></pre><p>Note that <code>pc</code> does not capture the result by default with <code>parse</code>.</p><pre><code class="language-julia-repl">julia&gt; parse(!pc,s[end])
-&quot;peVyt3K2qv&quot;</code></pre><p>For large word collections, PCRE fails</p><pre><code class="language-julia-repl">julia&gt; s = [ randstring(10) for _ in 1:10000 ];
+  evals/sample:     728</code></pre><p>Note that <code>pc</code> does not capture the result by default with <code>parse</code>.</p><pre><code class="language-julia-repl">julia&gt; parse(!pc,s[end])
+&quot;TkqM6uPjsY&quot;</code></pre><p>For large word collections, PCRE fails</p><pre><code class="language-julia-repl">julia&gt; s = [ randstring(10) for _ in 1:10000 ];
 
 julia&gt; re = Regex(join(s,&quot;|&quot;));
 ERROR: PCRE compilation error: regular expression is too large at offset 109999</code></pre><p><code>CombinedParsers</code> displays good time complexity.</p><pre><code class="language-julia-repl">julia&gt; pc = Either(s);
@@ -46,10 +46,10 @@ BenchmarkTools.Trial:
   memory estimate:  272 bytes
   allocs estimate:  8
   --------------
-  minimum time:     176.785 ns (0.00% GC)
-  median time:      192.376 ns (0.00% GC)
-  mean time:        244.612 ns (17.94% GC)
-  maximum time:     13.556 μs (98.27% GC)
+  minimum time:     179.370 ns (0.00% GC)
+  median time:      190.788 ns (0.00% GC)
+  mean time:        239.918 ns (17.67% GC)
+  maximum time:     12.300 μs (98.14% GC)
   --------------
   samples:          10000
-  evals/sample:     685</code></pre><p><code>Either{Trie{Char}}</code> can be used to perform fast text search in Julia.</p><h3 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h3><ul><li>Flesh out text search example.</li><li>Parallelization</li><li>Relate to Aho-Corasick algorithm.</li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../user/">« User Guide</a><a class="docs-footer-nextpage" href="../pcre-compliance/">PCRE Compliance »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 9 July 2020 23:30">Thursday 9 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  evals/sample:     705</code></pre><p><code>Either{Trie{Char}}</code> can be used to perform fast text search in Julia.</p><h3 id="Next-steps"><a class="docs-heading-anchor" href="#Next-steps">Next steps</a><a id="Next-steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-steps" title="Permalink"></a></h3><ul><li>Flesh out text search example.</li><li>Parallelization</li><li>Relate to Aho-Corasick algorithm.</li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../user/">« User Guide</a><a class="docs-footer-nextpage" href="../pcre-compliance/">PCRE Compliance »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 9 July 2020 23:36">Thursday 9 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
