@@ -16,7 +16,7 @@ log conveniently for debugging, and let Julia compile your parser for performanc
 ## Package Features
 - Speed
   - [write parsers faster than `Base.PCRE`](https://gkappler.github.io/CombinedParsers.jl/dev/man/pcre-compliance), optimized by the Julia compiler for parametric parser and state types.
-  - `@generated function`s, trie-based scanning ([example](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-either-trie.md)), compile with your custom parsing algorithm ([example](man/example-palindromes))
+  - `@generated function`s, trie-based scanning ([example](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-either-trie)), compile with your custom parsing algorithm ([example](man/example-palindromes))
   - (planned: memoization, lazy transformations)
 - Simplicity
   - Clear `@syntax` integrates `map` transformations with Julia `result_type` inference.
