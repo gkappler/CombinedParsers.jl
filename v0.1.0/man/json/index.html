@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>JSON · CombinedParsers.jl</title><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/json/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">CombinedParsers.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li><a class="tocitem" href="../example-either-trie/">Prefix-Tree Matching</a></li><li><a class="tocitem" href="../pcre-compliance/">PCRE Compliance</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../example-person/">What is Parsing? Names...</a></li><li><a class="tocitem" href="../example-number-ranges/">Representations: Number sequences</a></li><li><a class="tocitem" href="../pcre/">Regular Expressions</a></li><li><a class="tocitem" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser</a></li><li><a class="tocitem" href="../example-arithmetics/">Arithmetics</a></li><li class="is-active"><a class="tocitem" href>JSON</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Public</a></li><li><a class="tocitem" href="../../lib/regexp/">Regexp</a></li><li><a class="tocitem" href="../../lib/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>JSON</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>JSON</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/blob/master/docs/src/man/json.md#L" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="JSON"><a class="docs-heading-anchor" href="#JSON">JSON</a><a id="JSON-1"></a><a class="docs-heading-anchor-permalink" href="#JSON" title="Permalink"></a></h1><p><a href="https://www.lihaoyi.com/fastparse/#Json">Adapted from the fastparse JSON example</a>.</p><pre><code class="language-julia">using CombinedParsers
+
+space    = Repeat( CharIn(&quot; \r\n&quot;) )
+hexDigit = CharIn(&#39;0&#39;:&#39;9&#39;,&#39;a&#39;:&#39;f&#39;,&#39;A&#39;:&#39;F&#39;)
+strChars = CharNotIn(&quot;\&quot;\\&quot;)
+@with_names begin
+    decimal = Repeat1( CharIn(&#39;0&#39;:&#39;9&#39;) )
+    exponent = ( CharIn(&quot;eE&quot;) * map(v-&gt;parse(Int,v), !((&#39;+&#39;|&#39;-&#39;|missing) * decimal)) )[2]
+    ## force result_type to be supertype of type inferred from transformation
+    fractional    = map(v-&gt;parse(Float64,v), Number, !( &quot;.&quot; * decimal ) )
+    integral      =  &quot;0&quot; | CharIn(&#39;1&#39;:&#39;9&#39;) * Optional(decimal)
+
+    number = map(map(v-&gt;parse(Int,v), !((&#39;+&#39;|&#39;-&#39;|missing) * integral)) * (fractional | 0) * ( exponent | 0 )) do v
+        (i,f,e) = v
+        ((i+f)*10^e)::Union{Float64,Int64}
+    end
+
+
+    unicodeEscape = &quot;u&quot; * hexDigit * hexDigit * hexDigit * hexDigit
+    escape        = &quot;\\&quot; * ( CharIn(&quot;\&quot;/\\\\bfnrt&quot;) | unicodeEscape )
+
+    string = ( space * &quot;\&quot;&quot; / !Repeat(strChars | escape) * &quot;\&quot;&quot; )[3]
+
+    data = string | parser(&quot;true&quot;=&gt;true) | (&quot;false&quot;=&gt;false) | (&quot;null&quot;=&gt;nothing) | number | NamedTuple | Vector
+    jsonExpr = ( space * data * space )[2]
+
+    array = ( &quot;[&quot; / join(Repeat(jsonExpr),&quot;,&quot;) * &quot;]&quot; )[2]
+    push!(data, array)
+
+    pair = map(string * space / &quot;:&quot; / jsonExpr ) do (k,s,d,v)
+        Pair{Symbol,result_type(jsonExpr)}(Symbol(k),v)
+    end;
+
+    obj = map(v-&gt;(;v...),( &quot;{&quot; / join(Repeat(pair),&quot;,&quot;) * space * &quot;}&quot;)[2])
+    push!(data, obj)
+end</code></pre><pre><code class="language-julia-repl">julia&gt; parse(pair, &quot;\&quot;a\&quot; : 1&quot;)
+Pair{Symbol,Union{Nothing, Bool, Float64, Int64, SubString, Array{T,1} where T, NamedTuple}}(:a, 1)
+
+julia&gt; parse(obj,&quot;{\&quot;a_number\&quot; : 5.0, \&quot;an_array\&quot; : [\&quot;string\&quot;, 9]}&quot;)
+(a_number = 5.0, an_array = Union{Nothing, Bool, Float64, Int64, SubString, Array{T,1} where T, NamedTuple}[&quot;string&quot;, 9])</code></pre><pre><code class="language-julia">s=&quot;&quot;&quot;
+{
+    &quot;firstName&quot;: &quot;John&quot;,
+    &quot;lastName&quot;: &quot;Smith&quot;,
+    &quot;age&quot;: 25,
+    &quot;address&quot;: {
+        &quot;streetAddress&quot;: &quot;21 2nd Street&quot;,
+        &quot;city&quot;: &quot;New York&quot;,
+        &quot;state&quot;: &quot;NY&quot;,
+        &quot;postalCode&quot;: 10021
+    },
+    &quot;phoneNumbers&quot;:
+    [
+        {
+            &quot;type&quot;: &quot;home&quot;,
+            &quot;number&quot;: &quot;212 555-1234&quot;
+        },
+        {
+            &quot;type&quot;: &quot;fax&quot;,
+            &quot;number&quot;: &quot;646 555-4567&quot;
+        }
+    ]
+}
+&quot;&quot;&quot;
+parse(obj,s)</code></pre><pre><code class="language-none">(firstName = &quot;John&quot;, lastName = &quot;Smith&quot;, age = 25, address = (streetAddress = &quot;21 2nd Street&quot;, city = &quot;New York&quot;, state = &quot;NY&quot;, postalCode = 10021), phoneNumbers = Union{Nothing, Bool, Float64, Int64, SubString, Array{T,1} where T, NamedTuple}[(type = &quot;home&quot;, number = &quot;212 555-1234&quot;), (type = &quot;fax&quot;, number = &quot;646 555-4567&quot;)])</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-arithmetics/">« Arithmetics</a><a class="docs-footer-nextpage" href="../../lib/public/">Public »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 11 July 2020 12:24">Saturday 11 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
