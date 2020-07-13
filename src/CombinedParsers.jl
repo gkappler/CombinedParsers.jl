@@ -1874,7 +1874,7 @@ Repeat(min::Integer,p::ParserTypes...) =
 
 Abbreviation for `map(f,Repeat(a...))`.
 """
-Repeat(f::Function,a...;kw...) =
+Repeat(f::Union{Function,Type},a...;kw...) =
     map(f,Repeat(a...;kw...))
 
 """
@@ -1898,7 +1898,6 @@ Repeat1(f::Function,a...) =
 
 @deprecate Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
 
-@deprecate Repeat(T::Type, x, minmax::Tuple{<:Integer,<:Integer}=(0,Repeat_max); transform) map(transform,T, Repeat(minmax...,parser(x)))
 
 @deprecate rep(a...;kw...) Repeat(a...;kw...)
 

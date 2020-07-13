@@ -224,6 +224,10 @@ Parser transforming result of a wrapped parser.
 @auto_hash_equals struct Transformation{F,P,S,T} <: WrappedParser{P,S,T}
     transform::F
     parser::P
+    Transformation(T::Type, p_) = 
+        let p = parser(p_)
+            new{Type,typeof(p),state_type(p),T}(T, p)
+        end
     Transformation{T}(transform, p_) where {T} =
         let p = parser(p_)
             new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
@@ -404,7 +408,7 @@ function instance(Tc::Type, p::ParserTypes, a...)
     Transformation{Tc}((v) -> Tc(a..., v), p)
 end
 function instance(Tc::Type, p::ParserTypes)
-    Transformation{Tc}((v) -> convert(Tc,v), p)
+    Transformation(Tc, p)
 end
 function Base.map(f::Function, Tc::Type, p::AbstractToken, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
