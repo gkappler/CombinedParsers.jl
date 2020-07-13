@@ -112,7 +112,7 @@ end
 
 
 @testset "html" begin
-    inner = Either{Any}(!Repeat(CharNotIn("<>")));
+    inner = Either{Any}(Any[!Repeat(CharNotIn("<>"))]);
     pushfirst!(inner,html(!re"[[:alpha:]]+",inner,attributes));
     parse(inner,"<a font=1><b>b</b>a</a>")
     @test parse(inner,"<a font=\"+1\">i<b>bold</b>j</a>") == 
