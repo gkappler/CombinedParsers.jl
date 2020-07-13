@@ -1513,10 +1513,10 @@ function Sequence(p...)
     NT= NamedTuple{ tuple( (n.first for n in names)...),
                     Tuple{ (T[n.second] for n in names)... }}
     NTn = NamedTuple{ tuple( (n.first for n in names)...) }
-    function transform(v)
+    function ntuple(v)
         NT( tuple( (v[k.second] for k in names )... ))
     end
-    map(transform, NT, s)
+    map(ntuple, NT, s)
 end
 
 Base.lastindex(x::Sequence) = lastindex(x.parts)
