@@ -851,11 +851,12 @@ with_log(s::AbstractString,p_, delta_char::Integer=5;nomatch=false) =
     end
 
 function log_effect(s,start,after,state,log,delta)
+    at = "@$(start)-$(after) "
     if state === nothing
-        printstyled("no match @$(start)-$(after) ",
+        printstyled("no match $at",
                     bold=true,color=:underline)
     else
-        printstyled("   match @$(start)-$(after) ";
+        printstyled("   match $at";
                     bold=true,color=:green)
     end
     print(log)
@@ -880,7 +881,7 @@ function log_effect(s,start,after,state,log,delta)
     end
     println()
     if !get(stdout,:color,false)
-        print(" "^(9+length(log)+length(before)),"^")
+        print(" "^(9+length(at)+length(log)+length(before)),"^")
         if length(matched)>1
             print("_"^(length(matched)-2),"^")
         end
@@ -889,7 +890,7 @@ function log_effect(s,start,after,state,log,delta)
 end
 
 function log_effect_match(s,start,after,state,log,delta)
-    if state!==nothing
+    if state!==nothing && start!=after
         log_effect(s,start,after,state,log,delta)
     end
 end
