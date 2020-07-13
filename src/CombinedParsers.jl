@@ -1452,6 +1452,8 @@ function state_type_tuple(pts::Type)
     end
 end
 
+Sequence(p::Vector{<:ParserTypes}) =
+    Sequence(p...)
 function Sequence(p...)
     s = Sequence(( parser(x) for x = p )...)
     T = fieldtypes(result_type(s))
