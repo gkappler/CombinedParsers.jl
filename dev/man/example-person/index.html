@@ -14,17 +14,17 @@ julia&gt; import CombinedParsers.Regexp: whitespace_horizontal, whitespace_maybe
                    words, *(&quot; &quot;), word)
            )
 |🗄... Either |&gt; with_name(:name)
-├─ 🗄 Sequence |&gt; map(transform)
-│  ├─ [\w]+ CharIn |&gt; Repeat |&gt; JoinSubstring |&gt; with_name(:lastname)
+├─ 🗄 Sequence |&gt; map(ntuple)
+│  ├─ [\w]+ CharIn |&gt; Repeat |&gt; ! |&gt; with_name(:lastname)
 │  ├─ 🗄 Sequence
 │  │  ├─ \ *  |&gt; Repeat
 │  │  ├─ ,
 │  │  └─ \ *  |&gt; Repeat
-│  └─ [_\u2028\u200e\v\u2029\u85\u200f\f\t\ \p{1:5}\p{9:11}]+ CharIn |&gt; Repeat |&gt; JoinSubstring |&gt; with_name(:name)
+│  └─ [\w\h]+ CharIn |&gt; Repeat |&gt; ! |&gt; with_name(:name)
 └─ 🗄 Sequence |&gt; map(#1)
-   ├─ [_\u2028\u200e\v\u2029\u85\u200f\f\t\ \p{1:5}\p{9:11}]+ CharIn |&gt; Repeat |&gt; JoinSubstring
+   ├─ [\w\h]+ CharIn |&gt; Repeat |&gt; !
    ├─ \
-   └─ [\w]+ CharIn |&gt; Repeat |&gt; JoinSubstring
+   └─ [\w]+ CharIn |&gt; Repeat |&gt; !
 ::NamedTuple{(:lastname, :name),_A} where _A&lt;:Tuple</code></pre><p><code>CombinedParsers.@syntax</code> defines a string macro <code>name&quot;&quot;</code> for using the syntax parser in your Julia program: See also <a href="../../lib/public/#CombinedParsers.@syntax"><code>@syntax</code></a></p><pre><code class="language-julia-repl">julia&gt; name&quot;Person, Called&quot;
 NamedTuple{(:lastname, :name),Tuple{SubString,SubString}}((&quot;Person&quot;, &quot;Called&quot;))</code></pre><p><code>CombinedParsers.@syntax</code> also defines a syntax parser function <code>name()</code> to use in your Julia program:</p><pre><code class="language-julia-repl">julia&gt; (re&quot;Best, *&quot; * name)(&quot;Best, yours truly&quot;)
 (&#39;B&#39;, &#39;e&#39;, &#39;s&#39;, &#39;t&#39;, &#39;,&#39;, [&#39; &#39;], (lastname = &quot;truly&quot;, name = &quot;yours&quot;))</code></pre><h2 id="Addresses"><a class="docs-heading-anchor" href="#Addresses">Addresses</a><a id="Addresses-1"></a><a class="docs-heading-anchor-permalink" href="#Addresses" title="Permalink"></a></h2><p>On a letter, you see the</p><pre><code class="language-julia-repl">julia&gt; @syntax for street_address in texts
@@ -34,12 +34,12 @@ NamedTuple{(:lastname, :name),Tuple{SubString,SubString}}((&quot;Person&quot;, &
                     :no =&gt;Numeric(Int))
        end;
 ┌ Warning: examples currently ignored
-└ @ CombinedParsers ~/build/gkappler/CombinedParsers.jl/src/CombinedParsers.jl:1096</code></pre><p>In programming, regular expressions are the standard language for matching sequences of letters, a <code>String</code>. The street is a sequence of alphabetical symbols or space (not numbers or <code>AnyChar()</code>) can be written concisely as <code>re&quot;Regex&quot;</code>:</p><pre><code class="language-julia-repl">julia&gt; @syntax for street_address in texts ## todo: override in Either
+└ @ CombinedParsers ~/build/gkappler/CombinedParsers.jl/src/CombinedParsers.jl:1046</code></pre><p>In programming, regular expressions are the standard language for matching sequences of letters, a <code>String</code>. The street is a sequence of alphabetical symbols or space (not numbers or <code>AnyChar()</code>) can be written concisely as <code>re&quot;Regex&quot;</code>:</p><pre><code class="language-julia-repl">julia&gt; @syntax for street_address in texts ## todo: override in Either
            Sequence(:street =&gt; !!re&quot;[[:alpha:] ]+&quot;, whitespace_horizontal, :no =&gt;Numeric(Int))
        end;
 
 julia&gt; street_address&quot;Allee 47&quot;
-NamedTuple{(:street, :no),Tuple{AbstractString,Int64}}((&quot;Allee&quot;, 47))</code></pre><p>Defined <code>@syntax</code>&#39;s can be combined.</p><pre><code class="language-julia-repl">julia&gt; whitenewline = Repeat1(Either(whitespace_horizontal,newline));
+(street = &quot;Allee&quot;, no = 47)</code></pre><p>Defined <code>@syntax</code>&#39;s can be combined.</p><pre><code class="language-julia-repl">julia&gt; whitenewline = Repeat1(Either(whitespace_horizontal,newline));
 
 julia&gt; @syntax for address in texts
            Sequence(
@@ -50,31 +50,31 @@ julia&gt; @syntax for address in texts
                whitespace_maybe
            )
        end
-🗄 Sequence |&gt; map(transform) |&gt; with_name(:address)
+🗄 Sequence |&gt; map(ntuple) |&gt; with_name(:address)
 ├─ 🗄? Sequence |&gt; Optional(default=missing)
 │  ├─ Adresse\:
 │  └─ |🗄...+ Either |&gt; Repeat
-│     ├─ [\t\ \ \ \u180e\ \ \ \ \ \ \ \ \ \ \ \ \ \　]+ CharIn |&gt; Repeat |&gt; JoinSubstring
+│     ├─ [\h]+ CharIn |&gt; Repeat |&gt; !
 │     └─ (?&gt;|🗄...) Either |&gt; Atomic
 │        ├─ \r\n
 │        └─ [\n\x0b\f\r\x85] CharIn
-├─ 🗄 Sequence |&gt; map(transform) |&gt; with_name(:street_address) |&gt; with_name(:door)
-│  ├─ [\ \p{1:5}]+ CharIn |&gt; Repeat |&gt; JoinSubstring |&gt; map(intern) |&gt; with_name(:street)
-│  ├─ [\t\ \ \ \u180e\ \ \ \ \ \ \ \ \ \ \ \ \ \　]+ CharIn |&gt; Repeat |&gt; JoinSubstring
-│  └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; with_name(:no)
+├─ 🗄 Sequence |&gt; map(ntuple) |&gt; with_name(:street_address) |&gt; with_name(:door)
+│  ├─ [\ \p{1:5}]+ CharIn |&gt; Repeat |&gt; !! |&gt; with_name(:street)
+│  ├─ [\h]+ CharIn |&gt; Repeat |&gt; !
+│  └─ TextParse.Numeric{Int64}  |&gt; with_name(:no)
 ├─ |🗄...+ Either |&gt; Repeat
-│  ├─ [\t\ \ \ \u180e\ \ \ \ \ \ \ \ \ \ \ \ \ \　]+ CharIn |&gt; Repeat |&gt; JoinSubstring
+│  ├─ [\h]+ CharIn |&gt; Repeat |&gt; !
 │  └─ (?&gt;|🗄...) Either |&gt; Atomic
 │     ├─ \r\n
 │     └─ [\n\x0b\f\r\x85] CharIn
-├─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; with_name(:zip)
-├─ [\t\ \ \ \u180e\ \ \ \ \ \ \ \ \ \ \ \ \ \　]+ CharIn |&gt; Repeat |&gt; JoinSubstring
-├─ [\ \p{1:5}]+ CharIn |&gt; Repeat |&gt; JoinSubstring |&gt; with_name(:city)
-└─ [\t\ \ \ \u180e\ \ \ \ \ \ \ \ \ \ \ \ \ \　]* CharIn |&gt; Repeat |&gt; JoinSubstring
-::NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{AbstractString,Int64}},Int64,SubString}}</code></pre><p>A <code>@syntax</code> can be applied as a julia String macro</p><pre><code class="language-julia-repl">julia&gt; address&quot;&quot;&quot;Allee 47
+├─ TextParse.Numeric{Int64}  |&gt; with_name(:zip)
+├─ [\h]+ CharIn |&gt; Repeat |&gt; !
+├─ [\ \p{1:5}]+ CharIn |&gt; Repeat |&gt; ! |&gt; with_name(:city)
+└─ [\h]* CharIn |&gt; Repeat |&gt; !
+::NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{String,Int64}},Int64,SubString}}</code></pre><p>A <code>@syntax</code> can be applied as a julia String macro</p><pre><code class="language-julia-repl">julia&gt; address&quot;&quot;&quot;Allee 47
        80000 Augsburg
        &quot;&quot;&quot;
-NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{AbstractString,Int64}},Int64,SubString}}((NamedTuple{(:street, :no),Tuple{AbstractString,Int64}}((&quot;Allee&quot;, 47)), 80000, &quot;Augsburg&quot;))</code></pre><h2 id="Person&#39;s-address-data"><a class="docs-heading-anchor" href="#Person&#39;s-address-data">Person&#39;s address data</a><a id="Person&#39;s-address-data-1"></a><a class="docs-heading-anchor-permalink" href="#Person&#39;s-address-data" title="Permalink"></a></h2><p>For person entries in texts a <code>CombinedParser</code> can be intuitively written as</p><pre><code class="language-julia-repl">julia&gt; @syntax for person_adresses in texts
+NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{String,Int64}},Int64,SubString}}(((street = &quot;Allee&quot;, no = 47), 80000, &quot;Augsburg&quot;))</code></pre><h2 id="Person&#39;s-address-data"><a class="docs-heading-anchor" href="#Person&#39;s-address-data">Person&#39;s address data</a><a id="Person&#39;s-address-data-1"></a><a class="docs-heading-anchor-permalink" href="#Person&#39;s-address-data" title="Permalink"></a></h2><p>For person entries in texts a <code>CombinedParser</code> can be intuitively written as</p><pre><code class="language-julia-repl">julia&gt; @syntax for person_adresses in texts
            Sequence(Optional(&quot;Name:&quot;,whitenewline),
                     :person =&gt; name, Repeat1(whitenewline),
                     :adresses =&gt; join(address, Repeat1(whitenewline)));
@@ -91,4 +91,4 @@ julia&gt; person_adresses&quot;&quot;&quot;
        Allee 47
        80650 Zweistadt
        &quot;&quot;&quot;
-NamedTuple{(:person, :adresses),Tuple{NamedTuple{(:lastname, :name),_A} where _A&lt;:Tuple,Array{NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{AbstractString,Int64}},Int64,SubString}},1}}}(((lastname = &quot;Mutbürger&quot;, name = &quot;Gottfried&quot;), NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{AbstractString,Int64}},Int64,SubString}}[NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{AbstractString,Int64}},Int64,SubString}}((NamedTuple{(:street, :no),Tuple{AbstractString,Int64}}((&quot;Am Hang&quot;, 19)), 86653, &quot;Glauberg&quot;)), NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{AbstractString,Int64}},Int64,SubString}}((NamedTuple{(:street, :no),Tuple{AbstractString,Int64}}((&quot;Allee&quot;, 47)), 80650, &quot;Zweistadt&quot;))]))</code></pre><p>This example demonstrated the terms &quot;syntax&quot; and &quot;parsing&quot;. Here, a syntax defines the ways in which information is written. Parsing means the computer reads the information back from the way it was written: The <code>CombinedParser.jl</code> definitions create a program that parses a formal <code>NamedTuple</code> representation from texts written in that way.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pcre-compliance/">« PCRE Compliance</a><a class="docs-footer-nextpage" href="../example-number-ranges/">Representations: Number sequences »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 9 July 2020 23:36">Thursday 9 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+NamedTuple{(:person, :adresses),Tuple{NamedTuple{(:lastname, :name),_A} where _A&lt;:Tuple,Array{NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{String,Int64}},Int64,SubString}},1}}}(((lastname = &quot;Mutbürger&quot;, name = &quot;Gottfried&quot;), NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{String,Int64}},Int64,SubString}}[NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{String,Int64}},Int64,SubString}}(((street = &quot;Am Hang&quot;, no = 19), 86653, &quot;Glauberg&quot;)), NamedTuple{(:door, :zip, :city),Tuple{NamedTuple{(:street, :no),Tuple{String,Int64}},Int64,SubString}}(((street = &quot;Allee&quot;, no = 47), 80650, &quot;Zweistadt&quot;))]))</code></pre><p>This example demonstrated the terms &quot;syntax&quot; and &quot;parsing&quot;. Here, a syntax defines the ways in which information is written. Parsing means the computer reads the information back from the way it was written: The <code>CombinedParser.jl</code> definitions create a program that parses a formal <code>NamedTuple</code> representation from texts written in that way.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pcre-compliance/">« PCRE Compliance</a><a class="docs-footer-nextpage" href="../example-number-ranges/">Representations: Number sequences »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 13 July 2020 21:58">Monday 13 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

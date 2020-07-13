@@ -33,7 +33,7 @@ julia&gt; parse(int,&quot;19&quot;)
 julia&gt; int(&quot;19&quot;)
 1-element Array{Int64,1}:
  19</code></pre><p>The tree displays how a number is read and transformed to a Vector with length 1.</p><pre><code class="language-julia-repl">julia&gt; int
-TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#3)
+TextParse.Numeric{Int64}  |&gt; map(#3)
 ::Array{Int64,1}</code></pre><h2 id="Joining-numbers-and-ranges"><a class="docs-heading-anchor" href="#Joining-numbers-and-ranges">Joining numbers and ranges</a><a id="Joining-numbers-and-ranges-1"></a><a class="docs-heading-anchor-permalink" href="#Joining-numbers-and-ranges" title="Permalink"></a></h2><pre><code class="language-julia-repl">julia&gt; @syntax numbers = map(join(
            Repeat(Either(int_vector, int)),
            re&quot; *, *&quot;
@@ -60,19 +60,25 @@ julia&gt; wiki_references&quot;[1, 7-9, 2]&quot;
  8
  9
  2</code></pre><p>The tree displays how a bracketed comma separated sequence of numbers and number ranges is read and transformed to a Vector.</p><pre><code class="language-julia-repl">julia&gt; wiki_references
-🗄 Sequence |&gt; map(#68) |&gt; with_name(:wiki_references)
+🗄 Sequence |&gt; map(#65) |&gt; with_name(:wiki_references)
 ├─ \[
-├─ 🗄 Sequence |&gt; map(#94) |&gt; map(#5) |&gt; with_name(:numbers)
+├─ 🗄 Sequence |&gt; map(#90) |&gt; map(#5) |&gt; with_name(:numbers)
 │  ├─ |🗄... Either
 │  │  ├─ 🗄 Sequence |&gt; map(#1) |&gt; map(collect) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
 │  │  │  ├─ &lt;Int64&gt;
 │  │  │  ├─ 🗄 Sequence
 │  │  │  │  ├─ \ *  |&gt; Repeat
+│  │  │  │  │  ⋮
+│  │  │  │  │
 │  │  │  │  ├─ \-
+│  │  │  │  │  ⋮
+│  │  │  │  │
 │  │  │  │  └─ \ *  |&gt; Repeat
+│  │  │  │     ⋮
+│  │  │  │
 │  │  │  └─ &lt;Int64&gt;
-│  │  └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#3)
-│  └─ 🗄* Sequence |&gt; map(#68) |&gt; Repeat
+│  │  └─ TextParse.Numeric{Int64}  |&gt; map(#3)
+│  └─ 🗄* Sequence |&gt; map(#65) |&gt; Repeat
 │     ├─ 🗄 Sequence
 │     │  ├─ \ *  |&gt; Repeat
 │     │  ├─ ,
@@ -80,9 +86,15 @@ julia&gt; wiki_references&quot;[1, 7-9, 2]&quot;
 │     └─ |🗄... Either
 │        ├─ 🗄 Sequence |&gt; map(#1) |&gt; map(collect) |&gt; with_name(:int_range) |&gt; with_name(:int_vector)
 │        │  ├─ &lt;Int64&gt;
+│        │  │  ⋮
+│        │  │
 │        │  ├─ 🗄 Sequence
+│        │  │  ⋮
+│        │  │
 │        │  └─ &lt;Int64&gt;
-│        └─ TextParse.Numeric{Int64} TextParse.Numeric |&gt; map(#3)
+│        │     ⋮
+│        │
+│        └─ TextParse.Numeric{Int64}  |&gt; map(#3)
 └─ \]
 ::Array{Int64,1}</code></pre><h2 id="PCRE-papercuts-when-parsing-number-sequences"><a class="docs-heading-anchor" href="#PCRE-papercuts-when-parsing-number-sequences">PCRE papercuts when parsing number sequences</a><a id="PCRE-papercuts-when-parsing-number-sequences-1"></a><a class="docs-heading-anchor-permalink" href="#PCRE-papercuts-when-parsing-number-sequences" title="Permalink"></a></h2><p>The same parser as a regular expression will be tedious to understand and write (though writing the regular expression <code>re&quot; *- *&quot;</code> is clear). PCRE matching does recognize the match but makes not all required parsing parts accessible (7 is not captured).</p><pre><code class="language-julia-repl">julia&gt; re = &quot;\\[([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+)(?: *, *([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+))*\\]&quot;
 &quot;\\[([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+)(?: *, *([[:digit:]]+ *- *[[:digit:]]+|[[:digit:]]+))*\\]&quot;
@@ -90,4 +102,4 @@ julia&gt; wiki_references&quot;[1, 7-9, 2]&quot;
 julia&gt; match(Regex(&quot;^&quot;*re*&quot;\$&quot;), &quot;[1-3,7,9]&quot;)
 RegexMatch(&quot;[1-3,7,9]&quot;, 1=&quot;1-3&quot;, 2=&quot;9&quot;)
 
-julia&gt; ### TODO: regex_string(wiki_references)</code></pre><p>To make the parsing work with regular expressions you would choose a stepwise strategy, handling <code>[</code> and <code>]</code> and stepping though <code>,</code> separated parts. Parsing was pain.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-person/">« What is Parsing? Names...</a><a class="docs-footer-nextpage" href="../pcre/">Regular Expressions »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 9 July 2020 23:36">Thursday 9 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+julia&gt; ### TODO: regex_string(wiki_references)</code></pre><p>To make the parsing work with regular expressions you would choose a stepwise strategy, handling <code>[</code> and <code>]</code> and stepping though <code>,</code> separated parts. Parsing was pain.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-person/">« What is Parsing? Names...</a><a class="docs-footer-nextpage" href="../pcre/">Regular Expressions »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 13 July 2020 21:58">Monday 13 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
