@@ -54,8 +54,9 @@ bsr = Atomic(Either("\r\n",
 
 newline = bsr
 inline = !Repeat(CharNotIn(vertical_space))
-whitespace_maybe = !Repeat(CharIn(horizontal_space))
-whitespace_horizontal = !Repeat1(CharIn(horizontal_space))
+whitespace_maybe = !Repeat(CharIn("\\h",horizontal_space))
+whitespace_horizontal = !Repeat1(CharIn("\\h",horizontal_space))
+whitespace = whitespace_horizontal
 
 
 bracket_range(start) =
@@ -167,7 +168,7 @@ char =  Either(
     Sequence(2,'\\', CharIn(meta_chars))) do v
         convert(CombinedParser,v)
     end
-@with_names repeatable = Either{CombinedParser}(Any[char])
+repeatable = Either{CombinedParser}(Any[char])
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC5
 escape_sequence(stop=AtEnd()) =
@@ -180,13 +181,13 @@ push!(pattern,
 
 word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
-words = JoinSubstring(Repeat1(CharIn(word_char,whitespace_char))) ## "[[:alpha:] ]+"
+words = JoinSubstring(Repeat1(CharIn("\\w\\h", horizontal_space..., word_char))) ## "[[:alpha:] ]+"
 
 non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
 non_word = JoinSubstring(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
 non_word_char_ = Either(non_word_char,AtStart(),AtEnd())
 
-word_boundary = Either(
+@with_names word_boundary = Either(
     Sequence(PositiveLookbehind(word),PositiveLookahead(non_word_char_)),
     Sequence(PositiveLookbehind(non_word_char_),PositiveLookahead(word))
 )

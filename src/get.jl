@@ -58,6 +58,36 @@ function Base.get(t::PositiveLookbehind,
         state)
 end
 
+
+export JoinSubstring
+"""
+    JoinSubstring(x)
+    (!)(x::AbstractToken)
+
+Parser Transformation getting the matched SubString.
+"""
+@auto_hash_equals struct JoinSubstring{P,S} <: WrappedParser{P,S,SubString}
+    parser::P
+    JoinSubstring(x) =
+        new{typeof(x),state_type(x)}(x)
+end
+Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
+revert(x::JoinSubstring) = JoinSubstring(revert(x.parser))
+function print_constructor(io::IO,x::JoinSubstring)
+    print_constructor(io,x.parser)
+    print(io," |> !")
+end
+
+deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
+    get!(mem,x) do
+        JoinSubstring(
+            deepmap_parser(f,mem,x.parser,a...;kw...))
+    end
+
+export map_match
+map_match(f::Function,p_) =
+    map(f, JoinSubstring(parser(p_)))
+
 function Base.get(
     x::Union{AbstractString,JoinSubstring,ConstantParser{<:Any,<:AbstractString}},
     sequence, till,
@@ -245,6 +275,41 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
             deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
+"""
+    (!)(x::AbstractToken)
+
+Parser Transformation getting the matched SubString.
+
+```jldoctest
+julia> parse(Repeat(CharIn(:L)),"abc123")
+3-element Array{Char,1}:
+ 'a'
+ 'b'
+ 'c'
+
+julia> parse(!Repeat(CharIn(:L)),"abc123")
+"abc"
+
+```
+
+"""
+(!)(x::AbstractToken) = JoinSubstring(x)
+using InternedStrings
+import InternedStrings: intern
+"""
+    (!)(x::JoinSubstring)
+
+Parser transformating result `v -> InternedStrings.intern(v)`.
+"""
+(!)(x::AbstractToken{<:SubString}) =
+    instance(String, x)
+(!)(x::Transformation{T}) where {T<:Type} =
+    if x.transform <: AbstractString
+        map(InternedStrings.intern, x.parser)
+    else
+        error("$(x.transform)")
+    end
+
 
 """
 A Transformation{<:Constant} skips evaluation of get(.parser).
@@ -287,6 +352,13 @@ function print_constructor(io::IO,x::Transformation)
     _string(io,x.transform)
     print(io,")")
 end
+
+function print_constructor(io::IO,x::Transformation{Type, <:JoinSubstring})
+    print_constructor(io,x.parser)
+    print(io,"!")
+end
+
+
 
 """
     Base.get(parser::Transformation{<:Function}, a...)

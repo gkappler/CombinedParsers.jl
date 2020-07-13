@@ -332,7 +332,11 @@ regex_inner(x::CombinedParser) = ""
 
 Print constructor pipeline in parser tree node.
 """
-print_constructor(io::IO,x) = print(io, typeof(x).name)
+print_constructor(io::IO,x) =
+    if x isa CombinedParser
+        print(io, typeof(x).name)
+    else
+    end
 
 
 
@@ -392,61 +396,6 @@ Base.filter(f::Function, x::CombinedParser) =
     end
     r
 end
-
-export JoinSubstring
-"""
-    JoinSubstring(x)
-    (!)(x::AbstractToken)
-
-Parser Transformation getting the matched SubString.
-"""
-@auto_hash_equals struct JoinSubstring{P,S} <: WrappedParser{P,S,SubString}
-    parser::P
-    JoinSubstring(x) =
-        new{typeof(x),state_type(x)}(x)
-end
-Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
-revert(x::JoinSubstring) = JoinSubstring(revert(x.parser))
-
-
-"""
-    (!)(x::AbstractToken)
-
-Parser Transformation getting the matched SubString.
-
-```jldoctest
-julia> parse(Repeat(CharIn(:L)),"abc123")
-3-element Array{Char,1}:
- 'a'
- 'b'
- 'c'
-
-julia> parse(!Repeat(CharIn(:L)),"abc123")
-"abc"
-
-```
-
-"""
-(!)(x::AbstractToken) = JoinSubstring(x)
-using InternedStrings
-import InternedStrings: intern
-"""
-    (!)(x::JoinSubstring)
-
-Parser transformating result `v -> InternedStrings.intern(v)`.
-"""
-(!)(x::JoinSubstring) = map(InternedStrings.intern, x)
-
-
-deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
-    get!(mem,x) do
-        JoinSubstring(
-            deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
-
-export map_match
-map_match(f::Function,p_) =
-    map(f, JoinSubstring(parser(p_)))
 
 
 "wrapper for stepping with ncodeunit length."
