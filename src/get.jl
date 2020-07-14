@@ -358,7 +358,10 @@ function print_constructor(io::IO,x::Transformation{Type, <:JoinSubstring})
     print(io,"!")
 end
 
-
+function print_constructor(io::IO,x::Transformation{<:Constant})
+    print_constructor(io,x.parser)
+    print(io," => ",x.transform.value)
+end
 
 """
     Base.get(parser::Transformation{<:Function}, a...)

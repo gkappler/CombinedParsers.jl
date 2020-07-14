@@ -2210,7 +2210,8 @@ regex_suffix(x::Optional) = regex_suffix(x.parser)*"?"
 
 function print_constructor(io::IO, x::Optional)
     print_constructor(io,x.parser)
-    print(io, " |> Optional(default=$(x.default))")
+    printstyled(io, "|$(x.default)",color=:underline)
+    #print(io, " |> Optional(default=$(x.default))")
 end
 deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
     get!(mem,x) do
