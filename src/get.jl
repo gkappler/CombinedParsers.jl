@@ -75,7 +75,7 @@ Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
 revert(x::JoinSubstring) = JoinSubstring(revert(x.parser))
 function print_constructor(io::IO,x::JoinSubstring)
     print_constructor(io,x.parser)
-    print(io," |> !")
+    printstyled(io," |> !", color=:blue)
 end
 
 deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
@@ -349,7 +349,7 @@ children(x::Transformation) = children(x.parser)
 function print_constructor(io::IO,x::Transformation)
     print_constructor(io,x.parser)
     print(io," |> map(")
-    _string(io,x.transform)
+    printstyled(io,x.transform, color=:blue)
     print(io,")")
 end
 
@@ -360,7 +360,8 @@ end
 
 function print_constructor(io::IO,x::Transformation{<:Constant})
     print_constructor(io,x.parser)
-    print(io," => ",x.transform.value)
+    printstyled(io," => ",x.transform.value, color=:blue)
+    
 end
 
 """
@@ -400,6 +401,11 @@ function Base.get(parser::Transformation{IndexAt{I}}, sequence, till, after, i, 
 end
 function Base.get(parser::Transformation{IndexAt{Is}}, sequence, till, after, i, state) where {Is <: Union{Tuple, Vector, UnitRange}}
     tuple(get(parser.parser,sequence, till, after, i, state)[parser.transform.i]...)
+end
+
+function print_constructor(io::IO,x::Transformation{<:IndexAt})
+    print_constructor(io,x.parser)
+    printstyled(io,"[",x.transform.i,"]", color=:blue)
 end
 
 

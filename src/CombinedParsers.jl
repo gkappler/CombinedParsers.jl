@@ -319,6 +319,7 @@ Regex representation of `x`.
 See [`regex_string`](@ref)
 """
 regex_inner(x::AbstractToken) = "$(typeof(x))"
+regex_inner(::TextParse.Numeric{T}) where T = "$(T)"
 
 regex_prefix(x::AbstractString) = ""
 regex_suffix(x::AbstractString) = ""
@@ -795,20 +796,21 @@ If `nomatch==true`, also log when parser does not match.
 See also: [`log_names`](@ref), [`with_effect`](@ref)
 """
 with_log(s::AbstractString,p_, delta_char::Integer=5;nomatch=false) =
-    let p = parser(p_), log=s*": "
+    let p = parser(p_), log=s
         SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta_char)
     end
 
 function log_effect(s,start,after,state,log,delta)
-    at = "@$(start)-$(after) "
+    at = "@$(start)-$(after)"
     if state === nothing
-        printstyled("no match $at",
+        printstyled("no match ",
                     bold=true,color=:underline)
     else
-        printstyled("   match $at";
+        printstyled("   match ";
                     bold=true,color=:green)
     end
-    print(log)
+    printstyled(log,color=:red, bold=true)
+    print(at,": ")
     firsti = prevind(s,start,delta)
     lasti = (prevind(s,start))
     before, matched = if prevind(s,start)<start
@@ -830,7 +832,7 @@ function log_effect(s,start,after,state,log,delta)
     end
     println()
     if !get(stdout,:color,false)
-        print(" "^(9+length(at)+length(log)+length(before)),"^")
+        print(" "^(11+length(at)+length(log)+length(before)),"^")
         if length(matched)>1
             print("_"^(length(matched)-2),"^")
         end
@@ -2210,7 +2212,7 @@ regex_suffix(x::Optional) = regex_suffix(x.parser)*"?"
 
 function print_constructor(io::IO, x::Optional)
     print_constructor(io,x.parser)
-    printstyled(io, "|$(x.default)",color=:underline)
+    printstyled(io, "|$(x.default)",color=:blue)
     #print(io, " |> Optional(default=$(x.default))")
 end
 deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
