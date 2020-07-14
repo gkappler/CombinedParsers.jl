@@ -58,6 +58,9 @@ whitespace_maybe = !Repeat(CharIn("\\h",horizontal_space))
 whitespace_horizontal = !Repeat1(CharIn("\\h",horizontal_space))
 whitespace = whitespace_horizontal
 
+export whitespace_newline
+whitespace_newline = Repeat1(CharIn("\\h\\v",horizontal_space,vertical_space))
+
 
 bracket_range(start) =
     with_name(:char_range,Sequence(start,
