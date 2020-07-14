@@ -158,6 +158,7 @@ and by providing a method for `TextParse.tryparsenext`,
 - If you seek support with a CSV example, please contact me (e.g. address text field parsing).
 
 ### Inspirations
+
 - The work was strongly inspired by the great Scala [fastparse](https://github.com/lihaoyi/fastparse) package, and also the [elm parser](https://package.elm-lang.org/packages/elm/parser/latest/).
 - [Parsers.jl](https://github.com/JuliaData/Parsers.jl), a collection of parsers for date and primitive types, inspired the `parse` methods.
 - [Automa.jl](https://github.com/BioJulia/Automa.jl), a Julia package for text validation, parsing, and tokenizing based on state machine compiler.  The package compiles deterministic finite automata.  (Currently there is no inter-operation possible, because in `Automa` processing of parsed tokens is done with actions and UTF8 support is lacking).
@@ -167,19 +168,19 @@ and by providing a method for `TextParse.tryparsenext`,
   I want to provide benchmarks comparisons with `ParserCombinator.jl`.
 
 
-# Contributing and Questions
-Contributions are very welcome, as are feature requests and suggestions. Please open an issue if you encounter any problems or would just like to ask a question.
-
-<!-- CombinedParsers is a package by Gregor Kappler. If you use and appreciate CombinedParsers.jl, please support development at patreon. -->
 
 ## Next Steps
-- [ ] test coverage
+- [ ] Syntax freeze -- your comments are appreciated!
+- [ ] decide for a error tracing strategy, backtracking. If you want to collaborate on stepping & debugging, please reach out to me.
 - [ ] Performance optimizations
-    - parsing memoization
+- [ ] streaming
+- [ ] test coverage underestimated (PCRE tests are not included in travis)
 - [ ] [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
-- [ ] Publishing packages for parsing wikitext and orgmode markup
-- [ ] error backtracking, stepping & debugging
 
-
+# Contributing and Questions
+Contributions and feedback are very welcome, 
+especially regarding brief syntax and constructor dispatch. 
+Please open an issue if you encounter any problems or would just like to ask a question,
+or contact me at mail@g-kappler.de.
 
 
