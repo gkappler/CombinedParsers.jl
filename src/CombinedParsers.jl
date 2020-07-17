@@ -1496,6 +1496,7 @@ Sequence(transform::Integer,tokens...) =
 function Sequence(::Val{transform},tokens...) where {transform}
     s = Sequence(tokens...)
     map(v -> v[transform], fieldtype(result_type(s),transform), s)
+    # map(IndexAt(transform), s)
 end
 
 
