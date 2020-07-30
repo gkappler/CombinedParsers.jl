@@ -21,7 +21,7 @@ using CombinedParsers
 using TextParse
 # Term expressions are sequences of subterms interleaved with operators.
 # Sub terms are [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
-@syntax subterm = Either{Rational{Int}}(TextParse.Numeric(Int));
+@syntax subterm = Either{Rational{Int}}(Any[TextParse.Numeric(Int)]);
 # A subterm can also be a nested term in parentheses
 @syntax for parenthesis in subterm
     mult = evaluate |> join(subterm, CharIn("*/"), infix=:prefix )
