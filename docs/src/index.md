@@ -8,7 +8,9 @@ log conveniently for debugging, and let Julia compile your parser for performanc
 
 
 !!! note
-    `CombinedParsers.jl` is currently an α release.	The first official released is prepared for JuliaCon2020.
+    `CombinedParsers.jl` is currently a release candidate presented at JuliaCon2020.
+    See the next steps section, if interested.
+	
 
 ## Package Features
 
@@ -77,7 +79,7 @@ end;
 nothing # hide
 ```
 The [`@syntax`](@ref) definition in 5,5 lines is sufficient for parsing and evaluating arithmetics:
-[`Base.join`](@ref)`(x,infix; infix=:prefix)` is shorthand for [`Sequence`](@ref)`(x ,`[`Repeat`](@ref)`( infix * x  ))`,
+[`Base.join`](@ref)`(x, delimiter; infix=:prefix)` is shorthand for [`Sequence`](@ref)`(x ,`[`Repeat`](@ref)`( delimiter * x  ))`,
 and `f |> parser` is shorthand for [`map`](@ref)`(f,parser)`.
 That's all! [`@syntax`](@ref) registers a `@term_string` macro for parsing and transforming:
 ```@repl session
