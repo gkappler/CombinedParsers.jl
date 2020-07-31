@@ -57,7 +57,7 @@ The following defines an evaluating parser for rational number terms as sequence
 Sub-terms are `Either` fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
 or a subterm is written as parentheses around a nested term:
 ```julia
-@syntax subterm = Either{Rational{Int}}(TextParse.Numeric(Int));
+@syntax subterm = Either{Rational{Int}}(Any[TextParse.Numeric(Int)]);
 @syntax for parenthesis in subterm
     mult         = evaluate |> join(subterm, CharIn("*/"), infix=:prefix )
     @syntax term = evaluate |> join(mult,    CharIn("+-"), infix=:prefix )

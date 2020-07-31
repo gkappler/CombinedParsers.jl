@@ -2,7 +2,7 @@
 
 A package for combining parsers and transforming strings into julia types.
 
-Compose parsers with the functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
+Compose parsers parsimoneously within a functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
 utilize Julia's type inference for transformations,
 log conveniently for debugging, and let Julia compile your parser for performance.
 
@@ -35,14 +35,15 @@ log conveniently for debugging, and let Julia compile your parser for performanc
 
 
 ## Getting started
-- The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
+The [Overview](@ref) provides a tutorial explaining how to get started using CombinedParsers.
 The [User guide](man/user.md) provides a summary of CombinedParsers types and constructors.
 Some examples of packages using CombinedParsers can be found on the [Examples](@ref) page.
 See the [Index](@ref main-index) for the complete list of documented functions and types.
 
+> `CombinedParsers.jl` is a registered package:
 Install with
 ```julia
-] add https://github.com/gkappler/CombinedParsers.jl
+] add CombinedParsers
 ```
 
 ### Example: rational numbers arithmetics
@@ -98,44 +99,49 @@ evaluate( (0, [ ('+',1), ('-',2) ]) )
 evaluate( (1, [ ('*',4), ('/',3) ]) )
 ```
 
-## Design
-The arithmetic parser above was defined without redundancy.
-The `CombinedParsers` design 
-- infers the Julia data types of the parsing domain with [`result_type`](@ref),
-- constructors are compiled for the parsing states,
-- is fast due to Julia parametric types, and compiler optimizations with generated functions,
-- is composable and optimizable with Julia method dispatch,
-- provides flexible public API for parsing, matching, and iteration.
 
-This design is used in several packages providing parsers transforming formats into nested julia representations.
+
+
+  
+
+## Useful Design
+- [WikitextParser.jl](https://github.com/gkappler/WikitextParser.jl) is a `CombinedParser` for parsing [wikitext syntax](https://en.wikipedia.org/wiki/Help:Wikitext),
+  quite comprehensibly and representing Wikipedia articles within Julia.
 - OrgmodeParser.jl is a `CombinedParser` for parsing main [org mode](https://orgmode.org/) syntax,
   representing org files within Julia.
-- WikitextParser.jl is a `CombinedParser` for parsing [wikitext syntax](https://en.wikipedia.org/wiki/Help:Wikitext),
-  quite comprehensibly and representing Wikipedia articles within Julia.
-- CombinedParserTools.jl is currently more or less my own workspace to provide a set of re-useable parsers.
+- [CombinedParserTools.jl](https://github.com/gkappler/CombinedParserTools.jl) is currently more or less my own workspace to provide a set of re-useable parsers, used in `WikitextParser`.
+- [Tries.jl](https://github.com/gkappler/Tries.jl) is the abstract implementation of the fast prefix-tree matching in `CombinedParsers` (see [docs](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-either-trie/))
 If you want to work with any of these open source packages, I will gladly provide professional support.
 If you are writing your own recursive `CombinedParser` and seek inspiration, you might find these comprehensive examples interesting.
-(pre-α, so beware, dragons!)
+(currently α release, so beware, dragons!)
 
+The `CombinedParsers` design 
+- is fast due to Julia parametric types, and compiler optimizations with generated functions,
+- its strictly typed parsing defines the domain data types,
+- is composable and optimizable with Julia method dispatch,
+- provides flexible public API for parsing, matching, iteration
 
-Making Julia parametric types central for the parser design allows equal automation of the data pipeline after parsing!
+Making Julia parametric types central for the parser design equally allows automation of the data pipeline after parsing.
+
+FilingForest demonstrates indexing the German Wiktionary into a columnar database, with fast selecting and measuring.
+I am finishing the write-up of Wiktionary data parsing into a language graph database including:
 - fast db-indexing of text streams (e.g. logging): If you need support indexing logging streams into a (SQL-)Database, the (currently) proprietary TypeGraphs.jl provides `CombinedParsers` plug and play: Table schemas are infered from your parser.
-- fast HTTP-serving of parsed data: If you need support with a parsing server-client infrastructure, the (currently) proprietary GraphQLAlchemy.jl provides `CombinedParsers` plug and play: GraphQL schemas and resolver are infered from your parser.
 - fast out-of core data science/AI on your parsed data: If you need support with storing parsed data in optimized memory-mapped JuliaDB, TypeDB.jl provides `CombinedParsers` plug and play. 
 - fast scientific measurements in a data graph: FilingForest IA.jl provides `CombinedParsers` plug and play: even for recursively nested data.
 All (currently) proprietary packages are default-over-configuration for fast integration, and are in active development.
+- fast HTTP-serving of parsed data: If you need support with a parsing server-client infrastructure, the (currently) proprietary GraphQLAlchemy.jl provides `CombinedParsers` plug and play: GraphQL schemas and resolver are infered from your parser.
 
 ## Optimization Strategy
-CombinedParsers.jl is tested against the C PCRE2 library testset, and for 58% of patterns, `CombinedParsers`  match faster than `Regex`.
+With the C PCRE2 library testset, and for 58% of patterns, `CombinedParsers`  match faster than `Regex` (first 100 pattern).
 C PCRE2 optimized is among the fastest regex libraries ([second behind Rust](https://github.com/mariomka/regex-benchmark/tree/optimized), running [mariomka](https://github.com/mariomka)'s benchmark will position CombinedParser among its competition).
+Explorations for optimization are in git branches.
+> All benchmarks are wrong, but some are useful - [Szilard](https://github.com/szilard), [benchm-ml](https://github.com/szilard/benchm-ml)
 ```@contents
 Pages = [
     "man/pcre-compliance.md",
 ]
 Depth = 5
 ```
-Explorations for optimization are in git branches.
-> All benchmarks are wrong, but some are useful - [Szilard](https://github.com/szilard), [benchm-ml](https://github.com/szilard/benchm-ml)
 
 The package is still young, and optimization is ongoing.
 If you are interested in and able to dive deeper into the Julia memory layout and compiler, I would gladly collaborate on further optimizations:
@@ -148,11 +154,11 @@ If you are interested in and able to dive deeper into the Julia memory layout an
   (Profiling hints that function calls do hardly contribute to runtime.)
 
 
+
 ## Acknowledgements
 
-This package is enabled only due to Julia's compiler and superior type system.
+This package is enabled only due to the Julia's compiler and superior type system.
 Thankfully: a really concise language for powerful computing!
-
 
 I am thankful for contributions and inspiration from many great packages:
 ### [TextParse.jl](https://github.com/queryverse/TextParse.jl)
@@ -171,11 +177,8 @@ and by providing a method for `TextParse.tryparsenext`,
 ```@docs
 CombinedParsers.tryparsenext
 ```
-
-### `CombinedParsers` builds on
-- Tries.jl is the abstract implementation of the fast prefix-tree matching in `CombinedParsers` (see [docs](https://gkappler.github.io/CombinedParsers.jl/dev/man/example-either-trie/))
-- [AbstractTrees.jl](https://github.com/JuliaCollections/AbstractTrees.jl) interface provides clearly layed out printing in the REPL. [`with_log`](@ref) provides colored logging of the parsing [`with_name`](@ref)s.
 ### Inspirations
+
 - The work was strongly inspired by the great Scala [fastparse](https://github.com/lihaoyi/fastparse) package, and also the [elm parser](https://package.elm-lang.org/packages/elm/parser/latest/).
 - [Parsers.jl](https://github.com/JuliaData/Parsers.jl), a collection of parsers for date and primitive types, inspired the [`parse`](@ref) methods.
 - [Automa.jl](https://github.com/BioJulia/Automa.jl), a Julia package for text validation, parsing, and tokenizing based on state machine compiler.  The package compiles deterministic finite automata.  (Currently there is no inter-operation possible, because in `Automa` processing of parsed tokens is done with actions and UTF8 support is lacking).
@@ -183,6 +186,22 @@ CombinedParsers.tryparsenext
   Yet I decided for a new design with a focus on transformations and type inference with parametric types, instead of basing this work off `ParserCombinator`, written before 2016 (and fixed for Julia 1.0 in 2018).
   `CombinedParsers` integrates into the Julia 1.0 Iteration API, small `Union{Nothing,T} where T` types instead of using Nullables, compiler optimizations and generated functions.
   I want to provide benchmarks comparisons with `ParserCombinator.jl`.
+
+
+## Next Steps
+- [ ] Syntax freeze -- your comments are appreciated!
+- [ ] decide for a error tracing strategy, backtracking. If you want to collaborate on stepping & debugging, please reach out to me.
+- [ ] Performance optimizations
+- [ ] streaming
+- [ ] test coverage underestimated (PCRE tests are not included in travis)
+- [ ] [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+
+# Contributing and Questions
+Contributions and feedback are very welcome, 
+especially regarding brief syntax and constructor dispatch. 
+Please open an issue if you encounter any problems or would just like to ask a question,
+or contact me at mail@g-kappler.de.
+
 
 ## Outline
 ### Manual
