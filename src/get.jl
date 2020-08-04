@@ -52,10 +52,10 @@ function Base.get(t::PositiveLookbehind,
                   str, till,
                   after, i, state)
     rseq = revert(str)
+    i_ = reverse_index(rseq,prevind(rseq,i))
+    after_ = nextind(rseq,i_,t.parser,state)
     get(t.parser, rseq, till,
-        after,
-        reverse_index(rseq,prevind(rseq,i)),
-        state)
+        after_, i_, state)
 end
 
 
