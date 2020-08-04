@@ -20,14 +20,16 @@ reverse_index(x::Reverse,i) =
 reverse_index(x::AbstractString,i) =
     i
 
-Base.SubString(x::Reverse,start,stop) =
-    SubString(x.x, reverse_index(x,stop), reverse_index(x,start))
+Base.SubString(x::Reverse,start::Int,stop::Int) =
+    SubString(x.x, reverse_index(x, stop), reverse_index(x, start))
 
 function set_capture(sequence::Reverse, index::Int, x)
     @warn "check"
     set_capture(sequence.x,index,x)
 end
 
+regex_string(x::Reverse) = regex_escape(x.x)
+Base.ncodeunits(x::Reverse) = ncodeunits(x.x)
 Base.firstindex(x::Reverse) = 1
 Base.lastindex(x::Reverse) = x.lastindex
 Base.getindex(x::Reverse,is::UnitRange) = getindex(x.x,reverse_index(x,is.stop):reverse_index(x,is.start))
