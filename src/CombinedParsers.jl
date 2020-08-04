@@ -850,6 +850,16 @@ end
 
 
 export NamedParser, with_name
+"""
+    NamedParser{P,S,T} <: WrappedParser{P,S,T}
+
+Struct with
+```julia
+    name::Symbol
+    parser::P
+    doc::String
+```
+"""
 @auto_hash_equals struct NamedParser{P,S,T} <: WrappedParser{P,S,T}
     name::Symbol
     parser::P
