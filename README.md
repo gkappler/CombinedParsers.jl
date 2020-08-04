@@ -37,11 +37,13 @@ The [User guide](https://gkappler.github.io/CombinedParsers.jl/dev/man/user) pro
 Some examples of packages using CombinedParsers can be found on the Examples page.
 See the [Index](@ref main-index) for the complete list of documented functions and types.
 
-> `CombinedParsers.jl` is a registered package (currently β release).  The first official release is prepared for JuliaCon2020.
+> `CombinedParsers.jl` is a registered package (currently release-candiate).  
 Install with
 ```julia
 ] add CombinedParsers
 ```
+
+You can get an 8-min idea of the package in comparison to `Regex` in [my JuliaCon2020 talk![JuliaCon2020 talk](https://img.youtube.com/vi/YBMJSKwwCT0/0.jpg)](https://www.youtube.com/watch?v=YBMJSKwwCT0).
 
 ### Example: rational numbers arithmetics
 Parsing is reading and transforming a sequence of characters.
