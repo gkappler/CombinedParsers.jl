@@ -1522,7 +1522,8 @@ sSequence_(x::Sequence) = sSequence_(x.parts...)
 sSequence_(x::Always) = tuple()
 sSequence_() = tuple()
 sSequence_(x1) = tuple(parser(x1))
-sSequence_(x1,x...) = Iterators.flatten( ( sSequence_(x1), Iterators.flatten( ( sSequence_(e) for e in x ) ) ) )
+sSequence_(x1,x...) =
+    Iterators.flatten(tuple( sSequence_(x1), collect(Iterators.flatten( ( sSequence_(e) for e in x ) ))))
 
 """
     sSequence(x...)

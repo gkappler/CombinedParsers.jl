@@ -1,22 +1,18 @@
 # Compliance with the PCRE test set
 !!! note 
     PCRE features supported by `@re_str` 
-	- Characters
+    - ✅ sequences, alternations (`|`), repetitions (`*`,`+`,`{n}`, `{min,}`, `{min,max}`), optional matches (`?`)
     - ✅ escaped characters and generic character types
     - ✅ character ranges (`[]`)
-	- Basics
-    - ✅ sequences, alternations (`|`), repetitions (`*`,`+`,`{n}`, `{min,}`, `{min,max}`), optional matches (`?`)
-    - ✅ lazy repetitions
-    - ✅ atomic groups
-    - ✅ options, internal and accross pattern
-    - ✅ comments
-	- Capturing
     - ✅ non-capturing groups
     - ✅ capturing groups, backreferences, subroutines (all by index, relative index and name)
-    - ✅ conditional expressions
-	- Assertions
-    - ✅ simple assertions (`\A`, `\z`, `\Z`, `\b`, `\B`, `^`, `$`,...)
+    - ✅ simple assertions (`\A`, `\z`, `\Z`, `\b`, `\B`, `^`, `$`)
     - ✅ lookaheads and lookbehinds
+    - ✅ atomic groups
+    - ✅ lazy repetitions
+    - ✅ conditional expressions
+    - ✅ internal and pattern options setting
+    - ✅ comments
 !!! warning 
     PCRE functionality that is currently not supported:
     - ❌ Capture groups in lookbehinds.
