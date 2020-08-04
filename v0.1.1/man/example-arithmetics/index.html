@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Arithmetics · CombinedParsers.jl</title><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/example-arithmetics/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">CombinedParsers.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li><a class="tocitem" href="../example-either-trie/">Prefix-Tree Matching</a></li><li><a class="tocitem" href="../pcre-compliance/">PCRE Compliance</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../example-person/">What is Parsing? Names...</a></li><li><a class="tocitem" href="../example-number-ranges/">Representations: Number sequences</a></li><li><a class="tocitem" href="../pcre/">Regular Expressions</a></li><li><a class="tocitem" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser</a></li><li class="is-active"><a class="tocitem" href>Arithmetics</a></li><li><a class="tocitem" href="../json/">JSON</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Public</a></li><li><a class="tocitem" href="../../lib/regexp/">Regexp</a></li><li><a class="tocitem" href="../../lib/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Arithmetics</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Arithmetics</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/docs/docs/src/man/example-arithmetics.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Arithmetical-terms-for-rational-numbers"><a class="docs-heading-anchor" href="#Arithmetical-terms-for-rational-numbers">Arithmetical terms for rational numbers</a><a id="Arithmetical-terms-for-rational-numbers-1"></a><a class="docs-heading-anchor-permalink" href="#Arithmetical-terms-for-rational-numbers" title="Permalink"></a></h1><p>Parsing is reading and transforming a sequence of characters. This example reads and evaluates arithmetical terms for rational numbers. Subterms can use algebraic operators <code>+-*/</code> that will be evaluated with</p><pre><code class="language-julia-repl">julia&gt; function evaluate( (start, operation_values) )
+           aggregated_value::Rational{Int} = start
+           for (op,val) in operation_values
+               aggregated_value = eval( Expr(:call, Symbol(op),
+       			              aggregated_value, val
+       			              ))
+           end
+           return aggregated_value
+       end
+evaluate (generic function with 1 method)
+
+julia&gt; evaluate( (0, [ (&#39;+&#39;,1), (&#39;+&#39;,1) ]) )
+2//1
+
+julia&gt; evaluate( (1, [ (&#39;*&#39;,2), (&#39;*&#39;,3) ]) )
+6//1</code></pre><p>The function definition is detailed in <a href="man/man/example-arithmetic.md">the full example</a>.</p><pre><code class="language-julia-repl">julia&gt; using CombinedParsers</code></pre><p><code>CombinedParsers</code> provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax. Combinator constructors are discussed in the <a href="man/man/user.md">user guide</a>.</p><pre><code class="language-julia-repl">julia&gt; using TextParse</code></pre><p>Term expressions are sequences of subterms interleaved with operators. Sub terms are <a href="../../lib/public/#CombinedParsers.Either"><code>Either</code></a> fast <code>TextParse.Numeric(Int)</code> integer numbers, converted to <code>Rational{Int}</code>,</p><pre><code class="language-julia-repl">julia&gt; @syntax subterm = Either{Rational{Int}}(Any[TextParse.Numeric(Int)]);</code></pre><p>A subterm can also be a nested term in parentheses</p><pre><code class="language-julia-repl">julia&gt; @syntax for parenthesis in subterm
+           mult = evaluate |&gt; join(subterm, CharIn(&quot;*/&quot;), infix=:prefix )
+           adds = evaluate |&gt; join(mult,    CharIn(&quot;+-&quot;), infix=:prefix )
+           Sequence(2,&#39;(&#39;,adds,&#39;)&#39;)
+       end;</code></pre><p>This <code>CombinedParser</code> definition in 5,5 lines is sufficient for doing arithmetics: <a href="../../lib/public/#Base.join"><code>Base.join</code></a>(x,infix; infix=:prefix) is shorthand for <code>x</code><a href="man/@ref"><code>*</code></a><code></code><a href="../../lib/public/#CombinedParsers.Repeat"><code>Repeat</code></a><code>( infix * x  )</code>, and <code>f |&gt; parser</code> is shorthand for <a href="../../lib/public/#Base.map"><code>map</code></a>(f,parser)`.</p><pre><code class="language-julia-repl">julia&gt; @syntax term = adds;</code></pre><p>registers a <code>@term_string</code> macro for parsing and transforming.</p><pre><code class="language-julia-repl">julia&gt; term&quot;(1+2)/5&quot;
+3//5</code></pre><p>The defined <code>CombinedParser</code> <code>term</code> can be used as a function for colorful logging of the parsing process.</p><pre><code class="language-julia-repl">julia&gt; term(&quot;1/((1+2)*4+3*(5*2))&quot;,log = [:parenthesis])
+   match parenthesis@4-9: 1/((1+2)*4+3*(
+                             ^___^
+   match parenthesis@14-19: *4+3*(5*2))
+                                 ^___^
+   match parenthesis@3-20: 1/((1+2)*4+3*(5*2))
+                             ^_______________^
+1//42</code></pre><p><a href="https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42)">Is every rational answer ultimately the inverse of a universal question in life?</a></p><p>The parser representation can be printed as a tree</p><pre><code class="language-julia-repl">julia&gt; term
+🗄 Sequence |&gt; map(evaluate) |&gt; with_name(:term)
+├─ 🗄 Sequence |&gt; map(evaluate)
+│  ├─ |🗄... Either |&gt; with_name(:subterm)
+│  │  ├─ 🗄 Sequence |&gt; map(#63) |&gt; with_name(:parenthesis)
+│  │  │  ├─ \(
+│  │  │  ├─ 🗄 Sequence |&gt; map(evaluate)
+│  │  │  │  ├─ 🗄 Sequence |&gt; map(evaluate)
+│  │  │  │  │  ⋮
+│  │  │  │  │
+│  │  │  │  └─ 🗄* Sequence |&gt; Repeat
+│  │  │  │     ⋮
+│  │  │  │
+│  │  │  └─ \)
+│  │  └─ &lt;Int64&gt;
+│  └─ 🗄* Sequence |&gt; Repeat
+│     ├─ [\*/] CharIn
+│     └─ |🗄... Either |&gt; with_name(:subterm)
+│        ├─ 🗄 Sequence |&gt; map(#63) |&gt; with_name(:parenthesis)
+│        │  ├─ \(
+│        │  │  ⋮
+│        │  │
+│        │  ├─ 🗄 Sequence |&gt; map(evaluate)
+│        │  │  ⋮
+│        │  │
+│        │  └─ \)
+│        │     ⋮
+│        │
+│        └─ &lt;Int64&gt;
+└─ 🗄* Sequence |&gt; Repeat
+   ├─ [\+\-] CharIn
+   └─ 🗄 Sequence |&gt; map(evaluate)
+      ├─ |🗄... Either |&gt; with_name(:subterm)
+      │  ├─ 🗄 Sequence |&gt; map(#63) |&gt; with_name(:parenthesis)
+      │  │  ├─ \(
+      │  │  │  ⋮
+      │  │  │
+      │  │  ├─ 🗄 Sequence |&gt; map(evaluate)
+      │  │  │  ⋮
+      │  │  │
+      │  │  └─ \)
+      │  │     ⋮
+      │  │
+      │  └─ &lt;Int64&gt;
+      └─ 🗄* Sequence |&gt; Repeat
+         ├─ [\*/] CharIn
+         └─ |🗄... Either |&gt; with_name(:subterm)
+            ├─ 🗄 Sequence |&gt; map(#63) |&gt; with_name(:parenthesis)
+            │  ⋮
+            │
+            └─ &lt;Int64&gt;
+               ⋮
+
+::Rational{Int64}</code></pre><h3 id="Benchmarks"><a class="docs-heading-anchor" href="#Benchmarks">Benchmarks</a><a id="Benchmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmarks" title="Permalink"></a></h3><p>Parsing times for Int, operators, brackets are</p><pre><code class="language-julia-repl">julia&gt; using BenchmarkTools
+
+julia&gt; @benchmark match(term,&quot;(1+2)/5&quot;)
+BenchmarkTools.Trial:
+  memory estimate:  2.17 KiB
+  allocs estimate:  42
+  --------------
+  minimum time:     3.033 μs (0.00% GC)
+  median time:      3.260 μs (0.00% GC)
+  mean time:        3.657 μs (7.64% GC)
+  maximum time:     1.408 ms (99.43% GC)
+  --------------
+  samples:          10000
+  evals/sample:     8</code></pre><p>in unfair benchmark-comparison with the more expressive Julia syntax parser</p><pre><code class="language-julia-repl">julia&gt; @benchmark Meta.parse(&quot;(1+2)/5&quot;)
+BenchmarkTools.Trial:
+  memory estimate:  496 bytes
+  allocs estimate:  11
+  --------------
+  minimum time:     58.409 μs (0.00% GC)
+  median time:      60.553 μs (0.00% GC)
+  mean time:        66.731 μs (0.00% GC)
+  maximum time:     2.319 ms (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1</code></pre><p>Parsing and transforming (here <code>eval</code>)</p><pre><code class="language-julia-repl">julia&gt; @benchmark term(&quot;(1+2)/5&quot;)
+BenchmarkTools.Trial:
+  memory estimate:  8.67 KiB
+  allocs estimate:  160
+  --------------
+  minimum time:     140.135 μs (0.00% GC)
+  median time:      145.153 μs (0.00% GC)
+  mean time:        164.155 μs (1.38% GC)
+  maximum time:     11.830 ms (96.97% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1</code></pre><p>compared to Julia</p><pre><code class="language-julia-repl">julia&gt; @benchmark eval(Meta.parse(&quot;(1+2)/5&quot;))
+BenchmarkTools.Trial:
+  memory estimate:  3.02 KiB
+  allocs estimate:  49
+  --------------
+  minimum time:     135.888 μs (0.00% GC)
+  median time:      140.191 μs (0.00% GC)
+  mean time:        156.763 μs (0.00% GC)
+  maximum time:     2.278 ms (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-palindromes/">« struct Palindrome&lt;:CombinedParser</a><a class="docs-footer-nextpage" href="../json/">JSON »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 4 August 2020 17:29">Tuesday 4 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
