@@ -2354,6 +2354,8 @@ function sEither(x...)
     opts = collect(sEither_(x...))
     length(opts)==1 ? opts[1] : Either(opts...)
 end
+sEither(x1::NamedParser,x...) =
+    with_name(x1.name, sEither(x1.parser, x...), doc=x1.doc)
 
 
 either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
