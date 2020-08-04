@@ -6,6 +6,49 @@ import Base: (^), (*), (~), (/), (|), (!)
 
 ## todo: cuts
 
+"""
+    (!)(x::AbstractToken)
+
+Parser Transformation getting the matched SubString.
+
+```jldoctest
+julia> parse(Repeat(CharIn(:L)),"abc123")
+3-element Array{Char,1}:
+ 'a'
+ 'b'
+ 'c'
+
+julia> parse(!Repeat(CharIn(:L)),"abc123")
+"abc"
+
+```
+
+"""
+(!)(x::AbstractToken) = JoinSubstring(x)
+using InternedStrings
+import InternedStrings: intern
+"""
+    (!)(x::JoinSubstring)
+
+Parser transformating result `v -> InternedStrings.intern(v)`.
+"""
+(!)(x::AbstractToken{<:SubString}) =
+    instance(String, x)
+(!)(x::Transformation{<:SubString}) =
+    map(InternedStrings.intern, x.parser)
+
+"""
+    (!)(x::NamedParser)
+
+Parser transformating result `v -> v=>x.name`.
+"""
+(!)(x::NamedParser) = map(v -> v => x.name, x)
+
+
+
+
+
+
 (|)(x, y::ParserTypes) = sEither(parser(x),y)
 (|)(x::ParserTypes, y) = sEither(x,parser(y))
 """

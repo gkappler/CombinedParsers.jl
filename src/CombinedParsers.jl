@@ -877,13 +877,6 @@ function print_constructor(io::IO,x::NamedParser)
 end
 
 """
-    (!)(x::NamedParser)
-
-Parser transformating result `v -> v=>x.name`.
-"""
-(!)(x::NamedParser) = map(v -> v => x.name, x)
-
-"""
     parser(x::Pair{Symbol, P}) where P
 
 A parser labelled with name `x.first`.

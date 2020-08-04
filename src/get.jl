@@ -276,42 +276,6 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
     end
 
 """
-    (!)(x::AbstractToken)
-
-Parser Transformation getting the matched SubString.
-
-```jldoctest
-julia> parse(Repeat(CharIn(:L)),"abc123")
-3-element Array{Char,1}:
- 'a'
- 'b'
- 'c'
-
-julia> parse(!Repeat(CharIn(:L)),"abc123")
-"abc"
-
-```
-
-"""
-(!)(x::AbstractToken) = JoinSubstring(x)
-using InternedStrings
-import InternedStrings: intern
-"""
-    (!)(x::JoinSubstring)
-
-Parser transformating result `v -> InternedStrings.intern(v)`.
-"""
-(!)(x::AbstractToken{<:SubString}) =
-    instance(String, x)
-(!)(x::Transformation{T}) where {T<:Type} =
-    if x.transform <: AbstractString
-        map(InternedStrings.intern, x.parser)
-    else
-        error("$(x.transform)")
-    end
-
-
-"""
 A Transformation{<:Constant} skips evaluation of get(.parser).
 """
 struct Constant{T}
