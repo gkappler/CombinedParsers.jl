@@ -6,6 +6,39 @@ import Base: (^), (*), (~), (/), (|), (!)
 
 ## todo: cuts
 
+
+"""
+
+Character matchers `m` like `Union{CharIn,CharNotIn,T}`, or any type `T` providing a `ismatch(m::T,c::Char)::Bool` method represent a 
+lazy bitarray for all characters.
+
+"""
+Base.broadcasted(::typeof((&)), x::CharNotIn, y::CharNotIn) =
+    CharNotIn(x.pcre*y.pcre, x.sets,y.sets)
+
+Base.broadcasted(::typeof((&)), x::CharIn, y::CharNotIn) =
+    CharIn(setdiff(x.sets, y.sets))
+
+Base.broadcasted(::typeof((&)), x::Union{CharIn,CharNotIn}, ::AnyChar) =
+    x
+
+
+Base.broadcasted(::typeof((&)), x::NamedParser, y) =
+    NamedParser(x.name,x.parser .& y; doc=x.doc)
+
+Base.broadcasted(::typeof((&)), x::JoinSubstring, y) =
+    JoinSubstring(x.parser .& y)
+
+Base.broadcasted(::typeof((&)), x::Transformation, y) =
+    Transformation(x.transform, x.parser .& y)
+
+Base.broadcasted(::typeof((&)), x::Repeat, y) =
+    Repeat(x.range, x.parser .& y)
+
+
+Base.broadcasted(::typeof((|)), x::CharIn, y::CharIn) =
+    CharIn(x.pcre*y.pcre, x.sets,y.sets)
+
 """
     (!)(x::AbstractToken)
 
