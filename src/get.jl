@@ -18,6 +18,16 @@ function Base.get(
         after_, i, state)
 end
 
+function Base.get(parser::Bytes{N,T},
+                  sequence, till,
+                  after, i, state) where {N,T}
+    if isbitstype(T)
+        reinterpret(result_type(parser),sequence[i:after-1])[1]
+    else
+        T(sequence[i:after-1])
+    end
+end
+
 function Base.get(parser::AbstractToken,
                   sequence, till,
                   after, i, state)

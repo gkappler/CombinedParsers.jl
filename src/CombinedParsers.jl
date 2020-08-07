@@ -442,9 +442,24 @@ end
 
 
 
-
+export Bytes
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
+Bytes(N::Integer, T::Type=Char) = Bytes{N,T}()
+"""
+    Bytes{N,T} <: NIndexParser{N,T}
+
+Fast parsing of a fixed number `N` of indices, 
+`reinterpret(T,match)[1]` the parsed vector as `T`, if `isbitstype`, or `T(match)` constructor otherwise.
+
+Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,T}` for custom conversion.
+"""
+struct Bytes{N,T} <: NIndexParser{N,T} end
+Bytes(N::Integer, T::Type=Char) = Bytes{N,T}()
+
+_iterate(parser::Bytes{N}, sequence, till, posi, next_i, state::Nothing) where N =
+    nextind(sequence,posi,N), MatchState()
+
 @inline prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i
 @inline nextind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =

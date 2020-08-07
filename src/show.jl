@@ -43,6 +43,8 @@ function Base.show(io::IO, x::CombinedParser)
     end
 end
 
+printnode(io::IO,x::Bytes) =
+    print(io, "$(x.N) Bytes::$(result_type(x))")
 
 printnode(io::IO, x::CombinedParser) =
     printnode_(io, x)
