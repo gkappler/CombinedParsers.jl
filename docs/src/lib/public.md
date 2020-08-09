@@ -10,6 +10,7 @@ CombinedParsers
 match
 ParseMatch
 Base.iterate
+match_all
 ```
 
 ### Parsing
@@ -19,6 +20,7 @@ get
 parse
 tryparse
 tryparse_pos
+parse_all
 ```
 
 ## Typed Transformation Parsers

@@ -31,7 +31,7 @@ log conveniently for debugging, and let Julia compile your parser for performanc
 - Generality
   - All valid parsings can be Base.[`iterate`](@ref)d lazily.
   - Higher-order parsers depending on the parsing state allow for not context-free parsers ([`after`](@ref)).
-  - can process UTF8 strings or any sequence type supporting `getindex`, `nextind`, `prevind` methods.
+  - Parse binary data `Vector{UInt8}` and any sequence type supporting `getindex`, `nextind`, `prevind` methods over and above UTF8 strings ([bson example](man/bson.md)).
 
 
 ## Getting started
@@ -40,7 +40,7 @@ The [User guide](man/user.md) provides a summary of CombinedParsers types and co
 Some examples of packages using CombinedParsers can be found on the [Examples](@ref) page.
 See the [Index](@ref main-index) for the complete list of documented functions and types.
 
-> `CombinedParsers.jl` is a registered package:
+`CombinedParsers.jl` is a registered package.
 Install with
 ```julia
 ] add CombinedParsers

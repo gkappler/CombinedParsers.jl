@@ -20,12 +20,13 @@ for f in [ "pcre.jl", "example-person.jl", "example-number-ranges.jl", "example-
                       codefence = "```@repl session" => "```")
 end
 
-for f in [ "example-palindromes.jl" ]
+for f in [ "example-palindromes.jl", "bson.jl" ]
     Literate.markdown(joinpath(mandir,f), mandir,
                       repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs")
 end
 
 makedocs(;
+         source=docdir,
          modules=[CombinedParsers],
          authors="Gregor Kappler",
          repo="https://github.com/gkappler/CombinedParsers.jl/blob/{commit}{path}#L{line}",
@@ -49,6 +50,7 @@ makedocs(;
                  "Regular Expressions" => "man/pcre.md",
                  "struct Palindrome<:CombinedParser" => "man/example-palindromes.md",
                  "Arithmetics" => "man/example-arithmetics.md",
+                 "Parsing `Vector{Unit8}`: BSON" => "man/bson.md",
                  "JSON" => "man/json.md",
              ],
              "Library" => Any[
