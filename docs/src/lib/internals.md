@@ -1,6 +1,10 @@
 # Internal API
 ## Iterating Parsings
 ```@docs
+CombinedParsers.MatchesIterator
+CombinedParsers.parsematch_tuple
+Base.prevind
+Base.nextind
 CombinedParsers.ismatch
 CombinedParsers._ismatch
 CombinedParsers._iterate

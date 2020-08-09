@@ -2,16 +2,41 @@ import Base: (^), (*), (~), (/), (|), (!)
 
 (*)(x::Any, y::AbstractToken) = sSequence(parser(x),y)
 (*)(x::AbstractToken, y::Any) = sSequence(x,parser(y))
+"""
+    (*)(x::Any, y::AbstractToken)
+    (*)(x::AbstractToken, y::Any)
+    (*)(x::AbstractToken, y::AbstractToken)
+
+Chain parsers in [`sSequence`](@ref).
+See also [`@seq`](@ref).
+"""
 (*)(x::AbstractToken, y::AbstractToken) = sSequence(x,y)
 
 ## todo: cuts
 
+"""
+    (/)(x::ParserTypes, y::ParserTypes)
+
+`Sequence(PositiveLookbehind(x),y)`
+
+```jldoctest
+julia> match("is "/"match", "no match is match").start
+13
+```
+
+!!! note
+    This syntax is reviewed and I your appreciate your comments!
+"""
+(/)(x::ParserTypes, y::ParserTypes) =
+    Sequence(PositiveLookbehind(x),y)
+
 
 """
+    Base.broadcasted(::typeof((&)), x::CharNotIn, y::CharNotIn)
 
-Character matchers `m` like `Union{CharIn,CharNotIn,T}`, or any type `T` providing a `ismatch(m::T,c::Char)::Bool` method represent a 
+Character matchers `m` like `Union{CharIn,CharNotIn,T}`, or any 
+type `T` providing a `ismatch(m::T,c::Char)::Bool` method represent a 
 lazy bitarray for all characters.
-
 """
 Base.broadcasted(::typeof((&)), x::CharNotIn, y::CharNotIn) =
     CharNotIn(x.pcre*y.pcre, x.sets,y.sets)
@@ -47,9 +72,9 @@ Parser Transformation getting the matched SubString.
 ```jldoctest
 julia> parse(Repeat(CharIn(:L)),"abc123")
 3-element Array{Char,1}:
- 'a'
- 'b'
- 'c'
+ 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+ 'b': ASCII/Unicode U+0062 (category Ll: Letter, lowercase)
+ 'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
 
 julia> parse(!Repeat(CharIn(:L)),"abc123")
 "abc"

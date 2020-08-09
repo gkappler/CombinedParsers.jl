@@ -29,7 +29,7 @@ log conveniently for debugging, and let Julia compile your parser for performanc
   - Pure Julia regular expression parsers are provided with the [`@re_str`](@ref) macro, a plug-in replacement for `Base.@r_str`.
     Tested on the [PCRE pattern test set](man/pcre-compliance.md).
 - Generality
-  - All valid parsings can be [`Base.iterate`](@ref)d lazily.
+  - All valid parsings can be Base.[`iterate`](@ref)d lazily.
   - Higher-order parsers depending on the parsing state allow for not context-free parsers ([`after`](@ref)).
   - can process UTF8 strings or any sequence type supporting `getindex`, `nextind`, `prevind` methods.
 
@@ -93,7 +93,7 @@ term("1/((1+2)*4+3*(5*2))",log = [:parenthesis])
 [Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
 
 
-Note: The `evaluate` function definition is detailed in [the full example](man/example-arithmetic.md).
+Note: The `evaluate` function definition is detailed in [the full example](man/example-arithmetics.md).
 ```@repl session
 evaluate( (0, [ ('+',1), ('-',2) ]) )
 evaluate( (1, [ ('*',4), ('/',3) ]) )

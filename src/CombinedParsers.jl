@@ -26,8 +26,6 @@ export result_type
 
 """
 State object for a match that is defined by the parser, sequence and position.
-
-See also [`NCodeuntitsMatchState`](@ref).
 """
 struct MatchState end
 Base.show(io::IO, ::MatchState) = print(io,"∘")
@@ -145,8 +143,24 @@ end
 @inline function _iterate(p::Union{<:AbstractString,Char}, sequence, till, posi, next_i, state)
     nothing
 end
+"""
+    Base.nextind(str,i::Int,parser,state)
+
+Return the index after the `state` match at `i`.
+!!! note
+    I am in doubt whether this qualifies as type piracy because I provide an outside method for outside types.
+    I thought it might not, because the differentiating two extra arguments. If you have an opinion, please let me know on GitHub.
+"""
 @inline nextind(str,i::Int,parser::Union{AbstractString,Char},x) where L =
     i+ncodeunits(parser)
+"""
+    Base.prevind(str,i::Int,parser,state)
+
+Return the index before the `state` match ending before position `i`.
+!!! note
+    I am in doubt whether this qualifies as type piracy because I provide an outside method for outside types.
+    I thought it might not, because the differentiating two extra arguments. If you have an opinion, please let me know on GitHub.
+"""
 @inline prevind(str,i::Int,parser::Union{AbstractString,Char},x) where L = 
     i-ncodeunits(parser)
 
@@ -164,7 +178,9 @@ end
 ## Parsing with AbstractToken
 
 """
-State object representing ncodeunits of match for `prevind`, `nextind`, performance.
+State object representing ncodeunits explicitely with state of match for `prevind`, `nextind` to improve performance.
+    nc::Int
+    state::S
 
 See also [`MatchState`](@ref), [`prevind`](@ref), [`nextind`](@ref).
 """
@@ -370,8 +386,9 @@ regex_inner(x::WrappedParser) = regex_inner(x.parser)
 
 export FilterParser
 """
-A parser the succeeds ony if wrapped parser succeeds and a predicate function on the position,state tuple
-`.state_filter(sequence, till, posi, r...)`.
+A parser succeeds ony if 
+1. the wrapped `parser` succeeds 
+2. and a predicate function `state_filter(sequence, till, posi, r...)` returns `true` the `after,state = r` tuple.
 """
 struct FilterParser{P,S,F,T} <: WrappedParser{P,S,T}
     parser::P
@@ -957,6 +974,8 @@ end
 
 
 """
+    @with_names
+
 Sets names of parsers within begin/end block to match the variables they are asigned to.
 
 so, for example
@@ -966,12 +985,12 @@ julia> @with_names foo = AnyChar()
 ::Char
 
 julia> parse(log_names(foo),"ab")
-   match foo: ab
-              ^
+   match foo@1-2: ab
+                  ^
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 ```
 
-See also [`log_names(parser)`](@ref)
+See also [`log_names(parser)`](@ref), [`@syntax`](@ref).
 """
 macro with_names(block)
     esc(with_names(block))
@@ -995,10 +1014,10 @@ julia> @syntax for german_street_address in street_address
                  " ",
                  :no =>Numeric(Int))
        end
-🗄 Sequence |> map(#38) |> with_name(:german_street_address)
-├─ .* AnyChar |> Repeat |> JoinSubstring |> with_name(:street)
-├─ \\
-└─ TextParse.Numeric{Int64} TextParse.Numeric |> with_name(:no)
+🗄 Sequence |> map(ntuple) |> with_name(:german_street_address)
+├─ .* AnyChar |> Repeat |> ! |> with_name(:street)
+├─ \\  
+└─ Int64  |> with_name(:no)
 ::NamedTuple{(:street, :no),Tuple{SubString,Int64}}
 
 julia> german_street_address"Some Avenue 42"
@@ -1010,10 +1029,10 @@ julia> @syntax for us_street_address in street_address
                      " ",
                      :street => !Repeat(AnyChar()))
        end
-🗄 Sequence |> map(#38) |> with_name(:us_street_address)
-├─ TextParse.Numeric{Int64} TextParse.Numeric |> with_name(:no)
+🗄 Sequence |> map(ntuple) |> with_name(:us_street_address)
+├─ Int64  |> with_name(:no)
 ├─ \\  
-└─ .* AnyChar |> Repeat |> JoinSubstring |> with_name(:street)
+└─ .* AnyChar |> Repeat |> ! |> with_name(:street)
 ::NamedTuple{(:no, :street),Tuple{Int64,SubString}}
 
 julia> street_address"50 Oakland Ave"
@@ -1283,7 +1302,7 @@ Returns results of `p`.
 ```jldoctest
 julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄* Sequence |> map(#52) |> Repeat
+├─ 🗄* Sequence[2] |> Repeat
 │  ├─ (?!🗄) NegativeLookahead
 │  │  └─ b
 │  └─ . AnyChar
@@ -1297,12 +1316,12 @@ julia> parse(p,"acbX")
 See also [`NegativeLookahead`](@ref)
 """
 Repeat_stop(p,stop) =
-    Repeat(Sequence(2,NegativeLookahead(parser(stop)),parser(p)))
+    Repeat(map(IndexAt(2),Sequence(NegativeLookahead(parser(stop)),parser(p))))
 
 @deprecate rep_stop(a...;kw...) Repeat_stop(a...;kw...)
 
 """
-    Repeat\\_until(p,until, with_until=false;wrap=identity)
+    Repeat_until(p,until, with_until=false;wrap=identity)
 
 Repeat `p` until `stop` (with [`Repeat_stop`](@ref)).
 and set point **after** `stop`.
@@ -1313,8 +1332,8 @@ To transform the `Repeat_stop(p)` parser head, provide a function(::Vector{resul
 ```jldoctest
 julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 🗄 Sequence
-├─ 🗄 Sequence |> map(#52)
-│  ├─ (?>🗄*) Sequence |> map(#52) |> Repeat |> Atomic
+├─ 🗄 Sequence[1]
+│  ├─ (?>🗄*) Sequence[2] |> Repeat |> Atomic
 │  │  ├─ (?!🗄) NegativeLookahead
 │  │  │  └─ b
 │  │  └─ . AnyChar
@@ -1335,7 +1354,7 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
     if with_until
         Sequence(map(wrap,Atomic(Repeat_stop(p,until))), until)
     else
-        Sequence(1, map(wrap,Atomic(Repeat_stop(p,until))), until)
+        map(IndexAt(1),Sequence(map(wrap,Atomic(Repeat_stop(p,until))), until))
     end
 
 @deprecate rep_until(p,until) Repeat_until(p,until)
@@ -1343,10 +1362,36 @@ Repeat_until(p,until, with_until=false;wrap=identity) =
 
 
 export FlatMap,after
+"""
+    FlatMap{P,S,Q<:Function,T} <: CombinedParser{S,T}
+    after(right::Function,left::AbstractToken)
+    after(right::Function,left::AbstractToken,T::Type)
+
+Like Scala's [fastparse FlatMap](https://www.lihaoyi.com/fastparse/#FlatMap).
+
+```jldoctest
+julia> saying(v) = v == "same" ? v : "different";
+
+julia> p = after(saying, String, "same"|"but")
+🗄 FlatMap
+├─ |🗄... Either
+│  ├─ same 
+│  └─ but 
+└─ saying
+::String
+
+julia> p("samesame")
+"same"
+
+julia> p("butdifferent")
+"different"
+
+```
+"""
 @auto_hash_equals struct FlatMap{P,S,Q<:Function,T} <: CombinedParser{S,T}
     left::P
     right::Q
-    function FlatMap{T}(left::P, right::Q) where {T, P, Q<:Function}
+    function FlatMap{T}(right::Q, left::P) where {T, P, Q<:Function}
         new{P,Tuple{<:Any,<:Any,<:Any},Q,T}(left, right)
     end
 end
@@ -1766,7 +1811,7 @@ a+?  |> Repeat |> Lazy
 ::Array{Char,1}
 
 julia> re"a??"
-a??  |> Optional(default=missing) |> Lazy
+a?? |missing |> Lazy
 ::Union{Missing, Char}
 ```
 """
@@ -1800,6 +1845,18 @@ export Repeat1, Repeat
     Repeat(min::Integer,max::Integer, x)
 
 Parser repeating pattern `x` `min:max` times.
+
+```jldoctest
+julia> Repeat(2,2,'a')
+a{2}  |> Repeat
+::Array{Char,1}
+
+
+julia> Repeat(3,'a')
+a{3,}  |> Repeat
+::Array{Char,1}
+
+```
 """
 @auto_hash_equals struct Repeat{P,S,T} <: WrappedParser{P,S,T}
     range::UnitRange{Int}
@@ -1863,9 +1920,9 @@ Parser matching repeated `x.parser` separated by `delim`.
 ```jldoctest
 julia> parse(join(Repeat(AnyChar()),','),"a,b,c")
 3-element Array{Char,1}:
- 'a'
- 'b'
- 'c'
+ 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+ 'b': ASCII/Unicode U+0062 (category Ll: Letter, lowercase)
+ 'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
 ```
 ```jldoctest
 julia> parse(join(Repeat(AnyChar()),',';infix=:prefix),"a,b,c")

@@ -243,8 +243,6 @@ end
 export Transformation
 """
     Transformation{T}(f::Function, p_) where {T}
-    map_at(f::Function, p, a...)
-    map_at(f::Function, Tc::Type, p, a...)
     Base.map(f::Function, Tc::Type, p::ParserTypes, a...)
     Base.map(f::Function, p::ParserTypes, a...)
 
@@ -281,6 +279,7 @@ A Transformation{<:Constant} skips evaluation of get(.parser).
 struct Constant{T}
     value::T
 end
+Base.show(io::IO, x::Constant) = show(io,x.value)
 function map_constant(transform, p::AbstractToken)
     T=typeof(transform)
     Transformation{T}(Constant(transform), p)
@@ -324,7 +323,7 @@ end
 
 function print_constructor(io::IO,x::Transformation{<:Constant})
     print_constructor(io,x.parser)
-    printstyled(io," => ",x.transform.value, color=:blue)
+    printstyled(io," => ",string(x.transform), color=:blue)
     
 end
 
@@ -337,17 +336,29 @@ function Base.get(parser::Transformation{<:Function}, sequence, till, after, i, 
     v = get(parser.parser, sequence, till, after, i, state)
     parser.transform(v)
 end
-"""
-    Base.get(parser::Transformation{<:Type}, a...)
-
-Function call `parser.transform(get(parser.parser,a...))`.
-"""
 function Base.get(parser::Transformation{<:Type}, sequence, till, after, i, state)
     v = get(parser.parser, sequence, till, after, i, state)
     parser.transform(v)
 end
 
 export IndexAt
+"""
+Struct for fast access to an index of a `Transformation`.
+
+```jldoctest
+julia> using CombinedParsers.Regexp
+
+julia> p = re"(?:a|b*)."[1]
+🗄 Sequence[1]
+├─ |🗄... Either
+│  ├─ a 
+│  └─ b*  |> Repeat
+└─ [^\n] CharNotIn
+::Union{Char, Array{Char,1}}
+```
+
+See also [`getindex`](@ref), [`Sequence`](@ref).
+"""
 struct IndexAt{I}
     i::I
 end
@@ -410,7 +421,7 @@ import Base: map
 
 Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
 
-See also: [`map_at`](@ref), [`Transformation`](@ref)
+See also: [`get`](@ref), [`Transformation`](@ref)
 """
 function Base.map(f::Function, p::AbstractToken, a...;
                   throw_empty_union=true)
@@ -424,7 +435,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...)`.
 
-See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
+See also: [`get`](@ref), [`Transformation`](@ref)
 """
 function Base.map(Tc::Type, p::AbstractToken, a...)
     Transformation{Tc}(isempty(a) ? Tc : v -> Tc(a..., v), p)
@@ -436,7 +447,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing results to `getindex(x,index)` or `constant`.
 
-See also: [`map_at`](@ref) [`get`](@ref), [`Transformation`](@ref)
+See also: [`get`](@ref), [`Transformation`](@ref)
 
 """
 function Base.map(index::IndexAt{<:Integer}, p::AbstractToken)

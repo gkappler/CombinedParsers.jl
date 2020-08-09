@@ -1,17 +1,14 @@
 ## CombinedParsers.Regexp
 ```@docs
 CombinedParsers.Regexp
+CombinedParsers.Regexp.Regcomb
+(==)(::RegexMatch,::ParseMatch)
+getindex(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Integer)
+getproperty(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Symbol)
 with_options
 CombinedParsers.Regexp.@pcre_tests
 ```
 
-## Parsing Options
-```@docs
-CombinedParsers.Regexp.ParserOptions
-CombinedParsers.Regexp.FilterOptions
-CombinedParsers.Regexp.WithOptions
-CombinedParsers.Regexp.OnOptionsParser
-```
 ## Regular Expression Types
 ```@docs
 CombinedParsers.Regexp.parse_options
@@ -31,3 +28,10 @@ CombinedParsers.Regexp.Conditional
 CombinedParsers.Regexp.DupSubpatternNumbers
 ```
 
+## Parsing Options
+```@docs
+CombinedParsers.Regexp.ParserOptions
+CombinedParsers.Regexp.FilterOptions
+CombinedParsers.Regexp.WithOptions
+CombinedParsers.Regexp.OnOptionsParser
+```

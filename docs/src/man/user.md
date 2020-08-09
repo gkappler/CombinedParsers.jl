@@ -98,7 +98,7 @@ parse(("a"|"ab")*AtEnd(),"ab")
 ```
 
 ### Looking around
-A [`Lookaround`](@ref) parser wraps a parser `p`, 
+A [`Lookahead`](@ref) and [`Lookbehind`](@ref) parsers wrap a parser `p`, 
 - succeeds iif `p` matches ([`PositiveLookahead`](@ref), [`PositiveLookbehind`](@ref)), respectively iif failed ([`NegativeLookahead`](@ref), [`NegativeLookbehind`](@ref)),
 - without advancing the position.
 The `@re_str` macro [demonstrates][pcre.md] a parser for lookahead and lookbehind expressions.

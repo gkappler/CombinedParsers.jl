@@ -26,12 +26,34 @@ deepmap_parser(f::Function,mem::AbstractDict,x::MappingParser,a...;kw...) =
 
 export MappedChars
 """
-A lazy element transformation type (e.g. AbstractString), 
-`getindex` wraps elements in `with_options(flags,...)`.
+    MappedChars(f::Function,x) <: AbstractString
 
-With parsing options
+String implementation lazily transforming characters.
+Used for fast caseless matching.
 
-TODO: make flags a transformation function?
+```@meta
+DocTestFilters = r"[0-9.]+ .s.*"
+```
+
+```jldoctest
+julia> p = caseless("AlsO")
+🗄  |> MappingParser
+├─ also
+└─ lowercase
+::String
+
+julia> p("also")
+"also"
+
+julia> using BenchmarkTools;
+
+julia> @btime match(p,"also");
+  51.983 ns (2 allocations: 176 bytes)
+
+julia> p = parser("also"); @btime match(p,"also");
+  44.759 ns (2 allocations: 176 bytes)
+
+```
 """
 struct MappedChars{S,M<:Function} <: AbstractString
     x::S

@@ -5,14 +5,11 @@ import TextParse: tryparsenext
 
 TextParse.jl integrates with CombinedParsers.jl both ways.
 
-```@meta
-DocTestFilters = r"map\\(.+\\)"
-```
-
 ```jldoctest
+julia> using TextParse
 
 julia> p = ("Number:" * Repeat(' ') * TextParse.Numeric(Int))[3]
-🗄 Sequence |> map(IndexAt(3))
+🗄 Sequence[3]
 ├─ Number\\:
 ├─ \\ *  |> Repeat
 └─ <Int64>

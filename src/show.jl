@@ -38,7 +38,7 @@ function Base.show(io::IO, x::CombinedParser)
     if get(io,:compact,false)
         print(io, regex_string(x)) ##!!
     else
-        print_tree(io, MemoTreeChildren(Dict(),x, true))
+        print_tree(io, MemoTreeChildren(Dict(),x, true), indicate_truncation=false)
         println(io,"::",result_type(x))
     end
 end

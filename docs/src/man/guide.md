@@ -67,7 +67,7 @@ pattern = r"[aB]+c";
 @benchmark match(pattern,"aBaBc")
 ```
 `CombinedParsers` are slightly faster in this case,
-[and for many other tested parsers](man/pcre-compliance.md).
+[and for many other tested parsers](pcre-compliance.md).
 ```@example session
 pattern = re"[aB]+c";
 @benchmark match(pattern,"aBaBc")

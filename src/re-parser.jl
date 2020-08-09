@@ -700,7 +700,7 @@ function Regcomb(x)
 end
 
 """
-    Regcomb(x::AbstractString,flags::AbstractString)
+    Regcomb(x::AbstractString[, flags=""])
 
 Syntax for `flags` in [`@re_str`](@ref).
 """

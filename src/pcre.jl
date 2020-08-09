@@ -19,11 +19,10 @@ pcre_option =
         with_name(:INFO, 'I' => UInt32(0)) # info
     );
 
-pcre_options = Repeat1(Sequence(1,pcre_option,Optional(','))) do v
-    (|(v...))::UInt32
-end
+splat_or(v) = (|(v...))::UInt32
+pcre_options = Repeat1(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
 
-pcre_options_parser=Sequence(2,AtStart(),Optional(pcre_options,default=UInt32(0)),AtEnd())
+pcre_options_parser=map(IndexAt(2),Sequence(AtStart(),Optional(pcre_options,default=UInt32(0)),AtEnd()))
 
 """
     parse_options(options::AbstractString)
@@ -34,22 +33,22 @@ Parser for `flags` in [`@re_str`](@ref).
 
 ```jldoctest
 julia> CombinedParsers.Regexp.pcre_options_parser
-🗄 Sequence |> map(#52)
+🗄 Sequence[2]
 ├─ ^ AtStart
-├─ 🗄+? Sequence |> map(#52) |> Repeat |> map(#44) |> Optional(default=0)
+├─ 🗄+? Sequence[1] |> Repeat |> map(splat_or)|0
 │  ├─ |🗄... Either
-│  │  ├─ dupnames  |> map(Constant(0x00000040)) |> with_name(:DUPNAMES)
-│  │  ├─ xx  |> map(Constant(0x01000000)) |> with_name(:EXTENDED_MORE)
-│  │  ├─ i  |> map(Constant(0x00000008)) |> with_name(:CASELESS)
-│  │  ├─ m  |> map(Constant(0x00000400)) |> with_name(:MULTILINE)
-│  │  ├─ n  |> map(Constant(0x00002000)) |> with_name(:NO_AUTO_CAPTURE)
-│  │  ├─ U  |> map(Constant(0x00040000)) |> with_name(:UNGREEDY)
-│  │  ├─ J  |> map(Constant(0x00000040)) |> with_name(:DUPNAMES)
-│  │  ├─ s  |> map(Constant(0x00000020)) |> with_name(:DOTALL)
-│  │  ├─ x  |> map(Constant(0x00000080)) |> with_name(:EXTENDED)
-│  │  ├─ B  |> map(Constant(0x00000000)) |> with_name(:BINCODE)
-│  │  └─ I  |> map(Constant(0x00000000)) |> with_name(:INFO)
-│  └─ ,?  |> Optional(default=missing)
+│  │  ├─ dupnames  => 0x00000040 |> with_name(:DUPNAMES)
+│  │  ├─ xx  => 0x01000000 |> with_name(:EXTENDED_MORE)
+│  │  ├─ i  => 0x00000008 |> with_name(:CASELESS)
+│  │  ├─ m  => 0x00000400 |> with_name(:MULTILINE)
+│  │  ├─ n  => 0x00002000 |> with_name(:NO_AUTO_CAPTURE)
+│  │  ├─ U  => 0x00040000 |> with_name(:UNGREEDY)
+│  │  ├─ J  => 0x00000040 |> with_name(:DUPNAMES)
+│  │  ├─ s  => 0x00000020 |> with_name(:DOTALL)
+│  │  ├─ x  => 0x00000080 |> with_name(:EXTENDED)
+│  │  ├─ B  => 0x00000000 |> with_name(:BINCODE)
+│  │  └─ I  => 0x00000000 |> with_name(:INFO)
+│  └─ ,? |missing
 └─ \$ AtEnd
 ::UInt32
 

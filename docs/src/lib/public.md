@@ -8,11 +8,8 @@ See the Internals section of the manual for internal package docs covering all s
 ```@docs
 CombinedParsers
 match
-CombinedParsers.MatchesIterator
 ParseMatch
-(==)(::RegexMatch,::ParseMatch)
-getindex(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Integer)
-getproperty(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Symbol)
+Base.iterate
 ```
 
 ### Parsing
@@ -25,15 +22,15 @@ tryparse_pos
 ```
 
 ## Typed Transformation Parsers
-
 ```@docs
-CombinedParsers.state_type
-map
-map_at
-JoinSubstring
-CombinedParsers.Constant
 (!)(::CombinedParsers.AbstractToken)
+JoinSubstring
+map
+CombinedParsers.Constant
+CombinedParsers.IndexAt
 CombinedParsers.result_type
+CombinedParsers.infer_result_type
+CombinedParsers.state_type
 ```
 
 ## Parser Constructors
@@ -57,32 +54,50 @@ CombinedParsers.Regexp.integer_base
 
 ### Character Matchers
 ```@docs
+Bytes
 AnyChar
 CharIn
 CharNotIn
+CombinedParsers.broadcasted
+```
+
+## other
+```@docs
+CombinedParsers.WithMemory
+CombinedParsers.MappedChars
+```
+
+### Sequences
+```@docs
+Sequence
+(*)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
+sSequence
+```
+
+### Either
+```@docs
+Either
+(|)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
+(|)(::Either, ::Type)
+push!
+pushfirst!
+sEither
+CombinedParsers.either_result_type
 ```
 
 ### Combining Parser
 ```@docs
-@syntax
-Either
-CombinedParsers.either_types
-(|)(::CombinedParsers.ParserTypes, ::CombinedParsers.ParserTypes)
-push!
-pushfirst!
-sEither
-Sequence
-sSequence
 Atomic
+CombinedParsers.FlatMap
+(∘)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
 ```
 
 ### Repeating
 ```@docs
-Optional
-(|)(::Either, ::Type)
-(|)(::CombinedParsers.AbstractToken{T}, ::Union{T,Missing}) where { T }
 Repeat
 Lazy
+Optional
+(|)(::CombinedParsers.AbstractToken{T}, ::Union{T,Missing}) where { T }
 Repeat1
 Repeat_stop
 Repeat_until
@@ -91,6 +106,8 @@ Base.join
 
 ### Logging and Side-Effects
 ```@docs
+@syntax
+CombinedParsers.NamedParser
 with_name
 @with_names
 log_names
@@ -104,11 +121,20 @@ AtStart
 AtEnd
 Always
 Never
-Lookahead
-PositiveLookahead
-NegativeLookahead
+```
+
+#### Look behind
+```@docs
+(/)(::CombinedParsers.ParserTypes, ::CombinedParsers.ParserTypes)
 Lookbehind
 PositiveLookbehind
 NegativeLookbehind
+```
+
+#### Look ahead
+```@docs
+Lookahead
+PositiveLookahead
+NegativeLookahead
 ```
 

@@ -101,6 +101,8 @@ Base.getproperty(x::ParseMatch{<:Any,<:AbstractString,Nothing},key::Symbol) =
     end
 
 """
+    parsematch_tuple(m,start,state)
+
 ParseMatch iteration has the first match as iterator, the last match as a state.
 (Turned out to be fastest.)
 """
@@ -112,6 +114,10 @@ parsematch_tuple(m,start,state::Nothing) = nothing
 
 """
     iterate(m::CombinedParser,s::AbstractString)
+
+Returns `iterate(ParseMatch(m,s,1,1,nothing))`.
+
+See also [`ParseMatch`](@ref).
 """
 Base.iterate(m::CombinedParser,s::AbstractString) =
     iterate(ParseMatch(m,s,1,1,nothing))
@@ -119,7 +125,9 @@ import Base: iterate
 """
     Base.iterate(x::ParseMatch[, m::ParseMatch=x])
 
-[`_iterate`](@ref)(m).
+Returns next match at `m.start` after `m.state`, see [`_iterate`](@ref)(m).
+
+See also [`ParseMatch`](@ref).
 """
 function Base.iterate(x::ParseMatch, m=x)
     i = _iterate(m)
@@ -128,6 +136,12 @@ end
 _iterate(m::ParseMatch) =
     _iterate(m.parsings,m.start,m.stop,m.state)
 export match_all
+
+"""
+    match_all(parser::ParserTypes, sequence, idx=1; log=nothing)
+
+Returns an iterator over all matches at all indices in the sequence.
+"""
 function match_all(parser::ParserTypes, sequence, idx=1; log=nothing)
     p = (log === nothing || log == false ) ? parser : log_names(parser,log)
     MatchesIterator(p,sequence,idx)
@@ -138,8 +152,8 @@ import Base: iterate
     Base.iterate(x::MatchesIterator[, s::ParseMatch=ParseMatch(x,x.from,x.from,nothing)])
 
 Iterate match `s` at current position.
-While no match is found, increase s.start.
-Return first next ParseMatch (as return value and state) or nothing when at `m.till`.
+While no match is found and `s.start<=x.till`, increase s.start.
+Return first next [`ParseMatch`](@ref) (as return value and state) or `nothing` when at `m.till`.
 """
 @inline Base.iterate(x::MatchesIterator) =
     iterate(x,ParseMatch(x,x.from,x.from,nothing))
@@ -165,7 +179,10 @@ _iterate(mi::MatchesIterator,a...) =
 """
     Base.match(parser::ParserTypes,sequence::AbstractString[, idx::Integer]; log=nothing)
 
-Plug-in replacement for match(::Regex,sequence).
+Plug-in replacement for `match(::Regex,sequence)`.
+
+If `log!==nothing`, parser is transformed with `log_names(p, log)`.
+See also [`log_names`](@ref).
 """
 function Base.match(parser::ParserTypes, sequence, idx=1; log=nothing)
     p = (log === nothing || log == false ) ? parser : log_names(parser,log)
@@ -191,7 +208,7 @@ DocTestFilters = r"map\\(.+\\)"
 julia> using TextParse
 
 julia> p = ("Number: "*TextParse.Numeric(Int))[2]
-🗄 Sequence |> map(IndexAt(2))
+🗄 Sequence[2]
 ├─ Number\\:\\
 └─ <Int64>
 ::Int64
@@ -233,7 +250,12 @@ function tryparse_pos(p,s)
 end
 
 export parse_all
-function parse_all(parser::ParserTypes, sequence::AbstractString, idx=1)
+"""
+    parse_all(parser::ParserTypes, sequence, idx=1)
+
+Returns an iterator over all parsings of the sequence starting at `idx`.
+"""
+function parse_all(parser::ParserTypes, sequence, idx=1)
     ( get(p) for p=ParseMatch(parser,sequence,idx) )
 end
 
@@ -248,7 +270,7 @@ julia> m = match(re"(?<a>so)+ (or)", "soso or")
 ParseMatch("soso or", a="so", 2="or")
 
 julia> get(m)
-"so"
+([('s', 'o'), ('s', 'o')], ' ', ('o', 'r'))
 
 julia> m[2]
 "or"
@@ -256,8 +278,8 @@ julia> m[2]
 julia> m.match, m.captures
 ("soso or", SubString{String}["so", "or"])
 
-    ```
-    """
+```
+"""
 Base.get(x::ParseMatch)=
     get(x.parsings,x.stop,x.start,x.state)
 
