@@ -32,7 +32,11 @@ Base.show(io::IO, ::MatchState) = print(io,"∘")
 
 
 
+Base.nextind(x::AbstractVector,i,delta) =
+    i+delta
 
+Base.prevind(x::AbstractVector,i,delta) =
+    i-delta
 
 "Julia types that provide CombinedParser methods result_type, state_type, _iterate, get, nextind, prevind."
 ParserTypes = Union{AbstractToken, AbstractString, Char, Regex}
