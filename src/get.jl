@@ -25,11 +25,6 @@ function Base.get(parser::AbstractToken,
     state.state
 end
 
-"""
-    Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state)
-
-Default method for parser types returning nothing
-"""
 Base.get(
     parser::Union{Always,NegativeLookahead,AtStart,AtEnd,NegativeLookbehind},
     sequence, till, after,
@@ -329,6 +324,7 @@ end
 
 """
     Base.get(parser::Transformation{<:Function}, a...)
+    Base.get(parser::Transformation{<:Type}, a...)
 
 Function call `parser.transform(get(parser.parser,a...))`.
 """
@@ -353,7 +349,7 @@ julia> p = re"(?:a|b*)."[1]
 ├─ |🗄... Either
 │  ├─ a 
 │  └─ b*  |> Repeat
-└─ [^\n] CharNotIn
+└─ [^\\n] CharNotIn
 ::Union{Char, Array{Char,1}}
 ```
 
@@ -362,8 +358,6 @@ See also [`getindex`](@ref), [`Sequence`](@ref).
 struct IndexAt{I}
     i::I
 end
-# @inline Base.getindex(x,i::IndexAt) = getindex(x,i.i...)
-_string(io::IO,x::IndexAt) = print(io,"IndexAt(",x.i,")")
 
 """
     Base.get(parser::Transformation{<:IndexAt}, a...)

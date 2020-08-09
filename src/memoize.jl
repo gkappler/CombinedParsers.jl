@@ -20,12 +20,16 @@ deepmap_parser(f::Function,mem::AbstractDict,x::MemoizingParser,a...;kw...) =
 
 export WithMemory
 """
-A lazy element transformation type (e.g. AbstractString), 
-`getindex` wraps elements in `with_options(flags,...)`.
+    WithMemory(x) <: AbstractString
 
-With parsing options
+String wrapper with memoization of next match states for parsers at indices.
+Memoization is sometimes recommended as a way of improving the performance of parser combinators (like state machine optimization and compilation for regular languages).
 
-TODO: make flags a transformation function?
+
+!!! note
+    A snappy performance gain could not be demonstrated so far, probably because the costs of state memory allocation for caching are often greater than recomputing a match. 
+    If you have a case where your performance benefits with this, let me know!
+```
 """
 struct WithMemory{S,M} <: AbstractString
     x::S

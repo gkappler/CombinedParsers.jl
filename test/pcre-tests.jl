@@ -205,8 +205,10 @@ $n_failed failed tests on $(n_patterns.failed) patterns
 (See [list of failed patterns](pcre-compliance-failed.md)).
 ### Performance Overview:
 The PCRE C backend of `@r_str` has arrived at a widely optimized codebase after decades of improvements.
+C PCRE2 optimized is among the fastest regex libraries ([second behind Rust](https://github.com/mariomka/regex-benchmark/tree/optimized), running [mariomka](https://github.com/mariomka)'s benchmark will position CombinedParser among its competition).
+
 Although CombinedParsers.jl is a very young package that will be optimized further, 
-`@re_str` pure Julia Regcomb is competitive with PCRE `@r_str` Regex.\n\n
+`@re_str` pure Julia Regcomb is often competitive with PCRE `@r_str` Regex.\n\n
 PCRE benchmarks have a range between $(benchmarks.range_Regex[1])ns to $(benchmarks.range_Regex[2])ns.
 CombinedParsers benchmarks range between $(benchmarks.range_Regcomb[1])ns to $(benchmarks.range_Regcomb[2])ns.
 $(round(benchmarks.proportion_better*100))% of benchmarks are faster with CombinedParsers compared to PCRE.

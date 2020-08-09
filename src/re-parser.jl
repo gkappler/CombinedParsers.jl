@@ -134,7 +134,6 @@ end
 Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax ",e.message)
 
  
-hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
 _integer(maxchar=3) =
     Sequence(Optional('-'),integer_base(10,1,maxchar)) do v
         if v[1]===missing

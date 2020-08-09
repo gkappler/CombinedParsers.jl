@@ -415,27 +415,6 @@ end
 
 
 
-
-"""
-    integer_base(base,mind=0,maxd=Repeat_max)
-
-Parser matching a integer format on base `base`.
-"""
-function integer_base(base=10,mind=0,maxd=Repeat_max)
-    dig = if base == 16
-        hex_digit
-    elseif base == 8
-        CharIn('0':'7')
-    elseif base ==10
-        CharIn('0':'9')
-    else
-        error()
-    end
-    Repeat(mind:maxd,dig) do v
-        (isempty(v) ? 0 : parse(Int,join(v),base=base))::Int
-    end
-end
-
 """
     @pcre_testset
 

@@ -141,6 +141,10 @@ julia> parser("abc") | "nothing"
 └─ nothing
 ::SubString
 
+julia> parser("abc") | missing
+abc? |missing
+::Union{Missing, SubString}
+
 ```
 
 """

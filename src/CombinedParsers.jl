@@ -24,14 +24,6 @@ Numeric = TextParse.Numeric
 export CombinedParser
 export result_type
 
-"""
-State object for a match that is defined by the parser, sequence and position.
-"""
-struct MatchState end
-Base.show(io::IO, ::MatchState) = print(io,"∘")
-
-
-
 Base.nextind(x::AbstractVector,i,delta) =
     i+delta
 
@@ -64,6 +56,14 @@ parser(x::T) where {T<:AbstractString} =
 function Base.convert(::Type{AbstractToken},x)
     parser(x)
 end
+
+
+export MatchState
+"""
+State object for a match that is defined by the parser, sequence and position.
+"""
+struct MatchState end
+Base.show(io::IO, ::MatchState) = print(io,"∘")
 
 """
     CombinedParsers.state_type(x::T)
@@ -205,23 +205,6 @@ end
 
 @inline function prevind(str,i::Int,parser,x::NCodeunitsState)
     i-x.nc
-end
-
-function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state,opts=TextParse.default_opts)
-    if parser isa CombinedParser
-        @warn "define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))"
-        return nothing
-    end
-    if state === nothing
-        r,next_i_ = tryparsenext(parser, sequence, next_i, till,opts)
-        if isnull(r)
-            nothing
-        else
-            NCodeunitsState(next_i,next_i_,get(r))
-        end
-    else
-        nothing
-    end
 end
 
 
@@ -806,6 +789,15 @@ deepmap_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...;kw...) =
                          deepmap_parser(f,mem,x.parser,a...;kw...),
                          x.args...)
     end
+
+"""
+    Base.escape_string(x::AbstractVector)
+
+for printing a non-string sequence when parsing.
+!!! note
+    type piracy? module local `_escape_string`?
+"""
+Base.escape_string(x::AbstractVector) = "$x"
 
 """
     with_log(s::AbstractString,p, delta=5;nomatch=false)
@@ -2700,6 +2692,27 @@ include("textparse.jl")
 include("get.jl")
 include("operators.jl")
 
+hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
+export hex_digit, integer_base
+"""
+    integer_base(base,mind=0,maxd=Repeat_max)
+
+Parser matching a integer format on base `base`.
+"""
+function integer_base(base=10,mind=0,maxd=Repeat_max)
+    dig = if base == 16
+        hex_digit
+    elseif base == 8
+        CharIn('0':'7')
+    elseif base ==10
+        CharIn('0':'9')
+    else
+        error()
+    end
+    Repeat(mind:maxd,dig) do v
+        (isempty(v) ? 0 : parse(Int,join(v),base=base))::Int
+    end
+end
 
 include("re.jl")
 
