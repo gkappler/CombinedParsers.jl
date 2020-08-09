@@ -97,6 +97,7 @@ function html(inner::Function, T::Type, tags::CombinedParser, attrs_parser=attri
                     end)
     end
     FlatMap{Any}(
+        nested_html,
         Sequence(
             2,
             "<",
@@ -106,8 +107,7 @@ function html(inner::Function, T::Type, tags::CombinedParser, attrs_parser=attri
                     2,
                     whitespace_horizontal,
                     attrs_parser,
-                    whitespace_maybe)))),
-    nested_html)
+                    whitespace_maybe)))))
 end
 
 

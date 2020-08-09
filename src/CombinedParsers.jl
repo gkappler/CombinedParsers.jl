@@ -1407,23 +1407,17 @@ right_state(state::Tuple) = state[3]
 
 children(x::FlatMap) = ( x.left, x.right )
 function print_constructor(io::IO,x::FlatMap)
-    print_constructor(io,x.left)
-    print(io, "FlatMap(",x.right,")" )
+    print(io, "FlatMap" )
 end
-after(right::Function,left::AbstractToken,T::Type) =
-    FlatMap{T}(left,right)
+FlatMap(right::Function, left::AbstractToken, T::Type=Any) = FlatMap{T}(right,left)
+FlatMap(right::Function, T::Type, left::AbstractToken) = FlatMap{T}(right,left)
 
-function after(right::Function,left::AbstractToken)
-    result_type(left)
-    RT = infer_result_type(right,Any,left,"")
-    T=result_type(RT)
-    FlatMap{T}(left,right)
-end
+after(a...) = FlatMap(a...)
 
 deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...;kw...) =
     get!(mem,x) do
-        FlatMap{result_type(x)}(deepmap_parser(f,mem,x.left,a...;kw...),
-                                v -> deepmap_parser(f,mem,x.right(v),a...;kw...))
+        FlatMap{result_type(x)}(x.right,# v -> deepmap_parser(f,mem,x.right(v),a...;kw...),
+                                deepmap_parser(f,mem,x.left,a...;kw...))
     end
 regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
