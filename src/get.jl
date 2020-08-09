@@ -18,11 +18,17 @@ function Base.get(
         after_, i, state)
 end
 
-function Base.get(parser::Bytes{N,T},
-                  sequence, till,
-                  after, i, state) where {N,T}
+"""
+    Base.get(parser::Bytes{T}, sequence::Vector{UInt8})
+
+!!! note
+    The endian type is not configurable.  Might depend on the arch.
+    Your hint and help would be much appreciated!
+"""
+function Base.get(parser::Bytes{T}, sequence::Vector{UInt8}, till,
+                  after, i, state) where {T}
     if isbitstype(T)
-        reinterpret(result_type(parser),sequence[i:after-1])[1]
+        reinterpret(T,sequence[i:after-1])[1]
     else
         T(sequence[i:after-1])
     end
@@ -112,12 +118,6 @@ end
 
 
 
-
-"""
-    Base.get(parser::Transformation, a...)
-
-Constant value `parser.transform` fallback method.
-"""
 function Base.get(parser::JoinSubstring{<:NamedParser}, sequence, till, after, i, state)
     parser.parser.name => get(parser.parser.parser, sequence, till, after, i, state)
     

@@ -42,7 +42,17 @@ parser(x::AbstractToken) = x
 A [`ConstantParser`](@ref) matching `x`.
 """
 parser(x::Char) =
-    CharIn(x)
+    ConstantParser(x)
+
+
+"""
+    parser(x)
+
+A [`ConstantParser`](@ref){1} matching `x`.
+"""
+parser(x) =
+    ConstantParser{1}(x)
+
 
 """
     parser(x::StepRange{Char,<:Integer})
@@ -403,17 +413,31 @@ Base.filter(f::Function, x::CombinedParser) =
 end
 
 
-"wrapper for stepping with ncodeunit length."
+"""
+Wrapper for stepping with ncodeunit length.
+
+```jldoctest
+julia> parser("constant") isa CombinedParsers.ConstantParser
+true
+
+julia> parser('c') isa CombinedParsers.ConstantParser
+true
+
+julia> parser(1) isa CombinedParsers.ConstantParser
+true
+```
+"""
 @auto_hash_equals struct ConstantParser{N,P,T} <: WrappedParser{T,MatchState,T}
     parser::P
-    function ConstantParser{N}(x::Char) where N
-        new{N,Char,Char}(x)
-    end
-    function ConstantParser{N}(x::T) where {N,T<:AbstractString}
-        new{N,T,SubString}(x)
+    function ConstantParser(x::Char) where N
+        new{ncodeunits(x),Char,Char}(x)
     end
     function ConstantParser(x::T) where {T<:AbstractString}
         new{ncodeunits(x),T,SubString}(x)
+    end
+    function ConstantParser{N}(x) where N
+        T=typeof(x)
+        new{N,T,T}(x)
     end
 end
 
@@ -424,7 +448,7 @@ regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
 revert(x::ConstantParser{N,<:AbstractString}) where N =
-    ConstantParser{N}(reverse(x.parser))
+    ConstantParser(reverse(x.parser))
 
 deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
     get!(mem,x) do
@@ -445,7 +469,6 @@ end
 export Bytes
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
-Bytes(N::Integer, T::Type=Char) = Bytes{N,T}()
 """
     Bytes{N,T} <: NIndexParser{N,T}
 
@@ -454,11 +477,19 @@ Fast parsing of a fixed number `N` of indices,
 
 Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,T}` for custom conversion.
 """
-struct Bytes{N,T} <: NIndexParser{N,T} end
-Bytes(N::Integer, T::Type=Char) = Bytes{N,T}()
-
-_iterate(parser::Bytes{N}, sequence, till, posi, next_i, state::Nothing) where N =
-    nextind(sequence,posi,N), MatchState()
+struct Bytes{T} <: CombinedParser{MatchState,T}
+    N::Int
+end
+Bytes(N::Integer, T::Type=Char) = Bytes{T}(N)
+_iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) =
+    nextind(sequence,posi,parser.N), MatchState()
+regex_string_(x::Bytes{N}) where N = ".{$(N)}"
+Base.show(io::IO, x::Bytes) =
+    print(io, "$(x.N) Bytes::$(result_type(x))")
+@inline prevind(str,i::Int,parser::Bytes,x) =
+    prevind(str,i,parser.N)
+@inline nextind(str,i::Int,parser::Bytes,x) =
+    nextind(str,i,parser.N)
 
 @inline prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i
@@ -498,7 +529,7 @@ ismatch(c::MatchingNever,p)::Bool = false
 ismatch(c::MatchingNever,p::AnyChar)::Bool = false
 _ismatch(c,p::Function)::Bool = p(c)::Bool
 _ismatch(c,p::AnyChar)::Bool = true
-_ismatch(c::Char,p::Union{StepRange,Set})::Bool = c in p
+_ismatch(c,p::Union{StepRange,Set})::Bool = c in p
 
 """
     _ismatch(x::Char, set::Union{Tuple,Vector})::Bool
@@ -514,23 +545,23 @@ julia> parse(p,"a")
 
 ```
 """
-function _ismatch(x::Char, set::Union{Tuple,Vector})::Bool
+function _ismatch(x, set::Union{Tuple,Vector})::Bool
     return _ismatch(x,set...)
 end
 
-function _ismatch(x::Char)::Bool
+function _ismatch(x)::Bool
     return false
 end
 
-function _ismatch(x::Char, f, r1, r...)::Bool
+function _ismatch(x, f, r1, r...)::Bool
     ismatch(x,f) && return true
     return _ismatch(x::Char, r1, r...)
 end
 
-function _ismatch(c::Char,p::Char)::Bool
+function _ismatch(c,p)::Bool
     c==p
 end
-function ismatch(c::Char,p)::Bool
+function ismatch(c,p)::Bool
     _ismatch(c, p)
 end
 
@@ -1141,17 +1172,23 @@ julia> parse(ac, "c")
 @auto_hash_equals struct CharIn{S} <: NIndexParser{1,Char}
     pcre::String
     sets::S
-    CharIn(pcre::String,x::T) where {T<:Union{Char,Set{Char},<:Function,<:UnicodeClass,<:Tuple}}=
+    CharIn(pcre::String,x::T) where { T } = # <:Union{Char,Set{Char},<:Function,<:UnicodeClass,<:Tuple}}=
         new{T}(pcre,x)
 end
-CharIn(pcre::String,x_...) =
-    CharIn(pcre, optimize(CharIn,x_...))
+CharIn(pcre::String,x::CharIn) =
+    CharIn(pcre,x.sets)
+CharIn(pcre::String,x::AbstractString) =
+    CharIn(pcre,x...)
+CharIn(pcre::String,x1,x_...) =
+    CharIn(pcre, optimize(CharIn,x1,x_...))
 CharIn(chars::String) =
-    CharIn("",chars)
+    isempty(chars) ? Never() : CharIn("",chars...)
 CharIn(x_...) =
     CharIn("",x_...)
 CharIn(chars::StepRange) =
     CharIn("$(chars.start)-$(chars.stop)",chars)
+
+regex_string_(x) = "$x"
 
 """
     CharIn(unicode_class::Symbol...)
@@ -1266,11 +1303,11 @@ CharMatcher = Union{CharIn, CharNotIn, BaseCharMatcher}
 
 optimize!(charset,otherstuff) =
     charset,otherstuff
-optimize!(charset::Nothing,otherstuff,x::Char) =
+optimize!(charset::Nothing,otherstuff,x::T) where { T<:Union{Char,Integer} } =
     x,otherstuff
-optimize!(charset::Char,otherstuff,x::Char) =
-    optimize!(Set{Char}(charset),otherstuff,x)
-function optimize!(charset::Set{Char},otherstuff,x::Char)
+optimize!(charset::T,otherstuff,x::T) where { T<:Union{Char,Integer} } =
+    optimize!(Set{T}(charset),otherstuff,x)
+function optimize!(charset::Set{T},otherstuff,x::T) where { T<:Union{Char,Integer} }
     push!(charset,x)
     charset,otherstuff
 end
@@ -1283,9 +1320,8 @@ end
 function optimize!(charset,otherstuff,c::CharIn)
     optimize!(charset,otherstuff,c.sets)
 end
-function optimize!(charset,otherstuff,x::Union{Vector,Tuple,StepRange{Char,Int},Set{Char},<:AbstractString})
+optimize!(charset,otherstuff,x::Union{Vector,Tuple,StepRange{T,Int},Set{T},<:AbstractString}) where { T<:Union{Char,Integer} } =
     optimize!(charset,otherstuff,x...)
-end
 function optimize!(charset,otherstuff,x1,x2,x...)
     optimize!(optimize!(charset,otherstuff,x1)...,x2,x...)
 end
