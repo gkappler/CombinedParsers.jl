@@ -2454,10 +2454,11 @@ Recursive parsers can be built with `push!` to `Either`.
 
 See also [`pushfirst!`](@ref).
 """
-function Base.push!(x::Either{<:Vector,<:Any}, y)
+function Base.push!(x::Either{<:Vector,<:Any}, y_)
+    y = parser(y_)
     promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
     push!(x.options,y)
-    x
+    y
 end
 
 """
@@ -2477,7 +2478,7 @@ end
 Base.push!(x::Repeat{<:Either}, y) = push!(x.parser,y)
 Base.pushfirst!(x::Repeat{<:Either}, y) = pushfirst!(x.parser,y)
 
-function Base.push!(x::NamedParser{<:Either}, y)
+function Base.push!(x::NamedParser, y)
     push!(x.parser,y)
     x
 end
