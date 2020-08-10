@@ -2707,6 +2707,9 @@ include("show.jl")
 
 
 
+children(x::PositiveLookbehind) =
+    children(x.parser)
+
 export optimize
 optimize(x) = deepmap_parser(_optimize,x)
 
@@ -2715,6 +2718,9 @@ deepmap_parser(::typeof(_optimize),dict::AbstractDict,x::SideeffectParser) = x.p
 
 include("memoize.jl")
 include("caseless.jl")
+
+children(x::MappingParser) =
+    ( x.parser, x.f)
 end # module
 
 
