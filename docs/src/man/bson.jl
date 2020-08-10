@@ -164,11 +164,15 @@ using BenchmarkTools
 # ### Dates
 # Seems, reading a document written with BSON works.
 # BSON.jl has a nonstandard way with `Dates`...
+testdata = Dict(:a => 1, :b => 3.0, :c => "yeay", :d => true, :e => now())
+bson("test.bson", testdata)
+s = read("test.bson")
+parse(document,s, log=true)
+
+# This parser does not do any of the magic in `BSON.jl` to reassemble into julia types.
+# BSON dates work though:
 let d = now()
     Any[:e => d] == 
         parse(document,UInt8[0x10,0x0,0x0,0x0, # we actually ignore the 4 byte length of the vector
                              0x09,0x65,0x0,reinterpret(UInt8,[Dates.value(d)])...,0x0], log=true)
 end
-testdata = Dict(:a => 1, :b => 3.0, :c => "yeay", :d => true, :e => now())
-s = read("test.bson")
-parse(document,s, log=true)
