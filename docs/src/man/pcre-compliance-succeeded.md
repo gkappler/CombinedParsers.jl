@@ -1,5 +1,5 @@
 # PCRE Compliance
-3071 successful tests on 972 patterns.
+3074 successful tests on 973 patterns.
 
 
 
@@ -1524,6 +1524,16 @@
 - ✅ `1.875000282`
 - ✅ `1.235` no match
 - ✅ `` no match
+
+---
+
+```
+/a(?)b/
+```
+(no 140) succeeded 2 of 2 times:
+
+- ✅ `ab`
+- ✅ ``
 
 ---
 

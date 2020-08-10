@@ -1,7 +1,7 @@
 
 
 # Failed PCRE Tests
-25 failed tests on 17 patterns.
+23 failed tests on 15 patterns.
 
 
 
@@ -48,7 +48,7 @@
 /^(?:b|a(?=(.)))*\1/
 ```
 
-(no 524) skipped, Captures in Lookarounds need refactoring. Low prio because instead of using backreference, `FlatMap` is recommended in `CombinedParsers.jl`.
+(no 524) skipped, Captures in Lookaheads need refactoring. Low prio because instead of using backreference, `FlatMap` is recommended in `CombinedParsers.jl`.
 
 
 ---
@@ -134,13 +134,6 @@ parse(r"(|\1xxx)+", "xxx")
 ---
 
 ```
-/a(?)b/
-```
-(no 140) failed  0 of 0 times:
-
----
-
-```
 /(([a-c])b*?\2){3}/
 ```
 (no 397) failed  0 of 1 times:
@@ -214,13 +207,6 @@ parse(r"(|\1xxx)+", "xxx")
 /(?(R)a+|(?R)b)/
 ```
 (no 918) failed  0 of 0 times:
-
----
-
-```
-/(?(R)a+|((?R))b)/
-```
-(no 919) failed  0 of 0 times:
 
 ---
 

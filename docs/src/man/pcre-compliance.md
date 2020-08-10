@@ -29,10 +29,10 @@ parsed with
 [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
 (Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
 ## Test Overview
-3071 successful tests on 972 patterns
+3074 successful tests on 973 patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).
 
-25 failed tests on 17 patterns
+23 failed tests on 15 patterns
 (See [list of failed patterns](pcre-compliance-failed.md)).
 ### Performance Overview:
 The PCRE C backend of `@r_str` has arrived at a widely optimized codebase after decades of improvements.
@@ -67,7 +67,7 @@ Next steps in optimization are
 - caching codeunit lengths of matches for backtracking.
 - memoization of sub-parsings.
 ## Unsupported
-251 unsupported patterns were omitted for the following reasons:
+252 unsupported patterns were omitted for the following reasons:
 
 - `ACCEPT` excluded 16 patterns.
 - `COMMIT` excluded 35 patterns.
@@ -75,7 +75,7 @@ Next steps in optimization are
 - `SKIP` excluded 29 patterns.
 - `THEN` excluded 50 patterns.
 - `\K` excluded 13 patterns.
-- `checking for pattern recursion` excluded 5 patterns.
+- `checking for pattern recursion` excluded 6 patterns.
 - `options aftertext` excluded 12 patterns.
 - `options g` excluded 5 patterns.
 - `options g,aftertext` excluded 7 patterns.

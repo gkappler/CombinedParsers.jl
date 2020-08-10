@@ -19,10 +19,10 @@ pcre_option =
         with_name(:INFO, 'I' => UInt32(0)) # info
     );
 
-splat_or(v) = (|(v...))::UInt32
-pcre_options = Repeat1(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
+splat_or(v) = (isempty(v) ? 0x00000000 : (|(v...)))::UInt32
+pcre_options = Repeat(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
 
-pcre_options_parser=map(IndexAt(2),Sequence(AtStart(),Optional(pcre_options,default=UInt32(0)),AtEnd()))
+pcre_options_parser=map(IndexAt(2),Sequence(AtStart(),pcre_options,AtEnd()))
 
 """
     parse_options(options::AbstractString)

@@ -46,7 +46,7 @@ parse(r"(|\1xxx)+", "xxx")
     ## 260 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
     ## 261 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
     ## 562 => "case-ignoring backreferences still need to be done, contributions are very welcome,",
-    524 => "Captures in Lookarounds need refactoring. Low prio because instead of using backreference, `FlatMap` is recommended in `CombinedParsers.jl`.",
+    524 => "Captures in Lookaheads need refactoring. Low prio because instead of using backreference, `FlatMap` is recommended in `CombinedParsers.jl`.",
     527 => "Capture backtracking needs refactoring. Low prio because instead of using captures, `parse` is recommended in `CombinedParsers.jl`.",
     528 => "Capture backtracking needs refactoring. Low prio because instead of using captures, `parse` is recommended in `CombinedParsers.jl`.",
     625 => "\n!!! note\n    Lookahead in Lookbehind needs refactoring.",
