@@ -1045,6 +1045,7 @@ export @seq
     @seq(x...)
 
 Create a sequence interleaved with whitespace (horizontal or vertical).
+The result_type is omitting whitespace.
 """
 macro seq(x...)
     r = if length(x)==1
@@ -1052,7 +1053,7 @@ macro seq(x...)
     else
         quote
             x_ = [$(x...)]
-            sSequence( (i < lastindex(x_) ? (e*CombinedParsers.Regexp.whitespace_newline) : e for (i,e) in enumerate(x_))...)
+            sSequence( (i < lastindex(x_) ? (e*CombinedParsers.Regexp.whitespace_newline)[1] : e for (i,e) in enumerate(x_))...)
         end
     end
     esc(r)
