@@ -1040,6 +1040,25 @@ macro with_names(block)
     esc(with_names(block))
 end
 
+export @seq
+"""
+    @seq(x...)
+
+Create a sequence interleaved with whitespace (horizontal or vertical).
+"""
+macro seq(x...)
+    r = if length(x)==1
+        x
+    else
+        quote
+            x_ = [$(x...)]
+            sSequence( (i < lastindex(x_) ? (e*CombinedParsers.Regexp.whitespace_newline) : e for (i,e) in enumerate(x_))...)
+        end
+    end
+    esc(r)
+end
+
+
 export @syntax
 """
 Convenience macro `@syntax name = expr` for defining a CombinedParser `name=expr` and custom parsing macro `@name_str`.
@@ -1138,6 +1157,8 @@ macro syntax(block)
             end
             $(with_names(block))
         end
+    elseif block.head == :block
+        with_names(block)
     else
         dump(block)
         error()
