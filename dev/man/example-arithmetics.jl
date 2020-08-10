@@ -13,11 +13,10 @@ function evaluate( (start, operation_values) )
 end
 evaluate( (0, [ ('+',1), ('+',1) ]) )
 evaluate( (1, [ ('*',2), ('*',3) ]) )
-# The function definition is detailed in [the full example](man/example-arithmetic.md).
 #
 using CombinedParsers
 # `CombinedParsers` provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
-# Combinator constructors are discussed in the [user guide](man/user.md).
+# Combinator constructors are discussed in the [user guide](user.md).
 using TextParse
 # Term expressions are sequences of subterms interleaved with operators.
 # Sub terms are [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
@@ -29,7 +28,7 @@ using TextParse
     Sequence(2,'(',adds,')')
 end;
 # This `CombinedParser` definition in 5,5 lines is sufficient for doing arithmetics:
-# [`Base.join`](@ref)(x,infix; infix=:prefix) is shorthand for `x `[`*`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
+# [`Base.join`](@ref)(x,infix; infix=:prefix) is shorthand for `x `[`(*)`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
 # and `f |> parser` is shorthand for [`map`](@ref)(f,parser)`.
 @syntax term = adds;
 # registers a `@term_string` macro for parsing and transforming.

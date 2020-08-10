@@ -149,12 +149,9 @@ result_type(pattern)
 p = parse(pattern, "ab|c", log=(:sequence, :pattern))
 parse(p, "c")
 
-match(r"(\++?|)$", "+++")
-
 # ## [`Capture`](@ref)s
 # Parentheses allow groupings that are repeatable.
 import CombinedParsers.Regexp: name
-
 
 # The [`push!`](@ref) to [`Either`](@ref) technique allows for the construction of recursive parsers.
 @with_names capture_group =
@@ -206,7 +203,7 @@ push!(repeatable,bracket);
 
 
 
-# `CombinedParsers.Regexp.@re_str` is tested and benchmarked against the PCRE C library testset (see [compliance report](pcre-compliance.md)).
+# [`@re_str`](@ref) is tested and benchmarked against the PCRE C library testset (see [compliance report](pcre-compliance.md)).
 
 
 # Syntax is essential, semantics is high-brow.
