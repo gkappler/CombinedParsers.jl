@@ -483,6 +483,8 @@ end
 Bytes(N::Integer, T::Type=Char) = Bytes{T}(N)
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) =
     nextind(sequence,posi,parser.N), MatchState()
+_iterate(parser::Bytes, sequence, till, posi, next_i, state::MatchState) =
+    nothing
 regex_string_(x::Bytes{N}) where N = ".{$(N)}"
 Base.show(io::IO, x::Bytes) =
     print(io, "$(x.N) Bytes::$(result_type(x))")
