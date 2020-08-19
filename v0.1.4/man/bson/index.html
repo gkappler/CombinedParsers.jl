@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Parsing Vector{Unit8}: BSON · CombinedParsers.jl</title><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/bson/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">CombinedParsers.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li><a class="tocitem" href="../example-either-trie/">Prefix-Tree Matching</a></li><li><a class="tocitem" href="../pcre-compliance/">PCRE Compliance</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../example-person/">What is Parsing? Names...</a></li><li><a class="tocitem" href="../example-number-ranges/">Representations: Number sequences</a></li><li><a class="tocitem" href="../pcre/">Regular Expressions</a></li><li><a class="tocitem" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser</a></li><li><a class="tocitem" href="../example-arithmetics/">Arithmetics</a></li><li class="is-active"><a class="tocitem" href>Parsing <code>Vector{Unit8}</code>: BSON</a><ul class="internal"><li><a class="tocitem" href="#Specification-Version-1.1"><span>Specification Version 1.1</span></a></li><li><a class="tocitem" href="#Testing-examples"><span>Testing examples</span></a></li></ul></li><li><a class="tocitem" href="../json/">JSON</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Public</a></li><li><a class="tocitem" href="../../lib/regexp/">Regexp</a></li><li><a class="tocitem" href="../../lib/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Parsing <code>Vector{Unit8}</code>: BSON</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Parsing <code>Vector{Unit8}</code>: BSON</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/docs/docs/src/man/bson.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="BSON"><a class="docs-heading-anchor" href="#BSON">BSON</a><a id="BSON-1"></a><a class="docs-heading-anchor-permalink" href="#BSON" title="Permalink"></a></h1><p>BSON is a efficient compressed json-like data encoding. This BSON specification is copied verbatim from <a href="http://bsonspec.org/spec.html">http://bsonspec.org/spec.html</a>. The original document uses pseudo-BNF syntax, this document uses rearranged but otherwise quite similar syntax</p><pre><code class="language-julia">using CombinedParsers</code></pre><p>The <a href="#notes">Notes</a> contain information for reassembling the parsed part of the byte array into a JSON-like structure. This document adds the julia functions to the parser. The result <code>document</code> is a pure julia BSON parser.</p><h2 id="Specification-Version-1.1"><a class="docs-heading-anchor" href="#Specification-Version-1.1">Specification Version 1.1</a><a id="Specification-Version-1.1-1"></a><a class="docs-heading-anchor-permalink" href="#Specification-Version-1.1" title="Permalink"></a></h2><p>BSON is a binary format in which zero or more ordered key/value pairs are stored as a single entity. We call this entity a document.</p><p>The following grammar specifies version 1.1 of the BSON standard. We&#39;ve written the grammar using a <code>CombinedParsers</code> syntax. Valid BSON data is represented by the <code>document</code> non-terminal.</p><h3 id="Basic-Types"><a class="docs-heading-anchor" href="#Basic-Types">Basic Types</a><a id="Basic-Types-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Types" title="Permalink"></a></h3><p>The following basic types are used as terminals in the rest of the grammar. Each type must be serialized in little-endian format.</p><pre><code class="language-julia">byte = Bytes(1,UInt8)         #  (8-bits)
+int32 = Bytes(4,Int32)        # (32-bit signed integer, two&#39;s complement)
+int64 = Bytes(8,Int64)        # (64-bit signed integer, two&#39;s complement)
+uint64 = Bytes(8,UInt64)      # (64-bit unsigned integer)
+double = Bytes(8,Float64)     # (64-bit IEEE 754-2008 binary floating point)
+using DecFP
+decimal128 = Bytes(16,Dec128) # (128-bit IEEE 754-2008 decimal floating point)</code></pre><pre class="documenter-example-output">16 Bytes::DecFP.Dec128</pre><h3 id="Non-terminals"><a class="docs-heading-anchor" href="#Non-terminals">Non-terminals</a><a id="Non-terminals-1"></a><a class="docs-heading-anchor-permalink" href="#Non-terminals" title="Permalink"></a></h3><p>The following specifies the rest of the BSON grammar. Note that quoted strings represent terminals, and should be interpreted with C semantics (e.g. &quot;\x01&quot; represents the byte 0000 0001).</p><pre><code class="language-julia">@syntax t = Sequence(&quot;\\x&quot;, integer_base(16,2,2)) do v
+    CharIn(convert(UInt8,v[2]))
+end
+
+element = Either{Any}(Any[])
+e_list = Repeat(element)</code></pre><p>Also note that we use the * operator as shorthand for repetition (e.g. (&quot;\x01&quot;*2) is &quot;\x01\x01&quot;). When used as a unary operator, * means that the repetition can occur 0 or more times.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p><code>*</code> here is replaced with <code>Repeat</code>.</p></div></div><p>BSON Document. int32 is the total number of bytes comprising the document.</p><pre><code class="language-julia">@syntax document = Sequence(int32, e_list, t&quot;\x00&quot;)[2]</code></pre><pre class="documenter-example-output">🗄 Sequence[2] |&gt; with_name(:document)
+├─ 4 Bytes::Int32
+├─ |...* Either |&gt; Repeat
+└─ [0] CharIn
+::Array{Any,1}
+</pre><p>Zero or more modified UTF-8 encoded characters followed by &#39;\x00&#39;. The (byte*) MUST NOT contain &#39;\x00&#39;, hence it is not full UTF-8.</p><pre><code class="language-julia">@syntax cstring = map(String,Repeat_until(byte, t&quot;\x00&quot;))
+@syntax e_name = map(Symbol,cstring)            # Key name</code></pre><pre class="documenter-example-output">🗄 Sequence[1] |&gt; map(String) |&gt; map(Symbol) |&gt; with_name(:cstring) |&gt; with_name(:e_name)
+├─ (?&gt;🗄*) Sequence[2] |&gt; Repeat |&gt; Atomic
+│  ├─ (?!🗄) NegativeLookahead
+│  │  └─ [0] CharIn
+│  └─ 1 Bytes::UInt8
+└─ [0] CharIn
+::Symbol
+</pre><p>String - The int32 is the number bytes in the (byte*) + 1 (for the trailing &#39;\x00&#39;). The (byte*) is zero or more UTF-8 encoded characters.</p><pre><code class="language-julia">@inline string_until_before(v) = Bytes{String}(v-1)
+@syntax lstring = (after(string_until_before, String, int32) * t&quot;\x00&quot;)[1]</code></pre><pre class="documenter-example-output">🗄 Sequence[1] |&gt; with_name(:lstring)
+├─ 🗄 FlatMap
+│  ├─ 4 Bytes::Int32
+│  └─ string_until_before
+└─ [0] CharIn
+::String
+</pre><p>Binary - The int32 is the number of bytes in the (byte*).</p><pre><code class="language-julia">@syntax subtype = Either((
+    t&quot;\x00&quot;,                                  # Generic binary subtype
+    t&quot;\x01&quot;,                                  # Function
+    t&quot;\x02&quot;,                                  # Binary (Old)
+    t&quot;\x03&quot;,                                  # UUID (Old)
+    t&quot;\x04&quot;,                                  # UUID
+    t&quot;\x05&quot;,                                  # MD5
+    t&quot;\x06&quot;,                                  # Encrypted BSON value
+    t&quot;\x80&quot;,                                  # User defined
+))
+@syntax binary = after(Vector{UInt8}, int32) do v
+    subtype * Bytes(v,Vector{UInt8})
+end</code></pre><pre class="documenter-example-output">🗄 FlatMap |&gt; with_name(:binary)
+├─ 4 Bytes::Int32
+└─ #3
+::Array{UInt8,1}
+</pre><pre><code class="language-julia">@syntax code_w_s = int32 * lstring * document # Code w/ scope — Deprecated
+for e in [
+    :float64 =&gt; t&quot;\x01&quot; * e_name * double,               # 64-bit binary floating point
+    :string =&gt; t&quot;\x02&quot; * e_name * lstring,                # UTF-8 string
+    :embedded =&gt; t&quot;\x03&quot; * e_name * document,            # Embedded document
+    :array =&gt; t&quot;\x04&quot; * e_name * document,               # Array
+    t&quot;\x05&quot; * e_name * binary,                           # Binary data
+    t&quot;\x06&quot; * e_name * (Always() =&gt; missing),            # Undefined (value) — Deprecated
+    t&quot;\x07&quot; * e_name * Bytes(12,Vector{UInt8}),          # ObjectId
+    :boolean =&gt; t&quot;\x08&quot; * e_name * Either(
+        t&quot;\x00&quot; =&gt; false,                                # Boolean &quot;false&quot;
+        t&quot;\x01&quot; =&gt; true),                                # Boolean &quot;true&quot;
+    :UTC =&gt; t&quot;\x09&quot; * e_name * map(int64) do v
+    v |&gt; Millisecond |&gt; Dates.UTInstant |&gt; DateTime
+    end,                                                 # UTC datetime
+    t&quot;\x0A&quot; * e_name * (Always() =&gt; nothing),            # Null value
+    :regex =&gt; t&quot;\x0B&quot; * e_name * map(v-&gt;Regex(v...),cstring * cstring),
+    # Regular expression - The first cstring is the regex pattern,
+    # the second is the regex options string.
+    # Options are identified by characters, which must be stored in alphabetical order.
+    t&quot;\x0C&quot; * e_name * lstring * Bytes(12,Vector{UInt8}), # DBPointer — Deprecated
+    t&quot;\x0D&quot; * e_name * lstring,                           # JavaScript code
+    t&quot;\x0E&quot; * e_name * lstring,                           # Symbol. — Deprecated
+    t&quot;\x0F&quot; * e_name * code_w_s,                         # JavaScript code w/ scope — Deprecated
+    t&quot;\x10&quot; * e_name * int32,                            # 32-bit integer
+    t&quot;\x11&quot; * e_name * uint64,                           # Timestamp
+    :int =&gt; t&quot;\x12&quot; * e_name * int64,                    # 64-bit integer
+    t&quot;\x13&quot; * e_name * decimal128,                       # 128-bit decimal floating point
+    t&quot;\xFF&quot; * e_name,                                    # Min key
+    t&quot;\x7F&quot; * e_name,                                    # Max key
+]
+    pairp = parser(e)
+    push!(element,
+          map(if result_type(pairp) &lt;: Tuple &amp;&amp; fieldcount(result_type(pairp))==3
+              v-&gt;v[2]=&gt;v[3]
+              else
+              v-&gt;v[2]=&gt;v[3:end]
+              end,
+              pairp))
+end</code></pre><h3 id="Notes"><a class="docs-heading-anchor" href="#Notes">Notes</a><a id="Notes-1"></a><a class="docs-heading-anchor-permalink" href="#Notes" title="Permalink"></a></h3><ul><li>Array - The document for an array is a normal BSON document with integer values for the keys, starting with 0 and continuing sequentially. For example, the array [&#39;red&#39;, &#39;blue&#39;] would be encoded as the document {&#39;0&#39;: &#39;red&#39;, &#39;1&#39;: &#39;blue&#39;}. The keys must be in ascending numerical order.</li><li>UTC datetime - The int64 is UTC milliseconds since the Unix epoch.</li><li>Timestamp - Special internal type used by MongoDB replication and sharding. First 4 bytes are an increment, second 4 are a timestamp.</li><li>Min key - Special type which compares lower than all other possible BSON element values.</li><li>Max key - Special type which compares higher than all other possible BSON element values.</li><li>Generic binary subtype - This is the most commonly used binary subtype and should be the &#39;default&#39; for drivers and tools.</li><li>The BSON &quot;binary&quot; or &quot;BinData&quot; datatype is used to represent arrays of bytes. It is somewhat analogous to the Java notion of a ByteArray. BSON binary values have a subtype. This is used to indicate what kind of data is in the byte array. Subtypes from zero to 127 are predefined or reserved. Subtypes from 128-255 are user-defined.<ul><li>\x02 Binary (Old) - This used to be the default subtype, but was deprecated in favor of \x00. Drivers and tools should be sure to handle \x02 appropriately. The structure of the binary data (the byte* array in the binary non-terminal) must be an int32 followed by a (byte*). The int32 is the number of bytes in the repetition.</li><li>\x03 UUID (Old) - This used to be the UUID subtype, but was deprecated in favor of \x04. Drivers and tools for languages with a native UUID type should handle \x03 appropriately.</li><li>\x80-\xFF &quot;User defined&quot; subtypes. The binary data can be anything.</li></ul></li><li>Code w/ scope - Deprecated. The int32 is the length in bytes of the entire code<em>w</em>s value. The string is JavaScript code. The document is a mapping from identifiers to values, representing the scope in which the string should be evaluated.</li></ul><h2 id="Testing-examples"><a class="docs-heading-anchor" href="#Testing-examples">Testing examples</a><a id="Testing-examples-1"></a><a class="docs-heading-anchor-permalink" href="#Testing-examples" title="Permalink"></a></h2><pre><code class="language-julia">using Dates
+testdata = Dict(:a =&gt; 1, :b =&gt; 3.0, :c =&gt; &quot;yeay&quot;, :d =&gt; true)</code></pre><pre class="documenter-example-output">Dict{Symbol,Any} with 4 entries:
+  :a =&gt; 1
+  :b =&gt; 3.0
+  :d =&gt; true
+  :c =&gt; &quot;yeay&quot;</pre><p>The <a href="https://github.com/JuliaIO/BSON.jl">BSON.jl</a> package provides an optimized and feature-rich BSON serializer and parser.</p><pre><code class="language-julia">using BSON
+bson(&quot;test.bson&quot;, testdata)
+
+s = read(&quot;test.bson&quot;)
+parse(document,s, log=true)</code></pre><pre class="documenter-example-output">4-element Array{Any,1}:
+ :a =&gt; 1
+ :b =&gt; 3.0
+ :d =&gt; true
+ :c =&gt; &quot;yeay&quot;</pre><p>Aim of this page is demonstrating the straightforward implementation of a BSON parser. The parser is untested and not feature-complete regarding subtypes etc. Parsing logic can be plugged into the <code>element</code>s with <code>map</code>.</p><h3 id="Benchmarking"><a class="docs-heading-anchor" href="#Benchmarking">Benchmarking</a><a id="Benchmarking-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmarking" title="Permalink"></a></h3><pre><code class="language-julia">using BenchmarkTools</code></pre><p>BSON has an optimized parser, used for comparison</p><pre><code class="language-julia">@benchmark BSON.parse(IOBuffer(s))</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  1.50 KiB
+  allocs estimate:  19
+  --------------
+  minimum time:     1.325 μs (0.00% GC)
+  median time:      1.557 μs (0.00% GC)
+  mean time:        1.924 μs (14.45% GC)
+  maximum time:     948.063 μs (99.02% GC)
+  --------------
+  samples:          10000
+  evals/sample:     10</pre><p>The <code>CombinedParser</code> matching is slower.</p><pre><code class="language-julia">@benchmark match(document,s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  3.64 KiB
+  allocs estimate:  96
+  --------------
+  minimum time:     10.418 μs (0.00% GC)
+  median time:      11.047 μs (0.00% GC)
+  mean time:        11.541 μs (0.00% GC)
+  maximum time:     131.509 μs (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1</pre><p>Transformation is doing too much work currently - lazy access optimizations are planned.</p><pre><code class="language-julia">@benchmark parse(document,s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  14.84 KiB
+  allocs estimate:  317
+  --------------
+  minimum time:     44.184 μs (0.00% GC)
+  median time:      47.786 μs (0.00% GC)
+  mean time:        52.981 μs (6.58% GC)
+  maximum time:     11.944 ms (97.74% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1</pre><h3 id="Profiling"><a class="docs-heading-anchor" href="#Profiling">Profiling</a><a id="Profiling-1"></a><a class="docs-heading-anchor-permalink" href="#Profiling" title="Permalink"></a></h3><p>Profiling reveals that most time is lost due to the <code>Either</code> state type.</p><pre><code class="language-julia"># using Profile
+# Profile.clear()
+# f(n,a...) = for _ in 1:n; match(a...); end
+# @profile f(100000,document,s);
+# using ProfileView
+# ProfileView.view()</code></pre><p><img src="../bson-profile.png" alt/> This is looked into, I have a strong hunch that the allocation can be removed so <code>CombinedParser</code> can come close to <code>BSON.jl</code>.</p><h3 id="Dates"><a class="docs-heading-anchor" href="#Dates">Dates</a><a id="Dates-1"></a><a class="docs-heading-anchor-permalink" href="#Dates" title="Permalink"></a></h3><p>Seems, reading a document written with BSON works. BSON.jl has a nonstandard way with <code>Dates</code>...</p><pre><code class="language-julia">testdata = Dict(:a =&gt; 1, :b =&gt; 3.0, :c =&gt; &quot;yeay&quot;, :d =&gt; true, :e =&gt; now())
+bson(&quot;test.bson&quot;, testdata)
+s = read(&quot;test.bson&quot;)
+parse(document,s, log=true)</code></pre><pre class="documenter-example-output">5-element Array{Any,1}:
+ :a =&gt; 1
+ :b =&gt; 3.0
+ :d =&gt; true
+ :e =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;DateTime&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]]], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;UTInstant&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; 63733523318400]]]]]]
+ :c =&gt; &quot;yeay&quot;</pre><p>This parser does not do any of the magic in <code>BSON.jl</code> to reassemble into julia types. BSON dates work though:</p><pre><code class="language-julia">let d = now()
+    Any[:e =&gt; d] ==
+        parse(document,UInt8[0x10,0x0,0x0,0x0, # we actually ignore the 4 byte length of the vector
+                             0x09,0x65,0x0,reinterpret(UInt8,[Dates.value(d)])...,0x0], log=true)
+end</code></pre><pre class="documenter-example-output">true</pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-arithmetics/">« Arithmetics</a><a class="docs-footer-nextpage" href="../json/">JSON »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 19 August 2020 12:33">Wednesday 19 August 2020</span>. Using Julia version 1.5.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
