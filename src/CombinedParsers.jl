@@ -1368,9 +1368,10 @@ end
 export Repeat_stop, Repeat_until
 """
     Repeat_stop(p,stop)
+    Repeat_stop(p,stop; min=0, max=Repeat_max)
 
 Repeat `p` until `stop` (`NegativeLookahead`), not matching `stop`.
-Sets cursor **before** `stop`.
+Sets cursor **before** `stop`. Tries `min:max` times
 Returns results of `p`.
 
 ```jldoctest
@@ -1389,13 +1390,13 @@ julia> parse(p,"acbX")
 
 See also [`NegativeLookahead`](@ref)
 """
-Repeat_stop(p,stop) =
-    Repeat(map(IndexAt(2),Sequence(NegativeLookahead(parser(stop)),parser(p))))
+Repeat_stop(p,stop; min=0, max=Repeat_max) =
+    Repeat(map(IndexAt(2),Sequence(NegativeLookahead(parser(stop)),parser(p)));min=min,max=max)
 
 @deprecate rep_stop(a...;kw...) Repeat_stop(a...;kw...)
 
 """
-    Repeat_until(p,until, with_until=false;wrap=identity)
+    Repeat_until(p,until, with_until=false; wrap=identity, min=0, max=Repeat_max)
 
 Repeat `p` until `stop` (with [`Repeat_stop`](@ref)).
 and set point **after** `stop`.
@@ -1424,11 +1425,11 @@ julia> parse(Repeat_until(AnyChar(),'b';wrap=JoinSubstring),"acbX")
 
 See also [`NegativeLookahead`](@ref)
 """
-Repeat_until(p,until, with_until=false;wrap=identity) =
+Repeat_until(p,until, with_until=false;wrap=identity,min=0,max=Repeat_max) =
     if with_until
-        Sequence(map(wrap,Atomic(Repeat_stop(p,until))), until)
+        Sequence(map(wrap,Atomic(Repeat_stop(p,until;min=min,max=max))), until)
     else
-        map(IndexAt(1),Sequence(map(wrap,Atomic(Repeat_stop(p,until))), until))
+        map(IndexAt(1),Sequence(map(wrap,Atomic(Repeat_stop(p,until;min=min,max=max))), until))
     end
 
 @deprecate rep_until(p,until) Repeat_until(p,until)

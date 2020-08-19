@@ -1,6 +1,7 @@
 using CombinedParsers.Regexp
 import CombinedParsers.Regexp: word, non_word
 import CombinedParsers.Regexp: newline, inline, whitespace_maybe, whitespace_horizontal
+import CombinedParsers.Regexp: Repeat_max
 
 @testset "CombinedParsers" begin
 @testset "CharIn" begin
@@ -42,6 +43,16 @@ end
     @test parse(Sequence("(", Repeat_until(!!Either(word,non_word), ")")),
                 "(balanced parenthesis)") ==
         ("(",["balanced", " ", "parenthesis"])
+    # Test if strings bigger than Repeat_max can be parsed using max optional ArgumentError
+    new_Repeat_max = Repeat_max+10;
+    dat = 'a'^(new_Repeat_max)*'b';
+    @test String(parse(Repeat_until('a','b';max=new_Repeat_max), dat))==dat[1:end-1]
+end
+
+@testset "Repeat_stop" begin
+    new_Repeat_max = Repeat_max+10;
+    dat = 'a'^(new_Repeat_max)*'b';
+    @test String(parse(Repeat_stop('a','b';max=new_Repeat_max), dat))==dat[1:end-1]
 end
 end
 
