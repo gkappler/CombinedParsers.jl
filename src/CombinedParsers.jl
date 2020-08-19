@@ -15,6 +15,7 @@ import Base: cat, get, prevind, nextind
 using Nullables
 using AutoHashEquals
 import Base: ==, hash
+import Base: lowercase
 
 using TextParse
 import TextParse: AbstractToken
@@ -449,6 +450,8 @@ regex_suffix(x::ConstantParser) = ""
 
 revert(x::ConstantParser{N,<:AbstractString}) where N =
     ConstantParser(reverse(x.parser))
+
+lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
 
 deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
     get!(mem,x) do
