@@ -102,30 +102,30 @@ parse(document,s, log=true)</code></pre><pre class="documenter-example-output">4
   memory estimate:  1.50 KiB
   allocs estimate:  19
   --------------
-  minimum time:     1.372 μs (0.00% GC)
-  median time:      1.580 μs (0.00% GC)
-  mean time:        1.973 μs (13.63% GC)
-  maximum time:     907.552 μs (99.36% GC)
+  minimum time:     1.325 μs (0.00% GC)
+  median time:      1.551 μs (0.00% GC)
+  mean time:        1.946 μs (14.39% GC)
+  maximum time:     940.033 μs (99.34% GC)
   --------------
   samples:          10000
   evals/sample:     10</pre><p>The <code>CombinedParser</code> matching is slower.</p><pre><code class="language-julia">@benchmark match(document,s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
-  memory estimate:  3.22 KiB
-  allocs estimate:  78
+  memory estimate:  3.64 KiB
+  allocs estimate:  96
   --------------
-  minimum time:     8.827 μs (0.00% GC)
-  median time:      9.359 μs (0.00% GC)
-  mean time:        10.649 μs (7.48% GC)
-  maximum time:     4.029 ms (99.26% GC)
+  minimum time:     10.077 μs (0.00% GC)
+  median time:      10.708 μs (0.00% GC)
+  mean time:        11.337 μs (0.00% GC)
+  maximum time:     361.516 μs (0.00% GC)
   --------------
   samples:          10000
-  evals/sample:     3</pre><p>Transformation is doing too much work currently - lazy access optimizations are planned.</p><pre><code class="language-julia">@benchmark parse(document,s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
-  memory estimate:  14.42 KiB
-  allocs estimate:  299
+  evals/sample:     1</pre><p>Transformation is doing too much work currently - lazy access optimizations are planned.</p><pre><code class="language-julia">@benchmark parse(document,s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  14.84 KiB
+  allocs estimate:  317
   --------------
-  minimum time:     43.043 μs (0.00% GC)
-  median time:      47.663 μs (0.00% GC)
-  mean time:        54.086 μs (6.41% GC)
-  maximum time:     12.407 ms (97.83% GC)
+  minimum time:     45.656 μs (0.00% GC)
+  median time:      49.923 μs (0.00% GC)
+  mean time:        55.882 μs (6.04% GC)
+  maximum time:     11.665 ms (97.36% GC)
   --------------
   samples:          10000
   evals/sample:     1</pre><h3 id="Profiling"><a class="docs-heading-anchor" href="#Profiling">Profiling</a><a id="Profiling-1"></a><a class="docs-heading-anchor-permalink" href="#Profiling" title="Permalink"></a></h3><p>Profiling reveals that most time is lost due to the <code>Either</code> state type.</p><pre><code class="language-julia"># using Profile
@@ -140,9 +140,9 @@ parse(document,s, log=true)</code></pre><pre class="documenter-example-output">5
  :a =&gt; 1
  :b =&gt; 3.0
  :d =&gt; true
- :e =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;DateTime&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]]], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;UTInstant&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; 63732756976113]]]]]]
+ :e =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;DateTime&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]]], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;UTInstant&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; 63733511902065]]]]]]
  :c =&gt; &quot;yeay&quot;</pre><p>This parser does not do any of the magic in <code>BSON.jl</code> to reassemble into julia types. BSON dates work though:</p><pre><code class="language-julia">let d = now()
     Any[:e =&gt; d] ==
         parse(document,UInt8[0x10,0x0,0x0,0x0, # we actually ignore the 4 byte length of the vector
                              0x09,0x65,0x0,reinterpret(UInt8,[Dates.value(d)])...,0x0], log=true)
-end</code></pre><pre class="documenter-example-output">true</pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-arithmetics/">« Arithmetics</a><a class="docs-footer-nextpage" href="../json/">JSON »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 10 August 2020 15:41">Monday 10 August 2020</span>. Using Julia version 1.5.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><pre class="documenter-example-output">true</pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-arithmetics/">« Arithmetics</a><a class="docs-footer-nextpage" href="../json/">JSON »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 19 August 2020 09:23">Wednesday 19 August 2020</span>. Using Julia version 1.5.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
