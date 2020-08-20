@@ -54,9 +54,13 @@ end
     dat = 'a'^(new_Repeat_max)*'b';
     @test String(parse(Repeat_stop('a','b';max=new_Repeat_max), dat))==dat[1:end-1]
 end
+@testset "Bytes" begin
+    # simple test for binary parsing
+    @test parse(Bytes(1,UInt8),[0x33]) == 0x33
+    @test parse(Bytes(2,UInt16),[0x33,0x66]) == 0x6633
+    @test parse(Bytes(4,Float32),[0x55,0x77,0x33,0x66]) == reinterpret(Float32,0x66337755)
 end
-
-
+end
 
 @testset "FlatMap" begin
     @test parse(
