@@ -28,7 +28,12 @@ end
 function Base.get(parser::Bytes{T}, sequence::Vector{UInt8}, till,
                   after, i, state) where {T}
     if isbitstype(T)
-        reinterpret(T,sequence[i:after-1])[1]
+        if parser.endian == bigEndian
+            b = sequence[after-1:-1:i]
+        else
+            b = sequence[i:after-1]
+        end
+        reinterpret(T,b)[1]
     else
         T(sequence[i:after-1])
     end

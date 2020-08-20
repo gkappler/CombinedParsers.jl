@@ -60,6 +60,13 @@ end
     @test parse(Bytes(2,UInt16),[0x33,0x66]) == 0x6633
     @test parse(Bytes(4,Float32),[0x55,0x77,0x33,0x66]) == reinterpret(Float32,0x66337755)
 end
+@testset "Endianness" begin
+    # default should be little endian
+    @test parse(Bytes(2,UInt16),[0x22,0x33]) == 0x3322
+    # check each endian ness
+    @test parse(Bytes(2,UInt16,littleEndian), [0x22,0x33]) == 0x3322
+    @test parse(Bytes(2,UInt16,bigEndian), [0x22,0x33]) == 0x2233
+end
 end
 
 @testset "FlatMap" begin

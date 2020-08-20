@@ -469,7 +469,7 @@ end
 
 
 
-export Bytes
+export Bytes, bigEndian, littleEndian
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
 """
@@ -480,17 +480,22 @@ Fast parsing of a fixed number `N` of indices,
 
 Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,T}` for custom conversion.
 """
+@enum endianType begin
+    bigEndian
+    littleEndian
+end
 struct Bytes{T} <: CombinedParser{MatchState,T}
     N::Int
+    endian::endianType
 end
-Bytes(N::Integer, T::Type=Char) = Bytes{T}(N)
+Bytes(N::Integer, T::Type=Char,endian::endianType=littleEndian) = Bytes{T}(N, endian)
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) =
     posi+parser.N <= (till+1) ? (nextind(sequence,posi,parser.N), MatchState()) : nothing
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::MatchState) =
     nothing
 regex_string_(x::Bytes{N}) where N = ".{$(N)}"
 Base.show(io::IO, x::Bytes) =
-    print(io, "$(x.N) Bytes::$(result_type(x))")
+    print(io, "$(x.N) Bytes::$(result_type(x)) $(x.endian)")
 @inline prevind(str,i::Int,parser::Bytes,x) =
     prevind(str,i,parser.N)
 @inline nextind(str,i::Int,parser::Bytes,x) =
