@@ -48,9 +48,44 @@ vertical_space=(
     '\U2028', # "Line separator"),
     '\U2029') # "Paragraph separator"))
 
+"""
+```jldoctest
+julia> CombinedParsers.Regexp.bsr
+(?>|🗄...) Either |> Atomic
+├─ \r\n 
+└─ [\n\x0b\f\r\x85] CharIn
+::Union{Char, SubString}
+```
 
+PCRE backslash R (BSR), for newlines.
+"""
 bsr = Atomic(Either("\r\n",
-                    CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))); # backslash R (BSR)
+                    CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
+
+
+"""
+```jldoctest
+julia> CombinedParsers.Regexp.at_linestart
+|🗄... Either
+├─ ^ AtStart
+└─ (?<=🗄...)) PositiveLookbehind
+   ├─ \n\r 
+   └─ [\n\x0b\f\r\x85] CharIn
+::Union{AtStart, Char, SubString}
+```
+
+Note: in PCRE
+```julia
+Either(
+    on_options(Base.PCRE.MULTILINE, 
+           '^' => at_linestart),
+    parser('^' => AtStart())
+)
+```
+"""
+@with_names at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
+lineend   = Either(AtEnd(),bsr)
+@with_names at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
 
 newline = bsr
 inline = !Repeat(CharNotIn(vertical_space))
@@ -144,9 +179,6 @@ _integer(maxchar=3) =
     end
 integer = _integer(Repeat_max)
 
-at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
-lineend   = Either(AtEnd(),bsr)
-at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
 
 
 # pattern alternatives
