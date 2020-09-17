@@ -239,12 +239,12 @@ end
 
 export tryparse_pos
 """
-    tryparse_pos(parser::ParserTypes, str::AbstractString)
+    tryparse_pos(parser::ParserTypes, str::AbstractString[, idx=1, till=lastindex(s)])
 
 Like `parse`, but returns either a tuple of `result_type(parser)` and the position after the match, or `nothing` if string does not start with with a match.
 """
-function tryparse_pos(p,s)
-    i = iterate(p,s)
+function tryparse_pos(p,s, idx=1, till=lastindex(s))
+    i = _iterate(p,s,till,idx,idx,nothing)
     i === nothing && return nothing
     get(p,s,lastindex(s),tuple_pos(i),1,tuple_state(i)),tuple_pos(i)
 end
