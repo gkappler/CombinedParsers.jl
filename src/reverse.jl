@@ -145,13 +145,17 @@ for T in [PositiveLookahead,NegativeLookahead,PositiveLookbehind,NegativeLookbeh
          end
          end)
 end
-
+revert(x) = deepmap_parser(revert,x)
 revert(x::Union{AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,ConstantParser{N,Char} where N}) = x
 revert(x::AtStart) = AtEnd()
 revert(x::AtEnd) = AtStart()
 deepmap_parser(::typeof(revert),mem::AbstractDict,x::Sequence) =
     get!(mem,x) do
         Sequence(( deepmap_parser(revert,mem,p) for p in reverse(x.parts) )...)
+    end
+deepmap_parser(::typeof(revert),mem::AbstractDict,x::Atomic) =
+    get!(mem,x) do
+        Atomic(deepmap_parser(revert,mem,x.parser))
     end
 deepmap_parser(::typeof(revert),mem::AbstractDict,x::NegativeLookbehind) =
     get!(mem,x) do
