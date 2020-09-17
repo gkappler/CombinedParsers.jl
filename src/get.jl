@@ -10,6 +10,13 @@ function Base.get(
 end
 
 function Base.get(
+    parser::Atomic, sequence, till,
+    after, i, state::MatchState)
+    a, s = _iterate(parser.parser,sequence,till, i, i, nothing)
+    get(parser.parser, sequence, till, after, i, s)
+end
+
+function Base.get(
     parser::W, sequence, till,
     after, i, state
 ) where {W <: LookAround}
