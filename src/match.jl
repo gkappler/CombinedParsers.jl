@@ -234,7 +234,7 @@ Like `parse`, but returns either a value of `result_type(parser)` or `nothing` i
 function Base.tryparse(p::AbstractToken, s, idx=1)
     i = iterate(ParseMatch(p,s,idx))
     i === nothing && return nothing
-    get(i[1])
+    get(tuple_state(i))
 end
 
 export tryparse_pos
