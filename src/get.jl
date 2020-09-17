@@ -285,6 +285,30 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
             deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
+export MatchRange
+"""
+    MatchRange(p::AbstractToken)
+
+Succeed iif `p` succeeds, if so results in sequence match index `UnitRange`.
+"""
+struct MatchRange
+end
+MatchRange(p::AbstractToken) =
+    Transformation{UnitRange{Int}}(MatchRange(), p)
+
+Base.show(io::IO, x::MatchRange) = print(io,"@")
+
+"""
+    Base.get(parser::Transformation{MatchRange}, a...)
+
+Does not evaluate `get(parser.transform,...)`.
+"""
+function Base.get(parser::Transformation{MatchRange}, sequence, till, after, i, state)
+    i:prevind(sequence,after)
+end
+
+
+
 """
 A Transformation{<:Constant} skips evaluation of get(.parser).
 """
