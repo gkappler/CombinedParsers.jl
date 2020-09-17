@@ -1,5 +1,3 @@
-import AbstractTrees: print_tree, printnode
-
 """
 decurse recursive patterns
 """

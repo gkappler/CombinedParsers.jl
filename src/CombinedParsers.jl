@@ -358,7 +358,11 @@ print_constructor(io::IO,x) =
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,S,T} <: CombinedParser{S,T} end
+
+using AbstractTrees
 import AbstractTrees: children
+import AbstractTrees: print_tree, printnode
+
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
 
