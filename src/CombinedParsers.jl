@@ -2733,6 +2733,10 @@ A parser matching `p`, and failing when required to backtrack
             new{typeof(p),state_type(p),result_type(p)}(p)
         end
 end
+function Base.nextind(sequence, i::Int, parser::Atomic, state::MatchState)
+    @show a, s = _iterate(parser.parser,sequence,lastindex(sequence), i, i, nothing)
+    nextind(sequence, i, parser.parser, s)
+end
 
 deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...;kw...) =
     get!(mem,x) do
