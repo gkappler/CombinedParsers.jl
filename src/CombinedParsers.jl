@@ -81,7 +81,7 @@ Base.show(io::IO, ::MatchState) = print(io,"∘")
 
 Return the state type of `x`
 """
-@inline state_type(x::T) where {T<:Union{ParserTypes,AbstractToken}} = state_type(T)
+@inline state_type(x::Union{ParserTypes,AbstractToken}) = state_type(typeof(x))
 @inline state_type(x::Type{<:Union{Char,AbstractString}}) = MatchState
 @inline state_type(::Type{Any}) = Any
 @inline function state_type(T::Type{<:AbstractToken{P}}) where P
