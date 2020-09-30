@@ -11,14 +11,10 @@ export Reverse
         # if lastindex(x) == 1
         #     x
         # else
-        new{typeof(x)}(x,lastindex(x))
+        new{typeof(x)}(x, lastindex(x))
         ##end
 end
 revert(x::Reverse) = x.x
-reverse_index(x::Reverse,i) =
-    x.lastindex-i+1    
-reverse_index(x::AbstractString,i) =
-    i
 
 Base.SubString(x::Reverse,start::Int,stop::Int) =
     SubString(x.x, reverse_index(x, stop), reverse_index(x, start))
@@ -32,16 +28,56 @@ regex_string(x::Reverse) = regex_escape(x.x)
 Base.ncodeunits(x::Reverse) = ncodeunits(x.x)
 Base.firstindex(x::Reverse) = 1
 Base.lastindex(x::Reverse) = x.lastindex
-Base.getindex(x::Reverse,is::UnitRange) = getindex(x.x,reverse_index(x,is.stop):reverse_index(x,is.start))
-Base.getindex(x::Reverse,i::Int) = getindex(x.x,reverse_index(x,i))
-Base.nextind(x::Reverse,i::Int) = reverse_index(x,prevind(x.x,reverse_index(x,i)))
-Base.prevind(x::Reverse,i::Int) = reverse_index(x,nextind(x.x,reverse_index(x,i)))
-Base.nextind(x::Reverse,i::Int,n::Int) = reverse_index(x,prevind(x.x,reverse_index(x,i),n))
-Base.prevind(x::Reverse,i::Int,n::Int) = reverse_index(x,nextind(x.x,reverse_index(x,i),n))
+Base.getindex(x::Reverse,is::UnitRange{<:Integer}) =
+    getindex(x.x,reverse_index(x,is.stop):reverse_index(x,is.start))
+Base.getindex(x::Reverse,i::Int) =
+    getindex(x.x,reverse_index(x,i))
+
+"""
+    reverse_index(x::Reverse,i)
+
+Return corresponding index in unreversed String `x.lastindex-i+1`.
+Cap at `0:lastindex+1`.
+(can be optimized maybe)
+"""
+function reverse_index(x::Reverse,i)
+    ri = x.lastindex-i+1
+    if ri > x.lastindex
+        x.lastindex + 1
+    elseif ri<0 
+        0
+    else
+        ri
+    end
+end
+
+reverse_index(x::AbstractString,i) =
+    i
+
+function Base.nextind(x::Reverse,i::Int)
+    ri = reverse_index(x, i)
+    reverse_index(x, prevind(x.x, ri))
+end
+function Base.nextind(x::Reverse,i::Int,n::Int)
+    ri = reverse_index(x, i)
+    reverse_index(x, prevind(x.x, ri, n))
+end
+function Base.prevind(x::Reverse,i::Int)
+    ri = reverse_index(x, i)
+    reverse_index(x, nextind(x.x, ri))
+end
+function Base.prevind(x::Reverse,i::Int,n::Int)
+    ri = reverse_index(x, i)
+    reverse_index(x,nextind(x.x, ri, n))
+end
 Base.iterate(x::Reverse) =
     iterate(x,1)
 Base.iterate(x::Reverse,i::Int) =
-    x[i], nextind(x,i)
+    if reverse_index(x,i) >= 1 && reverse_index(x,i) <= lastindex(x) # ? <=
+        x[i], nextind(x,i)
+    else
+        nothing
+    end
 
 export PositiveLookbehind
 """
