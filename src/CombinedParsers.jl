@@ -891,11 +891,12 @@ function log_effect(s,start,after,state,log,delta)
     end
     printstyled(before)
     printstyled(matched; bold=true,color=:green)
+    li = after>lastindex(s) ? lastindex(s) : nextind(s,after,delta)
     if state === nothing 
-        printstyled(escape_string(s[after:min(end,nextind(s,after,delta))]),
+        printstyled(escape_string(s[after:min(end,li)]),
                     bold=true,color=:underline)
     elseif after<=lastindex(s)
-        printstyled(escape_string(s[after:min(end,nextind(s,after,delta))]),
+        printstyled(escape_string(s[after:min(end,li)]),
                     color=:yellow)
     end
     println()
