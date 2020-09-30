@@ -156,9 +156,10 @@ _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
 
 function _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::Nothing)
     rseq=revert(str)
+    ri = reverse_index(rseq,prevind(str,next_i))
     next_i < 1 && return nothing
     r = _iterate(t.parser, rseq, till,
-                 reverse_index(rseq,prevind(rseq,next_i)), nothing)
+                 ri, nothing)
     if r === nothing
         nothing
     else
