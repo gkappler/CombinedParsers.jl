@@ -2028,19 +2028,19 @@ function Base.join(x::Repeat, delim_; infix=:skip)
 end
 
 """
-    Base.join(x::Repeat,delim)
+    Base.join(x::AbstractToken,delim)
 
 Shorthand for `join(Repeat(x),delim)`.
 """
-Base.join(x::CombinedParser,delim; kw...) =
+Base.join(x::AbstractToken,delim; kw...) =
     join(Repeat(x),delim;kw...)
 
 """
-    Base.join(f::Function, x::CombinedParser, delim)
+    Base.join(f::Function, x::AbstractToken, delim)
 
 Shorthand for `map(f,join(x,delim))`.
 """
-Base.join(f::Function,p::CombinedParser,delim_; kw...) =
+Base.join(f::Function,p::AbstractToken,delim_; kw...) =
     map(f,join(p,delim_; kw...))
 
 function print_constructor(io::IO,x::Repeat)
