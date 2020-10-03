@@ -476,6 +476,11 @@ function Base.map(Tc::Type, p::AbstractToken, a...)
     Transformation{Tc}(isempty(a) ? Tc : v -> Tc(a..., v), p)
 end
 
+
+function Base.map(inner::AbstractToken, p::AbstractToken)
+    Transformation{result_type(inner)}(s -> parse(inner,s), p)
+end
+
 """
     map(index::IndexAt, p::AbstractToken, a...)
     map(constant, p::AbstractToken, a...)
