@@ -487,7 +487,13 @@ Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,
 struct Bytes{T} <: CombinedParser{MatchState,T}
     N::Int
 end
-Bytes(N::Integer, T::Type=Char) = Bytes{T}(N)
+
+"""
+    Bytes(N::Integer, T::Type=Vector{UInt8})
+
+If available before end of sequence, parse `N` bytes successfully with `result_type` `T`, fail otherwise.
+"""
+Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{T}(N)
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) =
     posi+parser.N <= till ? (nextind(sequence,posi,parser.N), MatchState()) : nothing
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::MatchState) =
