@@ -42,13 +42,6 @@ Cap at `0:lastindex+1`.
 """
 function reverse_index(x::Reverse,i)
     ri = x.lastindex-i+1
-    if ri > x.lastindex
-        x.lastindex + 1
-    elseif ri<0 
-        0
-    else
-        ri
-    end
 end
 
 reverse_index(x::AbstractString,i) =
