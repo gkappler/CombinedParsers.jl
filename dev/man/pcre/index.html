@@ -52,12 +52,12 @@ julia&gt; @with_names repetitions = Either(
    ├─ \{
    ├─ 🗄 Sequence |&gt; map(#52) |&gt; with_name(:min)
    │  ├─ \-? |missing
-   │  └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#176)
+   │  └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#180)
    ├─ 🗄? Sequence |&gt; map(#62)|missing |&gt; with_name(:max)
    │  ├─ ,
    │  └─ 🗄? Sequence |&gt; map(#52)|1000000
    │     ├─ \-? |missing
-   │     └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#176)
+   │     └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#180)
    └─ \}
 ::UnitRange{Int64}</code></pre><p><code>repetitions</code> parses PCRE repetitions syntax into a <code>(min, max)</code>:</p><pre><code class="language-julia-repl">julia&gt; parse(repetitions, &quot;?&quot;)
 0:1
@@ -122,12 +122,12 @@ julia&gt; parse(repetitions, &quot;{5,}&quot;)
 │     ├─ \{
 │     ├─ 🗄 Sequence |&gt; map(#52) |&gt; with_name(:min)
 │     │  ├─ \-? |missing
-│     │  └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#176)
+│     │  └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#180)
 │     ├─ 🗄? Sequence |&gt; map(#62)|missing |&gt; with_name(:max)
 │     │  ├─ ,
 │     │  └─ 🗄? Sequence |&gt; map(#52)|1000000
 │     │     ├─ \-? |missing
-│     │     └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#176)
+│     │     └─ [0-9]+ CharIn |&gt; Repeat |&gt; map(#180)
 │     └─ \}
 └─ [\?\+]? CharIn |&gt; map(#4)|missing |&gt; with_name(:possessive_quantifier)
 ::CombinedParser</code></pre><p>PCRE repetitions syntax can be <code>quantified</code>:</p><pre><code class="language-julia-repl">julia&gt; p = quantified(raw&quot;\++?&quot;, log=true)
@@ -208,4 +208,4 @@ ParseMatch(&quot;ad&quot;)
 julia&gt; match(Regex(&quot;a(?=c|d).&quot;),&quot;abad&quot;)
 RegexMatch(&quot;ad&quot;)</code></pre><h2 id="Regular-Expression-Brackets"><a class="docs-heading-anchor" href="#Regular-Expression-Brackets">Regular Expression Brackets</a><a id="Regular-Expression-Brackets-1"></a><a class="docs-heading-anchor-permalink" href="#Regular-Expression-Brackets" title="Permalink"></a></h2><p>The regular expression parser packaged with CombinedParser is widely compliant with the PCRE C library used in Julia <code>Base.Regex</code> – and in more than half the tests actually faster than C <a href="../pcre-compliance/">see testing and benchmarking against PCRE tests</a>.</p><pre><code class="language-julia-repl">julia&gt; import CombinedParsers.Regexp: bracket, ParserWithCaptures
 
-julia&gt; push!(repeatable,bracket);</code></pre><p><a href="../../lib/public/#CombinedParsers.Regexp.@re_str"><code>@re_str</code></a> is tested and benchmarked against the PCRE C library testset (see <a href="../pcre-compliance/">compliance report</a>).</p><p>Syntax is essential, semantics is high-brow. What is the semantics of a regular expression? The semantics of regular expression is a parser program that reads a context free regular language.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-number-ranges/">« Representations: Number sequences</a><a class="docs-footer-nextpage" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 19 August 2020 11:51">Wednesday 19 August 2020</span>. Using Julia version 1.5.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+julia&gt; push!(repeatable,bracket);</code></pre><p><a href="../../lib/public/#CombinedParsers.Regexp.@re_str"><code>@re_str</code></a> is tested and benchmarked against the PCRE C library testset (see <a href="../pcre-compliance/">compliance report</a>).</p><p>Syntax is essential, semantics is high-brow. What is the semantics of a regular expression? The semantics of regular expression is a parser program that reads a context free regular language.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-number-ranges/">« Representations: Number sequences</a><a class="docs-footer-nextpage" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 3 October 2020 23:15">Saturday 3 October 2020</span>. Using Julia version 1.5.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
