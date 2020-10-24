@@ -61,6 +61,12 @@ end
     @test parse(Bytes(2,UInt16),[0x33,0x66]) == 0x6633
     @test parse(Bytes(4,Float32),[0x55,0x77,0x33,0x66]) == reinterpret(Float32,0x66337755)
 end
+
+@testset "ByteSwap" begin
+    # Usually CombinedParsers will parse in big endian but to convert to little ending we can do a ByteSwap
+    @test parse(map(ByteSwap(), Bytes(2,UInt16)),[0x33,0x66]) == 0x3366
+    @test parse(map(ByteSwap(), Bytes(4,Float32)),[0x55,0x77,0x33,0x66]) == reinterpret(Float32,0x55773366)
+end
 end
 
 @testset "FlatMap" begin

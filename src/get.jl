@@ -307,7 +307,18 @@ function Base.get(parser::Transformation{MatchRange}, sequence, till, after, i, 
     i:prevind(sequence,after)
 end
 
+export ByteSwap
+struct ByteSwap
+end
 
+function Base.map(b::ByteSwap, p::AbstractToken)
+    T = result_type(p)
+    Transformation{T}(b,p)
+end
+function Base.get(parser::Transformation{ByteSwap}, sequence, till, after, i, state)
+    v = get(parser.parser,sequence, till, after, i, state)
+    bswap(v)
+end
 
 """
 A Transformation{<:Constant} skips evaluation of get(.parser).
