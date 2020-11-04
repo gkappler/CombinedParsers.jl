@@ -494,8 +494,8 @@ end
 If available before end of sequence, parse `N` bytes successfully with `result_type` `T`, fail otherwise.
 """
 Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{T}(N)
-_iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) =
-    posi+parser.N <= till ? (nextind(sequence,posi,parser.N), MatchState()) : nothing
+_iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) = 
+    posi+parser.N <= till+1 ? (nextind(sequence,posi,parser.N), MatchState()) : nothing
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::MatchState) =
     nothing
 regex_string_(x::Bytes{N}) where N = ".{$(N)}"
