@@ -152,11 +152,16 @@ function Base.get(parser::Either{<:Trie},
     get(state.state)
 end
 
+_copy(x::Vector) = copy(x)
+_copy(x::AbstractDict) = copy(x)
+_copy(x::AbstractSet) = copy(x)
+_copy(x) = x
+
 function Base.get(parser::Optional,
                   sequence, till,
                   after, i, state)
     if state === None()
-        parser.default
+        _copy(parser.default)
     else
         get(parser.parser,sequence, till, after, i, state)
     end
