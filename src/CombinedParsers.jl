@@ -2430,8 +2430,14 @@ Either(p::P) where P =
 Either{T}(p) where T = 
     Either{either_state_type(typeof(p)),T}(p)
 
-Either{T}(p...) where {T} =
-    Either{either_state_type(Vector{Any}),T}(Any[parser.(p)...])
+function Either{T}(p_...) where {T}
+    p = Any[parser.(p_)...]
+    for x in p
+        result_type(x) <: T || error("$(result_type(x))<:$T")
+    end
+    Either{either_state_type(Vector{Any}),T}(p)
+end
+
 function Either(x...; kw...)
     Either(Any[ (parser(y) for y in x)..., (with_name(k,v) for (k,v) in kw)...  ])
 end
