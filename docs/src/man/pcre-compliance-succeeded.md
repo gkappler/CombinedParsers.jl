@@ -1,5 +1,5 @@
 # PCRE Compliance
-3074 successful tests on 973 patterns.
+3079 successful tests on 978 patterns.
 
 
 
@@ -6236,11 +6236,10 @@
 ```
 /(?<=\d{3}(?!999))foo/
 ```
-(no 623) succeeded 3 of 3 times:
+(no 623) succeeded 2 of 2 times:
 
 - ✅ `999foo`
 - ✅ `123999foo`
-- ✅ `123abcfoo` no match
 
 ---
 
@@ -6672,8 +6671,9 @@
 ```
 /(?<=Z)X./
 ```
-(no 667) succeeded 0 of 0 times:
+(no 667) succeeded 1 of 1 times:
 
+- ✅ `\u84XAZXB`
 
 ---
 
@@ -9594,6 +9594,46 @@
 (no 1187) succeeded 1 of 1 times:
 
 - ✅ `aab`
+
+---
+
+```
+/(?<=(?=.)?)/
+```
+(no 1189) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.)?+)/
+```
+(no 1190) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.)*)/
+```
+(no 1191) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.){4,5})/
+```
+(no 1192) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.){4,5}x)/
+```
+(no 1193) succeeded 0 of 0 times:
+
 
 ---
 

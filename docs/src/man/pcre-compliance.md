@@ -29,10 +29,10 @@ parsed with
 [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
 (Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
 ## Test Overview
-3074 successful tests on 973 patterns
+3079 successful tests on 978 patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).
 
-23 failed tests on 15 patterns
+18 failed tests on 10 patterns
 (See [list of failed patterns](pcre-compliance-failed.md)).
 ### Performance Overview:
 The PCRE C backend of `@r_str` has arrived at a widely optimized codebase after decades of improvements.

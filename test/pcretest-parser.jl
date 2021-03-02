@@ -45,7 +45,11 @@ macro pcre_testset(tt,log=false)
                 e isa UnsupportedError && rethrow(e)
                 nothing
             end
-            @test pcre===nothing && isempty(ts.test) && isempty(ts.tests_nomatch) ? pc === nothing : pc !== nothing
+            if pcre===nothing && isempty(ts.test) && isempty(ts.tests_nomatch)
+                @test pc === nothing
+            else
+                @test pc !== nothing
+            end
             ## println(pc)
             ##test_seq = ts.test[1]
             if pc !== nothing 

@@ -1,7 +1,7 @@
 
 
 # Failed PCRE Tests
-23 failed tests on 15 patterns.
+18 failed tests on 10 patterns.
 
 
 
@@ -207,41 +207,6 @@ parse(r"(|\1xxx)+", "xxx")
 /(?(R)a+|(?R)b)/
 ```
 (no 918) failed  0 of 0 times:
-
----
-
-```
-/(?<=(?=.)?)/
-```
-(no 1189) failed  0 of 0 times:
-
----
-
-```
-/(?<=(?=.)?+)/
-```
-(no 1190) failed  0 of 0 times:
-
----
-
-```
-/(?<=(?=.)*)/
-```
-(no 1191) failed  0 of 0 times:
-
----
-
-```
-/(?<=(?=.){4,5})/
-```
-(no 1192) failed  0 of 0 times:
-
----
-
-```
-/(?<=(?=.){4,5}x)/
-```
-(no 1193) failed  0 of 0 times:
 
 ---
 
