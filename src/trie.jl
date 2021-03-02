@@ -1,6 +1,6 @@
 using Tries 
 function Either(x::Vector{<:AbstractString})
-    P = Trie{Char,Nothing}
+    P = Trie{Char,Union{Missing,Nothing}}
     r = P()
     for e in x
         r[e...] = nothing
@@ -9,7 +9,7 @@ function Either(x::Vector{<:AbstractString})
 end
 
 function Either(x::Dict)
-    P = Trie{Char,valtype(x)}
+    P = Trie{Char,Union{Missing,valtype(x)}}
     r=P()
     for (e,v) in pairs(x)
         r[e...] = v
@@ -58,7 +58,10 @@ children(x::Either{<:AbstractTrie}) =
 
 function deepmap_parser(f::typeof(lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
     get!(mem,x) do
-        Either{result_type(x)}(Trie(lowercase.(k)=>v for (k,v) in pairs(x.options) if !isempty(k)))
+        g = (lowercase.(Tries.path(st))=>get(st)
+             for st in PreOrderDFS(x.options)
+             if !isempty(Tries.path(st)))
+        Either{result_type(x)}(Trie(g))
     end
 end
 
