@@ -25,9 +25,10 @@ parse_all
 
 ## Typed Transformation Parsers
 ```@docs
-(!)(::CombinedParsers.AbstractToken)
+(!)
 JoinSubstring
 map
+MatchRange
 CombinedParsers.Constant
 CombinedParsers.IndexAt
 CombinedParsers.result_type
@@ -60,7 +61,7 @@ Bytes
 AnyChar
 CharIn
 CharNotIn
-CombinedParsers.broadcasted
+Base.broadcasted
 ```
 
 ## other
@@ -74,12 +75,14 @@ CombinedParsers.MappedChars
 Sequence
 (*)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
 sSequence
+CombinedParsers.@seq
 ```
 
 ### Either
 ```@docs
 Either
 (|)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
+(|)(::Union{Char, Regex, AbstractString, CombinedParsers.AbstractToken}, ::Union{Char, Regex, AbstractString, CombinedParsers.AbstractToken})
 (|)(::Either, ::Type)
 push!
 pushfirst!
@@ -87,11 +90,12 @@ sEither
 CombinedParsers.either_result_type
 ```
 
+
 ### Combining Parser
 ```@docs
 Atomic
 CombinedParsers.FlatMap
-(∘)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
+after
 ```
 
 ### Repeating
@@ -131,6 +135,7 @@ Never
 Lookbehind
 PositiveLookbehind
 NegativeLookbehind
+CombinedParsers.reverse_index
 ```
 
 #### Look ahead

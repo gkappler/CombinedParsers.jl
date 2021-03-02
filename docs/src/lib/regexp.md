@@ -9,6 +9,12 @@ with_options
 CombinedParsers.Regexp.@pcre_tests
 ```
 
+## Useful sub-parsers
+```@docs
+CombinedParsers.Regexp.bsr
+CombinedParsers.Regexp.at_linestart
+```
+
 ## Regular Expression Types
 ```@docs
 CombinedParsers.Regexp.parse_options
@@ -35,3 +41,5 @@ CombinedParsers.Regexp.FilterOptions
 CombinedParsers.Regexp.WithOptions
 CombinedParsers.Regexp.OnOptionsParser
 ```
+
+

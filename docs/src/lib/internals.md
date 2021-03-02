@@ -45,6 +45,7 @@ CombinedParsers.regex_inner
 CombinedParsers.regex_suffix
 CombinedParsers.print_constructor
 CombinedParsers.MemoTreeChildren
+Base.escape_string
 ```
 
 
