@@ -149,6 +149,7 @@ Base.iterate(x::WithOptions{<:AbstractString},i::Integer) =
     end
 
 Base.isless(x::WithOptions{Char},y) = isless(x.x,y)
+(==)(x::WithOptions{<:AbstractString},y::String) = x.x==y
 (==)(x::WithOptions{Char},y) = x.x==y
 Base.SubString(x::WithOptions,start::Int,stop::Int) = with_options(x.flags,SubString(x.x,start,stop))
 Base.length(x::WithOptions) =
