@@ -483,6 +483,18 @@ Fast parsing of a fixed number `N` of indices,
 `reinterpret(T,match)[1]` the parsed vector as `T`, if `isbitstype`, or `T(match)` constructor otherwise.
 
 Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,T}` for custom conversion.
+
+!!! note
+
+    Endianness can be achieved by just mapping `bswap`
+    ```jldoctest
+    julia> map(bswap, Bytes(2,UInt16))([0x16,0x11])
+    0x1611
+
+    julia> Bytes(2,UInt16)([0x16,0x11])
+    0x1116
+    ```
+
 """
 struct Bytes{T} <: CombinedParser{MatchState,T}
     N::Int

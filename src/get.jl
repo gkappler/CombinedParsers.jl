@@ -29,8 +29,15 @@ end
     Base.get(parser::Bytes{T}, sequence::Vector{UInt8})
 
 !!! note
-    The endian type is not configurable.  Might depend on the arch.
-    Your hint and help would be much appreciated!
+
+    Endianness can be achieved by just mapping `bswap`
+    ```jldoctest
+    julia> map(bswap, Bytes(2,UInt16))([0x16,0x11])
+    0x1611
+
+    julia> Bytes(2,UInt16)([0x16,0x11])
+    0x1116
+    ```
 """
 function Base.get(parser::Bytes{T}, sequence::Vector{UInt8}, till,
                   after, i, state) where {T}
