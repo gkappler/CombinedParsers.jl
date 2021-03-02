@@ -71,7 +71,7 @@ Parser Transformation getting the matched SubString.
 
 ```jldoctest
 julia> parse(Repeat(CharIn(:L)),"abc123")
-3-element Array{Char,1}:
+3-element Vector{Char}:
  'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
  'b': ASCII/Unicode U+0062 (category Ll: Letter, lowercase)
  'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)

@@ -403,7 +403,7 @@ julia> p = re"(?:a|b*)."[1]
 │  ├─ a 
 │  └─ b*  |> Repeat
 └─ [^\\n] CharNotIn
-::Union{Char, Array{Char,1}}
+::Union{Char, Vector{Char}}
 ```
 
 See also [`getindex`](@ref), [`Sequence`](@ref).

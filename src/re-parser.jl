@@ -52,8 +52,8 @@ vertical_space=(
 ```jldoctest
 julia> CombinedParsers.Regexp.bsr
 (?>|🗄...) Either |> Atomic
-├─ \r\n 
-└─ [\n\x0b\f\r\x85] CharIn
+├─ \\r\\n 
+└─ [\\n\\x0b\\f\\r\\x85] CharIn
 ::Union{Char, SubString}
 ```
 
@@ -66,11 +66,11 @@ bsr = Atomic(Either("\r\n",
 """
 ```jldoctest
 julia> CombinedParsers.Regexp.at_linestart
-|🗄... Either
+|🗄... Either |> with_name(:at_linestart)
 ├─ ^ AtStart
 └─ (?<=🗄...)) PositiveLookbehind
-   ├─ \n\r 
-   └─ [\n\x0b\f\r\x85] CharIn
+   ├─ \\n\\r 
+   └─ [\\n\\x0b\\f\\r\\x85] CharIn
 ::Union{AtStart, Char, SubString}
 ```
 
@@ -772,7 +772,7 @@ julia> re"a+c"
 🗄 Sequence
 ├─ a+  |> Repeat
 └─ c
-::Tuple{Array{Char,1},Char}
+::Tuple{Vector{Char}, Char}
 ```
 
 See also [`Regcomb`](@ref), [`parse_options`](@ref).

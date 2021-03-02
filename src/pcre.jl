@@ -35,7 +35,7 @@ Parser for `flags` in [`@re_str`](@ref).
 julia> CombinedParsers.Regexp.pcre_options_parser
 🗄 Sequence[2]
 ├─ ^ AtStart
-├─ 🗄+? Sequence[1] |> Repeat |> map(splat_or)|0
+├─ 🗄* Sequence[1] |> Repeat |> map(splat_or)
 │  ├─ |🗄... Either
 │  │  ├─ dupnames  => 0x00000040 |> with_name(:DUPNAMES)
 │  │  ├─ xx  => 0x01000000 |> with_name(:EXTENDED_MORE)
