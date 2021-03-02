@@ -1462,29 +1462,9 @@ Repeat_until(p,until, with_until=false;wrap=identity,min=0,max=Repeat_max) =
 export FlatMap,after
 """
     FlatMap{P,S,Q<:Function,T} <: CombinedParser{S,T}
-    after(right::Function,left::AbstractToken)
-    after(right::Function,left::AbstractToken,T::Type)
 
 Like Scala's [fastparse FlatMap](https://www.lihaoyi.com/fastparse/#FlatMap).
-
-```jldoctest
-julia> saying(v) = v == "same" ? v : "different";
-
-julia> p = after(saying, String, "same"|"but")
-🗄 FlatMap
-├─ |🗄... Either
-│  ├─ same 
-│  └─ but 
-└─ saying
-::String
-
-julia> p("samesame")
-"same"
-
-julia> p("butdifferent")
-"different"
-
-```
+See [`after`](@ref)
 """
 @auto_hash_equals struct FlatMap{P,S,Q<:Function,T} <: CombinedParser{S,T}
     left::P
@@ -1506,6 +1486,31 @@ end
 FlatMap(right::Function, left::AbstractToken, T::Type=Any) = FlatMap{T}(right,left)
 FlatMap(right::Function, T::Type, left::AbstractToken) = FlatMap{T}(right,left)
 
+"""
+    after(right::Function,left::AbstractToken)
+    after(right::Function,left::AbstractToken,T::Type)
+
+Like Scala's fastparse [`FlatMap`](@ref)
+
+```jldoctest
+julia> saying(v) = v == "same" ? v : "different";
+
+julia> p = after(saying, String, "same"|"but")
+🗄 FlatMap
+├─ |🗄... Either
+│  ├─ same 
+│  └─ but 
+└─ saying
+::String
+
+julia> p("samesame")
+"same"
+
+julia> p("butdifferent")
+"different"
+
+```
+"""
 after(a...) = FlatMap(a...)
 
 deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...;kw...) =
