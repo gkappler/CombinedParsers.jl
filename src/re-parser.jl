@@ -561,7 +561,7 @@ push!(repeatable,atomic_group);
                  ""),
              alternation,
              ")") do v
-                 with_name(v[2],Capture(Symbol(v[2]),v[3]))
+                 with_name(v[2],Capture(Symbol(v[2]),v[3]))::CombinedParser
              end;
 push!(repeatable,captured);
 
@@ -576,9 +576,9 @@ push!(repeatable,subpattern);
 @with_names lookahead=Sequence(
     2,
     "(",
-    Either(Sequence(v -> Lookahead(true,v[2]),
+    Either(Sequence(v -> Lookahead(true,v[2])::CombinedParser,
                     Either("?=","*positive_lookahead:","*pla:"),alternation),
-           Sequence(v -> Lookahead(false,v[2]),
+           Sequence(v -> Lookahead(false,v[2])::CombinedParser,
                     Either("?!","*negative_lookahead:","*nla:"),alternation)),
     ")");
 push!(repeatable,lookahead);
@@ -588,9 +588,9 @@ push!(repeatable,lookahead);
 @with_names lookbehind=Sequence(
     2,
     "(",
-    Either(Sequence(v -> Lookbehind(true,v[2]),
+    Either(Sequence(v -> Lookbehind(true,v[2])::CombinedParser,
             Either("?<=","*positive_lookbehind:","*plb:"),alternation),
-        Sequence(v -> Lookbehind(false,v[2]),
+        Sequence(v -> Lookbehind(false,v[2])::CombinedParser,
             Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
     ")");
 push!(repeatable,lookbehind);
@@ -659,7 +659,7 @@ push!(repeatable,resetting_capture_numbers);
                 Conditional(c,v[3],v[4])
             else
                 Conditional(Subroutine(c[2]),v[3],v[4])
-            end
+            end::CombinedParser
         end
 push!(repeatable, conditional);
 
