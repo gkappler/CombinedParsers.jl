@@ -1752,47 +1752,62 @@ Base.setindex!(A::MatchState, v, i::Int) = error("MatchState elements can only b
 
 Base.convert(::Type{MatchState},::Tuple{}) = MatchState()
 
-function _iterate_(parser::Sequence, sequence, till, posi, next_i, states)
-    next_i_ = next_i
-    parts=parser.parts
-    nexti,states = if states === nothing
-        sss = Vector{Any}(undef,length(parts))
-        length(parts) == 0 && return next_i,sss
-        sss[1] = nothing
-        1,sss
-    else
-        length(states),states
-    end
-    length(parts) == 0 && return nothing
-    while nexti<=length(states)
-        ## compute before next iteration, because states[nexti] might change.
-        ## only used if ns===nothing, but states[nexti] might still be modified.
-        posi = start_index(sequence, next_i_, parts[nexti], states[nexti])
-        ns = _iterate(parts[nexti], sequence, till, posi, next_i_, states[nexti])
-        if ns === nothing
-            nexti -= 1
-            next_i_ = posi
-            prune_captures(sequence,next_i_)
-            nexti == 0 && return nothing
-            if posi==0
-                println(parts[nexti])
-                error()
-            end
-        else
-            states[nexti] = tuple_state(ns)
-            next_i_ = tuple_pos(ns)
-            nexti += 1
-            if nexti > length(states)
-                return next_i_, states
-            else
-                states[nexti] = nothing
-            end
-        end
-    end
-    error("?")
+
+sequence_state(statettype::Type{MatchState}, states) = MatchState()
+sequence_state(statettype::Type{<:Tuple}, states) = tuple( (s for s in states...) )
+sequence_state(statettype::Type, states) = states
+
+sequence_state(statettype::Type{MatchState}) = MatchState()
+sequence_state(statettype::Type{<:Tuple}) = tuple( )
+sequence_state(statettype::Type) = Any[]
+
+_iterate(parser::Sequence, sequence, till, posi, next_i, states::MatchState) =
+    nothing
+
+function _iterate(parser::Sequence, sequence, till, posi, next_i, states::Nothing)
+    length(parser.parts) == 0 && return next_i, sequence_state(state_type(parser))
+    sss = Vector{Any}(undef,length(parser.parts))
+    sss[1] = nothing
+    _iterate(parser, sequence, till, posi, next_i, sss, 1)
 end
 
-@generated function _iterate(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,sts}} where {pts<:Tuple,sts}
+function _iterate(parser::Sequence, sequence, till, posi, next_i, substate::Vector{Any}, p=length(substate))
+    next_i_ = next_i
+    part=parser.parts
+    length(part) == 0 && return nothing
+    pposi = [ 0 for _ in 1:(length(substate)+1)]
+    pposi[1]=posi
+    if p==length(substate)
+        pposi[end]=next_i
+    end
+    while p<=length(substate)
+        if iszero(pposi[p])
+            pposi[p] = start_index(sequence, pposi[p+1], part[p], @inbounds substate[p])
+        end
+        if (@inbounds substate[p]) === nothing
+            pposi[p+1] = pposi[p]
+        end
+        r = _iterate(part[p], sequence, till, pposi[p], pposi[p+1], substate[p])
+
+        if r === nothing
+            prune_captures(sequence, pposi[p])
+            @inbounds substate[p] = nothing
+            pposi[p+1] = pposi[p]
+            p == 1 && return nothing
+            p -= 1
+        else
+            pposi[p+1] = tuple_pos(r)
+            @inbounds substate[p] = tuple_state(r)
+            if p < length(substate)
+                @inbounds substate[p+1]=nothing
+            end
+            p += 1
+        end
+    end
+    pposi[end], sequence_state(state_type(parser), substate)
+end
+
+@generated function _iterate_(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,sts}} where {pts<:Tuple,sts}
     fpts = fieldtypes(pts)
     spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
     n = length(fpts)
