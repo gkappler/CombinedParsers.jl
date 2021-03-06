@@ -11,6 +11,13 @@ utilize Julia's type inferrence for transformations,
 log conveniently for debugging, and let Julia compile your parser for good performance.
 """
 module CombinedParsers
+
+function __init__()
+    println("CombinedParsers@0.1.6 for julia 1.6-rc1 has disabled @generated _iterate function for Sequence to")
+    println("  work around an out of memory issue.")
+    println("  Until this is resolved, if you require best performance, use julia 1.5 and CombinedParsers@0.1.5\n  (about 10x faster performance on PCRE benchmarks).")
+end
+
 import Base: cat, get, prevind, nextind
 using Nullables
 using AutoHashEquals
