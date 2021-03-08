@@ -342,6 +342,10 @@ regex_inner(x::AbstractString) = ""
 regex_prefix(x::CombinedParser) = ""
 regex_suffix(x::CombinedParser) = ""
 regex_inner(x::CombinedParser) = ""
+
+
+constructor_name(x) = typeof(x).name
+
 """
     print_constructor(io::IO,x)
 
@@ -349,7 +353,7 @@ Print constructor pipeline in parser tree node.
 """
 print_constructor(io::IO,x) =
     if x isa CombinedParser
-        print(io, typeof(x).name)
+        print(io, constructor_name(x))
     else
     end
 
@@ -368,7 +372,7 @@ children_char = '\U1F5C4'
 
 function print_constructor(io::IO,x::WrappedParser)
     print_constructor(io, x.parser)
-    print(io, " |> ", typeof(x).name)
+    print(io, " |> ", constructor_name(x))
 end
 
 regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
