@@ -893,13 +893,14 @@ with_log(s::AbstractString,p_, delta_char::Integer=5;nomatch=false) =
 function log_effect(s,start,after,state,log,delta)
     at = "@$(start)-$(after)"
     if state === nothing
-        printstyled("no match ",
-                    bold=true,color=:underline)
+        printstyled("no match ", color=:underline)
     else
-        printstyled("   match ";
-                    bold=true,color=:green)
+        print("   ")
+        printstyled("match";
+                    bold=false,color=:underline)
+        print(" ")
     end
-    printstyled(log,color=:red, bold=true)
+    printstyled(log,color=:green, bold=false)
     print(at,": ")
     firsti = prevind(s,start,delta)
     lasti = (prevind(s,start))
@@ -911,15 +912,15 @@ function log_effect(s,start,after,state,log,delta)
     if lastindex(matched)>100
         matched=matched[1:nextind(matched,1,20)]*"[...]"*matched[prevind(matched,end,20):end]
     end
-    printstyled(before)
-    printstyled(matched; bold=true,color=:green)
+    printstyled(before; bold=true)
+    printstyled(matched; bold=true,color=:underline)
     li = after>lastindex(s) ? lastindex(s) : nextind(s,after,delta)
     if state === nothing 
         printstyled(escape_string(s[after:min(end,li)]),
                     bold=true,color=:underline)
     elseif after<=lastindex(s)
         printstyled(escape_string(s[after:min(end,li)]),
-                    color=:yellow)
+                    color=:darkgray)
     end
     println()
     if !get(stdout,:color,false)
@@ -2870,6 +2871,7 @@ include("caseless.jl")
 
 children(x::MappingParser) =
     ( x.parser, x.f)
+
 end # module
 
 
