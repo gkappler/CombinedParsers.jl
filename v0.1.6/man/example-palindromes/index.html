@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>struct Palindrome&lt;:CombinedParser · CombinedParsers.jl</title><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/example-palindromes/"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">CombinedParsers.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li><a class="tocitem" href="../example-either-trie/">Prefix-Tree Matching</a></li><li><a class="tocitem" href="../pcre-compliance/">PCRE Compliance</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../example-person/">What is Parsing? Names...</a></li><li><a class="tocitem" href="../example-number-ranges/">Representations: Number sequences</a></li><li><a class="tocitem" href="../pcre/">Regular Expressions</a></li><li class="is-active"><a class="tocitem" href>struct Palindrome&lt;:CombinedParser</a><ul class="internal"><li><a class="tocitem" href="#.-Regular-Expression"><span>1. Regular Expression</span></a></li><li><a class="tocitem" href="#.-A-non-word-skipping-Palindrome:CombinedParser"><span>2. A non-word skipping <code>Palindrome&lt;:CombinedParser</code></span></a></li><li><a class="tocitem" href="#Next..."><span>Next...</span></a></li></ul></li><li><a class="tocitem" href="../example-arithmetics/">Arithmetics</a></li><li><a class="tocitem" href="../bson/">Parsing <code>Vector{Unit8}</code>: BSON</a></li><li><a class="tocitem" href="../json/">JSON</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Public</a></li><li><a class="tocitem" href="../../lib/regexp/">Regexp</a></li><li><a class="tocitem" href="../../lib/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>struct Palindrome&lt;:CombinedParser</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>struct Palindrome&lt;:CombinedParser</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/docs/docs/src/man/example-palindromes.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Palindromes:CombinedParser:-a-Tutorial-for-writing-your-combinable-Parser"><a class="docs-heading-anchor" href="#Palindromes:CombinedParser:-a-Tutorial-for-writing-your-combinable-Parser"><code>Palindromes&lt;:CombinedParser</code>: a Tutorial for writing your combinable Parser</a><a id="Palindromes:CombinedParser:-a-Tutorial-for-writing-your-combinable-Parser-1"></a><a class="docs-heading-anchor-permalink" href="#Palindromes:CombinedParser:-a-Tutorial-for-writing-your-combinable-Parser" title="Permalink"></a></h1><p>Palindromes are an interesting example for parsing because intuitively programmers as well as laymen understand the problem:</p><p><strong>The text is identical when read from left to right, as we are used to do, or when read from right to left in reverse, when we read only the letters and discard all non-word characters.</strong></p><p>This example enables you to write and optimize your custom <code>CombinedParser</code> based off a minimal template.</p><pre><code class="language-julia">using CombinedParsers
+using CombinedParsers.Regexp</code></pre><h2 id=".-Regular-Expression"><a class="docs-heading-anchor" href="#.-Regular-Expression">1. Regular Expression</a><a id=".-Regular-Expression-1"></a><a class="docs-heading-anchor-permalink" href="#.-Regular-Expression" title="Permalink"></a></h2><p>The PCRE test case contains nice examples of non-trivial palindromes.</p><pre><code class="language-julia"># Defines parsers and output for pcre tests:
+CombinedParsers.Regexp.@pcre_tests;
+
+# The regular expression in the first quoted line is cryptic.
+pt = pcre_test&quot;&quot;&quot;
+/^\W*+(?:((.)\W*+(?1)\W*+\2|)|((.)\W*+(?3)\W*+\4|\W*+.\W*+))\W*+$/i
+    1221
+ 0: 1221
+ 1: 1221
+ 2: 1
+    Satan, oscillate my metallic sonatas!
+ 0: Satan, oscillate my metallic sonatas!
+ 1: &lt;unset&gt;
+ 2: &lt;unset&gt;
+ 3: Satan, oscillate my metallic sonatas
+ 4: S
+    A man, a plan, a canal: Panama!
+ 0: A man, a plan, a canal: Panama!
+ 1: &lt;unset&gt;
+ 2: &lt;unset&gt;
+ 3: A man, a plan, a canal: Panama
+ 4: A
+    Able was I ere I saw Elba.
+ 0: Able was I ere I saw Elba.
+ 1: &lt;unset&gt;
+ 2: &lt;unset&gt;
+ 3: Able was I ere I saw Elba
+ 4: A
+\= Expect no match
+    The quick brown fox
+No match
+&quot;&quot;&quot;</code></pre><pre class="documenter-example-output">Pattern: r(e)&quot;^\W*+(?:((.)\W*+(?1)\W*+\2|)|((.)\W*+(?3)\W*+\4|\W*+.\W*+))\W*+$&quot;i
+Test Examples:
+   1. 1221
+   2. Satan, oscillate my metallic sonatas!
+   3. A man, a plan, a canal: Panama!
+   4. Able was I ere I saw Elba.
+Not Examples:
+   1. The quick brown fox
+</pre><p>As to why and how this PCRE pattern matches palindromes requires arcane reasoning even to the initiated:</p><pre><code class="language-julia">re = Regex(pt.pattern...)</code></pre><pre class="documenter-example-output">r&quot;^\W*+(?:((.)\W*+(?1)\W*+\2|)|((.)\W*+(?3)\W*+\4|\W*+.\W*+))\W*+$&quot;i</pre><p>I figure the expression is hard to construct and come up with. The easy part is that the pattern needs to ignore case <code>&quot;i</code> and whitespace <code>\W</code>. The pattern makes intense use of backreferences and subroutines.</p><pre><code class="language-julia">s=pt.test[3].sequence
+match(re, s)</code></pre><pre class="documenter-example-output">RegexMatch(&quot;A man, a plan, a canal: Panama!&quot;, 1=nothing, 2=nothing, 3=&quot;A man, a plan, a canal: Panama&quot;, 4=&quot;A&quot;)</pre><p>The matched captures are purely technical (Pattern 4 is the first character).</p><h3 id="Tree-display-of-regex"><a class="docs-heading-anchor" href="#Tree-display-of-regex">Tree display of regex</a><a id="Tree-display-of-regex-1"></a><a class="docs-heading-anchor-permalink" href="#Tree-display-of-regex" title="Permalink"></a></h3><p>I find it hard to understand the compact captures <code>(.)</code>, even in a nested tree display:</p><pre><code class="language-julia">cp = Regcomb(pt.pattern...)</code></pre><pre class="documenter-example-output">🗄 Sequence |&gt; regular expression combinator with 4 capturing groups
+├─ ^ AtStart
+├─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+├─ |🗄... Either
+│  ├─ (|🗄...) Either |&gt; Capture 1
+│  │  ├─ 🗄 Sequence
+│  │  │  ├─ ([^\n]) CharNotIn |&gt; Capture 2
+│  │  │  ├─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+│  │  │  ├─ (?1) Subroutine
+│  │  │  ├─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+│  │  │  └─ (?i\g{2}) Backreference |&gt; set_options
+│  │  └─  Always
+│  └─ (|🗄...) Either |&gt; Capture 3
+│     ├─ 🗄 Sequence
+│     │  ├─ ([^\n]) CharNotIn |&gt; Capture 4
+│     │  ├─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+│     │  ├─ (?3) Subroutine
+│     │  ├─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+│     │  └─ (?i\g{4}) Backreference |&gt; set_options
+│     └─ 🗄 Sequence
+│        ├─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+│        ├─ [^\n] CharNotIn
+│        └─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+├─ (?&gt;[^\W]*) CharNotIn |&gt; Repeat |&gt; Atomic
+└─ |🗄... Either
+   ├─ $ AtEnd
+   └─ (?=🗄) PositiveLookahead
+      └─ 🗄 Sequence |&gt; map(#62)
+         ├─ \n
+         └─ $ AtEnd
+::Tuple{AtStart,Array{Char,1},Union{Always, Tuple{Any,Any,Any,Vararg{Any,N} where N}},Array{Char,1},AtEnd}
+</pre><p>Why no backreference <code>\1</code>, why no subroutine <code>(?2)</code>? Theoretical linguists, I wonder, is the minimum number of capture groups 4, for a regular expression matching palindromes?</p><p>Writing a palindrome parser should be easier. And with julia compiler it should be faster.</p><h3 id="Regular-Expression-performance"><a class="docs-heading-anchor" href="#Regular-Expression-performance">Regular Expression performance</a><a id="Regular-Expression-performance-1"></a><a class="docs-heading-anchor-permalink" href="#Regular-Expression-performance" title="Permalink"></a></h3><p>PCRE matching example 3 is fast</p><pre><code class="language-julia">using BenchmarkTools
+@benchmark match(re, s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  352 bytes
+  allocs estimate:  5
+  --------------
+  minimum time:     1.435 μs (0.00% GC)
+  median time:      1.608 μs (0.00% GC)
+  mean time:        1.596 μs (0.00% GC)
+  maximum time:     12.384 μs (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     10</pre><p>In practice <code>CombinedParsers</code> <a href="../../lib/regexp/#CombinedParsers.Regexp.Regcomb"><code>Regcomb</code></a> of the regular expression will detect palindromes too. Palindrome matching provides an interesting cross-parser performance benchmark.</p><pre><code class="language-julia">@benchmark match(cp, s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  98.47 KiB
+  allocs estimate:  1407
+  --------------
+  minimum time:     159.337 μs (0.00% GC)
+  median time:      177.008 μs (0.00% GC)
+  mean time:        202.591 μs (10.54% GC)
+  maximum time:     15.083 ms (97.60% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1</pre><p><code>CombinedParsers.Regexp.Subroutine</code> matching is slow because the current implementation is using state-copies of captures. (TODO: Capture Subroutines could be implemented as a stack?).</p><h2 id=".-A-non-word-skipping-Palindrome:CombinedParser"><a class="docs-heading-anchor" href="#.-A-non-word-skipping-Palindrome:CombinedParser">2. A non-word skipping <code>Palindrome&lt;:CombinedParser</code></a><a id=".-A-non-word-skipping-Palindrome:CombinedParser-1"></a><a class="docs-heading-anchor-permalink" href="#.-A-non-word-skipping-Palindrome:CombinedParser" title="Permalink"></a></h2><p>This example of <code>Palindrome&lt;:CombinedParser</code> is a much faster palindrome parser and more interesting and more easy to write. It mimics the human readable palindrome rule that is clear and quite easy to comprehend:</p><p>the text is identical when read from left to right, as we are used to do, or when read from right to left in reverse, when we read only the letters and skip all non-word characters.</p><p>This rule is efficient programming in natural language. After defining the parser, the third part of the example discusses the design of match iteration in <code>CombinedParsers</code>.</p><h3 id="Parsing-strategy"><a class="docs-heading-anchor" href="#Parsing-strategy">Parsing strategy</a><a id="Parsing-strategy-1"></a><a class="docs-heading-anchor-permalink" href="#Parsing-strategy" title="Permalink"></a></h3><p>A custom parser needs a method to determine if there is a match and its extent at a position. How can this be implemented for a palindrome? There are two strategies:</p><ol><li>inside-out: start at a position as <code>center</code><ul><li>expand <code>left</code> and <code>right</code> from <code>center</code> until they are at word characters</li><li>until word character left does not match word character at right.</li><li>Succeed if a minimal length is met. Fail otherwise.</li></ul></li><li>outside-in: start <code>left</code> and <code>right</code>,<ul><li>move positions towards <code>center</code> until they are at word characters and</li><li>succeed if left and right positions meet at the center,</li><li>compare these characters, and proceed to the next positions if the word characters match or fail if there is a mismatch.</li></ul>(This might be <a href="https://stackoverflow.com/questions/21403782/the-fastest-method-of-determining-if-a-string-is-a-palindrome">the-fastest-method-of-determining-if-a-string-is-a-palindrome</a>.  But I figure finding all palindrome matches in a string is slow because you would be required to test for all possible substrings.)</li></ol><p>The inside out strategy seems easier and faster.</p><h4 id="Prerequisite:-Skipping-whitespace"><a class="docs-heading-anchor" href="#Prerequisite:-Skipping-whitespace">Prerequisite: Skipping whitespace</a><a id="Prerequisite:-Skipping-whitespace-1"></a><a class="docs-heading-anchor-permalink" href="#Prerequisite:-Skipping-whitespace" title="Permalink"></a></h4><p>For the string <code>&quot;two   words&quot;</code>,  from the point of index 4 (<code>&#39; &#39;</code> after &quot;from&quot;) the next word character after skipping whitespace left and right are indices of 3 (tw<code>o</code>) and 7 (<code>w</code>ords). In Julia syntax, this is expressed in terms of <code>direction</code> (functions <code>Base.prevind</code> and <code>Base.nextind</code> return next index to left or right), and <code>word_char::T</code>, what makes up a word character (provided method <code>CombinedParser.ismatch(char,parser::T)::Bool</code>.)</p><pre><code class="language-julia">@inline function seek_word_char(direction,str,i,
+                                till=lastindex(str),
+                                word_char=UnicodeClass(:L))
+    i=direction(str,i)
+    while i&gt;0 &amp;&amp; i&lt;=till &amp;&amp; !CombinedParsers.ismatch((@inbounds str[i]),word_char)
+        i=direction(str,i)
+    end
+    return i
+end
+( prev_index=seek_word_char(prevind, &quot;two   words&quot;, 4),
+  next_index=seek_word_char(nextind, &quot;two   words&quot;, 4) )</code></pre><pre class="documenter-example-output">(prev_index = 3, next_index = 7)</pre><h3 id="Subtyping-:-CombinedParser{STATE,RESULT}."><a class="docs-heading-anchor" href="#Subtyping-:-CombinedParser{STATE,RESULT}.">Subtyping <code>&lt;: CombinedParser{STATE,RESULT}</code>.</a><a id="Subtyping-:-CombinedParser{STATE,RESULT}.-1"></a><a class="docs-heading-anchor-permalink" href="#Subtyping-:-CombinedParser{STATE,RESULT}." title="Permalink"></a></h3><p>Subtyping requires you to define the type of the parsing state (for julia compiler optimizations) and the type of the parsing result.</p><pre><code class="language-julia">STATE = NamedTuple{(:left,:center,:right),Tuple{Int,Int,Int}}
+RESULT = SubString
+struct Palindrome{P} &lt;: CombinedParser{STATE,RESULT}
+    word_char::P
+end
+Palindrome() = Palindrome(UnicodeClass(:L))</code></pre><pre class="documenter-example-output">Main.ex-example-palindromes.Palindrome</pre><h3 id="Matching:-CombinedParsers._iterate"><a class="docs-heading-anchor" href="#Matching:-CombinedParsers._iterate">Matching: <code>CombinedParsers._iterate</code></a><a id="Matching:-CombinedParsers._iterate-1"></a><a class="docs-heading-anchor-permalink" href="#Matching:-CombinedParsers._iterate" title="Permalink"></a></h3><p>With the inside-out stratedy, the implementation greedily expands over non-word characters. Computing the first match at <code>posi</code>tion is done by this method dispatch</p><pre><code class="language-julia">function CombinedParsers._iterate(x::Palindrome,
+                                  str, till,
+                                  posi, after,
+                                  state::Nothing)
+    right_ = left_ = left = right = posi
+    while left&gt;0 &amp;&amp; right&lt;=till &amp;&amp;
+          lowercase(@inbounds str[left])==lowercase(@inbounds str[right])
+        # if we cannot expand, (left_,right_) succeeded
+        right_ = right
+        left_ = left
+        left =  seek_word_char(
+            prevind,str,
+            left,till,x.word_char)
+        right = seek_word_char(
+            nextind,str,
+            right,till,x.word_char)
+    end
+    left, left_, right_, right
+    if left_ == right_
+        nothing
+    else
+        tuple(nextind(str,right_),
+              (left=left_, center=posi, right=right_))
+    end
+end</code></pre><p><code>_iterate</code> matches the right part of the palindrome if and only if <code>posi</code> at the center of a palindrome.</p><p>The internal API calls (for the center index 18):</p><pre><code class="language-julia">state = _iterate(Palindrome(),s,lastindex(s),18,18,nothing)</code></pre><pre class="documenter-example-output">(31, (left = 1, center = 18, right = 30))</pre><h3 id="Base.prevind-and-Base.nextind"><a class="docs-heading-anchor" href="#Base.prevind-and-Base.nextind"><code>Base.prevind</code> and <code>Base.nextind</code></a><a id="Base.prevind-and-Base.nextind-1"></a><a class="docs-heading-anchor-permalink" href="#Base.prevind-and-Base.nextind" title="Permalink"></a></h3><p><code>CombinedParsers</code> iterates through matches based on the parsing position and state.</p><pre><code class="language-julia">Base.nextind(str,i::Int,p::Palindrome,state) =
+    nextind(str,state.right)</code></pre><p>Note that for the inside-out strategy the <code>Palindrome&lt;:CombinedParser</code> matches from <code>center</code> and looks behind until <code>right</code>, possibly overlapping with the last match(es). The start index of a palindrome match is its center.</p><pre><code class="language-julia">Base.prevind(str,after::Int,p::Palindrome,state) =
+    state.center</code></pre><h3 id="match-and-get"><a class="docs-heading-anchor" href="#match-and-get"><code>match</code> and <code>get</code></a><a id="match-and-get-1"></a><a class="docs-heading-anchor-permalink" href="#match-and-get" title="Permalink"></a></h3><p><a href="../../lib/internals/#CombinedParsers._iterate"><code>_iterate</code></a> is called when the public API <code>match</code> or <code>parse</code> is used. Match searches for a center index and then matched the <code>state.center:state.right</code> part of the palindrome.</p><pre><code class="language-julia">p = Palindrome()
+m = match(p,s)</code></pre><pre class="documenter-example-output">ParseMatch(&quot;ma&quot;)</pre><p>The result of a parsing is the matching substring from <code>state.left:state.right</code>, implementing <code>Base.get</code> with the full argument range:</p><pre><code class="language-julia">Base.get(x::Palindrome, str, till, after, posi, state) =
+    SubString(str,state.left,state.right)</code></pre><p>The match result is matching the first palindrome, which is short and simple - but not yet what we want.</p><pre><code class="language-julia">get(m)</code></pre><pre class="documenter-example-output">&quot;A ma&quot;</pre><h3 id="Iterating-through-matches"><a class="docs-heading-anchor" href="#Iterating-through-matches">Iterating through matches</a><a id="Iterating-through-matches-1"></a><a class="docs-heading-anchor-permalink" href="#Iterating-through-matches" title="Permalink"></a></h3><p>The longest palindrome is matched too:</p><pre><code class="language-julia">p = Palindrome()
+[ get(m) for m in match_all(p,s) ]</code></pre><pre class="documenter-example-output">7-element Array{SubString{String},1}:
+ &quot;A ma&quot;
+ &quot;an, a&quot;
+ &quot;an, a&quot;
+ &quot;A man, a plan, a canal: Panama&quot;
+ &quot;ana&quot;
+ &quot;ana&quot;
+ &quot;ama&quot;</pre><p>To skip trivial short palindromes we can use <code>Base.filter</code></p><pre><code class="language-julia">islong(sequence, till, posi, after, state) =
+    state.right-state.left+1 &gt; 5
+long_palindrome = filter(islong,Palindrome())
+get(match(long_palindrome,s))</code></pre><pre class="documenter-example-output">&quot;A man, a plan, a canal: Panama&quot;</pre><h4 id="Iteration-of-smaller-Sub-palindromes"><a class="docs-heading-anchor" href="#Iteration-of-smaller-Sub-palindromes">Iteration of smaller Sub-palindromes</a><a id="Iteration-of-smaller-Sub-palindromes-1"></a><a class="docs-heading-anchor-permalink" href="#Iteration-of-smaller-Sub-palindromes" title="Permalink"></a></h4><p>The set of all palindromes in a text includes the shorter palindromes contained in longer ones. Provide a method to iterate the previous state:</p><pre><code class="language-julia">&quot;Shrinking `state` match&quot;
+function CombinedParsers._iterate(x::Palindrome, str, till, posi, after, state)
+    left_, posi_, right_ = state
+    left =  seek_word_char(
+        nextind,str,
+        left_,till,x.word_char)
+    right = seek_word_char(
+        prevind,str,
+        right_,till,x.word_char)
+    if left &gt;= right # left == posi
+        nothing
+    else
+        tuple(nextind(str,right),
+              (left=left, center=posi_, right=right))
+    end
+end
+
+[ get(m) for m in match_all(p,s) ]</code></pre><pre class="documenter-example-output">16-element Array{SubString{String},1}:
+ &quot;A ma&quot;
+ &quot;an, a&quot;
+ &quot;an, a&quot;
+ &quot;A man, a plan, a canal: Panama&quot;
+ &quot;man, a plan, a canal: Panam&quot;
+ &quot;an, a plan, a canal: Pana&quot;
+ &quot;n, a plan, a canal: Pan&quot;
+ &quot;a plan, a canal: Pa&quot;
+ &quot;plan, a canal: P&quot;
+ &quot;lan, a canal&quot;
+ &quot;an, a cana&quot;
+ &quot;n, a can&quot;
+ &quot;a ca&quot;
+ &quot;ana&quot;
+ &quot;ana&quot;
+ &quot;ama&quot;</pre><p>Note that the greedy-only behaviour was atomic in terms of regular expression, which can be restored with <a href="../../lib/public/#CombinedParsers.Atomic"><code>Atomic</code></a></p><pre><code class="language-julia">p = Atomic(Palindrome())
+get.(match_all(p,s)) |&gt; collect</code></pre><pre class="documenter-example-output">7-element Array{SubString{String},1}:
+ &quot;A ma&quot;
+ &quot;an, a&quot;
+ &quot;an, a&quot;
+ &quot;A man, a plan, a canal: Panama&quot;
+ &quot;ana&quot;
+ &quot;ana&quot;
+ &quot;ama&quot;</pre><h3 id="Performance-Optimization"><a class="docs-heading-anchor" href="#Performance-Optimization">Performance Optimization</a><a id="Performance-Optimization-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-Optimization" title="Permalink"></a></h3><pre><code class="language-julia">@benchmark match(long_palindrome,s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  272 bytes
+  allocs estimate:  2
+  --------------
+  minimum time:     2.161 μs (0.00% GC)
+  median time:      2.322 μs (0.00% GC)
+  mean time:        2.394 μs (0.00% GC)
+  maximum time:     9.765 μs (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     9</pre><p>After writing a <code>CombinedParser</code></p><pre><code class="language-julia"># using Profile</code></pre><p>is recommended to investigate options to optimize.</p><pre><code class="language-julia"># f(n) = for _ in 1:n; match(fast_palindrome,s); end
+# @profile f(10000)
+# Profile.clear()
+# @profile f(1000000)
+# ProfileView.view()</code></pre><p><img src="../profile-palindrome-unicodeclass.png" alt/>\n\n <code>Combinedparsers</code> was optimized for minimal garbage collection (Red bars indicating garbage collection are in the <code>f</code> function).</p><p>Here, replacing the <code>UnicodeClass</code> matcher (calling <code>categorycode</code>) with a fast tuple <code>==</code> check shaves off some extra time:</p><pre><code class="language-julia">fast_palindrome = filter(islong,Palindrome(CharNotIn(tuple(&quot; ,!:&quot;...))))
+@benchmark match(fast_palindrome,s)</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  288 bytes
+  allocs estimate:  2
+  --------------
+  minimum time:     1.275 μs (0.00% GC)
+  median time:      1.511 μs (0.00% GC)
+  mean time:        1.541 μs (0.00% GC)
+  maximum time:     6.011 μs (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     10</pre><p>Note, that <code>CharNotIn(tuple(&quot; ,!:&quot;...))</code> is faster than the default <code>CharNotIn(&quot; ,!:&quot;...)</code> using <code>Base.Set</code> in case of very few <code>Char</code>s.. Further possible optimization are</p><ul><li>Caching prevind, nextind</li><li>Memoization</li></ul><h3 id="Padding-and-combining"><a class="docs-heading-anchor" href="#Padding-and-combining">Padding and combining</a><a id="Padding-and-combining-1"></a><a class="docs-heading-anchor-permalink" href="#Padding-and-combining" title="Permalink"></a></h3><p>Note that the PCRE pattern included outside non-words, specifically the tailing <code>!</code>.</p><pre><code class="language-julia">re = Regex(pt.pattern...)
+match(re,&quot;  &quot;*s)</code></pre><pre class="documenter-example-output">RegexMatch(&quot;  A man, a plan, a canal: Panama!&quot;, 1=nothing, 2=nothing, 3=&quot;A man, a plan, a canal: Panama&quot;, 4=&quot;A&quot;)</pre><p>`<code>CombinedParsers</code> are designed with iteration in mind, and a small match set reduces computational time when iterating through all matches. <code>Palindrome</code> matches palindromes with word-char boundaries. The PCRE pattern includes non-words matches in the padding of palindromes, a superset of <code>Palindrome</code>. PCRE-equivalent matching can be achieved by combining the stricly matching <code>Palindrome</code> with parsers for the padding.</p><pre><code class="language-julia">padding=Repeat(CharNotIn(fast_palindrome.parser.word_char))
+match(fast_palindrome*padding*AtEnd(),s) |&gt; get</code></pre><pre class="documenter-example-output">(&quot;A man, a plan, a canal: Panama&quot;, [&#39;!&#39;], re&quot;$&quot;)</pre><p><code>Palindrome</code> matches from center to right, like a lookbehind parser. Padding to the left is not matched:</p><pre><code class="language-julia">match(fast_palindrome*padding*AtEnd(),&quot;  &quot;*s) |&gt; get</code></pre><pre class="documenter-example-output">(&quot;A man, a plan, a canal: Panama&quot;, [&#39;!&#39;], re&quot;$&quot;)</pre><p>Also, the left part can be parsed separately.</p><pre><code class="language-julia">match(!Repeat(AnyChar())*fast_palindrome*padding*AtEnd(),&quot;  &quot;*s) |&gt; get</code></pre><pre class="documenter-example-output">(&quot;  A man, a plan, a &quot;, &quot;A man, a plan, a canal: Panama&quot;, [&#39;!&#39;], re&quot;$&quot;)</pre><p>A prefix parser to the left requires a parser for the left-part coupled by filter:</p><pre><code class="language-julia">palindrome = filter(
+    Sequence(
+        2,
+        Lazy(Repeat(AnyChar())),
+        Atomic(Palindrome()))) do sequence, till, posi, after, state
+            # posi is the start of the sequence
+            posi==state[2].left
+        end</code></pre><pre class="documenter-example-output">🗄 Sequence |&gt; map(#62) |&gt; FilterParser
+├─ .*? AnyChar |&gt; Repeat |&gt; Lazy
+└─ (?&gt;) Main.ex-example-palindromes.Palindrome |&gt; Atomic
+::SubString
+</pre><p>Now we can express the full pattern</p><pre><code class="language-julia">p = padding * (palindrome) * padding * AtEnd()
+match(p,&quot;skipped: &quot;*s)</code></pre><pre class="documenter-example-output">ParseMatch(&quot;: A man, a plan, a canal: Panama!&quot;)</pre><p>This extra complexity comes at a cost:</p><pre><code class="language-julia">@benchmark match(p,$(&quot;skipped: &quot;*s))</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
+  memory estimate:  6.05 KiB
+  allocs estimate:  171
+  --------------
+  minimum time:     71.909 μs (0.00% GC)
+  median time:      74.843 μs (0.00% GC)
+  mean time:        75.513 μs (0.00% GC)
+  maximum time:     190.906 μs (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1</pre><h2 id="Next..."><a class="docs-heading-anchor" href="#Next...">Next...</a><a id="Next...-1"></a><a class="docs-heading-anchor-permalink" href="#Next..." title="Permalink"></a></h2><ul><li>optimize with memoization</li><li>match also palindromes with odd number of letters</li><li>elaborate on iteration documentation</li><li>comparative benchmarking, conditional on palindrome length</li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pcre/">« Regular Expressions</a><a class="docs-footer-nextpage" href="../example-arithmetics/">Arithmetics »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 25 March 2021 12:40">Thursday 25 March 2021</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
