@@ -23,7 +23,7 @@ julia&gt; parse(CharNotIn(isuppercase),&quot;c&quot;)
 ::Tuple{Char,Char}
 
 julia&gt; parse(p,&quot;Ab&quot;)
-(&#39;A&#39;, &#39;b&#39;)</code></pre><p><a href="../../lib/regexp/#Base.getindex-Tuple{ParseMatch{var&quot;#s36&quot;,var&quot;#s35&quot;,var&quot;#s34&quot;} where var&quot;#s34&quot; where var&quot;#s35&quot;&lt;:CombinedParsers.Regexp.SequenceWithCaptures where var&quot;#s36&quot;,Integer}"><code>getindex</code></a> on a sequence creates a transforming parser selecting from the result of the parsing.</p><pre><code class="language-julia-repl">julia&gt; parse(Sequence(CharIn(isuppercase) * CharIn(islowercase))[2],&quot;Ab&quot;)
+(&#39;A&#39;, &#39;b&#39;)</code></pre><p><a href="../../lib/regexp/#Base.getindex-Tuple{ParseMatch{var&quot;#s6118&quot;,var&quot;#s6117&quot;,var&quot;#s6116&quot;} where var&quot;#s6116&quot; where var&quot;#s6117&quot;&lt;:CombinedParsers.Regexp.SequenceWithCaptures where var&quot;#s6118&quot;,Integer}"><code>getindex</code></a> on a sequence creates a transforming parser selecting from the result of the parsing.</p><pre><code class="language-julia-repl">julia&gt; parse(Sequence(CharIn(isuppercase) * CharIn(islowercase))[2],&quot;Ab&quot;)
 ERROR: BoundsError: attempt to access DataType
   at index [2]</code></pre><p>Sequence keyword argument constructors transform the parsing into a named tuple. If some Sequence arguments are &lt;:<code>Pair{Symbol}</code>, only those are retained in a NamedTuple.</p><pre><code class="language-julia-repl">julia&gt; p = Sequence(first = CharIn(isuppercase), second = CharIn(islowercase))
 🗄 Sequence |&gt; map(ntuple)
@@ -42,7 +42,7 @@ julia&gt; parse(Sequence(CharIn(isuppercase), :second =&gt; CharIn(islowercase))
  &#39;a&#39;: ASCII/Unicode U+0061 (category Ll: Letter, lowercase)</code></pre><h2 id="Optional"><a class="docs-heading-anchor" href="#Optional">Optional</a><a id="Optional-1"></a><a class="docs-heading-anchor-permalink" href="#Optional" title="Permalink"></a></h2><p>Similar to Repeat, <a href="../../lib/public/#CombinedParsers.Optional"><code>Optional</code></a> creates a parser, repeating 0 or 1 times.  The <code>result_type(Optional(p, default=d))</code> is <code>promote_type</code> (or <code>Union</code> type is type promotion results in Any).</p><pre><code class="language-julia-repl">julia&gt; option = Optional(&#39;a&#39;) * join(Repeat(&#39;b&#39;),&quot;-&quot;)
 🗄 Sequence
 ├─ a? |missing
-└─ 🗄 Sequence |&gt; map(#87)
+└─ 🗄 Sequence |&gt; map(#89)
    ├─ b
    └─ 🗄* Sequence |&gt; map(#62) |&gt; Repeat
       ├─ \-
@@ -50,7 +50,7 @@ julia&gt; parse(Sequence(CharIn(isuppercase), :second =&gt; CharIn(islowercase))
 ::Tuple{Union{Missing, Char},Array{Char,1}}</code></pre><p>Feedback appreciated:</p><pre><code class="language-julia-repl">julia&gt; option = ( CharIn(&#39;a&#39;:&#39;z&#39;) | missing ) * join(Repeat(&#39;b&#39;),&quot;-&quot;)
 🗄 Sequence
 ├─ [a-z]? CharIn|missing
-└─ 🗄 Sequence |&gt; map(#87)
+└─ 🗄 Sequence |&gt; map(#89)
    ├─ b
    └─ 🗄* Sequence |&gt; map(#62) |&gt; Repeat
       ├─ \-
@@ -60,4 +60,4 @@ julia&gt; parse(Sequence(CharIn(isuppercase), :second =&gt; CharIn(islowercase))
 (&quot;ab&quot;, re&quot;$&quot;)
 
 julia&gt; parse(Atomic(Either(&quot;a&quot;,&quot;ab&quot;,&quot;ac&quot;))*AtEnd(),&quot;ab&quot;)
-ERROR: ArgumentError: no successfull parsing.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../guide/">« Overview</a><a class="docs-footer-nextpage" href="../example-either-trie/">Prefix-Tree Matching »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 26 February 2021 12:28">Friday 26 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ERROR: ArgumentError: no successfull parsing.</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../guide/">« Overview</a><a class="docs-footer-nextpage" href="../example-either-trie/">Prefix-Tree Matching »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 25 March 2021 11:28">Thursday 25 March 2021</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
