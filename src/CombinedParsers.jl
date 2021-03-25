@@ -471,8 +471,16 @@ deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
 @inline prevind(str,i::Int,parser::ConstantParser{L},x) where L = 
     i-L
 
-@inline function _iterate(parser::ConstantParser{L}, sequence, till, posi, next_i, state::Nothing) where {L}
-    _iterate(parser.parser,sequence,till,posi, next_i,state,L)
+@inline function _iterate(parser::ConstantParser{L,P}, sequence, till, posi, next_i, state::Nothing) where {L,P<:ParserTypes}
+    _iterate(parser.parser,sequence,till,posi, next_i,state, L)
+end
+
+@inline function _iterate(parser::ConstantParser{1}, sequence, till, posi, next_i, state::Nothing)
+    if posi <= till && parser.parser==sequence[posi]
+        nextind(sequence, posi), MatchState()
+    else
+        nothing
+    end
 end
 
 

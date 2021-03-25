@@ -128,6 +128,12 @@ function Base.get(
     @inbounds sequence[i]
 end
 
+function Base.get(parser::ConstantParser,
+                  sequence, till,
+                  after, i, state)
+    parser.parser
+end
+
 # Base.get(parser::ConstantParser, sequence, till, after, i, state) = parser.parser
 
 
