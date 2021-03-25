@@ -2872,6 +2872,27 @@ include("caseless.jl")
 children(x::MappingParser) =
     ( x.parser, x.f)
 
+
+export trim
+"""
+    trim(; whitespace=CharIn(' '))
+
+Match any whitespace and result in `tuple()`.
+"""
+trim(; whitespace=CharIn(' ')) =
+    map(Repeat(whitespace)) do v
+        tuple()
+    end
+
+"""
+    trim(p; whitespace=CharIn(' '))
+
+Ignore whitespace at left and right of `p`.
+"""
+trim(p; whitespace=CharIn(' ')) =
+    Sequence(2, Repeat(whitespace),
+             p, Repeat(whitespace))
+
 end # module
 
 
