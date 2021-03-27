@@ -7,13 +7,14 @@ using TextParse
 import TextParse: AbstractToken
 using AutoHashEquals
 
+using ReversedStrings
+import ReversedStrings: reversed, reverse_index
+
 import ..CombinedParsers: LeafParser, WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, _iterate, print_constructor
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
-import ..CombinedParsers: revert, reverse_index, state_type, start_index, tuple_pos, tuple_state
-
-import Base: prevind, nextind
-
+import ..CombinedParsers: state_type, start_index, tuple_pos, tuple_state
+import ..CombinedParsers: _prevind, _nextind
 indexed_captures_(x,a...) = x
 
 import Base: SubString, ==
@@ -57,7 +58,7 @@ Base.empty!(sequence::SequenceWithCaptures) =
     end
 copy_captures(x::SequenceWithCaptures,state) =
     SequenceWithCaptures(x.match,x.subroutines, [ copy(c) for c in x.captures ],x.names,state)
-revert(x::SequenceWithCaptures) = SequenceWithCaptures(revert(x.match),x)
+reversed(x::SequenceWithCaptures) = SequenceWithCaptures(reversed(x.match),x)
 reverse_index(x::SequenceWithCaptures,a...) = reverse_index(x.match,a...)
 with_options(flags::UInt32,x::SequenceWithCaptures) =
     SequenceWithCaptures(with_options(flags,x.match),x)
@@ -231,7 +232,7 @@ set_capture(sequence::WithOptions, index::Int, start,stop) =
     set_capture(sequence.x,index,start,stop)
 set_capture(sequence::SequenceWithCaptures, index::Int, start,stop) =
     push!((@inbounds sequence.captures[index]), start:stop)
-set_capture(sequence::SequenceWithCaptures{<:Reverse}, index::Int, start,stop) =
+set_capture(sequence::SequenceWithCaptures{<:ReversedString}, index::Int, start,stop) =
     push!((@inbounds sequence.captures[index]),
           reverse_index(sequence.match,
                         stop):reverse_index(sequence.match,
@@ -401,7 +402,7 @@ function regex_prefix(x::Subroutine)
 end
 regex_suffix(x::Subroutine) = ")"
 regex_inner(x::Subroutine) = ""
-deepmap_parser(::typeof(revert),mem::AbstractDict,x::Subroutine) = x
+deepmap_parser(::typeof(reversed),mem::AbstractDict,x::Subroutine) = x
 
 function _iterate_condition(cond::Subroutine, sequence, till, posi, next_i, state)
     sequence.state === nothing && return false

@@ -16,7 +16,7 @@ end
     _iterate(parser.parser, MappedChars(parser.f,sequence), till,posi,after,state)
 end
 
-revert(x::MappingParser) = MappingParser(x.f,x.parser)
+reversed(x::MappingParser) = MappingParser(x.f,x.parser)
 
 deepmap_parser(f::Function,mem::AbstractDict,x::MappingParser,a...;kw...) =
     get!(mem,x) do

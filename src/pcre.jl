@@ -213,8 +213,8 @@ function Base.convert(::Type{CombinedParser},x::WithOptions{Char})
 end
 
 
-revert(x::WithOptions) =
-    WithOptions(revert(x.x),x.flags)
+reversed(x::WithOptions) =
+    WithOptions(reversed(x.x),x.flags)
 
 
 

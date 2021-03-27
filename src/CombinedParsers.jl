@@ -16,6 +16,8 @@ using Nullables
 using AutoHashEquals
 import Base: ==, hash
 import Base: lowercase
+using ReversedStrings
+import ReversedStrings: reversed, reverse_index
 
 using TextParse
 import TextParse: AbstractToken
@@ -456,7 +458,8 @@ print_constructor(io::IO,x::ConstantParser) = print(io,"")
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
-revert(x::ConstantParser{N,<:AbstractString}) where N =
+
+reversed(x::ConstantParser{N,<:AbstractString}) where N =
     ConstantParser(reverse(x.parser))
 
 lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
@@ -730,7 +733,7 @@ julia> parse(la*AnyChar(),"peek")
 """
 @auto_hash_equals struct PositiveLookahead{T,P} <: LookAround{T}
     parser::P
-    PositiveLookahead(p_,revert=true) =
+    PositiveLookahead(p_,reversed=true) =
         let p = parser(p_)
             new{result_type(p),typeof(p)}(p)
         end
@@ -767,7 +770,7 @@ julia> parse(la*AnyChar(),"seek")
 """
 @auto_hash_equals struct NegativeLookahead{P} <: LookAround{NegativeLookahead{P}}
     parser::P
-    NegativeLookahead(p_,revert=true) =
+    NegativeLookahead(p_,reversed=true) =
         let p = parser(p_)
             new{typeof(p)}(p)
         end
@@ -2121,7 +2124,7 @@ regex_suffix(x::Repeat) =
     end
 
 
-revert(x::Repeat) = x
+reversed(x::Repeat) = x
 deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...;kw...) =
     get!(mem,x) do
         f(Repeat(x.range,

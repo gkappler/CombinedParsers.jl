@@ -76,9 +76,9 @@ Base.get(::AbstractToken{<:Nothing},
 function Base.get(t::PositiveLookbehind,
                   str, till,
                   after, i, state)
-    rseq = revert(str)
-    i_ = reverse_index(rseq,prevind(rseq,i))
-    after_ = nextind(rseq,i_,t.parser,state)
+    rseq = reversed(str)
+    i_ = reverse_index(rseq,_prevind(rseq,i))
+    after_ = _nextind(rseq,i_,t.parser,state)
     get(t.parser, rseq, till,
         after_, i_, state)
 end
@@ -97,7 +97,7 @@ Parser Transformation getting the matched SubString.
         new{typeof(x),state_type(x)}(x)
 end
 Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
-revert(x::JoinSubstring) = JoinSubstring(revert(x.parser))
+reversed(x::JoinSubstring) = JoinSubstring(reversed(x.parser))
 function print_constructor(io::IO,x::JoinSubstring)
     print_constructor(io,x.parser)
     printstyled(io," |> !", color=:blue)
