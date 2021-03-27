@@ -78,7 +78,7 @@ function Base.getproperty(x::ParseMatch{<:Any,<:AbstractString,<:Any},key::Symbo
     elseif key==:match
         SubString(x.parsings.sequence,
                   x.start,
-                  prevind(x.parsings.sequence,x.stop))
+                  _prevind(x.parsings.sequence,x.stop))
     else
         _getproperty(x,key)
     end
@@ -165,7 +165,7 @@ function Base.iterate(m::MatchesIterator,
     while start <= till+1 && state===nothing
         # state = iterate(m.parsings,(start,nothing))
         start > till && break
-        start = nextind(m.sequence,start)
+        start = _nextind(m.sequence,start)
         state = _iterate(m,start,start,nothing)
     end
     parsematch_tuple(m,start,state)

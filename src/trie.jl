@@ -43,15 +43,15 @@ Match char path in `p` greedily, recording shorter matches in state.
 end
 
 @inline function _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state)
-    _iterate(p, str, prevind(str,next_i,2), posi, posi, nothing)
+    _iterate(p, str, _prevind(str,next_i,2), posi, posi, nothing)
 end
 
 function _iterate(p::Either{<:AbstractTrie}, str, till, posi, next_i, state)
     _iterate(p.options, str, till, posi, next_i, state)
 end
 
-@inline nextind(str,i::Int,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i+x.nc
-@inline prevind(str,i::Int,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i-x.nc
+@inline _nextind(str,i::Int,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i+x.nc
+@inline _prevind(str,i::Int,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i-x.nc
 
 children(x::Either{<:AbstractTrie}) =
     children(x.options)

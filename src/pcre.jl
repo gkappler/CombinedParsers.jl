@@ -158,14 +158,14 @@ Base.lastindex(x::WithOptions) =
     lastindex(x.x)
 Base.firstindex(x::WithOptions) =
     firstindex(x.x)
-Base.prevind(x::WithOptions,i::Int,n::Int) =
-    prevind(x.x,i,n)
-Base.nextind(x::WithOptions,i::Int,n::Int) =
-    nextind(x.x,i,n)
-Base.prevind(x::WithOptions,i::Int) =
-    prevind(x.x,i)
-Base.nextind(x::WithOptions,i::Int) =
-    nextind(x.x,i)
+_prevind(x::WithOptions,i::Int,n::Int) =
+    _prevind(x.x,i,n)
+_nextind(x::WithOptions,i::Int,n::Int) =
+    _nextind(x.x,i,n)
+_prevind(x::WithOptions,i::Int) =
+    _prevind(x.x,i)
+_nextind(x::WithOptions,i::Int) =
+    _nextind(x.x,i)
 Base.ncodeunits(x::WithOptions) =
     ncodeunits(x.x)
 
@@ -315,14 +315,14 @@ Base.lastindex(x::FilterOptions) =
     lastindex(x.x)
 Base.firstindex(x::FilterOptions) =
     firstindex(x.x)
-Base.prevind(x::FilterOptions,i::Integer,n::Integer) =
-    prevind(x.x,i,n)
-Base.nextind(x::FilterOptions,i::Integer,n::Integer) =
-    nextind(x.x,i,n)
-Base.prevind(x::FilterOptions,i::Integer) =
-    prevind(x.x,i)
-Base.nextind(x::FilterOptions,i::Integer) =
-    nextind(x.x,i)
+_prevind(x::FilterOptions,i::Integer,n::Integer) =
+    _prevind(x.x,i,n)
+_nextind(x::FilterOptions,i::Integer,n::Integer) =
+    _nextind(x.x,i,n)
+_prevind(x::FilterOptions,i::Integer) =
+    _prevind(x.x,i)
+_nextind(x::FilterOptions,i::Integer) =
+    _nextind(x.x,i)
 Base.ncodeunits(x::FilterOptions) =
     ncodeunits(x.x)
 Base.iterate(x::FilterOptions,a...) =

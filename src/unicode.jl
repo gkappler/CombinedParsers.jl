@@ -180,7 +180,7 @@ _ismatch(x::Char, set::UnicodeClass)::Bool =
 
 function TextParse.tryparsenext(tok::UnicodeClass, str, i, till, opts=TextParse.default_opts)
     if i <= till
-        match_unicode_class(str[i],tok.class) && (Nullable(str[i]), nextind(str,i))
+        match_unicode_class(str[i],tok.class) && (Nullable(str[i]), _nextind(str,i))
     end
     Nullable{Char}(), i    
 end

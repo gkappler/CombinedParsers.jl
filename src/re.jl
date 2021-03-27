@@ -64,14 +64,14 @@ with_options(flags::UInt32,x::SequenceWithCaptures) =
     SequenceWithCaptures(with_options(flags,x.match),x)
 @inline Base.lastindex(x::SequenceWithCaptures) =
     lastindex(x.match)
-@inline Base.@propagate_inbounds Base.prevind(x::SequenceWithCaptures,i::Integer,n::Integer) =
-    prevind(x.match,i,n)
-@inline Base.@propagate_inbounds Base.nextind(x::SequenceWithCaptures,i::Integer,n::Integer) =
-    nextind(x.match,i,n)
-@inline Base.@propagate_inbounds Base.prevind(x::SequenceWithCaptures,i::Integer) =
-    prevind(x.match,i)
-@inline Base.@propagate_inbounds Base.nextind(x::SequenceWithCaptures,i::Integer) =
-    nextind(x.match,i)
+@inline Base.@propagate_inbounds _prevind(x::SequenceWithCaptures,i::Integer,n::Integer) =
+    _prevind(x.match,i,n)
+@inline Base.@propagate_inbounds _nextind(x::SequenceWithCaptures,i::Integer,n::Integer) =
+    _nextind(x.match,i,n)
+@inline Base.@propagate_inbounds _prevind(x::SequenceWithCaptures,i::Integer) =
+    _prevind(x.match,i)
+@inline Base.@propagate_inbounds _nextind(x::SequenceWithCaptures,i::Integer) =
+    _nextind(x.match,i)
 @inline Base.@propagate_inbounds Base.getindex(x::SequenceWithCaptures,i...) =
     getindex(x.match,i...)
 @inline Base.@propagate_inbounds Base.iterate(x::SequenceWithCaptures,i...) =
@@ -118,7 +118,7 @@ function Base.getproperty(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key:
           for c in x.captures ]
     elseif key==:match
         SubString(x.match,m.start,
-                  prevind(x.match,m.stop))
+                  _prevind(x.match,m.stop))
     else
         CombinedParsers._getproperty(m,key)
     end
@@ -220,7 +220,7 @@ Base.get(x::Capture, sequence, till, after, i, state) =
 @inline function _iterate(parser::Capture, sequence, till, posi, next_i, state)
     r = _iterate(parser.parser, sequence, till, posi, next_i, state)
     if r !== nothing ## set only if found (e.g. if repeated capture capture last)
-        set_capture(sequence,parser.index,posi,prevind(sequence,tuple_pos(r)))
+        set_capture(sequence,parser.index,posi,_prevind(sequence,tuple_pos(r)))
     elseif state !== nothing
         prune_captures(sequence, posi)
     end
@@ -303,14 +303,14 @@ end
 
 
 function Base.get(x::Backreference, sequence, till, after, i, state)
-    sequence[i:prevind(sequence,i+state)]
+    sequence[i:_prevind(sequence,i+state)]
 end
 
-@inline function prevind(str,i::Int,parser::Backreference,x)
+@inline function _prevind(str,i::Int,parser::Backreference,x)
     i-x
 end
 
-@inline function nextind(str,i::Int,parser::Backreference,x)
+@inline function _nextind(str,i::Int,parser::Backreference,x)
     i+x
 end
 
@@ -417,12 +417,12 @@ function _iterate_condition(cond::Subroutine, sequence, till, posi, next_i, stat
 end
 
 
-@inline function prevind(sequence,i::Int,parser::Subroutine,x)
-    prevind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
+@inline function _prevind(sequence,i::Int,parser::Subroutine,x)
+    _prevind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
 end
 
-@inline function nextind(sequence,i::Int,parser::Subroutine,x)
-    nextind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
+@inline function _nextind(sequence,i::Int,parser::Subroutine,x)
+    _nextind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
 end
 
 
@@ -523,12 +523,12 @@ _iterate_condition(cond, sequence, till, posi, next_i, state) =
 
 
 
-@inline function prevind(str,i::Int,parser::Conditional,state)
-    prevind(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
+@inline function _prevind(str,i::Int,parser::Conditional,state)
+    _prevind(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
 end
 
-@inline function nextind(str,i::Int,parser::Conditional,state)
-    nextind(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
+@inline function _nextind(str,i::Int,parser::Conditional,state)
+    _nextind(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
 end
 
 @inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Nothing)

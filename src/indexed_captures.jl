@@ -173,7 +173,7 @@ end
 """
     deepmap_parser(f::typeof(indexed_captures_),mem::AbstractDict,x::Capture,context,a...)
 
-Map the capture my setting `index` to  `nextind(context,x)`.
+Map the capture my setting `index` to  `_nextind(context,x)`.
 
 Registers result in `context.subroutines` if no previous subroutine with the same index exists
 (see also [`DupSubpatternNumbers`](@ref)).

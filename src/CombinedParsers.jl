@@ -11,13 +11,16 @@ utilize Julia's type inferrence for transformations,
 log conveniently for debugging, and let Julia compile your parser for good performance.
 """
 module CombinedParsers
-import Base: cat, get, prevind, nextind
 using Nullables
 using AutoHashEquals
 import Base: ==, hash
 import Base: lowercase
+import Base: cat, get
+
 using ReversedStrings
 import ReversedStrings: reversed, reverse_index
+
+include("ind.jl")
 
 using TextParse
 import TextParse: AbstractToken
@@ -26,12 +29,6 @@ Numeric = TextParse.Numeric
 
 export CombinedParser
 export result_type
-
-Base.nextind(x::AbstractVector,i,delta) =
-    i+delta
-
-Base.prevind(x::AbstractVector,i,delta) =
-    i-delta
 
 "Julia types that provide CombinedParser methods result_type, state_type, _iterate, get, nextind, prevind."
 ParserTypes = Union{AbstractToken, AbstractString, Char, Regex}
@@ -132,7 +129,7 @@ result_type(T::Type{<:Union{Char,AbstractString}}) = T
 
 Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
 such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
-and sequence[start_index(sequence,after,parser,state):prevind(sequence,next_i)] is the matched subsequence.
+and sequence[start_index(sequence,after,parser,state):_prevind(sequence,next_i)] is the matched subsequence.
 """
 @inline function _iterate(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L=ncodeunits(p))
     till, posi, next_i
@@ -160,35 +157,6 @@ end
 @inline function _iterate(p::Union{<:AbstractString,Char}, sequence, till, posi, next_i, state)
     nothing
 end
-"""
-    Base.nextind(str,i::Int,parser,state)
-
-Return the index after the `state` match at `i`.
-!!! note
-    I am in doubt whether this qualifies as type piracy because I provide an outside method for outside types.
-    I thought it might not, because the differentiating two extra arguments. If you have an opinion, please let me know on GitHub.
-"""
-@inline nextind(str,i::Int,parser::Union{AbstractString,Char},x) where L =
-    i+ncodeunits(parser)
-"""
-    Base.prevind(str,i::Int,parser,state)
-
-Return the index before the `state` match ending before position `i`.
-!!! note
-    I am in doubt whether this qualifies as type piracy because I provide an outside method for outside types.
-    I thought it might not, because the differentiating two extra arguments. If you have an opinion, please let me know on GitHub.
-"""
-@inline prevind(str,i::Int,parser::Union{AbstractString,Char},x) where L = 
-    i-ncodeunits(parser)
-
-@inline _prevind(str,i,parser,x::Nothing) = i
-@inline _nextind(str,i,parser,x::Nothing) = i
-@inline _prevind(str,i,parser,x) = prevind(str,i,parser,x)
-@inline _nextind(str,i,parser,x) = nextind(str,i,parser,x)
-
-
-
-
 
 
 ############################################################
@@ -212,11 +180,11 @@ NCodeunitsState(posi::Int,after::Int,state) =
 Base.convert(::Type{NCodeunitsState{T}}, x::NCodeunitsState{S}) where {S,T} =
     NCodeunitsState{T}(x.nc, convert(T,x.state))
 
-@inline function nextind(str,i::Int,parser,x::NCodeunitsState)
+@inline function _nextind(str,i::Int,parser,x::NCodeunitsState)
     i+x.nc
 end
 
-@inline function prevind(str,i::Int,parser,x::NCodeunitsState)
+@inline function _prevind(str,i::Int,parser,x::NCodeunitsState)
     i-x.nc
 end
 
@@ -381,11 +349,11 @@ regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
 regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
 regex_inner(x::WrappedParser) = regex_inner(x.parser)
 
-@inline prevind(str,i::Int,parser::W,x) where {W <: WrappedParser} = prevind(str,i,parser.parser,x)
-@inline nextind(str,i::Int,parser::W,x) where {W <: WrappedParser} = nextind(str,i,parser.parser,x)
+@inline _prevind(str,i::Int,parser::W,x) where {W <: WrappedParser} = _prevind(str,i,parser.parser,x)
+@inline _nextind(str,i::Int,parser::W,x) where {W <: WrappedParser} = _nextind(str,i,parser.parser,x)
 
-@inline nextind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i+x.nc
-@inline prevind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i-x.nc
+@inline _nextind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i+x.nc
+@inline _prevind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i-x.nc
 
 
 @inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
@@ -469,9 +437,9 @@ deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
         f(x,a...;kw...)
     end
 
-@inline nextind(str,i::Int,parser::ConstantParser{L},x) where L =
+@inline _nextind(str,i::Int,parser::ConstantParser{L},x) where L =
     i+L
-@inline prevind(str,i::Int,parser::ConstantParser{L},x) where L = 
+@inline _prevind(str,i::Int,parser::ConstantParser{L},x) where L = 
     i-L
 
 @inline function _iterate(parser::ConstantParser{L,P}, sequence, till, posi, next_i, state::Nothing) where {L,P<:ParserTypes}
@@ -522,25 +490,25 @@ If available before end of sequence, parse `N` bytes successfully with `result_t
 """
 Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{T}(N)
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) = 
-    posi+parser.N <= till+1 ? (nextind(sequence,posi,parser.N), MatchState()) : nothing
+    posi+parser.N <= till+1 ? (_nextind(sequence,posi,parser.N), MatchState()) : nothing
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::MatchState) =
     nothing
 regex_string_(x::Bytes{N}) where N = ".{$(N)}"
 Base.show(io::IO, x::Bytes) =
     print(io, "$(x.N) Bytes::$(result_type(x))")
-@inline prevind(str,i::Int,parser::Bytes,x) =
-    prevind(str,i,parser.N)
-@inline nextind(str,i::Int,parser::Bytes,x) =
-    nextind(str,i,parser.N)
+@inline _prevind(str,i::Int,parser::Bytes,x) =
+    _prevind(str,i,parser.N)
+@inline _nextind(str,i::Int,parser::Bytes,x) =
+    _nextind(str,i,parser.N)
 
-@inline prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
+@inline _prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i
-@inline nextind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
+@inline _nextind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i
-@inline prevind(str,i::Int,parser::NIndexParser{L},x) where L =
-    prevind(str,i,L)
-@inline nextind(str,i::Int,parser::NIndexParser{L},x) where L =
-    nextind(str,i,L)
+@inline _prevind(str,i::Int,parser::NIndexParser{L},x) where L =
+    _prevind(str,i,L)
+@inline _nextind(str,i::Int,parser::NIndexParser{L},x) where L =
+    _nextind(str,i,L)
 _iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, posi, next_i, state::MatchState)  =
     nothing
 
@@ -697,8 +665,8 @@ _iterate(parser::Always, str, till, posi, next_i, s::Nothing) =
     next_i, MatchState()
 _iterate(parser::Always, str, till, posi, next_i, s::MatchState) =
     nothing
-prevind(str,i::Int,p::Always,x) = i
-nextind(str,i::Int,p::Always,x) = i
+_prevind(str,i::Int,p::Always,x) = i
+_nextind(str,i::Int,p::Always,x) = i
 ##_iterate(parser::Never, str, till, posi, next_i, s) = nothing
 
 
@@ -820,7 +788,7 @@ end
 end
 export context
 context(x::PartialMatchException) =
-    x.str[min(x.index,end):min(end, nextind(x.str,x.index,x.delta))]
+    x.str[min(x.index,end):min(end, _nextind(x.str,x.index,x.delta))]
 import Base: showerror
 function Base.showerror(io::IO, x::PartialMatchException)
     println(io, "parsing stopped at postion $(x.index) in:")
@@ -913,19 +881,19 @@ function log_effect(s,start,after,state,log,delta)
     end
     printstyled(log,color=:green, bold=false)
     print(at,": ")
-    firsti = prevind(s,start,delta)
-    lasti = (prevind(s,start))
-    before, matched = if prevind(s,start)<start
-        escape_string(s[max(1,firsti):lasti]), escape_string(s[start:prevind(s,after)])
+    firsti = _prevind(s,start,delta)
+    lasti = (_prevind(s,start))
+    before, matched = if _prevind(s,start)<start
+        escape_string(s[max(1,firsti):lasti]), escape_string(s[start:_prevind(s,after)])
     else
         "",""
     end
     if lastindex(matched)>100
-        matched=matched[1:nextind(matched,1,20)]*"[...]"*matched[prevind(matched,end,20):end]
+        matched=matched[1:_nextind(matched,1,20)]*"[...]"*matched[_prevind(matched,end,20):end]
     end
     printstyled(before; bold=true)
     printstyled(matched; bold=true,color=:underline)
-    li = after>lastindex(s) ? lastindex(s) : nextind(s,after,delta)
+    li = after>lastindex(s) ? lastindex(s) : _nextind(s,after,delta)
     if state === nothing 
         printstyled(escape_string(s[after:min(end,li)]),
                     bold=true,color=:underline)
@@ -1537,14 +1505,14 @@ deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...;kw...) =
 regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
 
-@inline nextind(str,i::Int,parser::FlatMap,x::Tuple) =
-    let li = nextind(str,i,parser.left,tuple_pos(x))
-        nextind(str,li,x[2],x[3])
+@inline _nextind(str,i::Int,parser::FlatMap,x::Tuple) =
+    let li = _nextind(str,i,parser.left,tuple_pos(x))
+        _nextind(str,li,x[2],x[3])
     end
 
-@inline prevind(str,i::Int,parser::FlatMap,x::Tuple) =
-    let li = prevind(str,i,x[2],x[3])
-        prevind(str,li,parser.left,tuple_pos(x))
+@inline _prevind(str,i::Int,parser::FlatMap,x::Tuple) =
+    let li = _prevind(str,i,x[2],x[3])
+        _prevind(str,li,parser.left,tuple_pos(x))
     end
 
     
@@ -1718,40 +1686,33 @@ end
 
 
 
-@inline function prevind(str,i::Int,parser::Sequence,x::MatchState)
+@inline function _prevind(str,i::Int,parser::Sequence,x::MatchState)
     for p in length(parser.parts):-1:1
-        i=prevind(str,i,parser.parts[p],x)
+        i=_prevind(str,i,parser.parts[p],x)
     end
     i
 end
 
-@inline function prevind(str,i::Int,parser::Sequence,x)
+@inline function _prevind(str,i::Int,parser::Sequence,x)
     for j in lastindex(x):-1:1
         (p,e) = parser.parts[j],x[j]
-        i=prevind(str,i,p,e)
+        i=_prevind(str,i,p,e)
     end
     i
 end
 
-@inline function nextind(str,i::Int,parser::Sequence,x::MatchState)
+@inline function _nextind(str,i::Int,parser::Sequence,x::MatchState)
     for p in parser.parts
-        i=nextind(str,i,p,MatchState())
+        i=_nextind(str,i,p,MatchState())
     end
     i
 end
 
-@inline function nextind(str,i::Int,parser::Sequence,x)
+@inline function _nextind(str,i::Int,parser::Sequence,x)
     for (p,e) in zip(parser.parts,x)
-        i=nextind(str,i,p,e)
+        i=_nextind(str,i,p,e)
     end
     i
-end
-
-@inline function start_index(sequence,after,parser,state::Nothing)
-    after
-end
-@inline function start_index(sequence,after,parser,state)
-    _prevind(sequence, after, parser, state)
 end
 
 function prune_captures(sequence,after_i)
@@ -2134,30 +2095,30 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...;kw...) =
 
 
 
-@inline function prevind(str,i::Int,parser::Repeat,x::Int)
+@inline function _prevind(str,i::Int,parser::Repeat,x::Int)
     for e in 1:x
-        i=prevind(str,i,parser.parser,MatchState())
+        i=_prevind(str,i,parser.parser,MatchState())
     end
     i
 end
 
-@inline function nextind(str,i::Int,parser::Repeat,x::Int)
+@inline function _nextind(str,i::Int,parser::Repeat,x::Int)
     for e in 1:x
-        i=nextind(str,i,parser.parser,MatchState())
+        i=_nextind(str,i,parser.parser,MatchState())
     end
     i
 end
 
-@inline function nextind(str,i::Int,parser::Repeat,x::Vector)
+@inline function _nextind(str,i::Int,parser::Repeat,x::Vector)
     for e in x
-        i=nextind(str,i,parser.parser,e)
+        i=_nextind(str,i,parser.parser,e)
     end
     i
 end
 
-@inline function prevind(str,i::Int,parser::Repeat,x::Vector)
+@inline function _prevind(str,i::Int,parser::Repeat,x::Vector)
     for j in lastindex(x):-1:1
-        @inbounds i=prevind(str,i,parser.parser,x[j])
+        @inbounds i=_prevind(str,i,parser.parser,x[j])
     end
     i
 end
@@ -2304,7 +2265,7 @@ function _iterate(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
             return nothing
         end
         lstate, state_=poplast!(state,t.parser)
-        posi = prevind(sequence,next_i_,t.parser,lstate) ##state[end][1]
+        posi = _prevind(sequence,next_i_,t.parser,lstate) ##state[end][1]
         x = _iterate(t.parser,sequence, till, posi, next_i_, lstate)
         if x === nothing
             next_i_ = posi
@@ -2405,8 +2366,8 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
                  default=x.default)
     end
 
-@inline prevind(str,i::Int,parser::Optional,x::None) = i
-@inline nextind(str,i::Int,parser::Optional,x::None) = i
+@inline _prevind(str,i::Int,parser::Optional,x::None) = i
+@inline _nextind(str,i::Int,parser::Optional,x::None) = i
 
 
 
@@ -2414,7 +2375,7 @@ _iterate(t::Optional, str, till, posi, next_i, state::None) =
     nothing
 
 function _iterate(t::Optional, str, till, posi, next_i, state)
-    posi = state === nothing ? next_i : prevind(str,next_i,t.parser,state) ##state[end][1]
+    posi = state === nothing ? next_i : _prevind(str,next_i,t.parser,state) ##state[end][1]
     r = _iterate(t.parser, str, till, posi, next_i, state)
     if r === nothing
         prune_captures(str,posi)
@@ -2664,26 +2625,26 @@ either_state_state(x::Tuple) = x[2]
 either_state_option(x::Union{Pair,MutablePair}) = x.first
 either_state_state(x::Union{Pair,MutablePair}) = x.second
 
-@inline function prevind(str,i::Int,parser::Either,x)
+@inline function _prevind(str,i::Int,parser::Either,x)
     ## @show i
-    prevind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
+    _prevind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
 
-@inline function nextind(str,i::Int,parser::Either,x)
+@inline function _nextind(str,i::Int,parser::Either,x)
     ## @show i
-    nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
+    _nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
-@inline function nextind(str,i::Int,parser::Either{P,T},x::Tuple{Int,T}) where {P,T}
-    nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
+@inline function _nextind(str,i::Int,parser::Either{P,T},x::Tuple{Int,T}) where {P,T}
+    _nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
  
 
-@generated function prevind(str,i::Int,parser::Either{pts},x::Union{Pair,MutablePair}) where {pts<:Tuple}
+@generated function _prevind(str,i::Int,parser::Either{pts},x::Union{Pair,MutablePair}) where {pts<:Tuple}
     fpts = fieldtypes(pts)
     parseoptions = [
         quote
         if j === $p
-        return prevind(str,i,parser.options[$p],s) # $(part[p]),s)
+        return _prevind(str,i,parser.options[$p],s) # $(part[p]),s)
         end
         end
         for (p,t) in enumerate(fpts)
@@ -2797,9 +2758,9 @@ A parser matching `p`, and failing when required to backtrack
             new{typeof(p),state_type(p),result_type(p)}(p)
         end
 end
-function Base.nextind(sequence, i::Int, parser::Atomic, state::MatchState)
+function _nextind(sequence, i::Int, parser::Atomic, state::MatchState)
     @show a, s = _iterate(parser.parser,sequence,lastindex(sequence), i, i, nothing)
-    nextind(sequence, i, parser.parser, s)
+    _nextind(sequence, i, parser.parser, s)
 end
 
 deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...;kw...) =

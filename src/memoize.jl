@@ -61,9 +61,9 @@ end
 @inline Base.@propagate_inbounds Base.length(x::WithMemory) = length(x.x)
 @inline Base.@propagate_inbounds Base.lastindex(x::WithMemory) = lastindex(x.x)
 @inline Base.@propagate_inbounds Base.firstindex(x::WithMemory) = firstindex(x.x)
-@inline Base.@propagate_inbounds Base.prevind(x::WithMemory,i::Int,n::Int) = prevind(x.x,i,n)
-@inline Base.@propagate_inbounds Base.nextind(x::WithMemory,i::Int,n::Int) = nextind(x.x,i,n)
-@inline Base.@propagate_inbounds Base.prevind(x::WithMemory,i::Int) = prevind(x.x,i)
-@inline Base.@propagate_inbounds Base.nextind(x::WithMemory,i::Int) = nextind(x.x,i)
+@inline Base.@propagate_inbounds _prevind(x::WithMemory,i::Int,n::Int) = _prevind(x.x,i,n)
+@inline Base.@propagate_inbounds _nextind(x::WithMemory,i::Int,n::Int) = _nextind(x.x,i,n)
+@inline Base.@propagate_inbounds _prevind(x::WithMemory,i::Int) = _prevind(x.x,i)
+@inline Base.@propagate_inbounds _nextind(x::WithMemory,i::Int) = _nextind(x.x,i)
 @inline Base.@propagate_inbounds Base.ncodeunits(x::WithMemory) = ncodeunits(x.x)
 

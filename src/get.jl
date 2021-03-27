@@ -20,7 +20,7 @@ function Base.get(
     parser::W, sequence, till,
     after, i, state
 ) where {W <: LookAround}
-    after_ = nextind(sequence,i,parser.parser,state)
+    after_ = _nextind(sequence,i,parser.parser,state)
     get(parser.parser, sequence, till,
         after_, i, state)
 end
@@ -117,7 +117,7 @@ function Base.get(
     x::Union{AbstractString,JoinSubstring,ConstantParser{<:Any,<:AbstractString}},
     sequence, till,
     after, i, state)
-    li = prevind(sequence,after)
+    li = _prevind(sequence,after)
     li<i ? "" : @inbounds SubString(sequence,i,li)
 end
 
@@ -144,7 +144,7 @@ function Base.get(parser::JoinSubstring{<:NamedParser}, sequence, till, after, i
 end
 
 function Base.get(parser::FlatMap, sequence, till, after, i, state)
-    li = nextind(sequence,i,parser.left,tuple_pos(state))
+    li = _nextind(sequence,i,parser.left,tuple_pos(state))
     get(right_parser(state),
         sequence, till,
         after, li,
@@ -186,8 +186,8 @@ function Base.get(parser::Repeat,
     r = Vector{result_type(parser.parser)}(undef,length(state))
     i_=i
     for (p,s) in enumerate(state)
-        after_=nextind(sequence,i_,parser.parser,s)
-        @inbounds r[p] = get(parser.parser,sequence, till, after_, i_, s)
+        after_ = _nextind(sequence,i_,parser.parser,s)
+        @inbounds r[p] = get(parser.parser, sequence, till, after_, i_, s)
         i_=after_
     end
     r
@@ -200,7 +200,7 @@ function Base.get(parser::Repeat,
     i_=i
     s=MatchState()
     for p in 1:state
-        after_=nextind(sequence,i_,parser.parser,s)
+        after_ = _nextind(sequence,i_,parser.parser,s)
         @inbounds r[p] = get(parser.parser,sequence, till, after_, i_, s)
         i_=after_
     end
@@ -214,7 +214,7 @@ end
 #     r = Vector{Any}(undef,length(parser.parts))
 #     i_::Int = i
 #     for (p,s) in enumerate(state)
-#         after_=nextind(sequence,i_,parser.parts[p],s)
+#         after_ = _nextind(sequence,i_,parser.parts[p],s)
 #         r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
 #         i_=after_
 #     end
@@ -250,7 +250,7 @@ end
     end
     parseparts = [
         quote
-        $(pposi[i+1]) = nextind(sequence,$(pposi[i]),$(part[i]),$(substate[i]))
+        $(pposi[i+1]) = _nextind(sequence,$(pposi[i]),$(part[i]),$(substate[i]))
         $(subresult[i]) = get($(part[i]),sequence, till, $(pposi[i+1]), $(pposi[i]), $(substate[i]))
         end
         for (i,t) in enumerate(fpts)
@@ -322,7 +322,7 @@ Base.show(io::IO, x::MatchRange) = print(io,"@")
 Does not evaluate `get(parser.transform,...)`.
 """
 function Base.get(parser::Transformation{MatchRange}, sequence, till, after, i, state)
-    i:prevind(sequence,after)
+    i:_prevind(sequence,after)
 end
 
 
