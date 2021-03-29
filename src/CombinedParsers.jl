@@ -124,39 +124,6 @@ Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve fi
     pos_state[2]
 
 result_type(T::Type{<:Union{Char,AbstractString}}) = T
-"""
-    _iterate(parser, sequence, till, posi, next_i, states)
-
-Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
-such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
-and sequence[start_index(sequence,after,parser,state):_prevind(sequence,next_i)] is the matched subsequence.
-"""
-@inline function _iterate(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L=ncodeunits(p))
-    till, posi, next_i
-    j::Int = next_i
-    k::Int = 1
-    1
-    while k<=L
-        (j > till) && return(nothing)
-        @inbounds pc,k=iterate(p,k)
-        @inbounds sc,j=iterate(sequence,j)
-        !ismatch(sc,pc) && return(nothing)
-    end
-    return j, MatchState()
-end
-
-@inline function _iterate(parser::Char, sequence, till, posi, next_i, state::Nothing,L=ncodeunits(parser))
-    next_i>till && return nothing
-    if ismatch(sequence[next_i],parser)
-        next_i+L, MatchState()
-    else
-        nothing
-    end
-end
-
-@inline function _iterate(p::Union{<:AbstractString,Char}, sequence, till, posi, next_i, state)
-    nothing
-end
 
 
 ############################################################
@@ -391,69 +358,7 @@ Base.filter(f::Function, x::CombinedParser) =
     r
 end
 
-
-"""
-Wrapper for stepping with ncodeunit length.
-
-```jldoctest
-julia> parser("constant") isa CombinedParsers.ConstantParser
-true
-
-julia> parser('c') isa CombinedParsers.ConstantParser
-true
-
-julia> parser(1) isa CombinedParsers.ConstantParser
-true
-```
-"""
-@auto_hash_equals struct ConstantParser{N,P,T} <: WrappedParser{T,MatchState,T}
-    parser::P
-    function ConstantParser(x::Char) where N
-        new{ncodeunits(x),Char,Char}(x)
-    end
-    function ConstantParser(x::T) where {T<:AbstractString}
-        new{ncodeunits(x),T,SubString}(x)
-    end
-    function ConstantParser{N}(x) where N
-        T=typeof(x)
-        new{N,T,T}(x)
-    end
-end
-
-children(x::ConstantParser) = ()
-regex_prefix(x::ConstantParser) = ""
-print_constructor(io::IO,x::ConstantParser) = print(io,"")
-regex_inner(x::ConstantParser) = regex_string(x.parser)
-regex_suffix(x::ConstantParser) = ""
-
-
-reversed(x::ConstantParser{N,<:AbstractString}) where N =
-    ConstantParser(reverse(x.parser))
-
-lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
-
-deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
-    get!(mem,x) do
-        f(x,a...;kw...)
-    end
-
-@inline _nextind(str,i::Int,parser::ConstantParser{L},x) where L =
-    i+L
-@inline _prevind(str,i::Int,parser::ConstantParser{L},x) where L = 
-    i-L
-
-@inline function _iterate(parser::ConstantParser{L,P}, sequence, till, posi, next_i, state::Nothing) where {L,P<:ParserTypes}
-    _iterate(parser.parser,sequence,till,posi, next_i,state, L)
-end
-
-@inline function _iterate(parser::ConstantParser{1}, sequence, till, posi, next_i, state::Nothing)
-    if posi <= till && parser.parser==sequence[posi]
-        nextind(sequence, posi), MatchState()
-    else
-        nothing
-    end
-end
-
+include("constant.jl")
 
 
 export Bytes
