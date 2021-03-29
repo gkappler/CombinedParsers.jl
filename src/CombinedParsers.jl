@@ -2302,8 +2302,8 @@ export Optional
 """
 State type for skipped optional. (Missing was breaking julia).
 """
-struct None end
-Base.show(io::IO, ::None) = print(io,"n/a")
+struct NoMatch end
+Base.show(io::IO, ::NoMatch) = print(io,"n/a")
 """
     Optional(parser;default=defaultvalue(result_type(parser)))
     
@@ -2328,7 +2328,7 @@ julia> parse(Optional("a", default=42),"b")
         D = typeof(default)
         T_ = promote_type(T,D)
         T_ === Any && ( T_ = Union{T,D} )
-        new{typeof(p),Union{None,state_type(p)},T_}(p, default)
+        new{typeof(p),Union{NoMatch,state_type(p)},T_}(p, default)
     end
 end
 
@@ -2366,12 +2366,12 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
                  default=x.default)
     end
 
-@inline _prevind(str,i::Int,parser::Optional,x::None) = i
-@inline _nextind(str,i::Int,parser::Optional,x::None) = i
+@inline _prevind(str,i::Int,parser::Optional,x::NoMatch) = i
+@inline _nextind(str,i::Int,parser::Optional,x::NoMatch) = i
 
 
 
-_iterate(t::Optional, str, till, posi, next_i, state::None) =
+_iterate(t::Optional, str, till, posi, next_i, state::NoMatch) =
     nothing
 
 function _iterate(t::Optional, str, till, posi, next_i, state)
@@ -2379,25 +2379,22 @@ function _iterate(t::Optional, str, till, posi, next_i, state)
     r = _iterate(t.parser, str, till, posi, next_i, state)
     if r === nothing
         prune_captures(str,posi)
-        return tuple(posi, None())
+        return tuple(posi, NoMatch())
     else
         r
     end
 end
 
-function _iterate(t_::Lazy{<:Optional}, str, till, posi, next_i, state)
-    t=t_.parser
-    if state === nothing
-        next_i,None()
-    else 
-        r = _iterate(t.parser, str, till, posi, next_i,
-                     state === None() ? nothing : state)
-        if r === nothing
-            nothing
-        else
-            r
-        end            
-    end
+function _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::Nothing)
+    next_i, NoMatch()
+end
+
+function _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::NoMatch)
+    _iterate(t.parser.parser, str, till, posi, next_i, nothing)
+end
+
+function _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state)
+    _iterate(t.parser.parser, str, till, posi, next_i, state)
 end
 
 

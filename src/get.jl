@@ -170,15 +170,11 @@ _copy(x::AbstractDict) = copy(x)
 _copy(x::AbstractSet) = copy(x)
 _copy(x) = x
 
-function Base.get(parser::Optional,
-                  sequence, till,
-                  after, i, state)
-    if state === None()
-        _copy(parser.default)
-    else
-        get(parser.parser,sequence, till, after, i, state)
-    end
-end
+Base.get(parser::Optional, sequence, till, after, i, state::NoMatch) = 
+    _copy(parser.default)
+
+Base.get(parser::Optional, sequence, till, after, i, state) = 
+    get(parser.parser,sequence, till, after, i, state)
 
 function Base.get(parser::Repeat,
                   sequence, till,
