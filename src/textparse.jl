@@ -1,4 +1,26 @@
+export Numeric
+Numeric = TextParse.Numeric
 import TextParse: tryparsenext
+
+result_type(::Type{<:AbstractToken{T}}) where T = T
+
+struct AbstractTokenParser{P<:AbstractToken,T} <: LeafParser{NCodeunitsState{T},T}
+    parser::P
+    function AbstractTokenParser(p::AbstractToken) 
+        new{typeof(p), result_type(p)}(p)
+    end
+end
+
+parser(x::AbstractToken) = AbstractTokenParser(x)
+
+regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
+
+print_constructor(io::IO, x::AbstractTokenParser) =
+    print(io, typeof(x.parser))
+
+_iterate(parser::AbstractTokenParser, sequence, till, before_i, next_i, state) = 
+    _iterate(parser.parser, sequence, till, before_i, next_i, state)
+
 
 function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state,opts=TextParse.default_opts)
     if parser isa CombinedParser
@@ -52,22 +74,23 @@ end
 
 
 
+"""
+    regex_prefix(x)
 
+Prefix printed in parser tree node.
+"""
+regex_prefix(x::AbstractToken) = ""
+"""
+    regex_suffix(x)
 
+Suffix printed in parser tree node.
+"""
+regex_suffix(x::AbstractToken) = ""
+"""
+    regex_inner(x::AbstractToken)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Regex representation of `x`.
+See [`regex_string`](@ref)
+"""
+regex_inner(x::AbstractToken) = "$(typeof(x))"
+regex_inner(::TextParse.Numeric{T}) where T = "$(T)"

@@ -20,12 +20,14 @@ import Base: cat, get
 using ReversedStrings
 import ReversedStrings: reversed, reverse_index
 
-include("ind.jl")
-
 using TextParse
 import TextParse: AbstractToken
-export Numeric
-Numeric = TextParse.Numeric
+
+include("ind.jl")
+
+using AbstractTrees
+import AbstractTrees: children
+import AbstractTrees: print_tree, printnode
 
 export CombinedParser
 export result_type
@@ -35,7 +37,6 @@ ParserTypes = Union{AbstractToken, AbstractString, Char, Regex}
 ## Pair{<:Union{AbstractToken, AbstractString, Char, Regex, Pair},<:Any} }
 export parser
 import Base: convert
-parser(x::AbstractToken) = x
 """
     parser(x::Union{AbstractString,Char})
 
@@ -61,15 +62,6 @@ parser(x) =
 """
 parser(x::StepRange{Char,<:Integer}) =
     CharIn(x)
-parser(x::T) where {T<:AbstractString} =
-    ConstantParser(x)
-function Base.convert(::Type{AbstractToken},x)
-    parser(x)
-end
-
-
-result_type(x::Union{ParserTypes,AbstractToken}) = result_type(typeof(x))
-result_type(::Type{<:AbstractToken{T}}) where T = T
 
 
 export _iterate
@@ -121,6 +113,8 @@ Used for dispatch in [`deepmap_parser`](@ref)
 """
 abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
+include("textparse.jl")
+
 export regex_string
 """
     regex_string(x::CombinedParser)
@@ -128,27 +122,6 @@ export regex_string
 `regex_prefix(x)*regex_inner(x)*regex_suffix(x)`
 """
 regex_string(x::CombinedParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
-
-"""
-    regex_prefix(x)
-
-Prefix printed in parser tree node.
-"""
-regex_prefix(x::AbstractToken) = ""
-"""
-    regex_suffix(x)
-
-Suffix printed in parser tree node.
-"""
-regex_suffix(x::AbstractToken) = ""
-"""
-    regex_inner(x::AbstractToken)
-
-Regex representation of `x`.
-See [`regex_string`](@ref)
-"""
-regex_inner(x::AbstractToken) = "$(typeof(x))"
-regex_inner(::TextParse.Numeric{T}) where T = "$(T)"
 
 regex_prefix(x::AbstractString) = ""
 regex_suffix(x::AbstractString) = ""
@@ -177,10 +150,6 @@ print_constructor(io::IO,x) =
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,S,T} <: CombinedParser{S,T} end
-
-using AbstractTrees
-import AbstractTrees: children
-import AbstractTrees: print_tree, printnode
 
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
@@ -236,12 +205,13 @@ Base.filter(f::Function, x::CombinedParser) =
     r
 end
 
-include("constant.jl")
 
-
-export Bytes
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
+
+include("constant.jl")
+export Bytes
+
 """
     Bytes{N,T} <: NIndexParser{N,T}
 
@@ -1007,7 +977,6 @@ end
 export regex_string
 regex_string(x::AbstractString) = regex_escape(x)
 regex_string_(x::AbstractString) = regex_escape(x)
-regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
 
 result_type(::Type{<:CharIn}) = Char
 regex_string_(x::Union{Vector,Set}) = join(regex_string_.(x))
@@ -2502,7 +2471,6 @@ include("match.jl")
 
 
 include("reverse.jl")
-include("textparse.jl")
 include("get.jl")
 include("operators.jl")
 
