@@ -340,8 +340,8 @@ end
     p::Union{Backreference,ParserOptions{<:Backreference}},
     sequence::SequenceWithCaptures, till,
     posi, next_i, state::Nothing)
-    r = _iterate(
-        capture_substring(p, sequence),
+    r = _iterate_constant(
+        ConstantParser(capture_substring(p, sequence)),
         sequence, till, posi, next_i, state)
     r === nothing && return nothing
     tuple_pos(r), tuple_pos(r)-next_i

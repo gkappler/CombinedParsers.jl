@@ -15,16 +15,22 @@ julia> parser(1) isa CombinedParsers.ConstantParser
 true
 ```
 """
-@auto_hash_equals struct ConstantParser{N,P,T} <: NIndexParser{N, T}
+@auto_hash_equals struct ConstantParser{P,N,T} <: NIndexParser{N, T}
     parser::P
     function ConstantParser(x::T) where {T<:AbstractString}
-        new{_ncodeunits(x),T,SubString}(x)
+        new{T,_ncodeunits(x),SubString}(x)
     end
     function ConstantParser(x)
-        new{_ncodeunits(x),typeof(x),typeof(x)}(x)
+        new{typeof(x),_ncodeunits(x),typeof(x)}(x)
     end
 end
-_ncodeunits(x::ConstantParser{N}) where N = N
+_ncodeunits(x::Type{<:ConstantParser{<:Any,N}}) where N = N
+_ncodeunits(x::ConstantParser) = _ncodeunits(typeof(x))
+
+@inline _nextind(str,i::Int,parser::ConstantParser,x) =
+    i+_ncodeunits(parser)
+@inline _prevind(str,i::Int,parser::ConstantParser,x) = 
+    i-_ncodeunits(parser)
 
 children(x::ConstantParser) = ()
 regex_prefix(x::ConstantParser) = ""
@@ -35,7 +41,9 @@ regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
 
-reversed(x::ConstantParser{N,<:AbstractString}) where N =
+reversed(x::ConstantParser{Char}) = x
+
+reversed(x::ConstantParser{<:AbstractString}) =
     ConstantParser(reverse(x.parser))
 
 lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
@@ -45,47 +53,39 @@ deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
         f(x,a...;kw...)
     end
 
-@inline _nextind(str,i::Int,parser::ConstantParser{L},x) where L =
-    i+L
-@inline _prevind(str,i::Int,parser::ConstantParser{L},x) where L = 
-    i-L
-
 @inline function _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing)
-    _iterate(parser.parser,sequence,till,posi, next_i, nothing)
+    _iterate_constant(parser,sequence,till,posi, next_i, state)
 end
 
-"""
-    _iterate(parser, sequence, till, posi, next_i, states)
+@inline function _iterate(p::ConstantParser, sequence, till, posi, next_i, state::MatchState)
+    nothing
+end
 
-Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
-such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
-and sequence[start_index(sequence,after,parser,state):_prevind(sequence,next_i)] is the matched subsequence.
-"""
-@inline function _iterate(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L=_ncodeunits(p))
+@inline function _iterate_constant(parser::ConstantParser, sequence, till, posi, next_i, state)
+    _iterate_constant(parser.parser,sequence,till,posi, next_i, state, _ncodeunits(parser))
+end
+
+@inline function _iterate_constant(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L)
     till, posi, next_i
     j::Int = next_i
     k::Int = 1
-    1
     while k<=L
-        (j > till) && return(nothing)
-        @inbounds pc,k=iterate(p,k)
-        @inbounds sc,j=iterate(sequence,j)
-        !ismatch(sc,pc) && return(nothing)
+        (j > till) && return nothing
+        @inbounds pc=p[k]
+        k=_nextind(p,k)
+        @inbounds sc=sequence[j]
+        j=_nextind(sequence,j)
+        !ismatch(sc,pc) && return nothing
     end
     return j, MatchState()
 end
 
-@inline function _iterate(parser::Char, sequence, till, posi, next_i, state, L=_ncodeunits(parser))
-    @assert parser isa Char
-    state !== nothing || next_i>till && return nothing
+@inline function _iterate_constant(parser, sequence, till, posi, next_i, state::Nothing, L)
+    state !== nothing || next_i>till || next_i < 1 && return nothing
     if next_i<=till && ismatch(sequence[next_i],parser)
         next_i+L, MatchState()
     else
         nothing
     end
-end
-
-@inline function _iterate(p::Union{<:AbstractString,Char}, sequence, till, posi, next_i, state)
-    nothing
 end
 
