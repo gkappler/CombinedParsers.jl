@@ -61,7 +61,7 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Lazy,a...;kw...) =
         Lazy(deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::ParserTypes,a...;kw...) =
+deepmap_parser(f::Function,mem::AbstractDict,x::CombinedParser,a...;kw...) =
     f(x,a...;kw...)
 
 """
@@ -72,7 +72,7 @@ Used for [`log_names`](@ref).
 
 Calls `deepmap_parser(f,IdDict(),x,a...)`.
 """
-deepmap_parser(f::Function,x::ParserTypes,a...;kw...) =
+deepmap_parser(f::Function,x::CombinedParser,a...;kw...) =
     deepmap_parser(f,IdDict(),x,a...;kw...)
 
 """
