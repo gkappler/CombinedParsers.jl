@@ -1,4 +1,5 @@
 import Base: (^), (*), (~), (/), (|), (!)
+ParserOperatorTypes = Union{AbstractToken, AbstractString, Char, Regex}
 
 (*)(x::Any, y::AbstractToken) = sSequence(parser(x),y)
 (*)(x::AbstractToken, y::Any) = sSequence(x,parser(y))
@@ -15,7 +16,7 @@ See also [`@seq`](@ref).
 ## todo: cuts
 
 """
-    (/)(x::ParserTypes, y::ParserTypes)
+    (/)(x::ParserOperatorTypes, y::ParserOperatorTypes)
 
 `Sequence(PositiveLookbehind(x),y)`
 
@@ -27,7 +28,7 @@ julia> match("is "/"match", "no match is match").start
 !!! note
     This syntax is reviewed and I your appreciate your comments!
 """
-(/)(x::ParserTypes, y::ParserTypes) =
+(/)(x::ParserOperatorTypes, y::ParserOperatorTypes) =
     Sequence(PositiveLookbehind(x),y)
 
 
@@ -107,8 +108,8 @@ Parser transformating result `v -> v=>x.name`.
 
 
 
-(|)(x, y::ParserTypes) = sEither(parser(x),y)
-(|)(x::ParserTypes, y) = sEither(x,parser(y))
+(|)(x, y::ParserOperatorTypes) = sEither(parser(x),y)
+(|)(x::ParserOperatorTypes, y) = sEither(x,parser(y))
 """
     (|)(x::AbstractToken, y)
     (|)(x, y::AbstractToken)
@@ -127,7 +128,7 @@ julia> 'a' | CharIn("AB") | "bc"
 ```
 
 """
-(|)(x::ParserTypes, y::ParserTypes) = sEither(x,y)
+(|)(x::ParserOperatorTypes, y::ParserOperatorTypes) = sEither(x,y)
 
 """
     (|)(x::AbstractToken{T}, default::Union{T,Missing})

@@ -1,5 +1,5 @@
 _ncodeunits(x::Union{Char,AbstractString}) = ncodeunits(x)
-# _ncodeunits(x) = 1
+_ncodeunits(x) = 1
 
 """
 Wrapper for stepping with ncodeunit length.
@@ -15,7 +15,7 @@ julia> parser(1) isa CombinedParsers.ConstantParser
 true
 ```
 """
-@auto_hash_equals struct ConstantParser{N,P,T} <: WrappedParser{T,MatchState,T}
+@auto_hash_equals struct ConstantParser{N,P,T} <: NIndexParser{N, T}
     parser::P
     function ConstantParser(x::T) where {T<:AbstractString}
         new{_ncodeunits(x),T,SubString}(x)

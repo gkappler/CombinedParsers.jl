@@ -48,10 +48,9 @@ function Base.get(parser::Bytes{T}, sequence::Vector{UInt8}, till,
     end
 end
 
-function Base.get(parser::AbstractToken,
+function Base.get(parser::AbstractTokenParser,
                   sequence, till,
                   after, i, state)
-    parser isa CombinedParser && error("define Base.get(parser::$(typeof(parser)), sequence, till, after, i, state)")
     state.state
 end
 
@@ -64,11 +63,11 @@ Base.get(
 
 
 """
-    Base.get(parser::AbstractToken{Nothing}, sequence, till, after, i, state)
+    Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state)
 
 Default method for parser types returning nothing
 """
-Base.get(::AbstractToken{<:Nothing},
+Base.get(::CombinedParser{<:Nothing},
          sequence, till, after,
          i, state) =
              nothing
@@ -87,7 +86,7 @@ end
 export JoinSubstring
 """
     JoinSubstring(x)
-    (!)(x::AbstractToken)
+    (!)(x::CombinedParser)
 
 Parser Transformation getting the matched SubString.
 """
@@ -96,7 +95,7 @@ Parser Transformation getting the matched SubString.
     JoinSubstring(x) =
         new{typeof(x),state_type(x)}(x)
 end
-Base.map(f::Type{<:JoinSubstring}, p::AbstractToken) = JoinSubstring(p)
+Base.map(f::Type{<:JoinSubstring}, p::CombinedParser) = JoinSubstring(p)
 reversed(x::JoinSubstring) = JoinSubstring(reversed(x.parser))
 function print_constructor(io::IO,x::JoinSubstring)
     print_constructor(io,x.parser)
@@ -269,8 +268,8 @@ end
 export Transformation
 """
     Transformation{T}(f::Function, p_) where {T}
-    Base.map(f::Function, Tc::Type, p::ParserTypes, a...)
-    Base.map(f::Function, p::ParserTypes, a...)
+    Base.map(f::Function, Tc::Type, p::CombinedParser, a...)
+    Base.map(f::Function, p::CombinedParser, a...)
 
 Parser transforming result of a wrapped parser. 
 `a...` is passed as additional arguments to `f` (at front .
@@ -301,13 +300,13 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
 
 export MatchRange
 """
-    MatchRange(p::AbstractToken)
+    MatchRange(p::CombinedParser)
 
 Succeed iif `p` succeeds, if so results in sequence match index `UnitRange`.
 """
 struct MatchRange
 end
-MatchRange(p::AbstractToken) =
+MatchRange(p::CombinedParser) =
     Transformation{UnitRange{Int}}(MatchRange(), p)
 
 Base.show(io::IO, x::MatchRange) = print(io,"@")
@@ -330,17 +329,17 @@ struct Constant{T}
     value::T
 end
 Base.show(io::IO, x::Constant) = show(io,x.value)
-function map_constant(transform, p::AbstractToken)
+function map_constant(transform, p::CombinedParser)
     T=typeof(transform)
     Transformation{T}(Constant(transform), p)
 end
 """
-    parser(constant::Pair{<:ParserTypes})
-    map_constant(constant, parser::AbstractToken)
+    parser(constant::Pair)
+    map_constant(constant, parser::CombinedParser)
 
 A parser mapping matches of `parser` `x.first` to `constant` `x.second`.
 """
-parser(constant::Pair{<:ParserTypes}) =
+parser(constant::Pair) =
     map_constant(constant.second, parser(constant.first))
 """
     Base.get(parser::Transformation{<:Constant}, a...)
@@ -438,12 +437,12 @@ function _iterate(parser::Transformation, sequence, till, posi, next_i, state)
 end
 
 """
-    infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...; throw_empty_union=true)
+    infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::AbstractString,ts::Type...; throw_empty_union=true)
 
 Used by Parser Transformations to infer result type of a parser.
 Throws error if type inference fails, if throw_empty_union=true.
 """
-function infer_result_type(f::Function,Tc::Type,p::ParserTypes,onerror::AbstractString,ts::Type...; throw_empty_union=true)
+function infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::AbstractString,ts::Type...; throw_empty_union=true)
     Ts = Base.return_types(f, tuple(result_type(p),ts...))
     isempty(Ts) && error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
@@ -466,13 +465,13 @@ end
 
 import Base: map
 """
-    map(f::Function, p::AbstractToken, a...)
+    map(f::Function, p::CombinedParser, a...)
 
 Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
 
 See also: [`get`](@ref), [`Transformation`](@ref)
 """
-function Base.map(f::Function, p::AbstractToken, a...;
+function Base.map(f::Function, p::CombinedParser, a...;
                   throw_empty_union=true)
     T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...;
                           throw_empty_union=throw_empty_union)
@@ -480,53 +479,51 @@ function Base.map(f::Function, p::AbstractToken, a...;
 end
 
 """
-    map(T::Type, p::AbstractToken, a...)
+    map(T::Type, p::CombinedParser, a...)
 
 Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...)`.
 
 See also: [`get`](@ref), [`Transformation`](@ref)
 """
-function Base.map(Tc::Type, p::AbstractToken, a...)
+function Base.map(Tc::Type, p::CombinedParser, a...)
     Transformation{Tc}(isempty(a) ? Tc : v -> Tc(a..., v), p)
 end
 
 
-function Base.map(inner::AbstractToken, p::AbstractToken)
+function Base.map(inner::CombinedParser, p::CombinedParser)
     Transformation{result_type(inner)}(s -> parse(inner,s), p)
 end
 
 """
-    map(index::IndexAt, p::AbstractToken, a...)
-    map(constant, p::AbstractToken, a...)
+    map(index::IndexAt, p::CombinedParser, a...)
+    map(constant, p::CombinedParser, a...)
 
 Parser matching `p`, transforming `p`s parsing results to `getindex(x,index)` or `constant`.
 
 See also: [`get`](@ref), [`Transformation`](@ref)
 
 """
-function Base.map(index::IndexAt{<:Integer}, p::AbstractToken)
+function Base.map(index::IndexAt{<:Integer}, p::CombinedParser)
     T=result_type(p)    
     Transformation{fieldtype(T,index.i)}(index, p)
 end
-function Base.map(index::IndexAt{<:UnitRange}, p::AbstractToken)
+function Base.map(index::IndexAt{<:UnitRange}, p::CombinedParser)
     T=Tuple{fieldtypes(result_type(p))[index.i]...}
     Transformation{T}(index, p)
 end
-##instance(Tc::Type, p::ParserTypes, a...)
-##    instance(Tc::Type, p::ParserTypes)
-function instance(Tc::Type, p::ParserTypes, a...)
+function instance(Tc::Type, p::CombinedParser, a...)
     Transformation{Tc}((v) -> Tc(a..., v), p)
 end
-function instance(Tc::Type, p::ParserTypes)
+function instance(Tc::Type, p::CombinedParser)
     Transformation(Tc, p)
 end
-function Base.map(f::Function, Tc::Type, p::AbstractToken, a...)
+function Base.map(f::Function, Tc::Type, p::CombinedParser, a...)
     T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
     Transformation{Tc}(isempty(a) ? f : v -> f(v, a...), p)
 end
-Base.map(f::typeof(identity), p::AbstractToken) = p
+Base.map(f::typeof(identity), p::CombinedParser) = p
 
 
-@deprecate map(T::Type, f::Function, p::AbstractToken, a...) map(f,T,p,a...)
+@deprecate map(T::Type, f::Function, p::CombinedParser, a...) map(f,T,p,a...)
 @deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
 

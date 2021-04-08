@@ -138,11 +138,11 @@ _iterate(m::ParseMatch) =
 export match_all
 
 """
-    match_all(parser::ParserTypes, sequence, idx=1; log=nothing)
+    match_all(parser::CombinedParser, sequence, idx=1; log=nothing)
 
 Returns an iterator over all matches at all indices in the sequence.
 """
-function match_all(parser::ParserTypes, sequence, idx=1; log=nothing)
+function match_all(parser::CombinedParser, sequence, idx=1; log=nothing)
     p = (log === nothing || log == false ) ? parser : log_names(parser,log)
     MatchesIterator(p,sequence,idx)
 end
@@ -171,20 +171,20 @@ function Base.iterate(m::MatchesIterator,
     parsematch_tuple(m,start,state)
 end
 
-_iterate(p::ParserTypes,s) =
+_iterate(p::CombinedParser,s) =
     _iterate(MatchesIterator(p,s),1,1,nothing)
 _iterate(mi::MatchesIterator,a...) =
     _iterate(mi.parser, mi.sequence, mi.till, a...)
 
 """
-    Base.match(parser::ParserTypes,sequence::AbstractString[, idx::Integer]; log=nothing)
+    Base.match(parser::CombinedParser,sequence::AbstractString[, idx::Integer]; log=nothing)
 
 Plug-in replacement for `match(::Regex,sequence)`.
 
 If `log!==nothing`, parser is transformed with `log_names(p, log)`.
 See also [`log_names`](@ref).
 """
-function Base.match(parser::ParserTypes, sequence, idx=1; log=nothing)
+function Base.match(parser::CombinedParser, sequence, idx=1; log=nothing)
     p = (log === nothing || log == false ) ? parser : log_names(parser,log)
     i = iterate(MatchesIterator(p,sequence,idx))
     i === nothing && return nothing
@@ -193,7 +193,7 @@ end
 
 import Base: tryparse, parse
 """
-    parse(parser::ParserTypes, str::AbstractString; log=nothing)
+    parse(parser::CombinedParser, str::AbstractString; log=nothing)
 
 Parse a string with a CombinedParser as an instance of `result_type(parser)`.
 
@@ -227,7 +227,7 @@ function Base.parse(p::AbstractToken, s; log=nothing)
 end
 
 """
-    tryparse(parser::ParserTypes, str::AbstractString[, idx=1])
+    tryparse(parser::CombinedParser, str::AbstractString[, idx=1])
 
 Like `parse`, but returns either a value of `result_type(parser)` or `nothing` if string does not start with with a match.
 """
@@ -239,7 +239,7 @@ end
 
 export tryparse_pos
 """
-    tryparse_pos(parser::ParserTypes, str::AbstractString[, idx=1, till=lastindex(s)])
+    tryparse_pos(parser::CombinedParser, str::AbstractString[, idx=1, till=lastindex(s)])
 
 Like `parse`, but returns either a tuple of `result_type(parser)` and the position after the match, or `nothing` if string does not start with with a match.
 """
@@ -251,11 +251,11 @@ end
 
 export parse_all
 """
-    parse_all(parser::ParserTypes, sequence, idx=1)
+    parse_all(parser::CombinedParser, sequence, idx=1)
 
 Returns an iterator over all parsings of the sequence starting at `idx`.
 """
-function parse_all(parser::ParserTypes, sequence, idx=1)
+function parse_all(parser::CombinedParser, sequence, idx=1)
     ( get(p) for p=ParseMatch(parser,sequence,idx) )
 end
 

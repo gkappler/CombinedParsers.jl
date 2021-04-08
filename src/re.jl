@@ -31,7 +31,7 @@ See also [`ParserWithCaptures`](@ref)
 """
 @auto_hash_equals struct SequenceWithCaptures{S,T}
     match::S
-    subroutines::Vector{ParserTypes}
+    subroutines::Vector{CombinedParser}
     captures::Vector{Vector{UnitRange{Int}}}
     names::Dict{Symbol,Vector{Int}}
     state::T

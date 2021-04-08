@@ -33,26 +33,17 @@ export CombinedParser
 export result_type
 
 "Julia types that provide CombinedParser methods result_type, state_type, _iterate, get, nextind, prevind."
-ParserTypes = Union{AbstractToken, AbstractString, Char, Regex}
 ## Pair{<:Union{AbstractToken, AbstractString, Char, Regex, Pair},<:Any} }
 export parser
 import Base: convert
-"""
-    parser(x::Union{AbstractString,Char})
-
-A [`ConstantParser`](@ref) matching `x`.
-"""
-parser(x::Char) =
-    ConstantParser(x)
-
 
 """
     parser(x)
 
-A [`ConstantParser`](@ref){1} matching `x`.
+A [`ConstantParser`](@ref) matching `x`.
 """
 parser(x) =
-    ConstantParser{1}(x)
+    ConstantParser(x)
 
 
 """
@@ -75,14 +66,6 @@ Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve fi
 @inline _iterate(parser, sequence, till::Int, posi::Int, ::Nothing) =
     _iterate(parser, sequence,till,posi,posi,nothing)
 
-result_type(T::Type{<:Union{Char,AbstractString}}) = T
-
-
-############################################################
-## Parsing with AbstractToken
-include("state.jl")
-
-
 """
     CombinedParser{T,S} <: AbstractToken{T}
 
@@ -90,6 +73,14 @@ Abstract parser type for parsers returning matches transformed to `::T` and
 state::`S`.
 """
 abstract type CombinedParser{S,T} <: AbstractToken{T} end
+result_type(x::CombinedParser) = result_type(typeof(x))
+result_type(::Type{<:CombinedParser{<:Any,T}}) where T = T
+parser(x::CombinedParser) = x
+function Base.convert(::Type{CombinedParser},x)
+    parser(x)
+end
+Base.convert(::Type{CombinedParser}, x::CombinedParser) = x
+
 """
     (x::CombinedParser)(str;kw...)
 
@@ -103,13 +94,14 @@ See also [`parse`](@ref).
 (x::CombinedParser)(f::Function,a...;kw...) = map(f,x,a...;kw...)
 
 @inline state_type(::Type{<:CombinedParser{S}}) where {S} = S
-state_type(::Type{<:CombinedParser}) = Any
+
+include("state.jl")
 
 """
-    LeafParser{T} <: AbstractToken{T}
+    LeafParser{T} <: CombinedParser{T}
 
-Abstract parser type for parsers that have no sub-parser.
-Used for dispatch in [`deepmap_parser`](@ref)
+Abstract parser type for parsers that have no sub-parser (e.g. [`ConstantParser`](@ref)).
+Used for dispatch in [`deepmap_parser`](@ref).
 """
 abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
@@ -163,16 +155,23 @@ regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
 regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
 regex_inner(x::WrappedParser) = regex_inner(x.parser)
 
-@inline _prevind(str,i::Int,parser::W,x) where {W <: WrappedParser} = _prevind(str,i,parser.parser,x)
-@inline _nextind(str,i::Int,parser::W,x) where {W <: WrappedParser} = _nextind(str,i,parser.parser,x)
+@inline _prevind(str,i::Int,parser::WrappedParser,x::NCodeunitsState) =
+    i-x.nc
+@inline _nextind(str,i::Int,parser::WrappedParser,x::NCodeunitsState) =
+    i+x.nc
 
-@inline _nextind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i+x.nc
-@inline _prevind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i-x.nc
+@inline _prevind(str,i::Int,parser::WrappedParser,x) = _prevind(str,i,parser.parser,x)
+@inline _nextind(str,i::Int,parser::WrappedParser,x) = _nextind(str,i,parser.parser,x)
 
+"""
+    _iterate(parser, sequence, till, posi, next_i, states)
 
+Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
+such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
+and sequence[start_index(sequence,after,parser,state):_prevind(sequence,next_i)] is the matched subsequence.
+"""
 @inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
     _iterate(parser.parser, sequence, till, posi, after, state)
-
 
 export FilterParser
 """
@@ -232,8 +231,7 @@ Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,
     ```
 
 """
-struct Bytes{T} <: CombinedParser{MatchState,T}
-    N::Int
+struct Bytes{N,T} <: NIndexParser{N,T}
 end
 
 """
@@ -262,7 +260,7 @@ Base.show(io::IO, x::Bytes) =
     _prevind(str,i,L)
 @inline _nextind(str,i::Int,parser::NIndexParser{L},x) where L =
     _nextind(str,i,L)
-_iterate(parser::Union{NIndexParser,ConstantParser}, sequence, till, posi, next_i, state::MatchState)  =
+_iterate(parser::NIndexParser, sequence, till, posi, next_i, state::MatchState)  =
     nothing
 
 export AnyChar, any
@@ -554,7 +552,7 @@ end
     parser::P
     args::A
     effect::Function
-    SideeffectParser(f::Function, p::AbstractToken,a...) =
+    SideeffectParser(f::Function, p::CombinedParser,a...) =
         new{typeof(p),state_type(p),result_type(p),typeof(a)}(p,a,f)
 end
 children(x::SideeffectParser) = children(x.parser)
@@ -713,12 +711,12 @@ Labels are useful in printing and logging.
 See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
 with_name(name::Symbol,x; doc="") = 
-    NamedParser(name,x,doc)
+    NamedParser(name,parser(x),doc)
 
 with_name(name::AbstractString,x; doc="") =
-    name=="" && doc=="" ? x : NamedParser(Symbol(name),x,doc)
+    name=="" && doc=="" ? x : NamedParser(Symbol(name),parser(x),doc)
 
-log_names_(x::ParserTypes,a...;kw...) = x
+log_names_(x::CombinedParser,a...;kw...) = x
 
 
 export log_names
@@ -1181,7 +1179,7 @@ See [`after`](@ref)
 @auto_hash_equals struct FlatMap{P,S,Q<:Function,T} <: CombinedParser{S,T}
     left::P
     right::Q
-    function FlatMap{T}(right::Q, left::P) where {T, P, Q<:Function}
+    function FlatMap{T}(right::Q, left::P) where {T, P<:CombinedParser, Q<:Function}
         new{P,Tuple{<:Any,<:Any,<:Any},Q,T}(left, right)
     end
 end
@@ -1195,8 +1193,8 @@ children(x::FlatMap) = ( x.left, x.right )
 function print_constructor(io::IO,x::FlatMap)
     print(io, "FlatMap" )
 end
-FlatMap(right::Function, left::AbstractToken, T::Type=Any) = FlatMap{T}(right,left)
-FlatMap(right::Function, T::Type, left::AbstractToken) = FlatMap{T}(right,left)
+FlatMap(right::Function, left, T::Type=Any) = FlatMap{T}(right,parser(left))
+FlatMap(right::Function, T::Type, left) = FlatMap{T}(right,parser(left))
 
 """
     after(right::Function,left::AbstractToken)
@@ -1291,7 +1289,7 @@ Internally used for `Sequence` result_type.
 export Sequence
 @auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
     parts::P
-    Sequence(p::ParserTypes...) =
+    Sequence(p::CombinedParser...) =
         new{typeof(p),state_type_tuple(p),result_type(typeof(p))}(p)
 end
 
@@ -1756,19 +1754,19 @@ function Base.join(x::Repeat, delim_; infix=:skip)
 end
 
 """
-    Base.join(x::AbstractToken,delim)
+    Base.join(x::CombinedParser,delim)
 
 Shorthand for `join(Repeat(x),delim)`.
 """
-Base.join(x::AbstractToken,delim; kw...) =
+Base.join(x::CombinedParser,delim; kw...) =
     join(Repeat(x),delim;kw...)
 
 """
-    Base.join(f::Function, x::AbstractToken, delim)
+    Base.join(f::Function, x::CombinedParser, delim)
 
 Shorthand for `map(f,join(x,delim))`.
 """
-Base.join(f::Function,p::AbstractToken,delim_; kw...) =
+Base.join(f::Function,p::CombinedParser,delim_; kw...) =
     map(f,join(p,delim_; kw...))
 
 function print_constructor(io::IO,x::Repeat)

@@ -10,7 +10,7 @@ See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
 """
 @auto_hash_equals struct ParserWithCaptures{P,S,T} <: WrappedParser{P,S,T}
     parser::P
-    subroutines::Vector{ParserTypes} ## todo: rename subroutines
+    subroutines::Vector{CombinedParser} ## todo: rename subroutines
     names::Dict{Symbol,Vector{Int}}
     ParserWithCaptures(parser,captures,names) =
         new{typeof(parser),state_type(parser),result_type(parser)}(parser,captures,names)
@@ -40,7 +40,7 @@ Two passes of `deepmap_parser(indexed_captures_,...)` are used
 See also [`indexed_captures_`](@ref)
 """
 ParserWithCaptures(x) =
-    let cs = ParserWithCaptures(x,ParserTypes[],Dict{Symbol,Int}())
+    let cs = ParserWithCaptures(x,CombinedParser[],Dict{Symbol,Int}())
         pass1 = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),x,cs,false),cs.subroutines,cs.names)
         r = ParserWithCaptures(deepmap_parser(indexed_captures_,NoDict(),pass1.parser,pass1,false),pass1.subroutines,pass1.names)
         isempty(r.subroutines) ? r.parser : r
@@ -67,7 +67,7 @@ end
 
 set_options(set::UInt32,unset::UInt32,parser::ParserWithCaptures) =
     ParserWithCaptures(set_options(set,unset,parser.parser),
-                       ParserTypes[ set_options(set,unset,p) for p in parser.subroutines],
+                       CombinedParser[ set_options(set,unset,p) for p in parser.subroutines],
                        parser.names)
 
 function deepmap_parser(f::Function,mem::AbstractDict,x::ParserWithCaptures,a...;kw...)
