@@ -2536,8 +2536,8 @@ export trim
 
 Match any whitespace and result in `tuple()`.
 """
-trim(; whitespace=CharIn(' ')) =
-    map(Repeat(whitespace)) do v
+trim(; whitespace=Atomic(Repeat(horizontal_space_char))) =
+    map(whitespace) do v
         tuple()
     end
 
@@ -2546,9 +2546,49 @@ trim(; whitespace=CharIn(' ')) =
 
 Ignore whitespace at left and right of `p`.
 """
-trim(p; whitespace=CharIn(' ')) =
-    Sequence(2, Repeat(whitespace),
-             p, Repeat(whitespace))
+trim(p; whitespace=Atomic(Repeat(horizontal_space_char))) =
+    Sequence(2, whitespace, p, whitespace)
+
+
+export @trimmed
+trimmed(x) = x
+function trimmed(node::Expr)
+    if node.head == :(=) && length(node.args) == 2 && isa(node.args[1], Symbol)
+        node.args[2] = Expr(:call, :trim, node.args[2])
+    end
+    if node.head != :call 
+        node.args = map(trimmed, node.args)
+    end
+    node
+end
+
+
+"""
+    @trimmed
+
+Sets names of parsers within begin/end block to match the variables they are asigned to.
+
+so, for example
+```jldoctest
+julia> @trimmed foo = AnyChar()
+. AnyChar |> with_name(:foo)
+::Char
+
+julia> parse(log_names(foo),"ab")
+   match foo@1-2: ab
+                  ^
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+```
+
+See also [`log_names(parser)`](@ref), [`@syntax`](@ref).
+"""
+macro trimmed(block)
+    esc(trimmed(block))
+end
+
+mutable struct Delayed
+    name::Symbol
+end
 
 end # module
 
