@@ -228,7 +228,7 @@ Base.get(x::Capture, sequence, till, after, i, state) =
 end
 
 set_capture(sequence::AbstractString, index::Int, start, stop) = nothing
-set_capture(sequence::WithOptions, index::Int, start,stop) =
+set_capture(sequence::StringWithOptions, index::Int, start,stop) =
     set_capture(sequence.x,index,start,stop)
 set_capture(sequence::SequenceWithCaptures, index::Int, start,stop) =
     push!((@inbounds sequence.captures[index]), start:stop)

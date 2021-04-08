@@ -86,91 +86,12 @@ With parsing options
 
 TODO: make flags a transformation function?
 """
-struct WithOptions{S} <: AbstractString
-    x::S
+struct CharWithOptions
+    x::Char
     flags::UInt32
-    function WithOptions(x,flags)
-        @assert !isa(x,WithOptions)
-        new{typeof(x)}(x,flags)
-    end
 end
-export flags
-flags(x::WithOptions) = x.flags
-flags(x) = UInt32(0)
-regex_string(x::WithOptions) = WithOptions(regex_escape(x.x),x.flags)
 
-
-"""
-    with_options(options::AbstractString,str::AbstractString)
-
-
-
-"""
-with_options(flags::UInt32,x::WithOptions) =
-    with_options(flags|x.flags,x.x)
-with_options(flags::UInt32,x) =
-    flags == 0 ? x : WithOptions(x,flags)
-with_options(options::AbstractString,str::AbstractString) = 
-    with_options(parse_options(options),str)
-with_options(set_flags::UInt32, unset_flags::UInt32,x::AbstractString) =
-    with_options(set_flags,x)
-with_options(set_flags::UInt32, unset_flags::UInt32,x::WithOptions) =
-    with_options(set_flags | ( x.flags & ~unset_flags ),x.x)
-
-"""
-    convert(::Type{AbstractToken},x::Union{AbstractString,Char})
-
-A [`ConstantParser`](@ref) matching `x`.
-"""
-Base.convert(::Type{AbstractToken},x::WithOptions{Char}) =
-    if !iszero(x.flags & Base.PCRE.CASELESS)
-        CharIn(lowercase(x.x),uppercase(x.x))
-    else
-        convert(AbstractToken,x.x)
-    end
-
-import Base: Regex
-Base.Regex(x::WithOptions) =
-    Regex(x.x, options_string(x.flags))
-Base.show(io::IO, x::WithOptions) =
-    print(io,x.x)
-Base.print(io::IO, x::WithOptions{Char}) =
-    print(io,x.x)
-
-Base.getindex(x::WithOptions,i::Integer) =
-    with_options(x.flags,(getindex(x.x,i)))
-Base.iterate(x::WithOptions{<:AbstractString}) =
-    let n = iterate(x.x)
-        n===nothing ? nothing : ( with_options(x.flags,n[1]),n[2] ) 
-    end
-Base.iterate(x::WithOptions{<:AbstractString},i::Integer) =
-    let n = iterate(x.x,i)
-        n===nothing ? nothing : ( with_options(x.flags,n[1]),n[2] )
-    end
-
-Base.isless(x::WithOptions{Char},y) = isless(x.x,y)
-(==)(x::WithOptions{<:AbstractString},y::String) = x.x==y
-(==)(x::WithOptions{Char},y) = x.x==y
-Base.SubString(x::WithOptions,start::Int,stop::Int) = with_options(x.flags,SubString(x.x,start,stop))
-Base.length(x::WithOptions) =
-    length(x.x)
-Base.lastindex(x::WithOptions) =
-    lastindex(x.x)
-Base.firstindex(x::WithOptions) =
-    firstindex(x.x)
-_prevind(x::WithOptions,i::Int,n::Int) =
-    _prevind(x.x,i,n)
-_nextind(x::WithOptions,i::Int,n::Int) =
-    _nextind(x.x,i,n)
-_prevind(x::WithOptions,i::Int) =
-    _prevind(x.x,i)
-_nextind(x::WithOptions,i::Int) =
-    _nextind(x.x,i)
-Base.ncodeunits(x::WithOptions) =
-    ncodeunits(x.x)
-
-import ..CombinedParsers: MatchState
-@inline function _iterate(p::WithOptions{Char}, sequence, till, posi, next_i, state::Nothing, nc=0)
+@inline function _iterate(p::CharWithOptions, sequence, till, posi, next_i, state::Nothing, nc=0)
     @inbounds sc,j=iterate(sequence,posi)
     if ismatch(p,sc)
         j, MatchState()
@@ -179,18 +100,111 @@ import ..CombinedParsers: MatchState
     end
 end
 
+Base.print(io::IO, x::CharWithOptions) =
+    print(io,x.x)
+Base.isless(x::CharWithOptions,y) = isless(x.x,y)
+(==)(x::CharWithOptions,y) = x.x==y
+
 import ..CombinedParsers: ismatch, _ismatch
-function ismatch(c::WithOptions{Char},p)::Bool
-    _ismatch(c.x,p)
+function ismatch(c::CharWithOptions,p)::Bool
+    if !iszero(c.flags & Base.PCRE.CASELESS)
+        _ismatch(lowercase(c.x),p)
+    else
+        _ismatch(c.x,p)
+    end
 end
 
-function _ismatch(c,p::WithOptions{Char})::Bool
+function ismatch(c,p::CharWithOptions)::Bool
     if !iszero(p.flags & Base.PCRE.CASELESS)
         _ismatch(lowercase(c),lowercase(p.x))
     else
         _ismatch(c,p.x)
     end
 end
+
+import Base: convert
+function Base.convert(::Type{Char},y::CharWithOptions)
+    if !iszero(y.flags & Base.PCRE.CASELESS)
+        lowercase(y.x)
+    else
+        y.x
+    end
+end
+
+"""
+A lazy element transformation type (e.g. AbstractString), 
+`getindex` wraps elements in `with_options(flags,...)`.
+
+With parsing options
+
+TODO: make flags a transformation function?
+"""
+struct StringWithOptions{S<:AbstractString} <: AbstractString
+    x::S
+    flags::UInt32
+    function StringWithOptions(x,flags)
+        @assert !isa(x,StringWithOptions)
+        new{typeof(x)}(x,flags)
+    end
+end
+export flags
+flags(x::StringWithOptions) = x.flags
+flags(x) = UInt32(0)
+regex_string(x::StringWithOptions) = StringWithOptions(regex_escape(x.x),x.flags)
+
+
+with_options(flags::UInt32,x::Union{StringWithOptions,CharWithOptions}) =
+    with_options(flags|x.flags,x.x)
+with_options(flags::UInt32,x::AbstractString) =
+    flags == 0 ? x : StringWithOptions(x,flags)
+with_options(flags::UInt32,x::Char) =
+    flags == 0 ? x : CharWithOptions(x,flags)
+with_options(options::AbstractString,str::AbstractString) = 
+    with_options(parse_options(options),str)
+with_options(set_flags::UInt32, unset_flags::UInt32,x::AbstractString) =
+    with_options(set_flags,x)
+with_options(set_flags::UInt32, unset_flags::UInt32,x::StringWithOptions) =
+    with_options(set_flags | ( x.flags & ~unset_flags ),x.x)
+
+import Base: Regex
+Base.Regex(x::StringWithOptions) =
+    Regex(x.x, options_string(x.flags))
+Base.show(io::IO, x::StringWithOptions) =
+    print(io,x.x)
+
+Base.getindex(x::StringWithOptions,i::Integer) =
+    with_options(x.flags,(getindex(x.x,i)))
+Base.iterate(x::StringWithOptions{<:AbstractString}) =
+    let n = iterate(x.x)
+        n===nothing ? nothing : ( with_options(x.flags,n[1]),n[2] ) 
+    end
+Base.iterate(x::StringWithOptions{<:AbstractString},i::Integer) =
+    let n = iterate(x.x,i)
+        n===nothing ? nothing : ( with_options(x.flags,n[1]),n[2] )
+    end
+
+(==)(x::StringWithOptions{<:AbstractString},y::String) = x.x==y
+
+Base.SubString(x::StringWithOptions,start::Int,stop::Int) =
+    with_options(x.flags,SubString(x.x,start,stop))
+Base.length(x::StringWithOptions) =
+    length(x.x)
+Base.lastindex(x::StringWithOptions) =
+    lastindex(x.x)
+Base.firstindex(x::StringWithOptions) =
+    firstindex(x.x)
+_prevind(x::StringWithOptions,i::Int,n::Int) =
+    _prevind(x.x,i,n)
+_nextind(x::StringWithOptions,i::Int,n::Int) =
+    _nextind(x.x,i,n)
+_prevind(x::StringWithOptions,i::Int) =
+    _prevind(x.x,i)
+_nextind(x::StringWithOptions,i::Int) =
+    _nextind(x.x,i)
+Base.ncodeunits(x::StringWithOptions) =
+    ncodeunits(x.x)
+
+
 
 function Base.convert(::Type{CombinedParser},x::Char)
     CharIn(x)
@@ -213,8 +227,8 @@ function Base.convert(::Type{CombinedParser},x::WithOptions{Char})
 end
 
 
-reversed(x::WithOptions) =
-    WithOptions(reversed(x.x),x.flags)
+reversed(x::StringWithOptions) =
+    StringWithOptions(reversed(x.x),x.flags)
 
 
 
@@ -297,7 +311,7 @@ Base.getindex(x::FilterOptions,i) =
     if_options(x.flags,x.x[i])
 if_options(flags::UInt32,x::Char) =
     iszero(flags) ? x : MatchingNever{Char}()
-if_options(flags::UInt32,x::WithOptions{Char}) =
+if_options(flags::UInt32,x::CharWithOptions) =
     if (flags & x.flags) == flags
         x.x
     else
@@ -383,37 +397,6 @@ on_options(flags::Integer,p) =
     _iterate(parser.parser,
              (if_options(parser.flags,sequence)), till, posi, next_i, state)
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 """
