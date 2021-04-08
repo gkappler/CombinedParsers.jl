@@ -239,18 +239,18 @@ end
 
 If available before end of sequence, parse `N` bytes successfully with `result_type` `T`, fail otherwise.
 """
-Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{T}(N)
-_iterate(parser::Bytes, sequence, till, posi, next_i, state::Nothing) = 
-    posi+parser.N <= till+1 ? (_nextind(sequence,posi,parser.N), MatchState()) : nothing
+Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{N,T}()
+_iterate(parser::Bytes{N}, sequence, till, posi, next_i, state::Nothing) where N = 
+    posi+N <= till+1 ? (_nextind(sequence,posi,N), MatchState()) : nothing
 _iterate(parser::Bytes, sequence, till, posi, next_i, state::MatchState) =
     nothing
 regex_string_(x::Bytes{N}) where N = ".{$(N)}"
-Base.show(io::IO, x::Bytes) =
-    print(io, "$(x.N) Bytes::$(result_type(x))")
-@inline _prevind(str,i::Int,parser::Bytes,x) =
-    _prevind(str,i,parser.N)
-@inline _nextind(str,i::Int,parser::Bytes,x) =
-    _nextind(str,i,parser.N)
+Base.show(io::IO, x::Bytes{N}) where N =
+    print(io, "$(N) Bytes::$(result_type(x))")
+@inline _prevind(str,i::Int,parser::Bytes{N},x) where N =
+    _prevind(str,i,N)
+@inline _nextind(str,i::Int,parser::Bytes{N},x) where N =
+    _nextind(str,i,N)
 
 @inline _prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
     i

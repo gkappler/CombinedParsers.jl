@@ -26,7 +26,7 @@ function Base.get(
 end
 
 """
-    Base.get(parser::Bytes{T}, sequence::Vector{UInt8})
+    Base.get(parser::Bytes{N,T}, sequence::Vector{UInt8})
 
 !!! note
 
@@ -39,8 +39,8 @@ end
     0x1116
     ```
 """
-function Base.get(parser::Bytes{T}, sequence::Vector{UInt8}, till,
-                  after, i, state) where {T}
+function Base.get(parser::Bytes{N,T}, sequence::Vector{UInt8}, till,
+                  after, i, state) where {N,T}
     if isbitstype(T)
         reinterpret(T,sequence[i:after-1])[1]
     else
