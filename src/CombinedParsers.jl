@@ -937,17 +937,23 @@ julia> parse(ac, "c")
 @auto_hash_equals struct CharIn{S} <: NIndexParser{1,Char}
     pcre::String
     sets::S
-    CharIn(pcre::String,x::T) where { T } = # <:Union{Char,Set{Char},<:Function,<:UnicodeClass,<:Tuple}}=
-        new{T}(pcre,x)
+    function CharIn(pcre::String,x_) # <:Union{Char,Set{Char},<:Function,<:UnicodeClass,<:Tuple}}=
+        x = optimize(CharIn, x_)
+        new{typeof(x)}(pcre,x)
+    end
 end
+@inline _ismatch(c,p::CharIn)::Bool = _ismatch(c,p.sets)
+
 CharIn(pcre::String,x::CharIn) =
     CharIn(pcre,x.sets)
+CharIn(pcre::String,x::ConstantParser{Char}) =
+    CharIn(pcre,x.parser)
 CharIn(pcre::String,x::AbstractString) =
-    CharIn(pcre,x...)
-CharIn(pcre::String,x1,x_...) =
-    CharIn(pcre, optimize(CharIn,x1,x_...))
+    isempty(x) ? Never() : CharIn(pcre,x...)
 CharIn(chars::String) =
-    isempty(chars) ? Never() : CharIn("",chars...)
+    CharIn(regex_escape(chars),chars)
+CharIn(pcre::String,x_...) =
+    CharIn(pcre,x_)
 CharIn(x_...) =
     CharIn("",x_...)
 CharIn(chars::StepRange) =
@@ -963,7 +969,6 @@ succeeds if char at cursor is in one of the unicode classes.
 CharIn(unicode_classes::Symbol...) =
     CharIn(UnicodeClass(unicode_classes...))
 
-@inline _ismatch(c,p::CharIn)::Bool = _ismatch(c,p.sets)
 
 export regex_escape
 ## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
@@ -1019,21 +1024,26 @@ re"[^ac]"
 @auto_hash_equals struct CharNotIn{S} <: NIndexParser{1,Char}
     pcre::String
     sets::S
-    CharNotIn(pcre::String,x::T) where {T<:Union{Char,Set{Char},Function,UnicodeClass,Tuple}}=
-        new{T}(pcre,x)
+    function CharNotIn(pcre::String, x_) # where {T<:Union{Char,Set{Char},Function,UnicodeClass,Tuple}}=
+        x = optimize(CharNotIn, x_)
+        new{typeof(x)}(pcre,x)
+    end
 end
-CharNotIn(pcre::String,x_...) =
-    CharNotIn(pcre,optimize(CharNotIn,x_...))
+CharNotIn(pcre::String,x...) =
+    CharNotIn(pcre,x)
+CharNotIn(pcre::String,x::ConstantParser{Char}) =
+    CharNotIn(pcre,x.parser)
 CharNotIn(chars::String) =
-    CharNotIn("",chars)
+    CharNotIn(regex_escape(chars),chars)
 CharNotIn(chars::StepRange) =
     CharNotIn("$(chars.start)-$(chars.stop)",chars)
 CharNotIn(x_...) =
     CharNotIn("",x_...)
+
 result_type(::Type{<:CharNotIn}) = Char
-regex_string_(x::CharNotIn) = ( x.pcre =="" ? regex_string_(x.sets) : x.pcre )
+regex_string_(x::CharNotIn) = ( x.pcre =="" ? "^"*regex_string_(x.sets) : x.pcre )
 regex_inner(x::CharNotIn) =
-    "[^"*regex_string_(x)*"]"
+    "["*regex_string_(x)*"]"
 @inline _ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
 
 CharIn(x::Tuple{<:CharNotIn}) = x[1]
@@ -1055,37 +1065,41 @@ end
 
 @inline function _iterate(parser::CharIn, sequence, till, posi, next_i, state::Nothing)
     next_i>till && return nothing
-    @inbounds c,ni = iterate(sequence,next_i)
+    @inbounds c,ni = sequence[next_i], _nextind(sequence,next_i)
     !ismatch(c,parser.sets) && return nothing
     return ni, MatchState()
 end
 
 
 export CharMatcher
-BaseCharMatcher = Union{Char, AnyChar, UnicodeClass,StepRange{Char,Int}}
+BaseCharMatcher = Union{Char, AnyChar, UnicodeClass, StepRange{Char,Int}}
 CharMatcher = Union{CharIn, CharNotIn, BaseCharMatcher}
+
+
+_push!(charset::Nothing, x) = x
+_push!(charset::T, x::T) where T = Set{T}(tuple(charset,x))
+_push!(charset::Set, x) where T = push!(charset,x)
+_push!(charset::Vector, x) where T = push!(charset,x)
+_push!(charset::Nothing, x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) = Any[x]
 
 optimize!(charset,otherstuff) =
     charset,otherstuff
-optimize!(charset::Nothing,otherstuff,x::T) where { T<:Union{Char,Integer} } =
-    x,otherstuff
-optimize!(charset::T,otherstuff,x::T) where { T<:Union{Char,Integer} } =
-    optimize!(Set{T}(charset),otherstuff,x)
-function optimize!(charset::Set{T},otherstuff,x::T) where { T<:Union{Char,Integer} }
-    push!(charset,x)
-    charset,otherstuff
-end
-optimize!(charset,otherstuff::Nothing,x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) =
-    optimize!(charset,Any[],x)
-function optimize!(charset,otherstuff::Vector{Any},x::Union{<:Function,<:UnicodeClass,<:CharNotIn})
-    push!(otherstuff,x)
-    charset,otherstuff
-end
-function optimize!(charset,otherstuff,c::CharIn)
-    optimize!(charset,otherstuff,c.sets)
-end
-optimize!(charset,otherstuff,x::Union{Vector,Tuple,StepRange{T,Int},Set{T},<:AbstractString}) where { T<:Union{Char,Integer} } =
+optimize!(charset,otherstuff,x) =
+    _push!(charset,x),otherstuff
+
+optimize!(charset,otherstuff,x::ConstantParser{Char}) =
+    optimize!(charset,otherstuff, x.parser)
+
+optimize!(charset,otherstuff,x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) =
+    charset, _push!(otherstuff,x)
+
+optimize!(charset,otherstuff,c::CharIn) = 
+    optimize!(charset,otherstuff, c.sets...)
+
+ElementIterators = Union{Vector,Tuple,StepRange,Set,AbstractString}
+optimize!(charset,otherstuff,x::ElementIterators) =
     optimize!(charset,otherstuff,x...)
+
 function optimize!(charset,otherstuff,x1,x2,x...)
     optimize!(optimize!(charset,otherstuff,x1)...,x2,x...)
 end
