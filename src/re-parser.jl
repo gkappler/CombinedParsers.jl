@@ -11,90 +11,8 @@ import ..CombinedParsers: Repeat_max
 #(*NO_AUTO_POSSESS)
 #(*LIMIT_MATCH=d)
 #(*LIMIT_RECURSION=d)
-whitespace_string = " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B"
-whitespace_char = CharIn("[:space:]",whitespace_string)
 meta_chars = raw"\^$.[|()?*+{"
 
-# The horizontal space characters are:
-horizontal_space=(
-    '\U0009', # "Horizontal tab (HT)"),
-    '\U0020', # "Space"),
-    '\U00A0', # "Non-break space"),
-    '\U1680', # "Ogham space mark"),
-    '\U180E', # "Mongolian vowel separator"),
-    '\U2000', # "En quad"),
-    '\U2001', # "Em quad"),
-    '\U2002', # "En space"),
-    '\U2003', # "Em space"),
-    '\U2004', # "Three-per-em space"),
-    '\U2005', # "Four-per-em space"),
-    '\U2006', # "Six-per-em space"),
-    '\U2007', # "Figure space"),
-    '\U2008', # "Punctuation space"),
-    '\U2009', # "Thin space"),
-    '\U200A', # "Hair space"),
-    '\U202F', # "Narrow no-break space"),
-    '\U205F', # "Medium mathematical space"),
-    '\U3000' # "Ideographic space"))
-)
-
-# The vertical space characters are:
-vertical_space=(
-    '\U000A', # "Linefeed (LF)"),
-    '\U000B', # "Vertical tab (VT)"),
-    '\U000C', # "Form feed (FF)"),
-    '\U000D', # "Carriage return (CR)"),
-    '\U0085', # "Next line (NEL)"),
-    '\U2028', # "Line separator"),
-    '\U2029') # "Paragraph separator"))
-
-"""
-```jldoctest
-julia> CombinedParsers.Regexp.bsr
-(?>|🗄...) Either |> Atomic
-├─ \r\n 
-└─ [\n\x0b\f\r\x85] CharIn
-::Union{Char, SubString}
-```
-
-PCRE backslash R (BSR), for newlines.
-"""
-bsr = Atomic(Either("\r\n",
-                    CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
-
-
-"""
-```jldoctest
-julia> CombinedParsers.Regexp.at_linestart
-|🗄... Either
-├─ ^ AtStart
-└─ (?<=🗄...)) PositiveLookbehind
-   ├─ \n\r 
-   └─ [\n\x0b\f\r\x85] CharIn
-::Union{AtStart, Char, SubString}
-```
-
-Note: in PCRE
-```julia
-Either(
-    on_options(Base.PCRE.MULTILINE, 
-           '^' => at_linestart),
-    parser('^' => AtStart())
-)
-```
-"""
-@with_names at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
-lineend   = Either(AtEnd(),bsr)
-@with_names at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
-
-newline = bsr
-inline = !Repeat(CharNotIn(vertical_space))
-whitespace_maybe = !Repeat(CharIn("\\h",horizontal_space))
-whitespace_horizontal = !Repeat1(CharIn("\\h",horizontal_space))
-whitespace = whitespace_horizontal
-
-export whitespace_newline
-whitespace_newline = Repeat1(CharIn("\\h\\v",horizontal_space,vertical_space))
 
 
 bracket_range(start) =
@@ -117,7 +35,7 @@ bracket_range(start) =
 skip_whitespace_on(flags, wrap=identity) =
     with_name(:skip_ws,on_options(
         flags,
-        wrap(CharIn(whitespace_string...,'\n'))=>Always()))
+        wrap(CharIn(whitespace_char,'\n'))=>Always()))
 
 
 skip_whitespace_and_comments =
@@ -215,7 +133,7 @@ push!(pattern,
 
 word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
-words = JoinSubstring(Repeat1(CharIn("\\w\\h", horizontal_space..., word_char))) ## "[[:alpha:] ]+"
+words = JoinSubstring(Repeat1(CharIn("\\w\\h", horizontal_space_char, word_char))) ## "[[:alpha:] ]+"
 
 non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
 non_word = JoinSubstring(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
@@ -321,17 +239,17 @@ chartype_letter_parser = Either(
             # "any character that is not a decimal digit"),
             'D' => CharNotIn("\\D",'0':'9'),
             # "any horizontal white space character"),
-            'h' => CharIn("\\h",horizontal_space...),
+            'h' => CharIn("\\h",horizontal_space_char),
             # "any character that is not a horizontal white space character"),
-            'H' => CharNotIn("\\H",horizontal_space...),
+            'H' => CharNotIn("\\H",horizontal_space_char),
             # "any white space character"),
-            's' => CharIn("\\s",horizontal_space...,vertical_space...),
+            's' => CharIn("\\s",horizontal_space_char,vertical_space_char),
             # "any character that is not a white space character"),
-            'S' => CharNotIn("\\S",horizontal_space...,vertical_space...),
+            'S' => CharNotIn("\\S",horizontal_space_char,vertical_space_char),
             # "any vertical white space character"),
-            'v' => CharIn("\\v",vertical_space...),
+            'v' => CharIn("\\v",vertical_space_char),
             # "any character that is not a vertical white space character"),
-            'V' => CharNotIn("\\V",vertical_space...),
+            'V' => CharNotIn("\\V",vertical_space_char),
             # "any "word" character"),
             'w' => word_char,
             # "any "non-word" character"),
@@ -437,7 +355,7 @@ push!(repeatable,bracket);
     skip_whitespace_and_comments, ## for test 1130, preserve in map?
     Optional(repetition, default=1:1),
     skip_whitespace_and_comments,
-    Optional(map(v->convert(Char,v),CharIn('+','?'))), # possessive quantifier, strip option
+    Optional(CharIn('+','?')), # possessive quantifier, strip option
 ) do v
     pat = sSequence(v[1],v[2]...)
     result = if v[3] == 1:1
