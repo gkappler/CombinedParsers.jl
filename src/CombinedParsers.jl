@@ -76,10 +76,14 @@ abstract type CombinedParser{S,T} <: AbstractToken{T} end
 result_type(x::CombinedParser) = result_type(typeof(x))
 result_type(::Type{<:CombinedParser{<:Any,T}}) where T = T
 parser(x::CombinedParser) = x
-function Base.convert(::Type{CombinedParser},x)
+
+"""
+    Base.convert(::Type{CombinedParser},x)
+
+[`parser`](@ref)`(x)`.
+"""
+Base.convert(::Type{CombinedParser},x) =
     parser(x)
-end
-Base.convert(::Type{CombinedParser}, x::CombinedParser) = x
 
 """
     (x::CombinedParser)(str;kw...)
@@ -1439,7 +1443,6 @@ Base.getindex(A::MatchState, i::Int) = MatchState()
 Base.setindex!(A::MatchState, ::MatchState, i::Int) = nothing
 Base.setindex!(A::MatchState, v, i::Int) = error("MatchState elements can only be ::MatchState")
 
-Base.convert(::Type{MatchState},::Tuple{}) = MatchState()
 
 sequence_state(statettype::Type{MatchState}, states) = MatchState()
 sequence_state(statettype::Type{<:Tuple}, states) = tuple( (s for s in states...) )

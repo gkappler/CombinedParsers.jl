@@ -206,26 +206,18 @@ Base.ncodeunits(x::StringWithOptions) =
 
 
 
-function Base.convert(::Type{CombinedParser},x::Char)
-    CharIn(x)
-end
+"""
+    parser(x::CharWithOptions)
 
-import Base: convert
-function Base.convert(::Type{Char},y::WithOptions{Char})
-    if !iszero(y.flags & Base.PCRE.CASELESS)
-        lowercase(y.x)
+A [`ConstantParser`](@ref) matching `x`, 
+respecting `Base.PCRE.CASELESS`.
+"""
+parser(x::CharWithOptions) =
+    if !iszero(x.flags & Base.PCRE.CASELESS)
+        CharIn(lowercase(x.x),uppercase(x.x))
     else
-        y.x
+        parser(x.x)
     end
-end
-function Base.convert(::Type{CombinedParser},x::WithOptions{Char})
-    if x.flags & Base.PCRE.CASELESS > 0
-        CharIn(unique([lowercase(x.x),uppercase(x.x)])...)
-    else
-        CharIn(x.x)
-    end
-end
-
 
 reversed(x::StringWithOptions) =
     StringWithOptions(reversed(x.x),x.flags)
@@ -344,7 +336,6 @@ Base.iterate(x::FilterOptions,a...) =
         n===nothing ? nothing : if_options(x.flags,tuple_pos(n)),tuple_state(n)
     end
 
-Base.convert(::Type{Union{Char,CharIn}},x::FilterOptions{Char}) = x.x
 
 
 function Base.in(x::FilterOptions,set)
