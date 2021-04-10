@@ -2009,6 +2009,23 @@ end
 
 
 
+"""
+    defaultvalue(T::Type)
+
+Default value if [`Optional`](@ref)<:`CombinedParser` is skipped.
+- `T<:AbstractString`: `""`
+- `T<:Vector{E}`: `E[]`
+- `T<:CombinedParser`: `Always()`
+- otherwise `missing`
+
+!!! note
+    [`get`](@ref) will return a [`_copy`](@ref) of `defaultvalue`.
+"""
+defaultvalue(::Type{<:AbstractString}) = ""
+defaultvalue(V::Type{<:Vector}) = eltype(V)[]
+defaultvalue(V::Type) = missing
+defaultvalue(V::Type{<:CombinedParser}) = Always()
+
 export Optional
 """
 State type for skipped optional. (Missing was breaking julia).
@@ -2033,8 +2050,7 @@ julia> parse(Optional("a", default=42),"b")
 @auto_hash_equals struct Optional{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     default::T
-    function Optional(p_;default=defaultvalue(result_type(p_)))
-        p = parser(p_)
+    function Optional(p::CombinedParser;default=defaultvalue(result_type(p)))
         T = result_type(p)
         D = typeof(default)
         T_ = promote_type(T,D)
@@ -2043,20 +2059,15 @@ julia> parse(Optional("a", default=42),"b")
     end
 end
 
-
-
-Optional(p_::NamedParser;kw...) =
-    with_name(p_.name,Optional(p_.parser;kw...))
-
-
-Optional(x1,x...;kw...) = Optional(Sequence(x1,x...);kw...)
+Optional(x...;kw...) =
+    Optional(sSequence(x...); kw...)
 
 
 Optional(T::Type, x_; transform, kw...) =
     Optional(transform, T, x; kw...)
 
 function Optional(transform::Function, T::Type, x;
-             default=defaultvalue(T))
+                  default=defaultvalue(T))
     map(transform,T,Optional(x; default=default))
 end
 
@@ -2092,23 +2103,13 @@ function _iterate(t::Optional, str, till, posi, next_i, state)
     end
 end
 
-function _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::Nothing)
+_iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::Nothing) =
     next_i, NoMatch()
-end
-
-function _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::NoMatch)
+_iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::NoMatch) =
     _iterate(t.parser.parser, str, till, posi, next_i, nothing)
-end
-
-function _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state)
+_iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state) =
     _iterate(t.parser.parser, str, till, posi, next_i, state)
-end
 
-
-defaultvalue(::Type{<:AbstractString}) = ""
-defaultvalue(V::Type{<:Vector}) = eltype(V)[]
-defaultvalue(V::Type) = missing
-defaultvalue(V::Type{<:CombinedParser}) = Always()
 
 
 
