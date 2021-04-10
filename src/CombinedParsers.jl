@@ -2138,22 +2138,40 @@ struct Either{Ps,S,T} <: CombinedParser{S,T}
     Either{S,T}(p::P) where {S,T,P} =
         new{P,S,T}(p)
 end
-Either(p::P) where P = 
-    Either{either_state_type(p),either_result_type(p)}(p)
-Either{T}(p) where T = 
-    Either{either_state_type(typeof(p)),T}(p)
 
-function Either{T}(p_...) where {T}
+"""
+    Either(p...)
+
+Create a immutable `Either{<:Tuple}` improved for performance.
+Arguments `p...` are wrapped in [`parser`](@ref),
+type parameters are computed with [`either_state_type`](@ref) and [`either_result_type`](@ref).
+"""
+function Either(p_...)
+    p = tuple(parser.(p_)...)
+    Either{either_state_type(p),either_result_type(p)}(p)
+end
+
+
+"""
+    Either{T}(p...)
+
+Create a mutable `Either{<:Vector{Any}}` for creating recursive parsers.
+Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
+
+!!! note
+    state type is `Any` which might cost performance.
+"""
+function Either{T}(p_...) where T
     p = Any[parser.(p_)...]
     for x in p
-        result_type(x) <: T || error("$(result_type(x))<:$T")
+        result_type(x) <: T || error("$(result_type(x))<:$T\n$x")
     end
-    Either{either_state_type(Vector{Any}),T}(p)
+    Either{Any,T}(p)
 end
 
-function Either(x...; kw...)
-    Either(Any[ (parser(y) for y in x)..., (with_name(k,v) for (k,v) in kw)...  ])
-end
+@deprecate Either{T}(x::Vector{Any}) where T Either{T}(x...)
+@deprecate Either{T}(x::Tuple) where T Either(x...)
+
 """
     Either(transform::Function, x::Vararg)
 

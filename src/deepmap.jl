@@ -46,7 +46,7 @@ end
 
 function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Tuple},a...;kw...)
     get!(mem,x) do
-        Either{result_type(x)}(tuple( (deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... ))
+        Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
     end
 end
 

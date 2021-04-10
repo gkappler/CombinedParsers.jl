@@ -5,7 +5,7 @@ function Either(x::Vector{<:AbstractString})
     for e in x
         r[e...] = nothing
     end
-    Either{String}(r)
+    Either{NCodeunitsState, String}(r)
 end
 
 function Either(x::Dict)
@@ -14,7 +14,7 @@ function Either(x::Dict)
     for (e,v) in pairs(x)
         r[e...] = v
     end
-    Either{valtype(x)}(r)
+    Either{NCodeunitsState, valtype(x)}(r)
 end
 either_state_type(T::Type{<:Trie}) = NCodeunitsState{T}
 
