@@ -916,7 +916,7 @@ export CharIn
 """
     CharIn(x)
 
-Parser matching exactly one character in `x`.
+Parser matching exactly one element (character) in a sequence, iif in `x`.
 
 ```jldoctest
 julia> a_z = CharIn('a':'z')
@@ -956,7 +956,7 @@ CharIn(chars::StepRange) =
 regex_string_(x) = "$x"
 
 """
-    CharIn(unicode_class::Symbol...)
+    CharIn(unicode_category::Symbol...)
 
 succeeds if char at cursor is in one of the unicode classes.
 """
@@ -1005,7 +1005,7 @@ export CharNotIn
 """
     CharNotIn(x)
 
-Parser matching exactly one character in `x`.
+Parser matching exactly one element (character) in a sequence, iif not in `x`.
 
 ```jldoctest
 julia> a_z = CharNotIn('a':'z')
@@ -2118,7 +2118,7 @@ export alt, Either
 """
 Parser that tries matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
 
-This parser has no custom `==` and `hash` methods because it can recurse.
+This parser has no `==` and `hash` methods because it can recurse.
 
 ```jldoctest
 julia> match(r"a|bc","bc")
