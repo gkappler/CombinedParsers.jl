@@ -86,10 +86,13 @@ With parsing options
 
 TODO: make flags a transformation function?
 """
-struct CharWithOptions
+@auto_hash_equals struct CharWithOptions
     x::Char
     flags::UInt32
 end
+
+Base.isascii(x::CharWithOptions) = isascii(x.x)
+Base.isprint(x::CharWithOptions) = isprint(x.x)
 
 @inline function _iterate(p::CharWithOptions, sequence, till, posi, next_i, state::Nothing, nc=0)
     @inbounds sc,j=iterate(sequence,posi)
@@ -103,15 +106,14 @@ end
 Base.print(io::IO, x::CharWithOptions) =
     print(io,x.x)
 Base.isless(x::CharWithOptions,y) = isless(x.x,y)
+Base.isless(x,y::CharWithOptions) = isless(x,y.x)
 (==)(x::CharWithOptions,y) = x.x==y
 
 import ..CombinedParsers: ismatch, _ismatch
+
+
 function ismatch(c::CharWithOptions,p)::Bool
-    if !iszero(c.flags & Base.PCRE.CASELESS)
-        _ismatch(lowercase(c.x),p)
-    else
-        _ismatch(c.x,p)
-    end
+    _ismatch(c.x,p)
 end
 
 function ismatch(c,p::CharWithOptions)::Bool
@@ -122,13 +124,9 @@ function ismatch(c,p::CharWithOptions)::Bool
     end
 end
 
-import Base: convert
-function Base.convert(::Type{Char},y::CharWithOptions)
-    if !iszero(y.flags & Base.PCRE.CASELESS)
-        lowercase(y.x)
-    else
-        y.x
-    end
+
+function ismatch(c::CharWithOptions,p::CharWithOptions)::Bool
+    _ismatch(c.x,p)
 end
 
 """
@@ -139,7 +137,7 @@ With parsing options
 
 TODO: make flags a transformation function?
 """
-struct StringWithOptions{S<:AbstractString} <: AbstractString
+@auto_hash_equals struct StringWithOptions{S<:AbstractString} <: AbstractString
     x::S
     flags::UInt32
     function StringWithOptions(x,flags)
