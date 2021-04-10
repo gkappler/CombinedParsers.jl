@@ -129,6 +129,15 @@ function ismatch(c::CharWithOptions,p::CharWithOptions)::Bool
     _ismatch(c.x,p)
 end
 
+import Base: convert
+"""
+    Base.convert(::Type{Char},y::CharWithOptions)
+
+Strips options.
+"""
+Base.convert(::Type{Char},y::CharWithOptions) =
+    y.x
+
 """
 A lazy element transformation type (e.g. AbstractString), 
 `getindex` wraps elements in `with_options(flags,...)`.
