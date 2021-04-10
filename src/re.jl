@@ -10,8 +10,9 @@ using AutoHashEquals
 using ReversedStrings
 import ReversedStrings: reversed, reverse_index
 
-import ..CombinedParsers: LeafParser, WrappedParser, ParserTypes, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
-import ..CombinedParsers: parser, prune_captures, deepmap_parser, _iterate, print_constructor
+import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, LookAround, Either, SideeffectParser, MatchingNever
+import ..CombinedParsers: parser, prune_captures, deepmap_parser, print_constructor
+import ..CombinedParsers: _iterate, _iterate_constant
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
 import ..CombinedParsers: state_type, start_index, tuple_pos, tuple_state
 import ..CombinedParsers: _prevind, _nextind
