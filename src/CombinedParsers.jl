@@ -315,7 +315,7 @@ re"^"
 
 ```
 """
-struct AtStart <: NIndexParser{0,AtStart} end
+struct AtStart <: NCodeunitsParser{0,AtStart} end
 regex_prefix(x::AtStart) = "^"
 _iterate(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
     next_i == 1 ? (next_i, MatchState()) : nothing
@@ -333,7 +333,7 @@ re"\$"
 
 ```
 """
-struct AtEnd <: NIndexParser{0,AtEnd} end
+struct AtEnd <: NCodeunitsParser{0,AtEnd} end
 regex_suffix(x::AtEnd) = "\$"
 _iterate(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
@@ -353,11 +353,11 @@ re"(*FAIL)"
 
 ```
 """
-struct Never <: LeafParser{MatchState,Never} end
+struct Never <: NCodeunitsParser{0,Never} end
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
-_iterate(x::Never,str,posi, next_i,till,state) =
+_iterate(x::Never,str,posi, next_i,till,state::Nothing) =
     nothing
 
 
@@ -374,7 +374,7 @@ re""
 
 ```
 """
-struct Always <: LeafParser{MatchState,Always}
+struct Always <: NCodeunitsParser{0,Always}
 end
 Base.show(io::IO,x::Always) = print(io,"re\"\"")
 children(x::Union{Never,Always}) = tuple()
@@ -383,8 +383,6 @@ regex_inner(x::Always) = ""
 regex_suffix(x::Always) = ""
 _iterate(parser::Always, str, till, posi, next_i, s::Nothing) =
     next_i, MatchState()
-_iterate(parser::Always, str, till, posi, next_i, s::MatchState) =
-    nothing
 _prevind(str,i::Int,p::Always,x) = i
 _nextind(str,i::Int,p::Always,x) = i
 ##_iterate(parser::Never, str, till, posi, next_i, s) = nothing
@@ -397,7 +395,7 @@ Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
 """
 Parsers that do not consume any input can inherit this type.
 """
-abstract type LookAround{T} <: NIndexParser{0,T} end
+abstract type LookAround{T} <: NCodeunitsParser{0,T} end
 children(x::LookAround) = (x.parser,)
 _iterate(t::LookAround, str, till, posi, next_i, state::MatchState) =
     nothing
