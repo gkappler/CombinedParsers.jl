@@ -37,23 +37,6 @@ export result_type
 export parser
 import Base: convert
 
-"""
-    parser(x)
-
-A [`ConstantParser`](@ref) matching `x`.
-"""
-parser(x) =
-    ConstantParser(x)
-
-
-"""
-    parser(x::StepRange{Char,<:Integer})
-
-[`CharIn`](@ref) matching x.
-"""
-parser(x::StepRange{Char,<:Integer}) =
-    CharIn(x)
-
 
 export _iterate
 """
@@ -75,15 +58,6 @@ state::`S`.
 abstract type CombinedParser{S,T} <: AbstractToken{T} end
 result_type(x::CombinedParser) = result_type(typeof(x))
 result_type(::Type{<:CombinedParser{<:Any,T}}) where T = T
-parser(x::CombinedParser) = x
-
-"""
-    Base.convert(::Type{CombinedParser},x)
-
-[`parser`](@ref)`(x)`.
-"""
-Base.convert(::Type{CombinedParser},x) =
-    parser(x)
 
 """
     (x::CombinedParser)(str;kw...)
@@ -694,17 +668,6 @@ function print_constructor(io::IO,x::NamedParser)
     printstyled(io, x.name, bold=true,color=:red)
     print(io, ")")
 end
-
-"""
-    parser(x::Pair{Symbol, P}) where P
-
-A parser labelled with name `x.first`.
-Labels are useful in printing and logging.
-
-See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
-"""
-parser(x::Pair{Symbol, P}) where P =
-    NamedParser(x.first, parser(x.second))
 
 """
     with_name(name::Symbol,x; doc="")

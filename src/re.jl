@@ -519,6 +519,8 @@ end
 @inline Base.get(parser::Conditional, sequence, till, after, i, state) =
     get(state.first == :yes ? parser.yes : parser.no, sequence, till, after, i, state.second)
 
+_iterate_condition(cond::WrappedParser, sequence, till, posi, next_i, state) =
+    _iterate_condition(cond.parser, sequence, till, posi, next_i, state)
 _iterate_condition(cond, sequence, till, posi, next_i, state) =
     _iterate(cond, sequence, till, posi, next_i, state) !== nothing
 
@@ -534,12 +536,11 @@ end
 
 @inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Nothing)
     c = _iterate_condition(parser.condition, sequence, till, posi, next_i, state)
-    f = c ? :yes : :no
-    cparse = f == :yes ? parser.yes : parser.no
+    cparse = c ? parser.yes : parser.no
     s = _iterate(cparse,
                  sequence, till, posi, next_i, state)
     s === nothing && return nothing
-    tuple_pos(s), f => tuple_state(s)
+    tuple_pos(s), (c ? :yes : :no) => tuple_state(s)
 end
 
 @inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Pair)
