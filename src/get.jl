@@ -112,24 +112,16 @@ export map_match
 map_match(f::Function,p_) =
     map(f, JoinSubstring(parser(p_)))
 
-function Base.get(
-    x::Union{JoinSubstring,ConstantParser{<:AbstractString}},
-    sequence, till,
-    after, i, state)
+function Base.get(x::Union{JoinSubstring,ConstantParser{<:AbstractString}}, sequence, till, after, i, state)
     li = _prevind(sequence,after)
     li<i ? "" : @inbounds SubString(sequence,i,li)
 end
 
-function Base.get(
-    parser::Union{NIndexParser{1,Char},ConstantParser{Char}},
-    sequence, till,
-    after, i, state)
+function Base.get(parser::Union{NCodeunitsParser{1}, NIndexParser{1}, ConstantParser{Char}}, sequence, till, after, i, state)
     @inbounds sequence[i]
 end
 
-function Base.get(parser::ConstantParser,
-                  sequence, till,
-                  after, i, state)
+function Base.get(parser::ConstantParser, sequence, till, after, i, state)
     parser.parser
 end
 

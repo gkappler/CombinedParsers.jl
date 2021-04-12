@@ -1,6 +1,3 @@
-_ncodeunits(x::Union{Char,AbstractString}) = ncodeunits(x)
-_ncodeunits(x) = 1
-
 """
 Wrapper for stepping with ncodeunit length.
 
@@ -15,17 +12,18 @@ julia> parser(1) isa CombinedParsers.ConstantParser
 true
 ```
 """
-@auto_hash_equals struct ConstantParser{P,N,T} <: NIndexParser{N, T}
+@auto_hash_equals struct ConstantParser{P,T} <: LeafParser{MatchState,T}
     parser::P
     function ConstantParser(x::T) where {T<:AbstractString}
-        new{T,_ncodeunits(x),SubString}(x)
+        new{T,SubString}(x)
     end
     function ConstantParser(x)
-        new{typeof(x),_ncodeunits(x),typeof(x)}(x)
+        new{typeof(x),typeof(x)}(x)
     end
 end
-_ncodeunits(x::Type{<:ConstantParser{<:Any,N}}) where N = N
-_ncodeunits(x::ConstantParser) = _ncodeunits(typeof(x))
+@inline _ncodeunits(x::Union{Char,AbstractString}) = ncodeunits(x)
+@inline _ncodeunits(x) = 1
+@inline _ncodeunits(x::ConstantParser) = _ncodeunits(x.parser)
 
 @inline _nextind(str,i::Int,parser::ConstantParser,x) =
     i+_ncodeunits(parser)
@@ -53,17 +51,11 @@ deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
         f(x,a...;kw...)
     end
 
-@inline function _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing)
+@inline _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing) =
     _iterate_constant(parser,sequence,till,posi, next_i, state)
-end
 
-@inline function _iterate(p::ConstantParser, sequence, till, posi, next_i, state::MatchState)
-    nothing
-end
-
-@inline function _iterate_constant(parser::ConstantParser, sequence, till, posi, next_i, state)
+@inline _iterate_constant(parser::ConstantParser, sequence, till, posi, next_i, state) =
     _iterate_constant(parser.parser,sequence,till,posi, next_i, state, _ncodeunits(parser))
-end
 
 @inline function _iterate_constant(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L)
     till, posi, next_i

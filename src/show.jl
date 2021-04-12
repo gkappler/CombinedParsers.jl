@@ -29,7 +29,7 @@ children(x::Union{Regex,AbstractString}) = ()
 Base.show(io::IO, x::MemoTreeChildren) =
     show(io,x.child)
 
-function Base.show(io::IO, x::Union{ConstantParser,NIndexParser})
+function Base.show(io::IO, x::Union{ConstantParser,NCodeunitsParser})
     print(io, "re\"",regex_string(x),"\"") ##!!
 end
 function Base.show(io::IO, x::CombinedParser)

@@ -75,13 +75,6 @@ See also [`parse`](@ref).
 
 include("state.jl")
 
-"""
-    LeafParser{T} <: CombinedParser{T}
-
-Abstract parser type for parsers that have no sub-parser (e.g. [`ConstantParser`](@ref)).
-Used for dispatch in [`deepmap_parser`](@ref).
-"""
-abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
 include("textparse.jl")
 
@@ -174,6 +167,16 @@ Base.filter(f::Function, x::CombinedParser) =
 end
 
 
+"""
+    LeafParser{T} <: CombinedParser{T}
+
+Abstract parser type for parsers that have no sub-parser (e.g. [`ConstantParser`](@ref)).
+Used for dispatch in [`deepmap_parser`](@ref).
+"""
+abstract type LeafParser{S,T} <: CombinedParser{S,T} end
+
+# for convenience
+_iterate(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
 
@@ -221,10 +224,6 @@ Base.show(io::IO, x::Bytes{N}) where N =
 @inline _nextind(str,i::Int,parser::Bytes{N},x) where N =
     _nextind(str,i,N)
 
-@inline _prevind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
-    i
-@inline _nextind(str,i::Int,parser::Union{NIndexParser{0},ConstantParser{0}},x) =
-    i
 @inline _prevind(str,i::Int,parser::NIndexParser{L},x) where L =
     _prevind(str,i,L)
 @inline _nextind(str,i::Int,parser::NIndexParser{L},x) where L =

@@ -120,6 +120,10 @@ reversed(x) = deepmap_parser(reversed,x)
 reversed(x::Union{AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,ConstantParser{N,Char} where N}) = x
 reversed(x::AtStart) = AtEnd()
 reversed(x::AtEnd) = AtStart()
+reversed(x::ConstantParser) = x
+reversed(x::ConstantParser{<:AbstractString}) =
+    ConstantParser(reversed(x.parser))
+
 deepmap_parser(::typeof(reversed),mem::AbstractDict,x::Sequence) =
     get!(mem,x) do
         Sequence(( deepmap_parser(reversed,mem,p) for p in reverse(x.parts) )...)

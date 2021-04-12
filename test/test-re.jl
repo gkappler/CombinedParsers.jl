@@ -1,11 +1,10 @@
-import CombinedParsers: ParserTypes
 using CombinedParsers.Regexp
 
 import CombinedParsers.Regexp: char, integer_base, escape_sequence, escaped_character
 @testset "char" begin
     ##@test match(parse(char,with_options(Base.PCRE.CASELESS,"A")) =='a'
-    @test parse(char,"A") == CharIn('A')
-    @test parse(char,"\\^") == CharIn('^')
+    @test parse(char,"A") == CombinedParsers.ConstantParser('A')
+    @test parse(char,"\\^") == CombinedParsers.ConstantParser('^')
     @test tryparse(char,"^") === nothing
     @test parse(escape_sequence(),raw"\Q[].\E")=="[]."
     ##@btime _iterate(pattern,".")
@@ -70,7 +69,7 @@ import CombinedParsers.Regexp: option_sequences,skip_whitespace_on, ParserWithCa
     @test match(r"(?xx)[a- x]","b")==match(re"(?xx)[a- x]","b")    
     @test parse(pcre_options,"i")==Base.PCRE.CASELESS
     @test parse(parse(option_sequences,"a|b(?i)a"),"bA")==('b','A')
-    @test re" a"x == CharIn('a')
+    @test re" a"x == CombinedParsers.ConstantParser('a')
    
     
 @testset "comments" begin
