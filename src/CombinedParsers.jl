@@ -92,17 +92,11 @@ export regex_string
 `regex_prefix(x)*regex_inner(x)*regex_suffix(x)`
 """
 regex_string(x::CombinedParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
-
-regex_prefix(x::AbstractString) = ""
-regex_suffix(x::AbstractString) = ""
-regex_inner(x::AbstractString) = ""
-
 regex_prefix(x::CombinedParser) = ""
 regex_suffix(x::CombinedParser) = ""
 regex_inner(x::CombinedParser) = ""
-
-
 constructor_name(x) = typeof(x).name
+
 
 """
     print_constructor(io::IO,x)
@@ -120,15 +114,12 @@ print_constructor(io::IO,x) =
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,S,T} <: CombinedParser{S,T} end
-
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
-
 function print_constructor(io::IO,x::WrappedParser)
     print_constructor(io, x.parser)
     print(io, " |> ", constructor_name(x))
 end
-
 regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
 regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
 regex_inner(x::WrappedParser) = regex_inner(x.parser)
