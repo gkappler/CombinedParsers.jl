@@ -294,6 +294,18 @@ end
 
 
 """
+Helper struct to mask elements from matchers.
+"""
+struct MatchingNever{T} end
+""""
+    ismatch(c::Char,p::Union{Function,Steprange,Set,UnicodeClass})::Bool
+
+checks if `c` matches a matcher `p`.
+"""
+ismatch(c::MatchingNever,p)::Bool = false
+ismatch(c::MatchingNever,p::AnyChar)::Bool = false
+
+"""
 Lazy wrapper for a sequence, masking elements in `getindex` with MatchingNever if any of `flags` are not set.
 
 TODO: make flags a filter function?
