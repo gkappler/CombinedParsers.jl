@@ -92,8 +92,7 @@ function _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::Nothing
     rseq=reversed(str)
     ri = reverse_index(rseq,_prevind(str,next_i))
     next_i < 1 && return nothing
-    r = _iterate(t.parser, rseq, till,
-                 ri, nothing)
+    r = _iterate(t.parser, rseq, till, ri, nothing)
     if r === nothing
         nothing
     else

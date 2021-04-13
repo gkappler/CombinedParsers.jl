@@ -183,6 +183,16 @@ abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 _iterate(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
 "Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
+@inline _prevind(str,i::Int,parser::NIndexParser{0},x...) = i
+@inline _nextind(str,i::Int,parser::NIndexParser{0},x...) = i
+@inline _prevind(str,i::Int,parser::NIndexParser{L},x...) where L =
+    _prevind(str,i,L)
+@inline _nextind(str,i::Int,parser::NIndexParser{L},x...) where L =
+    _nextind(str,i,L)
+
+regex_string_(x::NIndexParser{N}) where N = ".{$(N)}"
+Base.show(io::IO, x::NIndexParser{N}) where N =
+    print(io, "$(N) NIndexParser::$(result_type(x))")
 
 export Bytes
 
@@ -226,13 +236,6 @@ Base.show(io::IO, x::Bytes{N}) where N =
     _prevind(str,i,N)
 @inline _nextind(str,i::Int,parser::Bytes{N},x) where N =
     _nextind(str,i,N)
-
-@inline _prevind(str,i::Int,parser::NIndexParser{L},x) where L =
-    _prevind(str,i,L)
-@inline _nextind(str,i::Int,parser::NIndexParser{L},x) where L =
-    _nextind(str,i,L)
-_iterate(parser::NIndexParser, sequence, till, posi, next_i, state::MatchState)  =
-    nothing
 
 
 
