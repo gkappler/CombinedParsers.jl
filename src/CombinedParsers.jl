@@ -71,9 +71,14 @@ See also [`parse`](@ref).
 (x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
 (x::CombinedParser)(f::Function,a...;kw...) = map(f,x,a...;kw...)
 
+
+"""
+    CombinedParsers.state_type(x::CombinedParser{S}) where S
+
+Return `S`, the state type of `x`
+"""
 @inline state_type(::Type{<:CombinedParser{S}}) where {S} = S
-
-
+@inline state_type(x::CombinedParser) = state_type(typeof(x))
 
 
 export regex_string
