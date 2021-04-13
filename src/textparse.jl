@@ -19,24 +19,16 @@ print_constructor(io::IO, x::AbstractTokenParser) =
     print(io, typeof(x.parser))
 
 _iterate(parser::AbstractTokenParser, sequence, till, before_i, next_i, state) = 
-    _iterate(parser.parser, sequence, till, before_i, next_i, state)
+    _iterate_token(parser.parser, sequence, till, before_i, next_i, state)
 
 
-function _iterate(parser::AbstractToken, sequence, till, before_i, next_i, state,opts=TextParse.default_opts)
-    if parser isa CombinedParser
-        @warn "define _iterate(parser::$(typeof(parser)), sequence, till, start_i, next_i, state::$(typeof(state)))"
-        return nothing
-    end
-    if state === nothing
+function _iterate_token(parser::AbstractToken, sequence, till, before_i, next_i, state::Nothing, opts=TextParse.default_opts)
         r,next_i_ = tryparsenext(parser, sequence, next_i, till,opts)
         if isnull(r)
             nothing
         else
             NCodeunitsState(next_i,next_i_,get(r))
         end
-    else
-        nothing
-    end
 end
 
 """
