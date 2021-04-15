@@ -253,7 +253,6 @@ Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{N,T}()
 include("parser.jl")
 include("textparse.jl")
 include("constant.jl")
-include("unicode.jl")
 include("valuematcher.jl")
 
 """

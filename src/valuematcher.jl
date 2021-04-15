@@ -1,3 +1,5 @@
+include("unicode.jl")
+
 """
 `ValueMatcher` match value at point `c` iif [`ismatch`](@ref)`(c, parser)`.
 A `ValueMatcher{T}=NIndexParser{1,T}` and has `state_type` `MatchState`.
