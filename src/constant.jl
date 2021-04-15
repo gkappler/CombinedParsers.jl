@@ -38,12 +38,6 @@ regex_string(x) = "$x::$(typeof(x))"
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
-
-reversed(x::ConstantParser{Char}) = x
-
-reversed(x::ConstantParser{<:AbstractString}) =
-    ConstantParser(reverse(x.parser))
-
 lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
 
 deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
