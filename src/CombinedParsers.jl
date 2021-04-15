@@ -1157,9 +1157,6 @@ sequence_state(statettype::Type{MatchState}) = MatchState()
 sequence_state(statettype::Type{<:Tuple}) = tuple( )
 sequence_state(statettype::Type) = Any[]
 
-_iterate_(parser::Sequence, sequence, till, posi, next_i, states::MatchState) =
-    nothing
-
 function _iterate_(parser::Sequence, sequence, till, posi, next_i, states::Nothing)
     length(parser.parts) == 0 && return next_i, sequence_state(state_type(parser))
     sss = Vector{Any}(undef,length(parser.parts))
@@ -1203,6 +1200,11 @@ function _iterate_(parser::Sequence, sequence, till, posi, next_i, substate::Vec
     pposi[end], sequence_state(state_type(parser), substate)
 end
 
+# unambigously
+@generated function _iterate(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states::MatchState) where {pts<:Tuple,sts}
+    nothing
+end
+
 @generated function _iterate(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,sts}} where {pts<:Tuple,sts}
     fpts = fieldtypes(pts)
     spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
@@ -1221,16 +1223,6 @@ end
             end
             for (i,(p,t)) in enumerate(zip(fpts,spts))
         ]
-    elseif states<:MatchState
-        substate = Symbol[ gensym(:s) for i in fpts ]
-        substate, [
-            quote
-            $(substate[i])::Union{Nothing,MatchState} = MatchState()
-            @inbounds $(part[i])::$p = parser.parts[$i]
-            $(pposi[i])::Int = 0
-            end
-            for (i,(p,t)) in enumerate(zip(fpts,spts))
-        ]
     elseif states<:Vector
         substate = Expr[ Expr(Symbol("::"), Expr(:ref,:states,i), t) for (i,(p,t)) in enumerate(zip(fpts,spts)) ]
         ## substate = Symbol[ gensym(:s) for i in fpts ]
@@ -1242,7 +1234,7 @@ end
             end
             for (i,(p,t)) in enumerate(zip(fpts,spts))
         ]
-    else ## Tuple
+    elseif states<:Tuple
         substate = Symbol[ gensym(:s) for i in fpts ]
         substate, [
             quote
@@ -1252,6 +1244,8 @@ end
             end
             for (i,(p,t)) in enumerate(zip(fpts,spts))
         ]
+    else
+        error("strange sequence state type")
     end
 
     ret_state = if state_type(parser) <: MatchState
