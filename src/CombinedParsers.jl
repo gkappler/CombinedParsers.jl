@@ -20,7 +20,7 @@ import Base: cat, get
 using ReversedStrings
 import ReversedStrings: reversed, reverse_index
 
-using TextParse
+import TextParse
 import TextParse: AbstractToken
 
 include("ind.jl")
@@ -50,14 +50,12 @@ Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve fi
     _iterate(parser, sequence,till,posi,posi,nothing)
 
 """
-    CombinedParser{T,S} <: AbstractToken{T}
+    CombinedParser{S,T} <: AbstractToken{T}
 
 Abstract parser type for parsers returning matches transformed to `::T` and 
 state::`S`.
 """
 abstract type CombinedParser{S,T} <: AbstractToken{T} end
-result_type(x::CombinedParser) = result_type(typeof(x))
-result_type(::Type{<:CombinedParser{<:Any,T}}) where T = T
 
 """
     (x::CombinedParser)(str;kw...)
@@ -71,6 +69,8 @@ See also [`parse`](@ref).
 (x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
 (x::CombinedParser)(f::Function,a...;kw...) = map(f,x,a...;kw...)
 
+result_type(x::CombinedParser) = result_type(typeof(x))
+result_type(::Type{<:CombinedParser{<:Any,T}}) where T = T
 
 """
     CombinedParsers.state_type(x::CombinedParser{S}) where S
