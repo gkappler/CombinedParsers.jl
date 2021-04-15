@@ -188,14 +188,16 @@ abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 # for convenience
 _iterate(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
 """
-Abstract type for stepping with [`_prevind`](@ref) and [`_nextind`](@ref), 
+    NIndexParser{N,T} <: LeafParser{MatchState,T}
+
+Abstract type for stepping `N` indices with [`_prevind`](@ref) and [`_nextind`](@ref), 
 accounting for [`ncodeunit`](@ref) length of unicode chars.
+
+See [`Bytes`](@ref) and [`ValueMatcher`](@ref).
 """
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
-
 @inline _leftof(str,i,parser::NIndexParser{0},state) = i
 @inline _rightof(str,i,parser::NIndexParser{0},state) = i
-
 @inline _leftof(str,i,parser::NIndexParser{L},state) where L =
     _prevind(str,i,L)
 @inline _rightof(str,i,parser::NIndexParser{L},state) where L =
@@ -204,8 +206,18 @@ regex_string_(x::NIndexParser{N}) where N = ".{$(N)}"
 Base.show(io::IO, x::NIndexParser{N}) where N =
     print(io, "$(N) NIndexParser::$(result_type(x))")
 
-export Bytes
+@inline function _iterate(parser::NIndexParser, sequence, till, posi, next_i, state::Nothing)
+    posi > till && return nothing # prevents BoundsError
+    ni = rightof(sequence,posi,parser,MatchState())
+    if ni <= till+1
+        (ni, MatchState())
+    else
+        nothing
+    end
+end
 
+
+export Bytes
 """
     Bytes{N,T} <: NIndexParser{N,T}
 
