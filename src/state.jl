@@ -31,7 +31,8 @@ NCodeunitsState(posi::Int,after::Int,state) =
 [`_iterate`](@ref) returns a tuple `pos_state` or nothing, and 
 `pos_state[1]` is position after match.
 """
-@inline tuple_pos(pos_state::Tuple) = pos_state[1]
+@inline tuple_pos(pos_state::Tuple, default...) = pos_state[1]
+@inline tuple_pos(pos_state::Nothing, default) = default
 
 """
     tuple_state(pos_state::Tuple)
@@ -40,3 +41,4 @@ NCodeunitsState(posi::Int,after::Int,state) =
 `pos_state[2]` is the state of match.
 """
 @inline tuple_state(pos_state::Tuple) = pos_state[2]
+@inline tuple_state(pos_state::Nothing) = nothing
