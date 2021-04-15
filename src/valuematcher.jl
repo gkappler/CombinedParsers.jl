@@ -4,7 +4,7 @@ A `ValueMatcher{T}=NIndexParser{1,T}` and has `state_type` `MatchState`.
 
 See [`AnyChar`](@ref), [`CharIn`](@ref), and [`CharNotIn`](@ref).
 """
-ValueMatcher{T} = NIndexParser{1,T}
+abstract type ValueMatcher{T} <: NIndexParser{1,T} end
 
 export AnyChar, any
 """
@@ -30,7 +30,7 @@ regex_inner(x::AnyChar{T}) where T = "(.::$T)"
 Matches value at point `c` iif [`ismatch`](@ref)`(c, parser)` with state MatchState.
 """
 @inline function _iterate(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
-    next_i>till && return(nothing)
+    next_i>till && return nothing
     @inbounds c,ni = sequence[next_i], _nextind(sequence, next_i)
     !ismatch(c,parser) && return nothing
     return ni, MatchState()
@@ -185,12 +185,12 @@ re"[^ac]"
 
 ```
 """
-@auto_hash_equals struct CharNotIn{S} <: NIndexParser{1,Char}
+@auto_hash_equals struct CharNotIn{S,T} <: ValueMatcher{T}
     pcre::String
     sets::S
     function CharNotIn(pcre::String, x_) # where {T<:Union{Char,Set{Char},Function,UnicodeClass,Tuple}}=
         x = optimize(CharNotIn, x_)
-        new{typeof(x)}(pcre,x)
+        new{typeof(x),eltype(x)}(pcre,x)
     end
 end
 CharNotIn(pcre::String,x...) =
