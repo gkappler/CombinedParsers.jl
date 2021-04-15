@@ -2,6 +2,7 @@ export Numeric
 Numeric = TextParse.Numeric
 import TextParse: tryparsenext
 
+result_type(x::AbstractToken) = result_type(typeof(x))
 result_type(::Type{<:AbstractToken{T}}) where T = T
 
 struct AbstractTokenParser{P<:AbstractToken,T} <: LeafParser{NCodeunitsState{T},T}
