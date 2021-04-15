@@ -10,7 +10,7 @@ using AutoHashEquals
 using ReversedStrings
 import ReversedStrings: reversed, reverse_index
 
-import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, LookAround, Either, SideeffectParser
+import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, print_constructor
 import ..CombinedParsers: _iterate, _iterate_constant
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_

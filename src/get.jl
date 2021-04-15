@@ -6,17 +6,6 @@ function Base.get(parser::WrappedParser, sequence, till, after, i, state)
     get(parser.parser, sequence, till, after, i, state)
 end
 
-Base.get(parser::Union{Assertion,NegativeLookahead,NegativeLookbehind}, sequence, till, after, i, state) =
-    parser
-
-function Base.get(
-    parser::W, sequence, till,
-    after, i, state
-) where {W <: LookAround}
-    after_ = _nextind(sequence,i,parser.parser,state)
-    get(parser.parser, sequence, till,
-        after_, i, state)
-end
 
 """
     Base.get(parser::Bytes{N,T}, sequence::Vector{UInt8})

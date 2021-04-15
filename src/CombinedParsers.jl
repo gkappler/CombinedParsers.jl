@@ -244,6 +244,27 @@ include("constant.jl")
 include("unicode.jl")
 include("valuematcher.jl")
 
+"""
+Parsers that do not consume any input can inherit `Assertion{S,T}`.
+!!! note
+    TODO: allow to keep state and return wrapped get
+"""
+abstract type Assertion{S,T} <: CombinedParser{S,T} end
+@inline _leftof(str,i,parser::Assertion,x...) = i
+@inline _rightof(str,i,parser::Assertion,x...) = i
+@inline _iterate(t::Assertion{MatchState}, str, till, posi, next_i, state::MatchState) = nothing
+
+"""
+    Base.get(parser::Assertion{MatchState, <:Assertion}, sequence, till, after, i, state)
+
+Most assertions return the assertion parser as a result 
+([`AtStart`](@ref), [`AtEnd`](@ref),  
+[`Always`](@ref), [`Never`](@ref), 
+[`NegativeLookahead`](@ref), [`NegativeLookbehind`](@ref)).
+"""
+Base.get(parser::Assertion{MatchState, <:Assertion}, sequence, till, after, i, state) =
+    parser
+
 export AtStart, AtEnd
 """
     AtStart()
@@ -256,8 +277,8 @@ re"^"
 
 ```
 """
-struct AtStart <: NCodeunitsParser{0,AtStart} end
-regex_prefix(x::AtStart) = "^"
+struct AtStart <: Assertion{MatchState,AtStart} end
+regex_string(x::AtStart) = "^"
 _iterate(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
     next_i == 1 ? (next_i, MatchState()) : nothing
 
@@ -274,8 +295,8 @@ re"\$"
 
 ```
 """
-struct AtEnd <: NCodeunitsParser{0,AtEnd} end
-regex_suffix(x::AtEnd) = "\$"
+struct AtEnd <: Assertion{MatchState,AtEnd} end
+regex_string(x::AtEnd) = "\$"
 _iterate(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
 print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
@@ -294,7 +315,7 @@ re"(*FAIL)"
 
 ```
 """
-struct Never <: NCodeunitsParser{0,Never} end
+struct Never <: Assertion{MatchState,Never} end
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
@@ -315,7 +336,7 @@ re""
 
 ```
 """
-struct Always <: NCodeunitsParser{0,Always}
+struct Always <: Assertion{MatchState,Always}
 end
 Base.show(io::IO,x::Always) = print(io,"re\"\"")
 children(x::Union{Never,Always}) = tuple()
@@ -324,8 +345,6 @@ regex_inner(x::Always) = ""
 regex_suffix(x::Always) = ""
 _iterate(parser::Always, str, till, posi, next_i, s::Nothing) =
     next_i, MatchState()
-_prevind(str,i::Int,p::Always,x) = i
-_nextind(str,i::Int,p::Always,x) = i
 ##_iterate(parser::Never, str, till, posi, next_i, s) = nothing
 
 
@@ -334,12 +353,12 @@ Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
 
 
 """
-Parsers that do not consume any input can inherit this type.
+An assertion with an inner parser, like WrappedParser interface.
 """
-abstract type LookAround{T} <: NCodeunitsParser{0,T} end
-children(x::LookAround) = (x.parser,)
-_iterate(t::LookAround, str, till, posi, next_i, state::MatchState) =
-    nothing
+abstract type WrappedAssertion{S,T} <: Assertion{S,T} end
+children(x::WrappedAssertion) = (x.parser,)
+regex_suffix(x::WrappedAssertion) = regex_suffix(x.parser)*")"
+regex_inner(x::WrappedAssertion) = regex_string(x.parser)
 
 export PositiveLookahead
 """
@@ -358,23 +377,25 @@ julia> parse(la*AnyChar(),"peek")
 
 ```
 """
-@auto_hash_equals struct PositiveLookahead{T,P} <: LookAround{T}
+@auto_hash_equals struct PositiveLookahead{S,T,P} <: WrappedAssertion{S,T}
     parser::P
     PositiveLookahead(p_,reversed=true) =
         let p = parser(p_)
-            new{result_type(p),typeof(p)}(p)
+            new{Tuple{Int,state_type(p)},result_type(p),typeof(p)}(p)
         end
 end
 regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
-regex_suffix(x::LookAround) = regex_suffix(x.parser)*")"
-regex_inner(x::LookAround) = regex_string(x.parser)
-function _iterate(t::PositiveLookahead, str, till, posi, next_i, state::Nothing)
-    r = _iterate(t.parser, str, till, posi, next_i, nothing)
+function _iterate(t::PositiveLookahead, str, till, posi, next_i, state)
+    r = _iterate(t.parser, str, till, posi, tuple_pos(state,posi), tuple_state(state))
     if r === nothing
         nothing
     else
-        next_i,MatchState()
+        next_i, r
     end
+end
+function Base.get(parser::PositiveLookahead, sequence, till, after, i, state)
+    after_ = tuple_pos(state)
+    get(parser.parser, sequence, till, after_, i, tuple_state(state))
 end
 
 
@@ -395,7 +416,7 @@ julia> parse(la*AnyChar(),"seek")
 
 ```
 """
-@auto_hash_equals struct NegativeLookahead{P} <: LookAround{NegativeLookahead{P}}
+@auto_hash_equals struct NegativeLookahead{P} <: WrappedAssertion{MatchState,NegativeLookahead{P}}
     parser::P
     NegativeLookahead(p_,reversed=true) =
         let p = parser(p_)
@@ -430,9 +451,6 @@ function Lookahead(does_match::Bool, p_)
 end
 
 @deprecate look_ahead(does_match,p) Lookahead(does_match, p)
-
-
-
 
 
 @auto_hash_equals struct PartialMatchException{S,P} <: Exception
@@ -1098,7 +1116,7 @@ sSequence_(x1,x...) =
 """
     sSequence(x...)
 
-Simplifying `Sequence`, flatten `Sequence`s, remove `Always` lookarounds.
+Simplifying `Sequence`, flatten `Sequence`s, remove `Always` assertions.
 
 ```jldoctest
 julia> Sequence('a',CharIn("AB")*'b')

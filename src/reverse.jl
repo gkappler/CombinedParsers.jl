@@ -21,11 +21,11 @@ Parser that succeeds if and only if `parser` succeeds **before cursor**. Consume
 The match is returned.
 Useful for checks like "must be preceded by `parser`, don't consume its match".
 """
-@auto_hash_equals struct PositiveLookbehind{T,P} <: LookAround{T}
+@auto_hash_equals struct PositiveLookbehind{S,T,P} <: WrappedAssertion{S,T}
     parser::P
     function PositiveLookbehind(p_,reversed_parser=true)
         p = reversed_parser ? deepmap_parser(reversed,IdDict(),parser(p_)) : parser(p_)
-        new{result_type(p),typeof(p)}(p)
+        new{Tuple{Int,state_type(p)},result_type(p),typeof(p)}(p)
     end
 end
 # result_type(p::Type{PositiveLookbehind{T}}) where T = T
@@ -47,7 +47,7 @@ julia> parse("peek"*la,"peek")
 ("peek", re"(?<!keep)")
 ```
 """
-@auto_hash_equals struct NegativeLookbehind{P} <: LookAround{NegativeLookbehind{P}}
+@auto_hash_equals struct NegativeLookbehind{P} <: WrappedAssertion{MatchState,NegativeLookbehind{P}}
     parser::P
     function NegativeLookbehind(p_,reversed_parser=true)
         p = reversed_parser ? deepmap_parser(reversed,IdDict(),parser(p_)) : parser(p_)
@@ -88,18 +88,52 @@ end
 _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
     nothing
 
-function _iterate(t::PositiveLookbehind, str, till, posi, next_i, state::Nothing)
+function _iterate(t::PositiveLookbehind, str, till, posi, next_i, state)
     rseq=reversed(str)
     ri = reverse_index(rseq,_prevind(str,next_i))
     next_i < 1 && return nothing
-    r = _iterate(t.parser, rseq, till, ri, nothing)
+    r = _iterate(t.parser, rseq, till, ri, tuple_pos(state,ri), tuple_state(state))
     if r === nothing
         nothing
     else
-        next_i,MatchState()
+        next_i, r
     end
 end
 
+
+"""
+    Base.get(parser::PositiveLookbehind, sequence, till, after, i, state)
+
+get result of PositiveLookbehind
+
+!!! note
+    The result is currently for a `reversed` sequence, and 
+    you might find it difficult to [`map`](@ref) a lookbehind parser match.
+    If you require this functionality please open an issue for discussion.
+
+    Assertions do not consume input, so typically these input chars are parsed/mapped outside of the assertion.
+
+```jldoctest
+julia> p = Sequence(!re"a+b", PositiveLookbehind(!re"a+b"))
+🗄 Sequence
+├─ 🗄 Sequence |> !
+│  ├─ a+  |> Repeat
+│  └─ b 
+└─ (?<=🗄) PositiveLookbehind
+   ├─ b 
+   └─ a+  |> Repeat
+::Tuple{SubString,SubString}
+
+
+julia> p("aaab")
+("aaab", "baaa")
+```
+"""
+function Base.get(parser::PositiveLookbehind, sequence, till, after, i, state)
+    rseq = reversed(sequence)
+    after_ = tuple_pos(state)
+    get(parser.parser, rseq, till, after_, reverse_index(rseq,prevind(sequence, i)), tuple_state(state))
+end
 
 regex_inner(x::Union{PositiveLookbehind,NegativeLookbehind}) =
     regex_inner(reversed(x.parser))

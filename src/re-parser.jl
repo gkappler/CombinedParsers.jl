@@ -494,7 +494,7 @@ push!(repeatable,subpattern);
 @with_names lookahead=Sequence(
     2,
     "(",
-    Either(Sequence(v -> Lookahead(true,v[2])::CombinedParser,
+    Either(Sequence(v -> Lookahead(true,Atomic(v[2]))::CombinedParser,
                     Either("?=","*positive_lookahead:","*pla:"),alternation),
            Sequence(v -> Lookahead(false,v[2])::CombinedParser,
                     Either("?!","*negative_lookahead:","*nla:"),alternation)),
@@ -506,7 +506,7 @@ push!(repeatable,lookahead);
 @with_names lookbehind=Sequence(
     2,
     "(",
-    Either(Sequence(v -> Lookbehind(true,v[2])::CombinedParser,
+    Either(Sequence(v -> Lookbehind(true,Atomic(v[2]))::CombinedParser,
             Either("?<=","*positive_lookbehind:","*plb:"),alternation),
         Sequence(v -> Lookbehind(false,v[2])::CombinedParser,
             Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
