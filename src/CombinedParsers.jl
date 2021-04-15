@@ -1837,6 +1837,11 @@ end
 
 
 
+function _iterate(t::Optional, str, till, posi, next_i, state::MatchState)
+    prune_captures(str,posi)
+    posi, NoMatch()
+end
+
 _iterate(t::Optional, str, till, posi, next_i, state::NoMatch) =
     nothing
 
