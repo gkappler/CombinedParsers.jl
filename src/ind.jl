@@ -1,43 +1,41 @@
-@inline function start_index(sequence,after,parser,state::Nothing)
-    after
-end
-@inline function start_index(sequence,after,parser,state)
-    _prevind(sequence, after, parser, state)
-end
 
-_nextind(x::AbstractString,i::Int,n::Int=1) =
+_nextind(x::AbstractString,i::Int) =
+    nextind(x,i)
+_prevind(x::AbstractString,i::Int) =
+    prevind(x,i)
+
+_nextind(x::AbstractString,i::Int,n::Int) =
     nextind(x,i,n)
-_prevind(x::AbstractString,i::Int,n::Int=1) =
+_prevind(x::AbstractString,i::Int,n::Int) =
     prevind(x,i,n)
 _nextind(x::AbstractVector,i::Int,n::Int=1) =
     i+n
 _prevind(x::AbstractVector,i::Int,n::Int=1) =
     i-n
 
-@inline _prevind(str,i,parser,state::Nothing) = i
-@inline _nextind(str,i,parser,state::Nothing) = i
-
-# @inline _prevind(str,i,parser,state) = _prevind(str,i,parser,state)
-# @inline _nextind(str,i,parser,state) = _nextind(str,i,parser,state)
 
 """
-    _nextind(str,i::Int,parser,state)
+    leftof(str,i,parser,state)
 
-Return the index after the `state` match at `i`.
+Left of `parser` match in `str` *before* `i` encoded by `state`,
+or `i` if `state===nothing`.
+
 !!! note
-    I am in doubt whether this qualifies as type piracy because I provide an outside method for outside types.
-    I thought it might not, because the differentiating two extra arguments. If you have an opinion, please let me know on GitHub.
+    override with [`_leftof`](@ref) and  [`_rightof`](@ref).
 """
-@inline _nextind(str,i::Int,parser::Union{AbstractString,Char},state) =
-    i+ncodeunits(parser)
+@inline leftof(str,i,parser,state::Nothing) = i
 
 """
-    _prevind(str,i::Int,parser,state)
+    rightof(str,i,parser,state)
 
-Return the index before the `state` match ending before position `i`.
+Left of `parser` match in `str` at `i` encoded by `state`,
+or `i` if `state===nothing`.
+
 !!! note
-    I am in doubt whether this qualifies as type piracy because I provide an outside method for outside types.
-    I thought it might not, because the differentiating two extra arguments. If you have an opinion, please let me know on GitHub.
+    override with [`_leftof`](@ref) and  [`_rightof`](@ref).
 """
-@inline _prevind(str,i::Int,parser::Union{AbstractString,Char},state) where L = 
-    i-ncodeunits(parser)
+@inline rightof(str,i,parser,state::Nothing) = i
+
+@inline leftof(str,i,parser,state) = _leftof(str,i,parser,state)
+@inline rightof(str,i,parser,state) = _rightof(str,i,parser,state)
+

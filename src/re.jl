@@ -14,8 +14,8 @@ import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantPar
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, print_constructor
 import ..CombinedParsers: _iterate, _iterate_constant
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
-import ..CombinedParsers: state_type, start_index, tuple_pos, tuple_state
-import ..CombinedParsers: _prevind, _nextind
+import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
+import ..CombinedParsers: _prevind, _nextind, _leftof, _rightof
 indexed_captures_(x,a...) = x
 
 import Base: SubString, ==
@@ -307,11 +307,11 @@ function Base.get(x::Backreference, sequence, till, after, i, state)
     sequence[i:_prevind(sequence,i+state)]
 end
 
-@inline function _prevind(str,i::Int,parser::Backreference,x)
+@inline function _leftof(str,i,parser::Backreference,x)
     i-x
 end
 
-@inline function _nextind(str,i::Int,parser::Backreference,x)
+@inline function _rightof(str,i,parser::Backreference,x)
     i+x
 end
 
@@ -418,12 +418,12 @@ function _iterate_condition(cond::Subroutine, sequence, till, posi, next_i, stat
 end
 
 
-@inline function _prevind(sequence,i::Int,parser::Subroutine,x)
-    _prevind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
+@inline function _leftof(sequence,i,parser::Subroutine,x)
+    _leftof(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
 end
 
-@inline function _nextind(sequence,i::Int,parser::Subroutine,x)
-    _nextind(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
+@inline function _rightof(sequence,i,parser::Subroutine,x)
+    _rightof(sequence,i,sequence.subroutines[index(parser,sequence)].parser,x)
 end
 
 
@@ -525,12 +525,12 @@ _iterate_condition(cond, sequence, till, posi, next_i, state) =
 
 
 
-@inline function _prevind(str,i::Int,parser::Conditional,state)
-    _prevind(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
+@inline function _leftof(str,i,parser::Conditional,state)
+    leftof(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
 end
 
-@inline function _nextind(str,i::Int,parser::Conditional,state)
-    _nextind(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
+@inline function _rightof(str,i,parser::Conditional,state)
+    rightof(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
 end
 
 @inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Nothing)

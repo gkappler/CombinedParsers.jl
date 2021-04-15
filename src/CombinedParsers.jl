@@ -951,14 +951,14 @@ after(a...) = FlatMap(a...)
 regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
 
-@inline _nextind(str,i::Int,parser::FlatMap,x::Tuple) =
-    let li = _nextind(str,i,parser.left,tuple_pos(x))
-        _nextind(str,li,x[2],x[3])
+@inline _rightof(str,i,parser::FlatMap,x::Tuple) =
+    let li = rightof(str,i,parser.left,tuple_pos(x))
+        rightof(str,li,x[2],x[3])
     end
 
-@inline _prevind(str,i::Int,parser::FlatMap,x::Tuple) =
-    let li = _prevind(str,i,x[2],x[3])
-        _prevind(str,li,parser.left,tuple_pos(x))
+@inline _leftof(str,i,parser::FlatMap,x::Tuple) =
+    let li = leftof(str,i,x[2],x[3])
+        leftof(str,li,parser.left,tuple_pos(x))
     end
 
     
@@ -987,7 +987,7 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
     lstate,rightp,rstate = left_state(state), right_parser(state), right_state(state)
 
     next_i_=next_i
-    posi_ = start_index(str,next_i_,rightp,rstate)
+    posi_ = leftof(str,next_i_,rightp,rstate)
     rr = nothing
     while rr === nothing
         rr = _iterate(rightp, str, till, posi_, next_i_, rstate)
@@ -1148,31 +1148,31 @@ end
 
 
 
-@inline function _prevind(str,i::Int,parser::Sequence,x::MatchState)
+@inline function _leftof(str,i,parser::Sequence,x::MatchState)
     for p in length(parser.parts):-1:1
-        i=_prevind(str,i,parser.parts[p],x)
+        i=leftof(str,i,parser.parts[p],x)
     end
     i
 end
 
-@inline function _prevind(str,i::Int,parser::Sequence,x)
+@inline function _leftof(str,i,parser::Sequence,x)
     for j in lastindex(x):-1:1
         (p,e) = parser.parts[j],x[j]
-        i=_prevind(str,i,p,e)
+        i=leftof(str,i,p,e)
     end
     i
 end
 
-@inline function _nextind(str,i::Int,parser::Sequence,x::MatchState)
+@inline function _rightof(str,i,parser::Sequence,x::MatchState)
     for p in parser.parts
-        i=_nextind(str,i,p,MatchState())
+        i=rightof(str,i,p,MatchState())
     end
     i
 end
 
-@inline function _nextind(str,i::Int,parser::Sequence,x)
+@inline function _rightof(str,i,parser::Sequence,x)
     for (p,e) in zip(parser.parts,x)
-        i=_nextind(str,i,p,e)
+        i=rightof(str,i,p,e)
     end
     i
 end
@@ -1212,7 +1212,7 @@ function _iterate_(parser::Sequence, sequence, till, posi, next_i, substate::Vec
     end
     while p<=length(substate)
         if iszero(pposi[p])
-            pposi[p] = start_index(sequence, pposi[p+1], part[p], @inbounds substate[p])
+            pposi[p] = leftof(sequence, pposi[p+1], part[p], @inbounds substate[p])
         end
         if (@inbounds substate[p]) === nothing
             pposi[p+1] = pposi[p]
@@ -1303,7 +1303,7 @@ end
         quote
         @label $(subsearch[p])
         if iszero($(pposi[p]))
-            $(pposi[p]) = start_index(sequence, $(pposi[p+1]), $(part[p]), @inbounds $(substate[p]))
+            $(pposi[p]) = leftof(sequence, $(pposi[p+1]), $(part[p]), @inbounds $(substate[p]))
         end
         if (@inbounds $(substate[p])) === nothing
             ## if sss[$p] === nothing
@@ -1542,30 +1542,30 @@ reversed(x::Repeat) = x
 
 
 
-@inline function _prevind(str,i::Int,parser::Repeat,x::Int)
+@inline function _leftof(str,i,parser::Repeat,x::Int)
     for e in 1:x
-        i=_prevind(str,i,parser.parser,MatchState())
+        i=leftof(str,i,parser.parser,MatchState())
     end
     i
 end
 
-@inline function _nextind(str,i::Int,parser::Repeat,x::Int)
+@inline function _rightof(str,i,parser::Repeat,x::Int)
     for e in 1:x
-        i=_nextind(str,i,parser.parser,MatchState())
+        i=rightof(str,i,parser.parser,MatchState())
     end
     i
 end
 
-@inline function _nextind(str,i::Int,parser::Repeat,x::Vector)
+@inline function _rightof(str,i,parser::Repeat,x::Vector)
     for e in x
-        i=_nextind(str,i,parser.parser,e)
+        i=rightof(str,i,parser.parser,e)
     end
     i
 end
 
-@inline function _prevind(str,i::Int,parser::Repeat,x::Vector)
+@inline function _leftof(str,i,parser::Repeat,x::Vector)
     for j in lastindex(x):-1:1
-        @inbounds i=_prevind(str,i,parser.parser,x[j])
+        @inbounds i=leftof(str,i,parser.parser,x[j])
     end
     i
 end
@@ -1669,7 +1669,7 @@ function _iterate(t::Repeat, sequence, till, posi, next_i, state)
             return nothing
         end
         lstate, state_=poplast!(state_,t.parser)
-        posi = _prevind(sequence,next_i_,t.parser,lstate) ##state[end][1]
+        posi = leftof(sequence,next_i_,t.parser,lstate) ##state[end][1]
         prune_captures(sequence,posi)
         x = _iterate(t.parser,sequence, till, posi, next_i_, lstate)
         x === nothing && state_length(t,state_) in t.range && return posi, state_
@@ -1712,7 +1712,7 @@ function _iterate(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
             return nothing
         end
         lstate, state_=poplast!(state,t.parser)
-        posi = _prevind(sequence,next_i_,t.parser,lstate) ##state[end][1]
+        posi = leftof(sequence,next_i_,t.parser,lstate) ##state[end][1]
         x = _iterate(t.parser,sequence, till, posi, next_i_, lstate)
         if x === nothing
             next_i_ = posi
@@ -1820,8 +1820,8 @@ function print_constructor(io::IO, x::Optional)
 end
 
 
-@inline _prevind(str,i::Int,parser::Optional,x::NoMatch) = i
-@inline _nextind(str,i::Int,parser::Optional,x::NoMatch) = i
+@inline _leftof(str,i,parser::Optional,x::NoMatch) = i
+@inline _rightof(str,i,parser::Optional,x::NoMatch) = i
 
 
 
@@ -1829,7 +1829,7 @@ _iterate(t::Optional, str, till, posi, next_i, state::NoMatch) =
     nothing
 
 function _iterate(t::Optional, str, till, posi, next_i, state)
-    posi = state === nothing ? next_i : _prevind(str,next_i,t.parser,state) ##state[end][1]
+    posi = state === nothing ? next_i : leftof(str,next_i,t.parser,state) ##state[end][1]
     r = _iterate(t.parser, str, till, posi, next_i, state)
     if r === nothing
         prune_captures(str,posi)
@@ -2065,26 +2065,26 @@ either_state_state(x::Tuple) = x[2]
 either_state_option(x::Union{Pair,MutablePair}) = x.first
 either_state_state(x::Union{Pair,MutablePair}) = x.second
 
-@inline function _prevind(str,i::Int,parser::Either,x)
+@inline function _leftof(str,i,parser::Either,x)
     ## @show i
-    _prevind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
+    leftof(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
 
-@inline function _nextind(str,i::Int,parser::Either,x)
+@inline function _rightof(str,i,parser::Either,x)
     ## @show i
-    _nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
+    rightof(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
-@inline function _nextind(str,i::Int,parser::Either{P,T},x::Tuple{Int,T}) where {P,T}
-    _nextind(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
+@inline function _rightof(str,i,parser::Either{P,T},x::Tuple{Int,T}) where {P,T}
+    rightof(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
  
 
-@generated function _prevind(str,i::Int,parser::Either{pts},x::Union{Pair,MutablePair}) where {pts<:Tuple}
+@generated function _leftof(str,i,parser::Either{pts},x::Union{Pair,MutablePair}) where {pts<:Tuple}
     fpts = fieldtypes(pts)
     parseoptions = [
         quote
         if j === $p
-        return _prevind(str,i,parser.options[$p],s) # $(part[p]),s)
+        return _leftof(str,i,parser.options[$p],s) # $(part[p]),s)
         end
         end
         for (p,t) in enumerate(fpts)
@@ -2127,7 +2127,7 @@ end
 function _iterate(t::Either{<:Vector}, str, till, posi, next_i, state)
     @inbounds opt = t.options[either_state_option(state)]
     fromindex = either_state_option(state)+1
-    posi = _prevind(str,next_i,opt,either_state_state(state)) ##state[end][1]
+    posi = leftof(str,next_i,opt,either_state_state(state)) ##state[end][1]
     r = _iterate_paired(either_state_option(state),opt,str,till,posi, next_i,state)
     r !== nothing && return r
     prune_captures(str,posi)

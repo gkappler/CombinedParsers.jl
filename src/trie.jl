@@ -50,8 +50,8 @@ function _iterate(p::Either{<:AbstractTrie}, str, till, posi, next_i, state)
     _iterate(p.options, str, till, posi, next_i, state)
 end
 
-@inline _nextind(str,i::Int,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i+x.nc
-@inline _prevind(str,i::Int,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i-x.nc
+@inline _rightof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i+x.nc
+@inline _leftof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i-x.nc
 
 children(x::Either{<:AbstractTrie}) =
     children(x.options)

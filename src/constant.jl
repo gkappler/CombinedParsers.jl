@@ -25,9 +25,9 @@ end
 @inline _ncodeunits(x) = 1
 @inline _ncodeunits(x::ConstantParser) = _ncodeunits(x.parser)
 
-@inline _nextind(str,i::Int,parser::ConstantParser,x) =
+@inline _rightof(str,i,parser::ConstantParser,x) =
     i+_ncodeunits(parser)
-@inline _prevind(str,i::Int,parser::ConstantParser,x) = 
+@inline _leftof(str,i,parser::ConstantParser,x) = 
     i-_ncodeunits(parser)
 
 children(x::ConstantParser) = ()

@@ -53,7 +53,7 @@ function Base.get(t::PositiveLookbehind,
                   after, i, state)
     rseq = reversed(str)
     i_ = reverse_index(rseq,_prevind(rseq,i))
-    after_ = _nextind(rseq,i_,t.parser,state)
+    after_ = rightof(rseq,i_,t.parser,state)
     get(t.parser, rseq, till,
         after_, i_, state)
 end
@@ -111,7 +111,7 @@ function Base.get(parser::JoinSubstring{<:NamedParser}, sequence, till, after, i
 end
 
 function Base.get(parser::FlatMap, sequence, till, after, i, state)
-    li = _nextind(sequence,i,parser.left,tuple_pos(state))
+    li = rightof(sequence,i,parser.left,tuple_pos(state))
     get(right_parser(state),
         sequence, till,
         after, li,
@@ -149,7 +149,7 @@ function Base.get(parser::Repeat,
     r = Vector{result_type(parser.parser)}(undef,length(state))
     i_=i
     for (p,s) in enumerate(state)
-        after_ = _nextind(sequence,i_,parser.parser,s)
+        after_ = rightof(sequence,i_,parser.parser,s)
         @inbounds r[p] = get(parser.parser, sequence, till, after_, i_, s)
         i_=after_
     end
@@ -163,7 +163,7 @@ function Base.get(parser::Repeat,
     i_=i
     s=MatchState()
     for p in 1:state
-        after_ = _nextind(sequence,i_,parser.parser,s)
+        after_ = rightof(sequence,i_,parser.parser,s)
         @inbounds r[p] = get(parser.parser,sequence, till, after_, i_, s)
         i_=after_
     end
@@ -177,7 +177,7 @@ end
 #     r = Vector{Any}(undef,length(parser.parts))
 #     i_::Int = i
 #     for (p,s) in enumerate(state)
-#         after_ = _nextind(sequence,i_,parser.parts[p],s)
+#         after_ = rightof(sequence,i_,parser.parts[p],s)
 #         r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
 #         i_=after_
 #     end
@@ -213,7 +213,7 @@ end
     end
     parseparts = [
         quote
-        $(pposi[i+1]) = _nextind(sequence,$(pposi[i]),$(part[i]),$(substate[i]))
+        $(pposi[i+1]) = rightof(sequence,$(pposi[i]),$(part[i]),$(substate[i]))
         $(subresult[i]) = get($(part[i]),sequence, till, $(pposi[i+1]), $(pposi[i]), $(substate[i]))
         end
         for (i,t) in enumerate(fpts)

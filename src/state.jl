@@ -16,16 +16,14 @@ struct NCodeunitsState{S}
     nc::Int
     state::S
 end
-@inline _prevind(str,i::Int,parser,x::NCodeunitsState) = i-x.nc
-@inline _nextind(str,i::Int,parser,x::NCodeunitsState) = i+x.nc
+@inline _leftof(str,i,parser::CombinedParser,x::NCodeunitsState) = i-x.nc
+@inline _rightof(str,i,parser::CombinedParser,x::NCodeunitsState) = i+x.nc
 NCodeunitsState(posi::Int,after::Int,state) =
     after, NCodeunitsState(after-posi,state)
 @inline NCodeunitsState{S}(posi::Int,after::Int,state) where S =
     after, NCodeunitsState{S}(after-posi,state)
 
 
-# @inline _nextind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i+x.nc
-# @inline _prevind(str,i::Int,parser::W,x::NCodeunitsState) where {W <: WrappedParser} = i-x.nc
 
 """
     tuple_pos(pos_state::Tuple)
