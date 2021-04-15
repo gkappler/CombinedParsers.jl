@@ -996,15 +996,28 @@ Internally used for `Sequence` result_type.
     Tuple{ (result_type(t) for t in fieldtypes(T))... }
 
 export Sequence
+"""
+    Sequence{P,S,T}
+
+of `parts::P`, [`sequence_state_type`](@ref) and [`sequence_result_type`](@ref).
+"""
 @auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
     parts::P
     Sequence(p::CombinedParser...) =
-        new{typeof(p),state_type_tuple(p),result_type(typeof(p))}(p)
+        new{typeof(p),sequence_state_type(p),sequence_result_type(typeof.(p)...)}(p)
 end
 
 
-state_type_tuple(x) = state_type_tuple(typeof(x))
-function state_type_tuple(pts::Type)
+sequence_state_type(x) = sequence_state_type(typeof(x))
+"""
+    sequence_state_type(pts::Type)
+
+`MatchState` if all `fieldtypes` are `MatchState`, Vector{Any} otherwise.
+
+!!! note
+    Todo: NCodeunitsState?
+"""
+function sequence_state_type(pts::Type)
     if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
         MatchState
     else
@@ -1012,6 +1025,14 @@ function state_type_tuple(pts::Type)
         Vector{Any}
     end
 end
+
+"""
+    sequence_result_type(::Type{T}) where {T<:Tuple}
+
+`Tuple` type, internally used for `Sequence` result_type.
+"""
+sequence_result_type(T::Type{<:CombinedParser}...) =
+    Tuple{ (result_type(t) for t in T)... }
 
 Sequence(p::Vector) =
     Sequence(p...)
