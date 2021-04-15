@@ -2,19 +2,12 @@
 ## get methods
 ## - reorganise result_type here?
 
-function Base.get(
-    parser::W, sequence, till,
-    after, i, state
-) where {W <: WrappedParser}
+function Base.get(parser::WrappedParser, sequence, till, after, i, state)
     get(parser.parser, sequence, till, after, i, state)
 end
 
-function Base.get(
-    parser::Atomic, sequence, till,
-    after, i, state::MatchState)
-    a, s = _iterate(parser.parser,sequence,till, i, i, nothing)
-    get(parser.parser, sequence, till, after, i, s)
-end
+Base.get(parser::Union{Assertion,NegativeLookahead,NegativeLookbehind}, sequence, till, after, i, state) =
+    parser
 
 function Base.get(
     parser::W, sequence, till,
@@ -53,12 +46,6 @@ function Base.get(parser::AbstractTokenParser,
                   after, i, state)
     state.state
 end
-
-Base.get(
-    parser::Union{Always,NegativeLookahead,AtStart,AtEnd,NegativeLookbehind},
-    sequence, till, after,
-    i, state) =
-    parser
 
 
 
@@ -117,7 +104,7 @@ function Base.get(x::Union{JoinSubstring,ConstantParser{<:AbstractString}}, sequ
     li<i ? "" : @inbounds SubString(sequence,i,li)
 end
 
-function Base.get(parser::Union{NCodeunitsParser{1}, NIndexParser{1}, ConstantParser{Char}}, sequence, till, after, i, state)
+function Base.get(parser::Union{NIndexParser{1}, ConstantParser{Char}}, sequence, till, after, i, state)
     @inbounds sequence[i]
 end
 
