@@ -48,16 +48,6 @@ Base.get(::CombinedParser{<:Nothing},
          i, state) =
              nothing
 
-function Base.get(t::PositiveLookbehind,
-                  str, till,
-                  after, i, state)
-    rseq = reversed(str)
-    i_ = reverse_index(rseq,_prevind(rseq,i))
-    after_ = rightof(rseq,i_,t.parser,state)
-    get(t.parser, rseq, till,
-        after_, i_, state)
-end
-
 
 export JoinSubstring
 """
