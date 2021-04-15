@@ -410,11 +410,6 @@ function print_constructor(io::IO,x::Transformation{<:IndexAt})
     printstyled(io,"[",x.transform.i,"]", color=:blue)
 end
 
-
-function _iterate(parser::Transformation, sequence, till, posi, next_i, state)
-    r = _iterate(parser.parser, sequence, till, posi, next_i, state )
-end
-
 """
     infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::AbstractString,ts::Type...; throw_empty_union=true)
 
