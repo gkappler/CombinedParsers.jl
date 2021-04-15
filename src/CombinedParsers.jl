@@ -121,20 +121,26 @@ regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
 regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
 regex_inner(x::WrappedParser) = regex_inner(x.parser)
 
-@inline _prevind(str,i::Int,parser::WrappedParser,x::NCodeunitsState) =
-    i-x.nc
-@inline _nextind(str,i::Int,parser::WrappedParser,x::NCodeunitsState) =
-    i+x.nc
+"""
+    _leftof(str,i,parser::WrappedParser,x)
 
-@inline _prevind(str,i::Int,parser::WrappedParser,x) = _prevind(str,i,parser.parser,x)
-@inline _nextind(str,i::Int,parser::WrappedParser,x) = _nextind(str,i,parser.parser,x)
+Convienience function for overriding [`leftof`](@ref) that guarantees that not `x isa Nothing` (returning `i`).
+"""
+@inline _leftof(str,i,parser::WrappedParser,x) = _leftof(str,i,parser.parser,x)
+
+"""
+    _rightof(str,i,parser::WrappedParser,x)
+
+Convienience function for overriding [`rightof`](@ref) that guarantees that not `x isa Nothing` (returning `i`).
+"""
+@inline _rightof(str,i,parser::WrappedParser,x) = _rightof(str,i,parser.parser,x)
 
 """
     _iterate(parser, sequence, till, posi, next_i, states)
 
 Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
-such that `start_index(sequence,after,parser,state)` returns the start of the matching subsequence,
-and sequence[start_index(sequence,after,parser,state):_prevind(sequence,next_i)] is the matched subsequence.
+such that `leftof(sequence,after,parser,state)` returns the start of the matching subsequence,
+and sequence[leftof(sequence,after,parser,state):_prevind(sequence,next_i)] is the matched subsequence.
 """
 @inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
     _iterate(parser.parser, sequence, till, posi, after, state)
@@ -181,15 +187,19 @@ abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
 # for convenience
 _iterate(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
-"Abstract type for stepping with previndex/nextindex, accounting for ncodeunit length of chars at point."
+"""
+Abstract type for stepping with [`_prevind`](@ref) and [`_nextind`](@ref), 
+accounting for [`ncodeunit`](@ref) length of unicode chars.
+"""
 abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
-@inline _prevind(str,i::Int,parser::NIndexParser{0},x...) = i
-@inline _nextind(str,i::Int,parser::NIndexParser{0},x...) = i
-@inline _prevind(str,i::Int,parser::NIndexParser{L},x...) where L =
-    _prevind(str,i,L)
-@inline _nextind(str,i::Int,parser::NIndexParser{L},x...) where L =
-    _nextind(str,i,L)
 
+@inline _leftof(str,i,parser::NIndexParser{0},state) = i
+@inline _rightof(str,i,parser::NIndexParser{0},state) = i
+
+@inline _leftof(str,i,parser::NIndexParser{L},state) where L =
+    _prevind(str,i,L)
+@inline _rightof(str,i,parser::NIndexParser{L},state) where L =
+    _nextind(str,i,L)
 regex_string_(x::NIndexParser{N}) where N = ".{$(N)}"
 Base.show(io::IO, x::NIndexParser{N}) where N =
     print(io, "$(N) NIndexParser::$(result_type(x))")
@@ -216,8 +226,7 @@ Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,
     ```
 
 """
-struct Bytes{N,T} <: NIndexParser{N,T}
-end
+struct Bytes{N,T} <: NIndexParser{N,T} end
 
 """
     Bytes(N::Integer, T::Type=Vector{UInt8})
@@ -225,17 +234,6 @@ end
 If available before end of sequence, parse `N` bytes successfully with `result_type` `T`, fail otherwise.
 """
 Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{N,T}()
-_iterate(parser::Bytes{N}, sequence, till, posi, next_i, state::Nothing) where N = 
-    posi+N <= till+1 ? (_nextind(sequence,posi,N), MatchState()) : nothing
-_iterate(parser::Bytes, sequence, till, posi, next_i, state::MatchState) =
-    nothing
-regex_string_(x::Bytes{N}) where N = ".{$(N)}"
-Base.show(io::IO, x::Bytes{N}) where N =
-    print(io, "$(N) Bytes::$(result_type(x))")
-@inline _prevind(str,i::Int,parser::Bytes{N},x) where N =
-    _prevind(str,i,N)
-@inline _nextind(str,i::Int,parser::Bytes{N},x) where N =
-    _nextind(str,i,N)
 
 
 
