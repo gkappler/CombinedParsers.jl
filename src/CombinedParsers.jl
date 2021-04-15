@@ -156,7 +156,7 @@ end
 Base.filter(f::Function, x::CombinedParser) =
     FilterParser(f,x)
 
-@inline function _iterate(parser::W, sequence, till, posi, next_i, state) where {W <: FilterParser}
+@inline function _iterate(parser::FilterParser, sequence, till, posi, next_i, state)
     r::Union{Nothing,Tuple{Int,state_type(W)}} = nothing
     while r === nothing
         r = _iterate(parser.parser, sequence, till, posi, next_i, state)
