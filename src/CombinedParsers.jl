@@ -38,17 +38,6 @@ export parser
 import Base: convert
 
 
-export _iterate
-"""
-    _iterate(parser, sequence, till::Int, posi::Int[, nothing])
-
-Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve first match, or nothing.
-"""
-@inline _iterate(parser, sequence, till::Int, posi::Int) =
-    _iterate(parser, sequence,till,posi,posi,nothing)
-@inline _iterate(parser, sequence, till::Int, posi::Int, ::Nothing) =
-    _iterate(parser, sequence,till,posi,posi,nothing)
-
 """
     CombinedParser{S,T} <: AbstractToken{T}
 
@@ -80,6 +69,8 @@ Return `S`, the state type of `x`
 @inline state_type(::Type{<:CombinedParser{S}}) where {S} = S
 @inline state_type(x::CombinedParser) = state_type(typeof(x))
 
+include("state.jl")
+
 
 export regex_string
 """
@@ -106,8 +97,17 @@ print_constructor(io::IO,x) =
     end
 
 
+export _iterate
+"""
+    _iterate(parser, sequence, till::Int, posi::Int[, nothing])
 
-include("state.jl")
+Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve first match, or nothing.
+"""
+@inline _iterate(parser, sequence, till::Int, posi::Int) =
+    _iterate(parser, sequence,till,posi,posi,nothing)
+@inline _iterate(parser, sequence, till::Int, posi::Int, ::Nothing) =
+    _iterate(parser, sequence,till,posi,posi,nothing)
+
 
 "Abstract type for parser wrappers, providing default methods"
 abstract type WrappedParser{P,S,T} <: CombinedParser{S,T} end
@@ -2210,21 +2210,25 @@ A parser matching `p`, and failing when required to backtrack
 """
 @auto_hash_equals struct Atomic{P,S,T} <: WrappedParser{P,S,T}
     parser::P
-    Atomic(x) =
-        let p=parser(x)
-            new{typeof(p),state_type(p),result_type(p)}(p)
-        end
+    Atomic(p::CombinedParser) =
+        new{typeof(p),state_type(p),result_type(p)}(p)
 end
-function _nextind(sequence, i::Int, parser::Atomic, state::MatchState)
-    @show a, s = _iterate(parser.parser,sequence,lastindex(sequence), i, i, nothing)
-    _nextind(sequence, i, parser.parser, s)
+Atomic(p) = Atomic(parser(x))
+
+regex_prefix(x::Atomic) = "(?>"*regex_prefix(x.parser)
+regex_suffix(x::Atomic) = regex_suffix(x.parser)*")"
+function Base.get(parser::Atomic, sequence, till, after, i, state::MatchState)
+    a, s = _iterate(parser.parser, sequence, till, i, i, nothing)
+    get(parser.parser, sequence, till, after, i, s)
 end
 
-@inline function _iterate(parser::Atomic, sequence, till, posi, next_i, state::Nothing)
+@inline _iterate(parser::Atomic, sequence, till, posi, next_i, state::Nothing) =
     _iterate(parser.parser, sequence, till, posi, next_i, state)
-end
-@inline function _iterate(parser::Atomic, sequence, till, posi, next_i, state)
-    nothing
+@inline _iterate(parser::Atomic, sequence, till, posi, next_i, state) = nothing
+
+function _rightof(sequence, i, parser::Atomic, state::MatchState)
+    a, s = _iterate(parser.parser,sequence,lastindex(sequence), i, i, nothing)
+    _rightof(sequence, i, parser.parser, s)
 end
 
 function print_constructor(io::IO,x::Atomic)
