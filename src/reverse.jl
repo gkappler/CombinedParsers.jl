@@ -149,10 +149,13 @@ for T in [PositiveLookahead,NegativeLookahead,PositiveLookbehind,NegativeLookbeh
          end
          end)
 end
-reversed(x) = deepmap_parser(reversed,x)
-reversed(x::Union{AnyChar,CharIn,CharNotIn,UnicodeClass,Always,Never,ConstantParser{N,Char} where N}) = x
+reversed(x::CombinedParser) = deepmap_parser(reversed, x)
+deepmap_parser(f::Function,mem::AbstractDict,x::Union{AtStart,AtEnd,Always,Never},a...; kw...) = f(x)
+reversed(x::Union{Always,Never}) = x
 reversed(x::AtStart) = AtEnd()
-reversed(x::AtEnd) = AtStart()
+reversed(x::AtEnd) =  AtStart()
+reversed(x::NIndexParser{0}) = x
+reversed(x::NIndexParser{1}) = x
 reversed(x::ConstantParser) = x
 reversed(x::ConstantParser{<:AbstractString}) =
     ConstantParser(reversed(x.parser))
