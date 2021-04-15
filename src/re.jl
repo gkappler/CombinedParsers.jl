@@ -3,7 +3,7 @@ A regular expression parser transforming a PCRE string to a CombinedParser equiv
 """
 module Regexp
 using ..CombinedParsers
-using TextParse
+import TextParse
 import TextParse: AbstractToken
 using AutoHashEquals
 
@@ -337,10 +337,9 @@ function capture_substring(p::Backreference, sequence::SequenceWithCaptures)
     SubString(sequence.match, sequence.captures[index][end])
 end
 
-@inline function _iterate(
-    p::Union{Backreference,ParserOptions{<:Backreference}},
-    sequence::SequenceWithCaptures, till,
-    posi, next_i, state::Nothing)
+@inline function _iterate(p::Union{Backreference,ParserOptions{<:Backreference}},
+                          sequence::SequenceWithCaptures, till,
+                          posi, next_i, state::Nothing)
     r = _iterate_constant(
         ConstantParser(capture_substring(p, sequence)),
         sequence, till, posi, next_i, state)
@@ -348,20 +347,13 @@ end
     tuple_pos(r), tuple_pos(r)-next_i
 end
 
-@inline function _iterate(
-    p::Union{Backreference,ParserOptions{<:Backreference}},
-    sequence::SequenceWithCaptures, till,
-    posi, next_i, state)
+@inline function _iterate(p::Union{Backreference,ParserOptions{<:Backreference}},
+                          sequence::SequenceWithCaptures, till,
+                          posi, next_i, state)
     return nothing
 end
 
 
-@inline function _iterate(
-    p::Nothing,
-    sequence, till,
-    posi, next_i, state)
-    return nothing
-end
 
 
 _iterate_condition(p::Backreference, sequence, till, posi, next_i, state) =
