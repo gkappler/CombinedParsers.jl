@@ -214,9 +214,6 @@ abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
     _prevind(str,i,L)
 @inline _rightof(str,i,parser::NIndexParser{L},state) where L =
     _nextind(str,i,L)
-regex_string_(x::NIndexParser{N}) where N = ".{$(N)}"
-Base.show(io::IO, x::NIndexParser{N}) where N =
-    print(io, "$(N) NIndexParser::$(result_type(x))")
 
 @inline function _iterate(parser::NIndexParser, sequence, till, posi, next_i, state::Nothing)
     posi > till && return nothing # prevents BoundsError
