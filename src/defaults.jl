@@ -50,7 +50,7 @@ julia> CombinedParsers.Regexp.bsr
 PCRE backslash R (BSR), for newlines.
 """
 bsr = Atomic(Either("\r\n",
-                    CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
+                    !CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
 
 export at_linestart, at_lineend
 """
@@ -74,7 +74,6 @@ Either(
 ```
 """
 @with_names at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
-lineend   = Either(AtEnd(),bsr)
 @with_names at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
 
 export newline, inline, whitespace_maybe, whitespace
