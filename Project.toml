@@ -20,6 +20,7 @@ InternedStrings = "0.7"
 Nullables = "1.0.0"
 TextParse = "0.9, 1.0.0"
 Tries = "0.1.4"
+ReversedStrings = "0.1.0"
 julia = "1.4.2, 1.5"
 
 [extras]
