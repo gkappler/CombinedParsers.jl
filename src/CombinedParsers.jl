@@ -2243,9 +2243,6 @@ macro trimmed(block)
     esc(trimmed(block))
 end
 
-mutable struct Delayed
-    name::Symbol
-end
 
 include("lazy.jl")
 end # module
