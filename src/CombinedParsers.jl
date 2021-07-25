@@ -162,11 +162,18 @@ struct FilterParser{P,S,F,T} <: WrappedParser{P,S,T}
             new{typeof(p),state_type(p),typeof(f),result_type(p)}(p,f)
         end
 end
-Base.filter(f::Function, x::CombinedParser) =
-    FilterParser(f,x)
+Base.filter(f::Function, x::Union{TextParse.AbstractToken,CombinedParser}) =
+    FilterParser(f,parser(x))
+
+export filter_result
+filter_result(f::Function, x) =
+    filter(parser(x)) do sequence,till,posi,after,state
+        f(get(parser(x),sequence,till,posi,after,state))
+    end
+        
 
 @inline function _iterate(parser::FilterParser, sequence, till, posi, next_i, state)
-    r::Union{Nothing,Tuple{Int,state_type(W)}} = nothing
+    r::Union{Nothing,Tuple{Int,state_type(parser.parser)}} = nothing
     while r === nothing
         r = _iterate(parser.parser, sequence, till, posi, next_i, state)
         if r === nothing
@@ -190,6 +197,8 @@ abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
 # for convenience
 _iterate(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
+
+
 """
     NIndexParser{N,T} <: LeafParser{MatchState,T}
 
