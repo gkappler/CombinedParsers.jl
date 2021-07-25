@@ -1,5 +1,14 @@
-export Numeric
-Numeric = TextParse.Numeric
+export NumericParser, DateParser, DateTimeParser
+import TextParse: Numeric
+import Dates
+import Dates: DateFormat
+
+NumericParser(x...) = parser(TextParse.Numeric(x...))
+DateParser(format::AbstractString...) = DateParser(Dates.DateFormat.(format)...)
+DateParser(format::DateFormat...) = sEither(parser.(TextParse.DateTimeToken.(Dates.Date,format))...)
+DateTimeParser(format::AbstractString...) = DateTimeParser(Dates.DateFormat.(format)...)
+DateTimeParser(format::DateFormat...) = sEither(parser.(TextParse.DateTimeToken.(Dates.DateTime,format))...)
+
 import TextParse: tryparsenext
 
 result_type(x::AbstractToken) = result_type(typeof(x))
