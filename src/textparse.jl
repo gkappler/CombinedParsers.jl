@@ -25,13 +25,16 @@ parser(x::AbstractToken) = AbstractTokenParser(x)
 
 regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
 
+
 print_constructor(io::IO, x::AbstractTokenParser) =
-    print(io, typeof(x.parser))
+    print(io, x.parser)
 
 _iterate(parser::AbstractTokenParser, sequence, till, before_i, next_i, state) = 
     _iterate_token(parser.parser, sequence, till, before_i, next_i, state)
 
 
+_iterate_token(parser::AbstractToken, sequence, till, before_i, next_i, state) =
+    nothing
 function _iterate_token(parser::AbstractToken, sequence, till, before_i, next_i, state::Nothing, opts=TextParse.default_opts)
         r,next_i_ = tryparsenext(parser, sequence, next_i, till,opts)
         if isnull(r)
