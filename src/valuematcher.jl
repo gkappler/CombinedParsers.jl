@@ -41,38 +41,68 @@ end
 """
     _ismatch(x::Char, set::Union{Tuple,Vector})::Bool
 
-`_ismatch(x,set...)` respects boolean logic:
-
-Example:
-```jldoctest
-julia> p = CharNotIn(CharNotIn("ab"));
-
-julia> parse(p,"a")
-'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
-
-```
+Return `_ismatch(x,set...)`.
 """
 function _ismatch(x, set::Union{Tuple,Vector})::Bool
     return _ismatch(x,set...)
 end
 
+"""
+    _ismatch(x, f, r1, r...)
+
+Check if `x` matches any of the options `f, r1,r...`:
+If `ismatch(x,f)` return `true`,
+otherwise return `_ismatch(x, r1, r...)`.
+"""
+function _ismatch(x, f, r1, r...)::Bool
+    ismatch(x,f) && return true
+    return _ismatch(x, r1, r...)
+end
+
+"""
+    _ismatch(x)
+
+returns `false` (out of options)
+"""
 function _ismatch(x)::Bool
     return false
 end
 
-function _ismatch(x, f, r1, r...)::Bool
-    ismatch(x,f) && return true
-    return _ismatch(x::Char, r1, r...)
-end
+"""
+    _ismatch(x, p)
 
+returns `x==p`
+"""
 function _ismatch(c,p)::Bool
     c==p
 end
+
+"""
+    ismatch(c,p)
+
+returns [`_ismatch`](@ref)`(c, p)`
+"""
 function ismatch(c,p)::Bool
     _ismatch(c, p)
 end
+
+"""
+    _ismatch(c,p::Function)
+
+returns `p(c)`
+"""
 _ismatch(c,p::Function)::Bool = p(c)::Bool
+"""
+    _ismatch(c,p::AnyChar)
+
+`true`
+"""
 _ismatch(c,p::AnyChar)::Bool = true
+"""
+    _ismatch(c,p::Union{StepRange,Set})
+
+returns `c in p`
+"""
 _ismatch(c,p::Union{StepRange,Set})::Bool = c in p
 
 
@@ -82,7 +112,7 @@ export CharIn
 """
     CharIn(x)
 
-Parser matching exactly one element (character) in a sequence, iif in `x`.
+Parser matching exactly one element `c` (character) in a sequence, iif [`_ismatch`](@ref)`(c,x)`.
 
 ```jldoctest
 julia> a_z = CharIn('a':'z')
