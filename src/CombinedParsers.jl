@@ -553,7 +553,7 @@ julia> @syntax for german_street_address in street_address
        end
 🗄 Sequence |> map(#50) |> with_name(:german_street_address)
 ├─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
-├─ \  
+├─ \\  
 └─  <Int64>
 ::NamedTuple{(:street, :no),Tuple{String,Int64}}
 
@@ -570,7 +570,7 @@ julia> @syntax for us_street_address in street_address
        end
 🗄 Sequence |> map(#52) |> with_name(:us_street_address)
 ├─  <Int64>
-├─ \  
+├─ \\  
 └─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
 ::NamedTuple{(:street, :no),Tuple{String,Int64}}
 
@@ -580,7 +580,6 @@ julia> street_address"50 Oakland Ave"
 julia> street_address"Oakland Ave 50"
 (street = "Oakland Ave", no = 50)
 ```
-
 """
 macro syntax(block)
     R = if block.head == :for
