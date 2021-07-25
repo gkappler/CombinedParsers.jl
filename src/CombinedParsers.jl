@@ -2131,19 +2131,22 @@ export hex_digit, integer_base
     integer_base(base,mind=0,maxd=Repeat_max)
 
 Parser matching a integer format on base `base`.
+
+!!! note
+    Uses a second Base.parse call on match.
+    
+    A custom parser could aggregate result incrementally while matching.
 """
 function integer_base(base=10,mind=0,maxd=Repeat_max)
     dig = if base == 16
         hex_digit
-    elseif base == 8
-        CharIn('0':'7')
-    elseif base ==10
-        CharIn('0':'9')
+    elseif base <= 10
+        CharIn('0':('0'+base))
     else
-        error()
+        error("Base $base not supported")
     end
-    Repeat(mind:maxd,dig) do v
-        (isempty(v) ? 0 : parse(Int,join(v),base=base))::Int
+    map(!Repeat(mind:maxd,dig)) do v
+        (isempty(v) ? 0 : parse(Int,convert(String,v),base=base))::Int
     end
 end
 
