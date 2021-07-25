@@ -1,16 +1,22 @@
 export MatchState
 """
-State object for a match that is defined by the parser, sequence and position.
+State object for a match that is defined by the triple `parser, sequence, position`.
+
+!!! note:
+    Performance tip: [`Atomic`](@ref) is masking the state of its wrapped parser with `MatchState`.
+    This simplifies the state
 """
 struct MatchState end
 Base.show(io::IO, ::MatchState) = print(io,"∘")
 
 """
 State object representing ncodeunits explicitely with state of match for `prevind`, `nextind` to improve performance.
-    nc::Int
-    state::S
+    `nc::Int` and `state::S`.
 
 See also [`MatchState`](@ref), [`prevind`](@ref), [`nextind`](@ref).
+
+!!! note:
+    `nc` as type parameter faster but slow compilation.
 """
 struct NCodeunitsState{S}
     nc::Int
@@ -18,6 +24,15 @@ struct NCodeunitsState{S}
 end
 @inline _leftof(str,i,parser::CombinedParser,x::NCodeunitsState) = i-x.nc
 @inline _rightof(str,i,parser::CombinedParser,x::NCodeunitsState) = i+x.nc
+"""
+    NCodeunitsState(posi::Int,after::Int,state)
+    NCodeunitsState{S}(posi::Int,after::Int,state)
+
+returns `(tuple_pos, NCodeunitsState(after-posi,state))`.
+
+!!! note:
+    rename
+"""
 NCodeunitsState(posi::Int,after::Int,state) =
     after, NCodeunitsState(after-posi,state)
 @inline NCodeunitsState{S}(posi::Int,after::Int,state) where S =
