@@ -66,24 +66,24 @@ Base.broadcasted(::typeof((|)), x::CharIn, y::CharIn) =
     CharIn(x.pcre*y.pcre, x.sets,y.sets)
 
 """
-    (!)(x::AbstractToken)
+    (!)(x::CombinedParser)
 
 Parser Transformation getting the matched SubString.
 
 ```jldoctest
-julia> parse(Repeat(CharIn(:L)),"abc123")
-3-element Array{Char,1}:
- 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
- 'b': ASCII/Unicode U+0062 (category Ll: Letter, lowercase)
- 'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
+julia> Repeat(AnyChar())
+Array{Char,1}
 
-julia> parse(!Repeat(CharIn(:L)),"abc123")
+julia> !Repeat(AnyChar())
+SubString{String}
+
+julia> !!Repeat(AnyChar())
 "abc"
 
 ```
 
 """
-(!)(x::AbstractToken) = JoinSubstring(x)
+(!)(x::CombinedParser) = JoinSubstring(x)
 using InternedStrings
 import InternedStrings: intern
 """
@@ -91,17 +91,9 @@ import InternedStrings: intern
 
 Parser transformating result `v -> InternedStrings.intern(v)`.
 """
-(!)(x::AbstractToken{<:SubString}) =
-    instance(String, x)
-(!)(x::Transformation{<:SubString}) =
-    map(InternedStrings.intern, x.parser)
+(!)(x::CombinedParser{<:Any,<:SubString}) =
+    map(String, map(InternedStrings.intern, x))
 
-"""
-    (!)(x::NamedParser)
-
-Parser transformating result `v -> v=>x.name`.
-"""
-(!)(x::NamedParser) = map(v -> v => x.name, x)
 
 
 
