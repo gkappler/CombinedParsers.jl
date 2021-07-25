@@ -1768,6 +1768,7 @@ end
 Create a mutable `Either{<:Vector{Any}}` for creating recursive parsers.
 Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
 
+See also [`@syntax`](@ref).
 !!! note
     state type is `Any` which might cost performance.
 """
@@ -1781,6 +1782,15 @@ end
 
 @deprecate Either{T}(x::Vector{Any}) where T Either{T}(x...)
 @deprecate Either{T}(x::Tuple) where T Either(x...)
+
+
+export Delayed
+"""
+    Delayed(T::Type)
+
+[`Either`](@ref)`{T}()`.
+"""
+Delayed(T::Type) = Either{T}()
 
 """
     Either(transform::Function, x::Vararg)
@@ -1852,7 +1862,7 @@ children(x::Either) = x.options
 regex_string(x::Either) = join(regex_string.(x.options),"|")
 regex_prefix(x::Either) = "|"
 regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
-regex_suffix(x::Either) = "..."
+regex_suffix(x::Either) = ""
 print_constructor(io::IO,x::Either) = print(io,"Either")
 
 
