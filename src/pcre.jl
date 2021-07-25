@@ -296,13 +296,13 @@ end
 
 
 """
-Helper struct to mask elements from matchers.
+Helper struct to mask sequence elements from matchers.
 """
 struct MatchingNever{T} end
-""""
-    ismatch(c::Char,p::Union{Function,Steprange,Set,UnicodeClass})::Bool
+"""
+    ismatch(c::MatchingNever,p)
 
-checks if `c` matches a matcher `p`.
+returns `false`.
 """
 ismatch(c::MatchingNever,p)::Bool = false
 ismatch(c::MatchingNever,p::AnyChar)::Bool = false
@@ -311,6 +311,7 @@ ismatch(c::MatchingNever,p::AnyChar)::Bool = false
 Lazy wrapper for a sequence, masking elements in `getindex` with MatchingNever if any of `flags` are not set.
 
 TODO: make flags a filter function?
+resolve confound of sequence and value, like StringWithOptions, CharWithOptions
 """
 struct FilterOptions{S}
     x::S
@@ -322,8 +323,9 @@ Base.show(io::IO, x::FilterOptions) =
 
 Base.getindex(x::FilterOptions,i) =
     if_options(x.flags,x.x[i])
+
 if_options(flags::UInt32,x::Char) =
-    iszero(flags) ? x : MatchingNever{Char}()
+    iszero(flags) ? x : MatchingNever{typeof(x)}()
 if_options(flags::UInt32,x::CharWithOptions) =
     if (flags & x.flags) == flags
         x.x
