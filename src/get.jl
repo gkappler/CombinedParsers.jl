@@ -56,9 +56,9 @@ export JoinSubstring
 
 Parser Transformation getting the matched SubString.
 """
-@auto_hash_equals struct JoinSubstring{P,S} <: WrappedParser{P,S,SubString}
+@auto_hash_equals struct JoinSubstring{P,S} <: WrappedParser{P,S,SubString{String}}
     parser::P
-    JoinSubstring(x) =
+    JoinSubstring(x::CombinedParser) =
         new{typeof(x),state_type(x)}(x)
 end
 Base.map(f::Type{<:JoinSubstring}, p::CombinedParser) = JoinSubstring(p)
