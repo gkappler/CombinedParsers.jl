@@ -1308,17 +1308,17 @@ function Base.join(x::Repeat, delim_; infix=:skip)
 end
 
 """
-    Base.join(x::CombinedParser,delim)
+    Base.join(x::CombinedParser,delim; kw...)
 
-Shorthand for `join(Repeat(x),delim)`.
+Shorthand for `join(Repeat(x),delim; kw...)`.
 """
-Base.join(x::CombinedParser,delim; kw...) =
-    join(Repeat(x),delim;kw...)
+Base.join(x::Union{TextParse.AbstractToken,CombinedParser},delim; kw...) =
+    join(Repeat(parser(x)),delim;kw...)
 
 """
-    Base.join(f::Function, x::CombinedParser, delim)
+    Base.join(f::Function, x::CombinedParser, delim; kw...)
 
-Shorthand for `map(f,join(x,delim))`.
+Shorthand for `map(f,join(x,delim; kw...))`.
 """
 Base.join(f::Function,p::CombinedParser,delim_; kw...) =
     map(f,join(p,delim_; kw...))
