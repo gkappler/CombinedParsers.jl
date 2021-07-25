@@ -124,8 +124,14 @@ julia> parse(a_z, "a")
 julia> ac = CharIn("ac")
 re"[ac]"
 
-
 julia> parse(ac, "c")
+'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
+
+julia> l = CharIn(islowercase)
+[islowercase(.)] CharIn
+::Char
+
+julia> parse(l, "c")
 'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
 
 ```
@@ -161,6 +167,31 @@ regex_string_(x) = "$x"
     CharIn(unicode_category::Symbol...)
 
 succeeds if char at cursor is in one of the unicode classes.
+
+```jldoctest
+julia> match(CharIn(:L), "aB")
+ParseMatch("a")
+
+julia> match(CharIn(:Lu), "aB")
+ParseMatch("B")
+
+julia> match(CharIn(:N), "aA1")
+ParseMatch("1")
+```
+
+Respects boolean logic:
+```jldoctest
+julia> parse(CharIn(CharIn("ab")),     "a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+julia> parse(CharIn(CharNotIn("bc")),  "a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+julia> parse(CharNotIn(CharIn("bc")),  "a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+```
+
+See also [`CombinedParsers.unicode_classes`](@ref).
 """
 CharIn(unicode_classes::Symbol...) =
     CharIn(UnicodeClass(unicode_classes...))
@@ -216,6 +247,15 @@ julia> ac = CharNotIn("ac")
 re"[^ac]"
 
 ```
+
+Respects boolean logic:
+```jldoctest
+julia> p = CharNotIn(CharNotIn("ab"));
+
+julia> parse(p,"a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+```
+
 """
 @auto_hash_equals struct CharNotIn{S,T} <: ValueMatcher{T}
     pcre::String
@@ -230,9 +270,9 @@ CharNotIn(pcre::String,x...) =
 CharNotIn(pcre::String,x::ConstantParser{Char}) =
     CharNotIn(pcre,x.parser)
 CharNotIn(chars::String) =
-    CharNotIn(regex_escape(chars),chars)
+    CharNotIn("^"*regex_escape(chars),chars)
 CharNotIn(chars::StepRange) =
-    CharNotIn("$(chars.start)-$(chars.stop)",chars)
+    CharNotIn("^$(chars.start)-$(chars.stop)",chars)
 CharNotIn(x_...) =
     CharNotIn("",x_...)
 
@@ -305,7 +345,13 @@ function optimize(::Type{<:Union{CharIn,CharNotIn}},x...)
     if otherstuff===nothing
         charset === nothing ? tuple() : charset
     elseif charset===nothing
-        tuple(otherstuff...)
+        if length(otherstuff) == 1
+            otherstuff[1]
+        else
+            tuple(otherstuff...)
+        end
+    elseif isempty(otherstuff)
+        charset
     else
         tuple(charset,otherstuff...)
     end
