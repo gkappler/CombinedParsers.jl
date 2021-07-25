@@ -1,6 +1,6 @@
 
 export caseless
-caseless(x) = MappingParser(lowercase, deepmap_parser(lowercase,x))
+caseless(x) = MappingParser(lowercase, deepmap_parser(lowercase,parser(x)))
 
 export MappingParser
 @auto_hash_equals struct MappingParser{P,S,T,F<:Function} <: WrappedParser{P,S,T}
