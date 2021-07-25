@@ -88,6 +88,32 @@ deepmap_parser(f::Function,mem::AbstractDict,x::Lazy,a...;kw...) =
         Lazy(deepmap_parser(f,mem,x.parser,a...;kw...))
     end
 
+"""
+    deepmap_parser(f::Function,mem::AbstractDict,x,a...;kw...)
+
+Perform a deep transformation of a CombinedParser.
+
+!!! note
+    For a custom parser `P<:CombinedParser` with sub-parsers, provide a method
+    ```julia
+    deepmap_parser(f::Function,mem::AbstractDict,x::P,a...;kw...) =
+        get!(mem,x) do
+            ## construct replacement, e.g. if P <: WrappedParser
+            P(deepmap_parser(f,mem,x.parser,a...;kw...))
+        end
+    ```
+"""
+deepmap_parser(f::Function,mem::AbstractDict,x::CombinedParser,a...;kw...) =
+    error("""
+    For a custom parser `$(typeof(x))` with sub-parsers, provide a method
+    ```julia
+    deepmap_parser(f::$(typeof(f)),mem::AbstractDict,x::$(typeof(x)),a...;kw...) =
+        get!(mem,x) do
+            ## construct replacement, e.g. if P <: WrappedParser
+            $(typeof(x))(deepmap_parser(f,mem,x.parser,a...;kw...))
+        end
+    ```
+""")
 
 deepmap_parser(f::Function,mem::AbstractDict,x::NamedParser,a...;kw...) =
     get!(mem,x) do
