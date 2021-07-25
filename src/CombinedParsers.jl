@@ -2076,6 +2076,9 @@ end
 
 include("trie.jl")
 
+
+AtomicState = NCodeunitsState{MatchState}
+
 export Atomic
 """
     Atomic(x)
@@ -2087,34 +2090,30 @@ A parser matching `p`, and failing when required to backtrack
     parser::P
     Atomic(p::CombinedParser) =
         new{typeof(p),state_type(p),result_type(p)}(p)
+    Atomic{MatchState}(p::CombinedParser) =
+        new{typeof(p),AtomicState,result_type(p)}(p)
 end
 Atomic(p) = Atomic(parser(x))
 
 regex_prefix(x::Atomic) = "(?>"*regex_prefix(x.parser)
 regex_suffix(x::Atomic) = regex_suffix(x.parser)*")"
-function Base.get(parser::Atomic, sequence, till, after, i, state::MatchState)
+function Base.get(parser::Atomic, sequence, till, after, i, state::AtomicState)
     a, s = _iterate(parser.parser, sequence, till, i, i, nothing)
     get(parser.parser, sequence, till, after, i, s)
 end
 
 @inline _iterate(parser::Atomic, sequence, till, posi, next_i, state::Nothing) =
     _iterate(parser.parser, sequence, till, posi, next_i, state)
-@inline _iterate(parser::Atomic, sequence, till, posi, next_i, state) = nothing
+@inline _iterate(parser::Atomic{<:Any,AtomicState}, sequence, till, posi, next_i, state::Nothing) =
+    AtomicState(_iterate(parser.parser, sequence, till, posi, next_i, state))
+@inline _iterate(parser::Atomic, sequence, till, posi, next_i, state) =
+    nothing
 
-function _rightof(sequence, i, parser::Atomic, state::MatchState)
-    a, s = _iterate(parser.parser,sequence,lastindex(sequence), i, i, nothing)
-    _rightof(sequence, i, parser.parser, s)
-end
 
 function print_constructor(io::IO,x::Atomic)
     print_constructor(io,x.parser)
     print(io, " |> Atomic" )
 end
-
-regex_prefix(x::Atomic) = "(?>"*regex_prefix(x.parser)
-regex_suffix(x::Atomic) = regex_suffix(x.parser)*")"
-regex_inner(x::Atomic) = regex_inner(x.parser)
-
 
 
 include("match.jl")
