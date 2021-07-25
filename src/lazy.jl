@@ -1,6 +1,6 @@
 
-function Base.getindex(x::ParseMatch{<:Union{Transformation}},a...)
-    # error("implement lazy getindex(::$(typeof(x))")
+function Base.getindex(x::ParseMatch{<:Transformation},a...)
+    # error?
     println("implement lazy getindex(::$(typeof(x))")
     getindex(get(x), a...)
 end
@@ -11,7 +11,6 @@ getstateindex(state::Integer, a...) = MatchState()
 function Base.getindex(x::ParseMatch{<:Sequence}, i)
     mi = x.parsings
     sequence = mi.sequence
-    inner = 
     outer_state = x.state
     inner_state = getindex(outer_state, i)
     l = lastindex(mi.parser.parts)
@@ -19,7 +18,6 @@ function Base.getindex(x::ParseMatch{<:Sequence}, i)
     ## walk back
     while l>=i
         stop = start
-        # outer_state::Union{<:Vector, Int}
         start = leftof(sequence,stop,mi.parser.parts[l],outer_state[l]) ##state[end][1]
         l-=1
     end
