@@ -526,46 +526,61 @@ end
 
 export @syntax
 """
-Convenience macro `@syntax name = expr` for defining a CombinedParser `name=expr` and custom parsing macro `@name_str`.
+    @syntax name = expr
+Convenience macro defining a CombinedParser `name=expr` and custom parsing macro `@name_str`.
 
-With `@syntax for name in either; expr; end` the defined parser is [`pushfirst!`](@ref) to `either`.
+```jldoctest
+julia> @syntax a = AnyChar()
+
+julia> a"char"
+
+```
+
+    @syntax for name in either; expr; end
+Parser `expr` is [`pushfirst!`](@ref) to `either`.
 If `either` is undefined, it will be created.
 If `either == :text || either == Symbol(:)` the parser will be added to `CombinedParser_globals` variable in your module.
 
-```@meta
-DocTestFilters = r"map\\(#[^)]+\\)"
-```
-
 ```jldoctest
+julia> @syntax street_address = Either(Any[]);
+
 julia> @syntax for german_street_address in street_address
-            Sequence(:street => !Repeat(AnyChar()),
-                 " ",
-                 :no =>Numeric(Int))
+            Sequence(!!Repeat(AnyChar()),
+                     " ",
+                     TextParse.Numeric(Int)) do v
+                (street = v[1], no=v[3])
+            end
        end
-🗄 Sequence |> map(ntuple) |> with_name(:german_street_address)
-├─ .* AnyChar |> Repeat |> ! |> with_name(:street)
-├─ \\  
-└─ Int64  |> with_name(:no)
-::NamedTuple{(:street, :no),Tuple{SubString,Int64}}
+🗄 Sequence |> map(#50) |> with_name(:german_street_address)
+├─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
+├─ \  
+└─  <Int64>
+::NamedTuple{(:street, :no),Tuple{String,Int64}}
 
 julia> german_street_address"Some Avenue 42"
 NamedTuple{(:street, :no),Tuple{SubString,Int64}}(("Some Avenue", 42))
 
 
 julia> @syntax for us_street_address in street_address
-            Sequence(:no =>Numeric(Int),
+            Sequence(TextParse.Numeric(Int),
                      " ",
-                     :street => !Repeat(AnyChar()))
+                     !!Repeat(AnyChar())) do v
+                (street = v[3], no=v[1])
+            end
        end
-🗄 Sequence |> map(ntuple) |> with_name(:us_street_address)
-├─ Int64  |> with_name(:no)
-├─ \\  
-└─ .* AnyChar |> Repeat |> ! |> with_name(:street)
-::NamedTuple{(:no, :street),Tuple{Int64,SubString}}
+🗄 Sequence |> map(#52) |> with_name(:us_street_address)
+├─  <Int64>
+├─ \  
+└─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
+::NamedTuple{(:street, :no),Tuple{String,Int64}}
 
 julia> street_address"50 Oakland Ave"
-NamedTuple{(:no, :street),Tuple{Int64,SubString}}((50, "Oakland Ave"))
+(street = "Oakland Ave", no = 50)
+
+julia> street_address"Oakland Ave 50"
+(street = "Oakland Ave", no = 50)
 ```
+
 """
 macro syntax(block)
     R = if block.head == :for
@@ -815,19 +830,60 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
     end
 end
 
+export ParserPair
 """
-    result_type(::Type{T}) where {T<:Tuple}
+    Sequence{P,S,T}
 
-Internally used for `Sequence` result_type.
+of `parts::P`, [`sequence_state_type`](@ref)==S and [`sequence_result_type`](@ref).
 """
-@generated result_type(::Type{T}) where {T<:Tuple} =
-    Tuple{ (result_type(t) for t in fieldtypes(T))... }
+@auto_hash_equals struct ParserPair{P,Q,S,T} <: CombinedParser{S,T}
+    first::P
+    second::Q
+    ParserPair(first::CombinedParser, second::CombinedParser) =
+        new{typeof(first),typeof(second),Tuple{first,second},sequence_result_type(typeof((first,second)))}(p)
+end
+
+
 
 export Sequence
 """
     Sequence{P,S,T}
 
-of `parts::P`, [`sequence_state_type`](@ref) and [`sequence_result_type`](@ref).
+of `parts::P`, [`sequence_state_type`](@ref)`==S` with [`sequence_result_type`](@ref)`==T`.
+
+    Sequence(parts::CombinedParser...; tuplestate=false)
+
+of `parts`, [`sequence_state_type`](@ref)`(p; tuplestate=tuplestate)` with [`sequence_result_type`](@ref).
+
+Sequences can alternatively created with [`*`](@ref)
+```jldoctest
+julia> german_street_address = !Repeat(AnyChar()) * ' ' * TextParse.Numeric(Int)
+🗄 Sequence
+├─ .* AnyChar |> Repeat |> !
+├─ \\  
+└─ Int64
+Tuple{SubString,Char,Int64}
+
+julia> german_street_address"Some Avenue 42"
+("Some Avenue", ' ', 42)
+```
+Indexing (transformation) can be defined with
+```jldoctest
+julia> @syntax german_street_in_address = Sequence(!Repeat(AnyChar()), ' ',TextParse.Numeric(Int))[1]
+🗄 Sequence
+├─ .* AnyChar |> Repeat |> !
+├─ \\  
+└─ Int64
+SubString
+
+julia> german_street_in_address"Some Avenue 42"
+"Some Avenue"
+```
+
+
+!!! note
+    State is managed as [`sequence_state_type`](@ref)`(parts; tuplestate)`.
+    Overwrite to optimize state types special cases.
 """
 @auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
     parts::P
@@ -875,7 +931,7 @@ Sequence(p::Vector; kw...) =
 
 Parts that are not `::CombinedParser` are converted with [`parser`](@ref).
 ```jldoctest
-julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', Numeric(Int))
+julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', TextParse.Numeric(Int))
 🗄 Sequence
 ├─ .* AnyChar |> Repeat |> !
 ├─ \\  
@@ -890,7 +946,7 @@ julia> german_street_address"Some Avenue 42"
     Returns a NamedTuple [`Transformation`](@ref) if any part was `Pair{Symbol}`.
 
     ```jldoctest
-    julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => Numeric(Int))
+    julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => TextParse.Numeric(Int))
     🗄 Sequence |> map(ntuple) |> with_name(:german_street_address)
     ├─ .* AnyChar |> Repeat |> ! |> with_name(:street)
     ├─ \\  
@@ -907,7 +963,7 @@ function Sequence(p...; kw...)
     T = fieldtypes(result_type(s))
     names = ( t.first=>i
               for (i,t) in enumerate(p)
-              if t isa Pair{Symbol,<:CombinedParser} )
+              if t isa Pair{Symbol} )
     isempty(names) && return s
     NT= NamedTuple{ tuple( (n.first for n in names)...),
                     Tuple{ (T[n.second] for n in names)... }}
@@ -1196,17 +1252,31 @@ export Lazy
     Lazy(x::Repeat)
     Lazy(x::Optional)
 
-Lazy `x` repetition matching from greedy to lazy.
+Lazy `x` repetition matching (instead of default greedy).
 
 ```jldoctest
-julia> re"a+?"
-a+?  |> Repeat |> Lazy
-::Array{Char,1}
+julia> german_street_address = !Lazy(Repeat(AnyChar())) * Repeat1(' ') * TextParse.Numeric(Int)
+🗄 Sequence
+├─ .* AnyChar |> Repeat |> !
+├─ \\  
+└─ Int64
+Tuple{SubString,Char,Int64}
 
-julia> re"a??"
-a?? |missing |> Lazy
-::Union{Missing, Char}
+julia> german_street_address"Konrad Adenauer Allee    42"
+("Some Avenue", ' ', 42)
 ```
+
+!!! note 
+    PCRE `@re_str`
+    ```jldoctest
+    julia> re"a+?"
+    a+?  |> Repeat |> Lazy
+    ::Array{Char,1}
+
+    julia> re"a??"
+    a?? |missing |> Lazy
+    ::Union{Missing, Char}
+    ```
 """
 @auto_hash_equals struct Lazy{P,S,T} <: WrappedParser{P,S,T}
     parser::P
@@ -1612,6 +1682,7 @@ defaultvalue(V::Type{<:Vector}) = eltype(V)[]
 defaultvalue(V::Type) = missing
 defaultvalue(V::Type{<:CombinedParser}) = Always()
 
+
 export Optional
 """
 State type for skipped optional. (Missing was breaking julia).
@@ -1712,6 +1783,7 @@ Parser that tries matching the provided parsers in order, accepting the first ma
 
 This parser has no `==` and `hash` methods because it can recurse.
 
+
 ```jldoctest
 julia> match(r"a|bc","bc")
 RegexMatch("bc")
@@ -1804,6 +1876,7 @@ sEither_(x::Never) = tuple()
 sEither_() = tuple()
 sEither_(x1) = tuple(x1)
 sEither_(x1,x...) = Iterators.flatten( Any[ sEither_(x1), ( sEither_(e) for e in x )... ] )
+
 """
     sEither(x...)
 
