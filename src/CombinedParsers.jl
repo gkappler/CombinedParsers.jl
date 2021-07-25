@@ -1390,12 +1390,16 @@ end
 @inline state_length(parser,state::Int) = state
 @inline pushstate!(state::Int,parser,substate::MatchState) =
     state + 1
-@inline poplast!(state::Int,parser) =
-    if iszero(state)
+
+@inline poplast!(outer_state::Int) =
+    if iszero(outer_state)
         nothing, 0
     else
-        MatchState(), state - 1
+        MatchState(), outer_state - 1
     end
+
+@inline poplast!(outer_state,inner_parser) =
+    poplast!(outer_state)
 
 @inline state_length(parser::Repeat,x::Vector) =
     length(x)
@@ -1405,9 +1409,10 @@ end
 @inline function pushstate!(state::Vector,parser,substate)
     push!(state,substate)
 end
-@inline function poplast!(state::Vector,parser)
-    l=pop!(state)
-    l,state
+
+@inline function poplast!(outer_state::Vector)
+    l=pop!(outer_state)
+    l,outer_state
 end
 
 ## kernel function (function barrier)
@@ -1456,7 +1461,7 @@ end
 end
 
 function _iterate(t::Repeat, sequence, till, posi, next_i, state)
-    next_i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
+    next_i_::Int,outer_state::state_type(typeof(t)),goback::Bool = if state === nothing
         es = emptystate(state_type(typeof(t)))
         fill_rep(t,sequence,till,next_i, es)
     else
@@ -1480,18 +1485,18 @@ function _iterate(t::Repeat, sequence, till, posi, next_i, state)
         next_i, state, true
     end
     while goback
-        if state_length(t,state_)==0
+        if state_length(t,outer_state)==0
             return nothing
         end
-        lstate, state_=poplast!(state_,t.parser)
-        posi = leftof(sequence,next_i_,t.parser,lstate) ##state[end][1]
+        inner_state, outer_state=poplast!(outer_state,t.parser)
+        posi = leftof(sequence,next_i_,t.parser,inner_state) ##state[end][1]
         prune_captures(sequence,posi)
-        x = _iterate(t.parser,sequence, till, posi, next_i_, lstate)
-        x === nothing && state_length(t,state_) in t.range && return posi, state_
-        next_i_,state_,goback = push_rep(t,sequence, till, posi, x, state_)
+        x = _iterate(t.parser,sequence, till, posi, next_i_, inner_state)
+        x === nothing && state_length(t,outer_state) in t.range && return posi, outer_state
+        next_i_,outer_state,goback = push_rep(t,sequence, till, posi, x, outer_state)
     end
-    if state_length(t,state_) in t.range
-        next_i_, state_
+    if state_length(t,outer_state) in t.range
+        next_i_, outer_state
     else
         nothing
     end
@@ -1549,11 +1554,6 @@ function _iterate(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
         nothing
     end
 end
-
-
-
-
-
 
 
 
@@ -2173,6 +2173,7 @@ mutable struct Delayed
     name::Symbol
 end
 
+include("lazy.jl")
 end # module
 
 
