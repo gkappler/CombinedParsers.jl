@@ -1,7 +1,7 @@
 using CombinedParsers.Regexp
 import CombinedParsers.Regexp: word, non_word
-import CombinedParsers.Regexp: newline, inline, whitespace_maybe, whitespace_horizontal
-import CombinedParsers.Regexp: Repeat_max
+import CombinedParsers: newline, inline, whitespace_maybe, whitespace_horizontal
+import CombinedParsers: Repeat_max
 
 @testset "CombinedParsers" begin
 @testset "CharIn" begin
