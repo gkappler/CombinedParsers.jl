@@ -1,3 +1,5 @@
+import ..CombinedParsers: MatchState
+
 pcre_option = 
     Either(
         # with_name(:MARK, "mark" => UInt32(0)),
