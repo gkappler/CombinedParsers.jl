@@ -182,5 +182,4 @@ end
 m = match(PositiveLookahead("a"), "aaab")
 @test m.start == 1
 @test m.stop == 1
-@test m.state == CombinedParsers.MatchState()
 @test get(m) == "a"
