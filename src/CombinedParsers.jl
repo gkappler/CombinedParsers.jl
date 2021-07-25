@@ -135,6 +135,9 @@ Convienience function for overriding [`rightof`](@ref) that guarantees that not 
 """
 @inline _rightof(str,i,parser::WrappedParser,x) = _rightof(str,i,parser.parser,x)
 
+@inline _leftof(str,i,parser::WrappedParser,x::NCodeunitsState) = i-x.nc
+@inline _rightof(str,i,parser::WrappedParser,x::NCodeunitsState) = i+x.nc
+
 """
     _iterate(parser, sequence, till, posi, next_i, states)
 
