@@ -197,7 +197,7 @@ import Base: tryparse, parse
 
 Parse a string with a CombinedParser as an instance of `result_type(parser)`.
 
-If `log` is a `Vector{Symbol}`, parser is transformed with `log_names(p, log)`.
+If `log!==nothing`, parser is transformed with `log_names(p, log)`.
 See also [`log_names`](@ref).
 
 ```@meta
@@ -220,19 +220,22 @@ julia> parse(p,"Number: 42")
 ```
 
 """
-function Base.parse(p::AbstractToken, s; log=nothing)
-    i = tryparse(log !== nothing ? log_names(p,log) : p,s)
+function Base.parse(p::AbstractToken, s; kw...)
+    i = tryparse(p, s; kw...)
     i === nothing && throw(ArgumentError("no successfull parsing."))
     i
 end
 
 """
-    tryparse(parser::CombinedParser, str::AbstractString[, idx=1])
+    tryparse(parser::CombinedParser, str::AbstractString[, idx=1]; log=nothing)
 
 Like `parse`, but returns either a value of `result_type(parser)` or `nothing` if string does not start with with a match.
+
+If `log!==nothing`, parser is transformed with `log_names(p, log)`.
+See also [`log_names`](@ref).
 """
-function Base.tryparse(p::AbstractToken, s, idx=1)
-    i = iterate(ParseMatch(p,s,idx))
+function Base.tryparse(p::AbstractToken, s, idx=1; log=nothing)
+    i = iterate(ParseMatch(log !== nothing ? log_names(p,log) : p,s,idx))
     i === nothing && return nothing
     get(tuple_state(i))
 end
