@@ -834,25 +834,29 @@ of `parts::P`, [`sequence_state_type`](@ref) and [`sequence_result_type`](@ref).
 """
 @auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
     parts::P
-    Sequence(p::CombinedParser...) =
-        new{typeof(p),sequence_state_type(p),sequence_result_type(typeof.(p)...)}(p)
+    Sequence(p::CombinedParser...; tuplestate=false) =
+        new{typeof(p),sequence_state_type(p; tuplestate=tuplestate),sequence_result_type(typeof.(p)...)}(p)
 end
 
 
-sequence_state_type(x) = sequence_state_type(typeof(x))
-"""
-    sequence_state_type(pts::Type)
+sequence_state_type(x; kw...) = sequence_state_type(typeof(x); kw...)
 
-`MatchState` if all `fieldtypes` are `MatchState`, Vector{Any} otherwise.
+"""
+    sequence_state_type(pts::Type; tuplestate=false)
+
+- `MatchState` if all `fieldtypes` are `MatchState`, 
+- otherwise if `tuplestate`, a tuple type with the `state_type` of `parts`,
+- or `Vector{Any}` if `!tuplestate`.
 
 !!! note
-    Todo: NCodeunitsState?
+    Todo: NCodeunitsState instead of MatchState might increase performance.
 """
-function sequence_state_type(pts::Type)
+function sequence_state_type(pts::Type; tuplestate=false)
     if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
         MatchState
+    elseif tuplestate
+        Tuple{(state_type(p) for p in fieldtypes(pts))...}
     else
-        ## Tuple{(state_type(p) for p in fieldtypes(pts))...}
         Vector{Any}
     end
 end
@@ -865,10 +869,44 @@ end
 sequence_result_type(T::Type{<:CombinedParser}...) =
     Tuple{ (result_type(t) for t in T)... }
 
-Sequence(p::Vector) =
-    Sequence(p...)
-function Sequence(p...)
-    s = Sequence(( parser(x) for x = p )...)
+Sequence(p::Vector; kw...) =
+    Sequence(p...; kw...)
+
+"""
+    Sequence(parts...; kw...)
+
+
+Parts that are not `::CombinedParser` are converted with [`parser`](@ref).
+```jldoctest
+julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', Numeric(Int))
+🗄 Sequence
+├─ .* AnyChar |> Repeat |> !
+├─ \\  
+└─ Int64
+Tuple{SubString,Char,Int64}
+
+julia> german_street_address"Some Avenue 42"
+("Some Avenue", ' ', 42)
+```
+
+!!! note
+    Returns a NamedTuple [`Transformation`](@ref) if any part was `Pair{Symbol}`.
+
+    ```jldoctest
+    julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => Numeric(Int))
+    🗄 Sequence |> map(ntuple) |> with_name(:german_street_address)
+    ├─ .* AnyChar |> Repeat |> ! |> with_name(:street)
+    ├─ \\  
+    └─ Int64  |> with_name(:no)
+    ::NamedTuple{(:street, :no),Tuple{SubString,Int64}}
+
+    julia> german_street_address"Some Avenue 42"
+    NamedTuple{(:street, :no),Tuple{SubString,Int64}}(("Some Avenue", 42))
+    ``` 
+
+"""
+function Sequence(p...; kw...)
+    s = Sequence(( parser(x) for x = p )...; kw...)
     T = fieldtypes(result_type(s))
     names = ( t.first=>i
               for (i,t) in enumerate(p)
@@ -890,23 +928,23 @@ Base.lastindex(x::Sequence) = lastindex(x.parts)
 
 Sequence keyword argument constructors transform the parsing into a named tuple.
 """
-Sequence(;kw...) =
-    isempty(kw) ? Always() : Sequence(kw...)
+Sequence(;tuplestate=false, kw...) =
+    isempty(kw) ? Always() : Sequence(kw...; tuplestate=tuplestate)
 
 
-Sequence(transform::Function, T::Type, a...) =
-    map(transform, T, Sequence(a...))
+Sequence(transform::Function, T::Type, a...; kw...) =
+    map(transform, T, Sequence(a...; kw...))
 
-Sequence(transform::Function, a...) =
-    map(transform, Sequence(a...))
+Sequence(transform::Function, a...; kw...) =
+    map(transform, Sequence(a...; kw...))
 
 
-Sequence(transform::Integer,tokens...) =
-    Sequence(Val{transform}(),tokens...)
+Sequence(transform::Integer,tokens...; kw...) =
+    Sequence(Val{transform}(),parser.(tokens)...; kw...)
 
-function Sequence(::Val{transform},tokens...) where {transform}
+function Sequence(::Val{transform},tokens...; kw...) where {transform}
     s = Sequence(tokens...)
-    map(v -> v[transform], fieldtype(result_type(s),transform), s)
+    map(v -> v[transform], fieldtype(result_type(s),transform), s; kw...)
     # map(IndexAt(transform), s)
 end
 
@@ -953,11 +991,11 @@ julia> sSequence('a',CharIn("AB")*'b')
 See also [`Sequence`](@ref)
 """
 function sSequence(x...)
-    sSequence(sSequence_(x...)...)
+    sSequence(sSequence_(parser.(x)...)...)
 end
 
-sSequence(x::AbstractToken) = x
-function sSequence(x::AbstractToken...)
+sSequence(x::CombinedParser) = x
+function sSequence(x::CombinedParser...)
     Sequence(sSequence_(x...)...)
 end
 
