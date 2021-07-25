@@ -1895,14 +1895,22 @@ function Base.pushfirst!(x::Either{<:Vector,<:Any}, y)
     x
 end
 
-Base.push!(x::Repeat{<:Either}, y) = push!(x.parser,y)
-Base.pushfirst!(x::Repeat{<:Either}, y) = pushfirst!(x.parser,y)
 
-function Base.push!(x::NamedParser, y)
+"""
+    Base.push!(x::WrappedParser{<:Either}, option)
+
+Push `option` to `x.options` of repeated inner parser.
+"""
+function Base.push!(x::WrappedParser, y)
     push!(x.parser,y)
     x
 end
-function Base.pushfirst!(x::NamedParser{<:Either}, y)
+"""
+    Base.pushfirst!(x::WrappedParser{<:Either}, option)
+
+Push `option` as first `x.options` of repeated inner parser.
+"""
+function Base.pushfirst!(x::WrappedParser, y)
     pushfirst!(x.parser,y)
     x
 end
