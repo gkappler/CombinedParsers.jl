@@ -1369,13 +1369,13 @@ end
 regex_inner(x::Repeat) = regex_inner(x.parser)
 regex_suffix(x::Repeat) = 
     regex_suffix(x.parser)*if x.range.start == 0
-        if x.range.stop == Repeat_max
+        if x.range.stop >= Repeat_max
             "*"
         else            
             "{,$(x.range.stop)}"
         end
     else
-        if x.range.stop == Repeat_max
+        if x.range.stop >= Repeat_max
             if x.range.start == 1
                 "+"
             else
@@ -1743,6 +1743,22 @@ type parameters are computed with [`either_state_type`](@ref) and [`either_resul
 function Either(p_...)
     p = tuple(parser.(p_)...)
     Either{either_state_type(p),either_result_type(p)}(p)
+end
+
+"""
+    Either(p::Vector)
+
+Create a mutable `Either{Vector{Any}}` for creating recursive parsers.
+Arguments `p...` are wrapped in [`parser`](@ref),
+type parameters are computed with [`either_state_type`](@ref) and [`either_result_type`](@ref).
+
+See also [`@syntax`](@ref).
+!!! note
+    state type and result type are `Any` which might cost performance.
+"""
+function Either(p_::Vector)
+    p = Any[parser.(p_)...]
+    Either{Any,Any}(p)
 end
 
 
