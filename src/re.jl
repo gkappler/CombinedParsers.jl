@@ -132,13 +132,13 @@ Gets capture `i` as SubString.
 
 See API of `RegexMatch`.
 """
-function Base.getindex(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Integer)
+function Base.getindex(x::ParseMatch{<:WrappedParser,<:SequenceWithCaptures,<:Any},i::Integer)
     m = getfield(x,1).sequence
     c = m.captures[i]
     isempty(c) ? nothing : match_string(m.match,c[end])
 end
 
-function Base.getindex(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Symbol)
+function Base.getindex(m::ParseMatch{<:WrappedParser,<:SequenceWithCaptures,<:Any},i::Symbol)
     x = getfield(m,1).sequence
     for j in x.names[i]
         c=getindex(m,j)
