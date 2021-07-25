@@ -1940,13 +1940,15 @@ print_constructor(io::IO,x::Either) = print(io,"Either")
     Base.push!(x::Either, option)
 
 Push `option` to `x.options` as parser tried next if `x` fails.
+
 Recursive parsers can be built with `push!` to `Either`.
 
-See also [`pushfirst!`](@ref).
+See also [`pushfirst!`](@ref) and [`@syntax`](@ref).
 """
 function Base.push!(x::Either{<:Vector,<:Any}, y_)
     y = parser(y_)
-    promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
+    promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
+    promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
     push!(x.options,y)
     y
 end
@@ -1954,13 +1956,16 @@ end
 """
     Base.pushfirst!(x::Either, option)
 
-Push `option` to `x.options` as parser tried first, and trying `x` if option fails.
+Push `option` to `x.options` as parser tried first, and trying `x` if `option` fails.
+
 Recursive parsers can be built with `pushfirst!` to `Either`.
 
-See also [`push!`](@ref).
+See also [`push!`](@ref) and [`@syntax`](@ref).
 """
-function Base.pushfirst!(x::Either{<:Vector,<:Any}, y)
-    result_type(y) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.")
+function Base.pushfirst!(x::Either{<:Vector,<:Any}, y_)
+    y = parser(y_)
+    promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
+    promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
     pushfirst!(x.options,y)
     x
 end
