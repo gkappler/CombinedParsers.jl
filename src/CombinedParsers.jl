@@ -58,6 +58,15 @@ See also [`parse`](@ref).
 (x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
 (x::CombinedParser)(f::Function,a...;kw...) = map(f,x,a...;kw...)
 
+"""
+    result_type(x::CombinedParser)
+
+returns the result type of a parser. 
+
+The result type is a CombinedParser type parameter.
+Most of the time it is type-inferred within constructors
+by [`infer_result_type`](@ref).
+"""
 result_type(x::CombinedParser) = result_type(typeof(x))
 result_type(::Type{<:CombinedParser{<:Any,T}}) where T = T
 
@@ -99,9 +108,27 @@ print_constructor(io::IO,x) =
 
 export _iterate
 """
-    _iterate(parser, sequence, till::Int, posi::Int[, nothing])
+    _iterate(parser, sequence, till::Int, posi::Int[, next_i[, state=nothing]])
 
-Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to retrieve first match, or nothing.
+Return position `after` next match of `parser` in `sequence` at `posi`.
+The next match is following current match `state` (first match iif `state==nothing`).
+
+If no next match is found, return `nothing`.
+
+!!! note
+    `next_i` is the index in `sequence` after `parser` match at `posi` with `state`.
+    
+    - `leftof(sequence,next_i,parser,state)==posi`, the start of the `state`-matching subsequence.
+    - `rightof(sequence,posi,parser,state)==next_i`, the position after the `state`-matching subsequence.
+    - `sequence[leftof(sequence,next_i,parser,state):_prevind(sequence,next_i)]` is the matched subsequence.
+
+Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to .
+
+!!! note 
+    custom `_iterate` implementations *must* return
+    - `nothing` if no match is found
+    - `Tuple{Int64,state_type(parser)}` with next position, match state if a match is found.
+
 """
 @inline _iterate(parser, sequence, till::Int, posi::Int) =
     _iterate(parser, sequence,till,posi,posi,nothing)
@@ -138,13 +165,6 @@ Convienience function for overriding [`rightof`](@ref) that guarantees that not 
 @inline _leftof(str,i,parser::WrappedParser,x::NCodeunitsState) = i-x.nc
 @inline _rightof(str,i,parser::WrappedParser,x::NCodeunitsState) = i+x.nc
 
-"""
-    _iterate(parser, sequence, till, posi, next_i, states)
-
-Note: `next_i` is the index in `sequence` after `parser` match according to `state` (and not the start of the match), 
-such that `leftof(sequence,after,parser,state)` returns the start of the matching subsequence,
-and sequence[leftof(sequence,after,parser,state):_prevind(sequence,next_i)] is the matched subsequence.
-"""
 @inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
     _iterate(parser.parser, sequence, till, posi, after, state)
 
@@ -202,8 +222,8 @@ _iterate(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  =
 """
     NIndexParser{N,T} <: LeafParser{MatchState,T}
 
-Abstract type for stepping `N` indices with [`_prevind`](@ref) and [`_nextind`](@ref), 
-accounting for [`ncodeunit`](@ref) length of unicode chars.
+Abstract type for stepping `N` indices with [`_leftof`](@ref) and [`_rightof`](@ref), 
+accounting for `Base.ncodeunits` length of unicode chars.
 
 See [`Bytes`](@ref) and [`ValueMatcher`](@ref).
 """
@@ -529,10 +549,15 @@ export @syntax
     @syntax name = expr
 Convenience macro defining a CombinedParser `name=expr` and custom parsing macro `@name_str`.
 
+```@meta
+DocTestFilters = r"map\\(.+\\)"
+```
+
 ```jldoctest
-julia> @syntax a = AnyChar()
+julia> @syntax a = AnyChar();
 
 julia> a"char"
+'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
 
 ```
 
@@ -553,12 +578,12 @@ julia> @syntax for german_street_address in street_address
        end
 🗄 Sequence |> map(#50) |> with_name(:german_street_address)
 ├─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
-├─ \\  
-└─  <Int64>
+├─ \\
+└─ <Int64>
 ::NamedTuple{(:street, :no),Tuple{String,Int64}}
 
 julia> german_street_address"Some Avenue 42"
-NamedTuple{(:street, :no),Tuple{SubString,Int64}}(("Some Avenue", 42))
+(street = "Some Avenue", no = 42)
 
 
 julia> @syntax for us_street_address in street_address
@@ -569,7 +594,7 @@ julia> @syntax for us_street_address in street_address
             end
        end
 🗄 Sequence |> map(#52) |> with_name(:us_street_address)
-├─  <Int64>
+├─ <Int64>
 ├─ \\  
 └─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
 ::NamedTuple{(:street, :no),Tuple{String,Int64}}
@@ -662,8 +687,7 @@ Returns results of `p`.
 julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
 🗄 Sequence
 ├─ 🗄* Sequence[2] |> Repeat
-│  ├─ (?!🗄) NegativeLookahead
-│  │  └─ b
+│  ├─ (?!b) NegativeLookahead
 │  └─ . AnyChar
 └─ . AnyChar
 ::Tuple{Array{Char,1},Char}
@@ -693,8 +717,7 @@ julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 🗄 Sequence
 ├─ 🗄 Sequence[1]
 │  ├─ (?>🗄*) Sequence[2] |> Repeat |> Atomic
-│  │  ├─ (?!🗄) NegativeLookahead
-│  │  │  └─ b
+│  │  ├─ (?!b) NegativeLookahead
 │  │  └─ . AnyChar
 │  └─ b
 └─ . AnyChar
@@ -758,7 +781,7 @@ julia> saying(v) = v == "same" ? v : "different";
 
 julia> p = after(saying, String, "same"|"but")
 🗄 FlatMap
-├─ |🗄... Either
+├─ |🗄 Either
 │  ├─ same 
 │  └─ but 
 └─ saying
@@ -859,23 +882,23 @@ Sequences can alternatively created with [`*`](@ref)
 julia> german_street_address = !Repeat(AnyChar()) * ' ' * TextParse.Numeric(Int)
 🗄 Sequence
 ├─ .* AnyChar |> Repeat |> !
-├─ \\  
-└─ Int64
-Tuple{SubString,Char,Int64}
+├─ \\
+└─ <Int64>
+::Tuple{SubString{String},Char,Int64}
 
-julia> german_street_address"Some Avenue 42"
+julia> german_street_address("Some Avenue 42")
 ("Some Avenue", ' ', 42)
 ```
 Indexing (transformation) can be defined with
 ```jldoctest
-julia> @syntax german_street_in_address = Sequence(!Repeat(AnyChar()), ' ',TextParse.Numeric(Int))[1]
-🗄 Sequence
+julia> e1 = Sequence(!Repeat(AnyChar()), ' ',TextParse.Numeric(Int))[1]
+🗄 Sequence[1]
 ├─ .* AnyChar |> Repeat |> !
-├─ \\  
-└─ Int64
-SubString
+├─ \\
+└─ <Int64>
+::SubString{String}
 
-julia> german_street_in_address"Some Avenue 42"
+julia> e1("Some Avenue 42")
 "Some Avenue"
 ```
 
@@ -933,11 +956,11 @@ Parts that are not `::CombinedParser` are converted with [`parser`](@ref).
 julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', TextParse.Numeric(Int))
 🗄 Sequence
 ├─ .* AnyChar |> Repeat |> !
-├─ \\  
-└─ Int64
-Tuple{SubString,Char,Int64}
+├─ \\
+└─ <Int64>
+::Tuple{SubString{String},Char,Int64}
 
-julia> german_street_address"Some Avenue 42"
+julia> german_street_address("Some Avenue 42")
 ("Some Avenue", ' ', 42)
 ```
 
@@ -946,14 +969,14 @@ julia> german_street_address"Some Avenue 42"
 
     ```jldoctest
     julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => TextParse.Numeric(Int))
-    🗄 Sequence |> map(ntuple) |> with_name(:german_street_address)
+    🗄 Sequence |> map(ntuple)
     ├─ .* AnyChar |> Repeat |> ! |> with_name(:street)
-    ├─ \\  
-    └─ Int64  |> with_name(:no)
-    ::NamedTuple{(:street, :no),Tuple{SubString,Int64}}
+    ├─ \\
+    └─  <Int64> |> with_name(:no)
+    ::NamedTuple{(:street, :no),Tuple{SubString{String},Int64}}
 
-    julia> german_street_address"Some Avenue 42"
-    NamedTuple{(:street, :no),Tuple{SubString,Int64}}(("Some Avenue", 42))
+    julia> german_street_address("Some Avenue 42")
+    (street = "Some Avenue", no = 42)
     ``` 
 
 """
@@ -1256,13 +1279,13 @@ Lazy `x` repetition matching (instead of default greedy).
 ```jldoctest
 julia> german_street_address = !Lazy(Repeat(AnyChar())) * Repeat1(' ') * TextParse.Numeric(Int)
 🗄 Sequence
-├─ .* AnyChar |> Repeat |> !
-├─ \\  
-└─ Int64
-Tuple{SubString,Char,Int64}
+├─ .*? AnyChar |> Repeat |> Lazy |> !
+├─ \\ +  |> Repeat
+└─ <Int64>
+::Tuple{SubString{String},Array{Char,1},Int64}
 
-julia> german_street_address"Konrad Adenauer Allee    42"
-("Some Avenue", ' ', 42)
+julia> german_street_address("Konrad Adenauer Allee    42")
+("Konrad Adenauer Allee", [' ', ' ', ' ', ' '], 42)
 ```
 
 !!! note 
@@ -1674,7 +1697,7 @@ Default value if [`Optional`](@ref)<:`CombinedParser` is skipped.
 - otherwise `missing`
 
 !!! note
-    [`get`](@ref) will return a [`_copy`](@ref) of `defaultvalue`.
+    [`get`](@ref) will return a [`CombinedParsers._copy`](@ref) of `defaultvalue`.
 """
 defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
@@ -1883,20 +1906,20 @@ Simplifying `Either`, flattens nested `Either`s, remove `Never` parsers.
 
 ```jldoctest
 julia> Either('a',CharIn("AB")|"bc")
-|🗄... Either
+|🗄 Either
 ├─ a
-└─ |🗄... Either
+└─ |🗄 Either
    ├─ [AB] CharIn
    └─ bc
-::Union{Char, SubString}
+::Union{Char, SubString{String}}
 
 
 julia> sEither('a',CharIn("AB")|"bc")
-|🗄... Either
+|🗄 Either
 ├─ a
 ├─ [AB] CharIn
 └─ bc
-::Union{Char, SubString}
+::Union{Char, SubString{String}}
 
 ```
 
@@ -2299,15 +2322,22 @@ end
 
 Sets names of parsers within begin/end block to match the variables they are asigned to.
 
+```@meta
+DocTestFilters = r"map\\(.+\\)"
+```
+
 so, for example
 ```jldoctest
 julia> @trimmed foo = AnyChar()
-. AnyChar |> with_name(:foo)
+🗄 Sequence |> map(#55)
+├─ (?>[\\h]*) CharIn |> Repeat |> Atomic
+├─ . AnyChar |> with_name(:foo)
+└─ (?>[\\h]*) CharIn |> Repeat |> Atomic
 ::Char
 
-julia> parse(log_names(foo),"ab")
-   match foo@1-2: ab
-                  ^
+julia> parse(log_names(foo),"  ab  ")
+   match foo@3-4:   ab
+                    ^
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 ```
 

@@ -3,8 +3,28 @@ whitespace_string = " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B"
 whitespace_char = CharIn("[:space:]",whitespace_string)
 
 export horizontal_space_char
-# The horizontal space characters are:
-horizontal_space_char=CharIn(
+"""
+Horizontal tab (HT),
+Space,
+Non-break space,
+Ogham space mark,
+Mongolian vowel separator,
+En quad,
+Em quad,
+En space,
+Em space,
+Three-per-em space,
+Four-per-em space,
+Six-per-em space,
+Figure space,
+Punctuation space,
+Thin space,
+Hair space,
+Narrow no-break space,
+Medium mathematical space,
+Ideographic space
+"""
+horizontal_space_char=CharIn("\\h",
     '\U0009', # "Horizontal tab (HT)"),
     '\U0020', # "Space"),
     '\U00A0', # "Non-break space"),
@@ -27,8 +47,19 @@ horizontal_space_char=CharIn(
 )
 
 export vertical_space_char
-# The vertical space characters are:
-vertical_space_char=CharIn(
+"""
+    vertical_space_char
+
+- Linefeed (LF)     
+- Vertical tab (VT)
+- Form feed (FF)
+- Carriage return (CR)
+- Next line (NEL)
+- Line separator   
+- Paragraph separator
+
+"""
+vertical_space_char=CharIn("\\v",
     '\U000A', # "Linefeed (LF)"),
     '\U000B', # "Vertical tab (VT)"),
     '\U000C', # "Form feed (FF)"),

@@ -260,7 +260,9 @@ export MatchRange
 """
     MatchRange(p::CombinedParser)
 
+Construct a [`Transformation`](@ref)`{UnitRange{Int}}` resulting in `p` when calling [`get`](@ref) fast,
 Succeed iif `p` succeeds, if so results in sequence match index `UnitRange`.
+Transformation does not evaluate `get(parser.transform,...)`.
 """
 struct MatchRange
 end
@@ -269,11 +271,6 @@ MatchRange(p::CombinedParser) =
 
 Base.show(io::IO, x::MatchRange) = print(io,"@")
 
-"""
-    Base.get(parser::Transformation{MatchRange}, a...)
-
-Does not evaluate `get(parser.transform,...)`.
-"""
 function Base.get(parser::Transformation{MatchRange}, sequence, till, after, i, state)
     i:_prevind(sequence,after)
 end
@@ -281,29 +278,44 @@ end
 
 
 """
-A Transformation{<:Constant} skips evaluation of get(.parser).
+    map_constant(constant, p::CombinedParser)
+    parser((p,constant)::Pair)
+
+Construct a [`Transformation`](@ref)`{<:Constant}` resulting in `p` when calling [`get`](@ref) fast,
+instead of computing result from state, 
+if `parser(p)` matches.
+
+```jldocs
+julia> parser("constant" | "fixed" => :constant)
+|🗄 Either => :constant
+├─ constant 
+└─ fixed 
+::Symbol
+```
+
+!!! note
+    If the `Pair` key is a symbol, a [`NamedParser`](@ref) is created.
+    ```jldocs
+    julia> parser(:constant => "constant" | "fixed")
+    |🗄 Either |> with_name(:constant)
+    ├─ constant 
+    └─ fixed 
+    ::SubString{String}
+    ```
 """
 struct Constant{T}
     value::T
 end
 Base.show(io::IO, x::Constant) = show(io,x.value)
+
 function map_constant(transform, p::CombinedParser)
     T=typeof(transform)
     Transformation{T}(Constant(transform), p)
 end
-"""
-    parser(constant::Pair)
-    map_constant(constant, parser::CombinedParser)
 
-A parser mapping matches of `parser` `x.first` to `constant` `x.second`.
-"""
 parser(constant::Pair) =
     map_constant(constant.second, parser(constant.first))
-"""
-    Base.get(parser::Transformation{<:Constant}, a...)
 
-does not evaluate `get(parser.transform,...)`.
-"""
 function Base.get(parser::Transformation{<:Constant}, sequence, till, after, i, state)
     parser.transform.value
 end
@@ -358,7 +370,7 @@ julia> using CombinedParsers.Regexp
 
 julia> p = re"(?:a|b*)."[1]
 🗄 Sequence[1]
-├─ |🗄... Either
+├─ |🗄 Either
 │  ├─ a 
 │  └─ b*  |> Repeat
 └─ [^\\n] CharNotIn

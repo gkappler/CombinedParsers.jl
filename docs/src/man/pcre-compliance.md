@@ -29,7 +29,7 @@ parsed with
 [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
 (Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
 ## Test Overview
-3074 successful tests on 973 patterns
+3075 successful tests on 973 patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).
 
 23 failed tests on 15 patterns

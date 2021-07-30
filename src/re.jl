@@ -444,7 +444,7 @@ Parser wrapper for `ParserWithCaptures`, setting reset_index=true in `deepmap_pa
 ```jldoctest
 julia> p = re"(?|(a)|(b))\\1"
 🗄 Sequence |> regular expression combinator with 1 capturing groups
-├─ |🗄... Either |> DupSubpatternNumbers
+├─ |🗄 Either |> DupSubpatternNumbers
 │  ├─ (a)  |> Capture 1
 │  └─ (b)  |> Capture 1
 └─ \\g{1} Backreference

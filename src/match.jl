@@ -16,25 +16,14 @@ Base.eltype(T::Type{<:MatchesIterator{P,S}}) where {P,S} =
     ParseMatch{P,S,state_type(P)}
 Base.IteratorSize(::Type{<:MatchesIterator}) = Base.SizeUnknown()
 
+
+
 export ParseMatch
 """
+    ParseMatch(p::MatchesIterator{P,S}, start::Integer, stop::Integer, state::ST) where {P,S,ST}
+
 Wrapper type for [`CombinedParsers.Regexp.SequenceWithCaptures`](@ref), providing
 `getindex` and `getproperty` behavior like `RegexMatch`.
-
-```jldoctest
-julia> m = match(re"(?<a>so)+ (or)", "soso or")
-ParseMatch("soso or", a="so", 2="or")
-
-julia> m[:a]
-"so"
-
-julia> m[2]
-"or"
-
-julia> m.match, m.captures
-("soso or", SubString{String}["so", "or"])
-
-```
 """
 @auto_hash_equals struct ParseMatch{P,S,State}
     parsings::MatchesIterator{P,S}
@@ -179,10 +168,35 @@ _iterate(mi::MatchesIterator,a...) =
 """
     Base.match(parser::CombinedParser,sequence::AbstractString[, idx::Integer]; log=nothing)
 
-Plug-in replacement for `match(::Regex,sequence)`.
+Search for the first match of `parser` in `sequence` and return a [`ParseMatch`](@ref) object containing the match, 
+or `nothing` if the match failed. 
 
-If `log!==nothing`, parser is transformed with `log_names(p, log)`.
-See also [`log_names`](@ref).
+The optional `idx` argument specifies an index at which to start the search.
+
+If `log!==nothing`, parser is transformed with [`log_names`](@ref)`(p, log)`.
+
+The matching substring can be retrieved by accessing m.match.
+
+!!! note 
+    If `parser isa CombinedParsers.Regexp.ParserWithCaptures`,
+    `match` behaves like a plug-in replacement for equivalent `match(::Regex,sequence)`:
+    the captured sequences can be retrieved by accessing m.captures.
+
+    ```jldoctest
+    julia> m = match(re"(?<a>so)+ (or)", "soso or")
+    ParseMatch("soso or", a="so", 2="or")
+
+    julia> m[:a]
+    "so"
+
+    julia> m[2]
+    "or"
+
+    julia> m.match, m.captures
+    ("soso or", SubString{String}["so", "or"])
+
+    ```
+
 """
 function Base.match(parser::CombinedParser, sequence, idx=1; log=nothing)
     p = (log === nothing || log == false ) ? parser : log_names(parser,log)

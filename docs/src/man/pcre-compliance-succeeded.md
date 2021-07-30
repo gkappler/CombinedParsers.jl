@@ -1,5 +1,5 @@
 # PCRE Compliance
-3074 successful tests on 973 patterns.
+3075 successful tests on 973 patterns.
 
 
 
@@ -6672,8 +6672,9 @@
 ```
 /(?<=Z)X./
 ```
-(no 667) succeeded 0 of 0 times:
+(no 667) succeeded 1 of 1 times:
 
+- ✅ `\u84XAZXB`
 
 ---
 

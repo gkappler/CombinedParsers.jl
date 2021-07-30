@@ -1,45 +1,54 @@
-## CombinedParsers.Regexp
+# PCRE Regular expressions
+You can use PCRE `@re_str` in combination with
+`CombinedParser`'s [constructors](constructors.md).
+
+### Regular expressions
 ```@docs
+CombinedParsers.Regexp.@re_str
 CombinedParsers.Regexp
 CombinedParsers.Regexp.Regcomb
-(==)(::RegexMatch,::ParseMatch)
-getindex(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Integer)
+getindex(::ParseMatch{<:CombinedParsers.WrappedParser,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Integer)
 getproperty(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Symbol)
-with_options
+regex_escape
+```
+
+## Unit Tested
+```@docs
+(==)(::RegexMatch,::ParseMatch)
 CombinedParsers.Regexp.@pcre_tests
 ```
 
-## Useful sub-parsers
+## CombinedParsers.Regexp
 ```@docs
-CombinedParsers.Regexp.bsr
-CombinedParsers.Regexp.at_linestart
-```
-
-## Regular Expression Types
-```@docs
-CombinedParsers.Regexp.parse_options
-regex_escape
 CombinedParsers._iterate(::CombinedParsers.Regexp.ParserWithCaptures,::CombinedParsers.Regexp.SequenceWithCaptures,a...)
 ```
 
+## Parsing Options
+PCRE options are supported 
+```@docs
+with_options
+CombinedParsers.Regexp.parse_options
+CombinedParsers.Regexp.StringWithOptions
+CombinedParsers.Regexp.CharWithOptions
+CombinedParsers.Regexp.OnOptionsParser
+CombinedParsers.Regexp.on_options
+CombinedParsers.Regexp.ParserOptions
+CombinedParsers.Regexp.FilterOptions
+CombinedParsers.Regexp.MatchingNever
+```
+
+
+
+## Regular Expression Types
 ```@docs
 CombinedParsers.Regexp.ParserWithCaptures
 CombinedParsers.Regexp.SequenceWithCaptures
 CombinedParsers.Regexp.Capture
 CombinedParsers.Regexp.Backreference
 CombinedParsers.Regexp.Subroutine
-CombinedParsers.Regexp.index(::Subroutine,::Any)
 CombinedParsers.Regexp.subroutine_index_reset(::CombinedParsers.Regexp.ParserWithCaptures,::Capture)
+CombinedParsers.Regexp.index(::Subroutine,::Any)
 CombinedParsers.Regexp.Conditional
 CombinedParsers.Regexp.DupSubpatternNumbers
 ```
-
-## Parsing Options
-```@docs
-CombinedParsers.Regexp.ParserOptions
-CombinedParsers.Regexp.FilterOptions
-CombinedParsers.Regexp.WithOptions
-CombinedParsers.Regexp.OnOptionsParser
-```
-
 

@@ -72,13 +72,16 @@ Parser Transformation getting the matched SubString.
 
 ```jldoctest
 julia> Repeat(AnyChar())
-Array{Char,1}
+.* AnyChar |> Repeat
+::Array{Char,1}
 
 julia> !Repeat(AnyChar())
-SubString{String}
+.* AnyChar |> Repeat |> !
+::SubString{String}
 
 julia> !!Repeat(AnyChar())
-"abc"
+.* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
+::String
 
 ```
 
@@ -111,11 +114,11 @@ Operator syntax for `sEither(x, y)`.
 
 ```jldoctest
 julia> 'a' | CharIn("AB") | "bc"
-|🗄... Either
+|🗄 Either
 ├─ a
 ├─ [AB] CharIn
 └─ bc
-::Union{Char, SubString}
+::Union{Char, SubString{String}}
 
 ```
 
@@ -129,14 +132,14 @@ Operator syntax for `Optional(x, default=default)`.
 
 ```jldoctest
 julia> parser("abc") | "nothing"
-|🗄... Either
+|🗄 Either
 ├─ abc
 └─ nothing
-::SubString
+::SubString{String}
 
 julia> parser("abc") | missing
 abc? |missing
-::Union{Missing, SubString}
+::Union{Missing, SubString{String}}
 
 ```
 

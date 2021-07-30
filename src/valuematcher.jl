@@ -15,7 +15,8 @@ export AnyChar, any
 Parser matching exactly one `x::T`, returning the value.
 ```jldoctest
 julia> AnyChar()
-re"."
+. AnyChar
+::Char
 ```
 
 """
@@ -27,9 +28,9 @@ regex_inner(x::AnyChar{Char}) = "."
 regex_inner(x::AnyChar{T}) where T = "(.::$T)"
 
 """
-    _iterate(parser::AnyChar, sequence, till, posi, next_i, state::Nothing)
+    _iterate(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
 
-Matches value at point `c` iif [`ismatch`](@ref)`(c, parser)` with state MatchState.
+When implementing a `Custom<:ValueMatcher` it suffices to provide a method [`CombinedParsers._ismatch`](@ref)`(c, parser::Custom)`.
 """
 @inline function _iterate(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
     next_i>till && return nothing
@@ -116,13 +117,15 @@ Parser matching exactly one element `c` (character) in a sequence, iif [`_ismatc
 
 ```jldoctest
 julia> a_z = CharIn('a':'z')
-re"[a-z]"
+[a-z] CharIn
+::Char
 
 julia> parse(a_z, "a")
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 
 julia> ac = CharIn("ac")
-re"[ac]"
+[ac] CharIn
+::Char
 
 julia> parse(ac, "c")
 'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
@@ -241,10 +244,12 @@ Parser matching exactly one element (character) in a sequence, iif not in `x`.
 
 ```jldoctest
 julia> a_z = CharNotIn('a':'z')
-re"[^a-z]"
+[^a-z] CharNotIn
+::Char
 
 julia> ac = CharNotIn("ac")
-re"[^ac]"
+[^ac] CharNotIn
+::Char
 
 ```
 

@@ -1,5 +1,12 @@
-
 export MemoizingParser
+"""
+    MemoizingParser{P,S,T}
+
+[`WrappedParser`](@ref) memoizing all match states.
+For slow parsers with a lot of backtracking this parser can help improve speed.
+
+(Sharing a good example where memoization makes a difference is appreciated.)
+"""
 @auto_hash_equals struct MemoizingParser{P,S,T} <: WrappedParser{P,S,T}
     parser::P
     function MemoizingParser(p)

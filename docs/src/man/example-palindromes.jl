@@ -155,18 +155,24 @@ function CombinedParsers._iterate(x::Palindrome,
               (left=left_, center=posi, right=right_))
     end
 end
+
+# Let's not iterate through next matches for now by dispatching `_iterate` for a match state to nothing.
+CombinedParsers._iterate(x::Palindrome, str, till, posi, after, state) =
+    nothing
+
 # `_iterate` matches the right part of the palindrome if and only if `posi` at the center of a palindrome. 
 #
 # The internal API calls (for the center index 18):
 state = _iterate(Palindrome(),s,lastindex(s),18,18,nothing)
 
+import CombinedParsers: _leftof, _rightof
 # ### `Base.prevind` and `Base.nextind`
 # `CombinedParsers` iterates through matches based on the parsing position and state.
-Base.nextind(str,i::Int,p::Palindrome,state) =
+CombinedParsers._rightof(str,i::Int,p::Palindrome,state) =
     nextind(str,state.right)
 # Note that for the inside-out strategy the `Palindrome<:CombinedParser` matches from `center` and looks behind until `right`, possibly overlapping with the last match(es).
 # The start index of a palindrome match is its center.
-Base.prevind(str,after::Int,p::Palindrome,state) =
+CombinedParsers._leftof(str,after::Int,p::Palindrome,state) =
     state.center
  
 

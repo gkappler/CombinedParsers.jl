@@ -35,8 +35,8 @@ using CombinedParsers.Regexp
 # The simplest regular expression pattern is a character matcher.
 import CombinedParsers.Regexp: meta_chars
 char_matcher =  Either(
-    character = CharNotIn(meta_chars),
-    escaped_meta =  Sequence(
+    CharNotIn(meta_chars), # character
+    Sequence( # escaped_meta
 	2,    # transform: emit unescaped at index
         '\\', CharIn(meta_chars)
     )
@@ -160,9 +160,10 @@ push!(repeatable,capture_group);
 
 # Conveniently, the [`@syntax`](@ref) with a `for <name> in <either>` calls `push!`.
 @syntax for noncapture_group in repeatable
-    Sequence(2, '(?:', pattern, ')')
+    Sequence(2, "(?:", pattern, ')')
 end;
 
+import CombinedParsers.Regexp: ParserWithCaptures
 regcomb = map(ParserWithCaptures,pattern);
 
 match(regcomb("(1a(2b?)*)*0"),"1a1a21a2b22b0")

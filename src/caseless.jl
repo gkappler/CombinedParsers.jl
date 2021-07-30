@@ -1,8 +1,44 @@
 
 export caseless
-caseless(x) = MappingParser(lowercase, deepmap_parser(lowercase,parser(x)))
+"""
+    caseless(x)
+    
+[`MappingParser`](@ref)(lowercase, deepmap_parser(lowercase,parser(x))).
+
+
+```@meta
+DocTestFilters = r"[0-9.]+ .s.*"
+```
+
+```jldoctest
+julia> p = caseless("AlsO")
+🗄  |> MappingParser
+├─ also
+└─ lowercase
+::SubString{String}
+
+julia> p("also")
+"also"
+
+julia> using BenchmarkTools;
+
+julia> @btime match(p,"also");
+  51.983 ns (2 allocations: 176 bytes)
+
+julia> p = parser("also"); @btime match(p,"also");
+  44.759 ns (2 allocations: 176 bytes)
+
+```
+"""
+caseless(x) =
+    MappingParser(lowercase, deepmap_parser(lowercase,parser(x)))
 
 export MappingParser
+"""
+    MappingParser(f::F,parser::P) where {F<:Function,P}
+
+Match parser on [`MappedChars`](@ref)`(f,sequence)`, e.g. in a [`caseless`](@ref) parser.
+"""
 @auto_hash_equals struct MappingParser{P,S,T,F<:Function} <: WrappedParser{P,S,T}
     parser::P
     f::F
@@ -29,31 +65,7 @@ export MappedChars
     MappedChars(f::Function,x) <: AbstractString
 
 String implementation lazily transforming characters.
-Used for fast caseless matching.
-
-```@meta
-DocTestFilters = r"[0-9.]+ .s.*"
-```
-
-```jldoctest
-julia> p = caseless("AlsO")
-🗄  |> MappingParser
-├─ also
-└─ lowercase
-::String
-
-julia> p("also")
-"also"
-
-julia> using BenchmarkTools;
-
-julia> @btime match(p,"also");
-  51.983 ns (2 allocations: 176 bytes)
-
-julia> p = parser("also"); @btime match(p,"also");
-  44.759 ns (2 allocations: 176 bytes)
-
-```
+Used for parsing with [`MappingParser`](@ref).
 """
 struct MappedChars{S,M<:Function} <: AbstractString
     x::S

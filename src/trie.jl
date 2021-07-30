@@ -19,9 +19,9 @@ end
 either_state_type(T::Type{<:Trie}) = NCodeunitsState{T}
 
 """
-    _iterate(p::Trie{Char}, str, till, posi, next_i, ::Nothing)
+    _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, ::Nothing)
 
-Match char path in `p` greedily, recording shorter matches in state.
+Match char path in `p` greedily, recording `SubTrie` in a [`NCodeunitsState`](@ref).
 """
 @inline function _iterate(p::Union{Trie{Char},SubTrie{Char}}, str, till, posi, next_i, state::Nothing)
     ni = ni_ = posi

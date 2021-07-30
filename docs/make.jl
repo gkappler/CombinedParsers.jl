@@ -55,6 +55,9 @@ makedocs(;
              ],
              "Library" => Any[
                  "Public" => "lib/public.md",
+                 "Parsers" => "lib/parsers.md",
+                 "Constructors" => "lib/constructors.md",
+                 "Transformations" => "lib/transformation.md",
                  "Regexp" => "lib/regexp.md",
                  "Internals" => "lib/internals.md"
              ],

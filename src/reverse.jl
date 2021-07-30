@@ -118,12 +118,11 @@ julia> p = Sequence(!re"a+b", PositiveLookbehind(!re"a+b"))
 🗄 Sequence
 ├─ 🗄 Sequence |> !
 │  ├─ a+  |> Repeat
-│  └─ b 
-└─ (?<=🗄) PositiveLookbehind
-   ├─ b 
+│  └─ b
+└─ (?<=🗄) Sequence |> ! |> PositiveLookbehind
+   ├─ b
    └─ a+  |> Repeat
-::Tuple{SubString,SubString}
-
+::Tuple{SubString{String},SubString{String}}
 
 julia> p("aaab")
 ("aaab", "baaa")

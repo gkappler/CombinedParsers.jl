@@ -37,8 +37,8 @@ Parser for `flags` in [`@re_str`](@ref).
 julia> CombinedParsers.Regexp.pcre_options_parser
 🗄 Sequence[2]
 ├─ ^ AtStart
-├─ 🗄+? Sequence[1] |> Repeat |> map(splat_or)|0
-│  ├─ |🗄... Either
+├─ 🗄* Sequence[1] |> Repeat |> map(splat_or)
+│  ├─ |🗄 Either
 │  │  ├─ dupnames  => 0x00000040 |> with_name(:DUPNAMES)
 │  │  ├─ xx  => 0x01000000 |> with_name(:EXTENDED_MORE)
 │  │  ├─ i  => 0x00000008 |> with_name(:CASELESS)
@@ -161,19 +161,46 @@ flags(x::StringWithOptions) = x.flags
 flags(x) = UInt32(0)
 regex_string(x::StringWithOptions) = StringWithOptions(regex_escape(x.x),x.flags)
 
+"""
+    with_options(flags::UInt32,x::AbstractString)
 
-with_options(flags::UInt32,x::Union{StringWithOptions,CharWithOptions}) =
-    with_options(flags|x.flags,x.x)
+Return 'x` if `iszero(0)`, otherwise `StringWithOptions` with `flags`.
+"""
 with_options(flags::UInt32,x::AbstractString) =
-    flags == 0 ? x : StringWithOptions(x,flags)
+    iszero(flags) ? x : StringWithOptions(x,flags)
+
+"""
+    with_options(flags::UInt32,x::Char)
+
+Return 'x` if `iszero(0)`, otherwise `CharWithOptions` with `flags`.
+"""
 with_options(flags::UInt32,x::Char) =
-    flags == 0 ? x : CharWithOptions(x,flags)
-with_options(options::AbstractString,str::AbstractString) = 
+    iszero(flags) ? x : CharWithOptions(x,flags)
+
+
+"""
+    with_options(flags::AbstractString,x)
+
+Return `with_options(parse_options(options),x)`, see [`parse_options`](@ref).
+"""
+with_options(options::AbstractString,str) = 
     with_options(parse_options(options),str)
-with_options(set_flags::UInt32, unset_flags::UInt32,x::AbstractString) =
-    with_options(set_flags,x)
-with_options(set_flags::UInt32, unset_flags::UInt32,x::StringWithOptions) =
+
+
+WithOptions = Union{StringWithOptions,CharWithOptions}
+with_options(flags::UInt32,x::WithOptions) =
+    with_options(flags|x.flags,x.x)
+
+"""
+    with_options(set_flags::UInt32, unset_flags::UInt32,x)
+
+Set options `set_flags | ( x.flags & ~unset_flags )` if `x isa WithOptions`, 
+set options `set_flags` otherwise.
+"""
+with_options(set_flags::UInt32, unset_flags::UInt32,x::WithOptions) =
     with_options(set_flags | ( x.flags & ~unset_flags ),x.x)
+with_options(set_flags::UInt32, unset_flags::UInt32,x) =
+    with_options(set_flags,x)
 
 import Base: Regex
 Base.Regex(x::StringWithOptions) =
@@ -403,7 +430,21 @@ deepmap_parser(f::Function,mem::AbstractDict,x::OnOptionsParser,a...; kw...) =
             deepmap_parser(f,mem,x.parser,a...; kw...),
             x.flags)
     end
-        
+
+"""
+    on_options(flags::Integer,parser)
+
+create parser that matches if `flags` are set in sequence, and `parser` matches.
+
+Used for PCRE parsing, e.g.
+```julia
+Either(
+    on_options(Base.PCRE.MULTILINE, 
+           '^' => at_linestart),
+    parser('^' => AtStart())
+)
+```
+"""
 on_options(flags::Integer,p) =
     OnOptionsParser(parser(p),UInt32(flags))
 

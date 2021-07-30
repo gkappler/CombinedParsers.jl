@@ -1,23 +1,43 @@
 # Internal API
-## Iterating Parsings
+## Iterating
+Iteration is done with states.
 ```@docs
-CombinedParsers.MatchesIterator
-CombinedParsers.parsematch_tuple
-Base.prevind
-Base.nextind
-CombinedParsers.ismatch
-CombinedParsers._ismatch
-CombinedParsers._iterate
-CombinedParsers.tuple_pos
-CombinedParsers.tuple_state
+CombinedParsers.state_type
 ```
 
+```@docs
+MatchesIterator
+ParseMatch
+CombinedParsers.parsematch_tuple
+```
+
+```@docs
+CombinedParsers._iterate
+```
+
+```@docs
+CombinedParsers.tuple_pos
+CombinedParsers.tuple_state
+CombinedParsers.leftof
+CombinedParsers._leftof
+CombinedParsers.rightof
+CombinedParsers._rightof
+```
+
+From result can (re-)construct [`CombinedParsers.leftof`](@ref).
 # Internal Types
 ## Abstract Parsers
 ```@docs
-CombinedParsers.ParserTypes
 CombinedParsers.CombinedParser
 CombinedParsers.LeafParser
+CombinedParsers.Assertion
+```
+
+## States
+```@docs
+CombinedParsers.MatchState
+CombinedParsers.NoMatch
+CombinedParsers.NCodeunitsState
 ```
 
 ## Wrapped Parsers
@@ -26,29 +46,24 @@ CombinedParsers.FilterParser
 CombinedParsers.ConstantParser
 CombinedParsers.NIndexParser
 CombinedParsers.WrappedParser
-CombinedParsers.Transformation
-CombinedParsers.LookAround
-```
-
-## States
-```@docs
-CombinedParsers.MatchState
-CombinedParsers.None
-CombinedParsers.NCodeunitsState
+CombinedParsers.WrappedAssertion
 ```
 
 ## Printing
 ```@docs
+CombinedParsers.print_constructor
+CombinedParsers.MemoTreeChildren
+```
+
+### PCRE
+printing currently in tree view, but has inconsistencies (might not result in the PCRE regex equivalent to the parser).
+```@docs
+Base.escape_string
 regex_string
 CombinedParsers.regex_prefix
 CombinedParsers.regex_inner
 CombinedParsers.regex_suffix
-CombinedParsers.print_constructor
-CombinedParsers.MemoTreeChildren
-Base.escape_string
 ```
-
-
 
 ## Rewriting Parsers
 ```@docs

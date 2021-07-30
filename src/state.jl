@@ -10,10 +10,10 @@ struct MatchState end
 Base.show(io::IO, ::MatchState) = print(io,"∘")
 
 """
-State object representing ncodeunits explicitely with state of match for `prevind`, `nextind` to improve performance.
+State object representing ncodeunits explicitely with state of match for `leftof`, `rightof` to improve performance.
     `nc::Int` and `state::S`.
 
-See also [`MatchState`](@ref), [`prevind`](@ref), [`nextind`](@ref).
+See also [`MatchState`](@ref), [`leftof`](@ref), [`rightof`](@ref).
 
 !!! note:
     `nc` as type parameter faster but slow compilation.
