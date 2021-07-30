@@ -2242,7 +2242,7 @@ function integer_base(base=10,mind=0,maxd=Repeat_max)
     dig = if base == 16
         hex_digit
     elseif base <= 10
-        CharIn('0':('0'+base))
+        CharIn('0':('0'+(base-1)))
     else
         error("Base $base not supported")
     end
