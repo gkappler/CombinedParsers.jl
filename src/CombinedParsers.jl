@@ -280,7 +280,7 @@ If available before end of sequence, parse `N` bytes successfully with `result_t
 """
 Bytes(N::Integer, T::Type=Vector{UInt8}) = Bytes{N,T}()
 
-
+@deprecate Bytes{T}(N::Integer) where T Bytes(N,T)
 
 
 include("parser.jl")
