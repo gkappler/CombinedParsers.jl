@@ -2312,7 +2312,7 @@ export @trimmed
 trimmed(x) = x
 function trimmed(node::Expr)
     if node.head == :(=) && length(node.args) == 2 && isa(node.args[1], Symbol)
-        node.args[2] = Expr(:call, :trim, node.args[2])
+        node.args[2] = Expr(:call, :trim, Expr(:call, :with_name, QuoteNode(node.args[1]), node.args[2]))
     end
     if node.head != :call 
         node.args = map(trimmed, node.args)
