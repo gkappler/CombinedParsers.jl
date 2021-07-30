@@ -91,8 +91,12 @@ regex_string(x::CombinedParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
 regex_prefix(x::CombinedParser) = ""
 regex_suffix(x::CombinedParser) = ""
 regex_inner(x::CombinedParser) = ""
-constructor_name(x) = typeof(x).name
 
+if VERSION>=v"1.6"
+    constructor_name(x) = typeof(x).name.name
+else
+    constructor_name(x) = typeof(x).name.name
+end
 
 """
     print_constructor(io::IO,x)
