@@ -820,7 +820,7 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state::Nothing)
     lr = _iterate(tokf.left, str, till, posi, next_i, nothing)
     lr === nothing && return nothing
     next_i_ = tuple_pos(lr)
-    rightp = tokf.right(get(tokf.left, str, till, next_i_,next_i,tuple_state(lr)))
+    rightp = parser(tokf.right(get(tokf.left, str, till, next_i_,next_i,tuple_state(lr))))
     rr = nothing
     while rr === nothing
         rr = _iterate(rightp, str, till, next_i_, next_i_, nothing)
@@ -828,7 +828,7 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state::Nothing)
             lr = _iterate(tokf.left, str, till, posi, next_i_, tuple_state(lr))
             lr === nothing && return nothing
             next_i_ = tuple_pos(lr)
-            rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,tuple_state(lr)))
+            rightp = parser(tokf.right(get(tokf.left, str, till, next_i_,posi,tuple_state(lr))))
         else
             return flatmap_state(nothing,tuple_state(lr), rightp, rr)
         end
@@ -848,7 +848,7 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
             lr = _iterate(tokf.left, str, till, posi, next_i_, lstate)
             lr === nothing && return nothing
             next_i_,lstate = lr
-            rightp = tokf.right(get(tokf.left, str, till, next_i_,posi,lstate))
+            rightp = parser(tokf.right(get(tokf.left, str, till, next_i_,posi,lstate)))
             rstate = nothing
         else
             return flatmap_state(state,lstate, rightp, rr)
