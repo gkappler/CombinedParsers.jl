@@ -15,7 +15,7 @@ true
 @auto_hash_equals struct ConstantParser{P,T} <: LeafParser{MatchState,T}
     parser::P
     function ConstantParser(x::T) where {T<:AbstractString}
-        new{T,SubString}(x)
+        new{T,SubString{T}}(x)
     end
     function ConstantParser(x)
         new{typeof(x),typeof(x)}(x)
