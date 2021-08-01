@@ -912,8 +912,17 @@ julia> e1("Some Avenue 42")
 """
 @auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
     parts::P
-    Sequence(p::CombinedParser...; tuplestate=false) =
-        new{typeof(p),sequence_state_type(p; tuplestate=tuplestate),sequence_result_type(typeof.(p)...)}(p)
+    function Sequence(p::CombinedParser...; tuplestate=false)
+        if VERSION>=v"1.6" && length(p)>4
+            Sequence(Sequence(p[1:2]...; tuplestate=tuplestate),
+                     Sequence(p[3:end]...; tuplestate=tuplestate);
+                     tuplestate=tuplestate) do v
+                         tuple(v[1]..., v[2]...)
+                     end
+        else
+            new{typeof(p),sequence_state_type(p; tuplestate=tuplestate),sequence_result_type(typeof.(p)...)}(p)
+        end
+    end
 end
 
 
