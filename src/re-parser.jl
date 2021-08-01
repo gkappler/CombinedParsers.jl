@@ -1,3 +1,4 @@
+import ..CombinedParsers: bsr, word, word_char, non_word_char, non_word, word_boundary
 import ..CombinedParsers: Repeat_max
 ## TODO:
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC2
@@ -130,19 +131,6 @@ escape_sequence(stop=AtEnd()) =
                   wrap=JoinSubstring));
 push!(pattern,
       map(parser, with_name(:escape_sequence, escape_sequence())));
-
-word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
-word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
-words = JoinSubstring(Repeat1(CharIn("\\w\\h", horizontal_space_char, word_char))) ## "[[:alpha:] ]+"
-
-non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
-non_word = JoinSubstring(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
-non_word_char_ = Either(non_word_char,AtStart(),AtEnd())
-
-@with_names word_boundary = Either(
-    Sequence(PositiveLookbehind(word),PositiveLookahead(non_word_char_)),
-    Sequence(PositiveLookbehind(non_word_char_),PositiveLookahead(word))
-)
     
 @with_names simple_assertion =
     Sequence(2,
