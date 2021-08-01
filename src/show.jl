@@ -10,11 +10,20 @@ end
 function MemoTreeChildren(children::Union{Vector, Tuple}, visited::Dict=Dict())
     children_ = []
     for x in children
-        push!(children_,MemoTreeChildren(visited, x, !haskey(visited, x)))
+        push!(children_,
+              MemoTreeChildren(visited, x,
+                               !haskey(visited, x)))
         visited[x] = true
     end
     children_
 end
+
+children(x::CombinedParser, visited::Dict) =
+    children(x)
+
+
+children(x::WrappedAssertion, visited::Dict) =
+    children(x.parser, visited)
 
 children(x::MemoTreeChildren) =
     if x.descend
@@ -29,21 +38,23 @@ function printnode(io::IO, x::MemoTreeChildren)
     x.descend || isempty(children(x.child)) || printstyled(io, " # branches hidden", color=:light_black)
 end
 
-children(x::Union{Regex,AbstractString}) = ()
 
 
 Base.show(io::IO, x::MemoTreeChildren) =
     show(io,x.child)
 
-function Base.show(io::IO, x::ConstantParser)
-    print(io, "re\"",regex_string(x),"\"") ##!!
-end
+hasregex(x::CombinedParser) = false
+hasregex(x::ConstantParser) = true
+hasregex(x::WrappedAssertion) = hasregex(x.parser)
+hasregex(x::WrappedParser) = false
+hasregex(x::Union{AtStart,AtEnd}) = true
 function Base.show(io::IO, x::CombinedParser)
-    if get(io,:compact,false)
-        print(io, regex_string(x)) ##!!
+    if hasregex(x)
+        print(io, "re\"",regex_string(x),"\"") ##!!
     else
-        print_tree(io, MemoTreeChildren(Dict{Any,Bool}(x=>true),x, true), indicate_truncation=false)
-        println(io,"::",result_type(x))
+        mc = MemoTreeChildren(Dict{Any,Bool}(x=>true),x, true)
+        print_tree(io, mc, indicate_truncation=false)
+        get(io,:compact,false) || println(io,"::",result_type(x))
     end
 end
 

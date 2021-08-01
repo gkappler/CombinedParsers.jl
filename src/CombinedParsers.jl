@@ -2276,17 +2276,8 @@ include("re.jl")
 
 include("show.jl")
 
-
-
-children(x::PositiveLookbehind) =
-    children(x.parser)
-
 include("memoize.jl")
 include("caseless.jl")
-
-children(x::MappingParser) =
-    ( x.parser, x.f)
-
 
 
 include("lazy.jl")

@@ -226,6 +226,7 @@ regex_string_(x::StepRange) =
         x.start*"-"*x.stop
     end
 regex_string_(x::Tuple) = join([regex_string_(s) for s in x])
+regex_string_(x::Function) = "$x(...)"
 regex_string_(x::CharIn) = ( x.pcre =="" ? regex_string_(x.sets) : x.pcre )
 regex_inner(x::CharIn) =
     "["*regex_string_(x)*"]"

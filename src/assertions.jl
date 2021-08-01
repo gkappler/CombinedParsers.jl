@@ -32,7 +32,7 @@ re"^"
 ```
 """
 struct AtStart <: Assertion{MatchState,AtStart} end
-regex_string(x::AtStart) = "^"
+regex_inner(x::AtStart) = "^"
 _iterate(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
     next_i == 1 ? (next_i, MatchState()) : nothing
 
@@ -50,7 +50,7 @@ re"\$"
 ```
 """
 struct AtEnd <: Assertion{MatchState,AtEnd} end
-regex_string(x::AtEnd) = "\$"
+regex_inner(x::AtEnd) = "\$"
 _iterate(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
 print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
@@ -110,9 +110,17 @@ Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
 An assertion with an inner parser, like WrappedParser interface.
 """
 abstract type WrappedAssertion{S,T} <: Assertion{S,T} end
-children(x::WrappedAssertion) = (x.parser,)
+children(x::WrappedAssertion) = children(x.parser)
 regex_suffix(x::WrappedAssertion) = regex_suffix(x.parser)*")"
-regex_inner(x::WrappedAssertion) = regex_string(x.parser)
+regex_inner(x::WrappedAssertion) = regex_inner(x.parser)
+
+function print_constructor(io::IO,x::WrappedAssertion)
+    if !hasregex(x.parser)
+        print_constructor(io, x.parser)
+        print(io, " |> ")
+    end
+    print(io, constructor_name(x))
+end
 
 export PositiveLookahead
 """

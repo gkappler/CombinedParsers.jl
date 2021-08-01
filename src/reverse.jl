@@ -72,6 +72,9 @@ function Lookbehind(does_match::Bool, p)
 end
 @deprecate look_behind(does_match,p) Lookbehind(does_match, p)
 
+children(x::PositiveLookbehind) =
+    children(x.parser)
+
 function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing)
     rseq=reversed(str)
     next_i < 1 && return next_i, MatchState()

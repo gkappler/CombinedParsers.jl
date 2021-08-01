@@ -24,7 +24,9 @@ end
 parser(x::AbstractToken) = AbstractTokenParser(x)
 
 regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
-
+function printnode_(io::IO, x::AbstractTokenParser)
+    print(io, x.parser)
+end
 
 print_constructor(io::IO, x::AbstractTokenParser) =
     print(io, x.parser)

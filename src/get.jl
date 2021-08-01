@@ -65,7 +65,7 @@ Base.map(f::Type{<:JoinSubstring}, p::CombinedParser) = JoinSubstring(p)
 reversed(x::JoinSubstring) = JoinSubstring(reversed(x.parser))
 function print_constructor(io::IO,x::JoinSubstring)
     print_constructor(io,x.parser)
-    printstyled(io," |> !", color=:blue)
+    printstyled(io," |> !", color=:bold)
 end
 
 deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
@@ -331,7 +331,7 @@ children(x::Transformation) = children(x.parser)
 function print_constructor(io::IO,x::Transformation)
     print_constructor(io,x.parser)
     print(io," |> map(")
-    printstyled(io,x.transform, color=:blue)
+    printstyled(io,x.transform, color=:bold)
     print(io,")")
 end
 
@@ -342,7 +342,7 @@ end
 
 function print_constructor(io::IO,x::Transformation{<:Constant})
     print_constructor(io,x.parser)
-    printstyled(io," => ",string(x.transform), color=:blue)
+    printstyled(IOContext(io, :compact => true)," => ",x.transform, color=:bold)
     
 end
 
@@ -398,7 +398,7 @@ end
 
 function print_constructor(io::IO,x::Transformation{<:IndexAt})
     print_constructor(io,x.parser)
-    printstyled(io,"[",x.transform.i,"]", color=:blue)
+    printstyled(io,"[",x.transform.i,"]", color=:bold)
 end
 
 """

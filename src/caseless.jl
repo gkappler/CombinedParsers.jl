@@ -46,6 +46,7 @@ Match parser on [`MappedChars`](@ref)`(f,sequence)`, e.g. in a [`caseless`](@ref
         new{P,state_type(p),result_type(p),F}(p,f)
     end
 end
+children(x::MappingParser) = tuple(x.parser, x.f)
 
 @inline function _iterate(parser::M, sequence::String, till, posi,after,state) where {M<:MappingParser}
     # @warn "for memoizing, wrap sequence in WithMemory"

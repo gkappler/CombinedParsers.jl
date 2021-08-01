@@ -273,8 +273,6 @@ Parser matching previously captured sequence, optionally with a name.
         new(Symbol(name),-1,f)
 end
 
-regex_string_(x::Function) = "#\$($x)"
-                                                          
 regex_string_(x::Backreference) =
    if x.name !== nothing
        string(x.name)
