@@ -326,6 +326,7 @@ _push!(charset::Nothing, x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) = Any[
 
 optimize!(charset,otherstuff) =
     charset,otherstuff
+
 optimize!(charset,otherstuff,x) =
     _push!(charset,x),otherstuff
 

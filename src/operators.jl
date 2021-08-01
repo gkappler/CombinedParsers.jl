@@ -1,5 +1,5 @@
 import Base: (^), (*), (~), (/), (|), (!)
-ParserOperatorTypes = Union{AbstractToken, AbstractString, Char, Regex}
+ParserOperatorTypes = Union{AbstractToken, AbstractString, Char}
 
 (*)(x::Any, y::AbstractToken) = sSequence(parser(x),y)
 (*)(x::AbstractToken, y::Any) = sSequence(x,parser(y))

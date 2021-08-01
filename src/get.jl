@@ -140,11 +140,9 @@ Base.get(parser::Optional, sequence, till, after, i, state::NoMatch) =
 Base.get(parser::Optional, sequence, till, after, i, state) = 
     get(parser.parser,sequence, till, after, i, state)
 
-function Base.get(parser::Repeat,
-                  sequence, till,
-                  after, i, state::Vector)
+function Base.get(parser::Repeat, sequence, till, after, i, state::Vector)
     r = Vector{result_type(parser.parser)}(undef,length(state))
-    i_=i
+    i_ = i
     for (p,s) in enumerate(state)
         after_ = rightof(sequence,i_,parser.parser,s)
         @inbounds r[p] = get(parser.parser, sequence, till, after_, i_, s)
@@ -153,9 +151,7 @@ function Base.get(parser::Repeat,
     r
 end
 
-function Base.get(parser::Repeat,
-                  sequence, till,
-                  after, i, state::Int)
+function Base.get(parser::Repeat, sequence, till, after, i, state::Int)
     r = Vector{result_type(parser.parser)}(undef,state)
     i_=i
     s=MatchState()

@@ -1,6 +1,6 @@
 
-function Base.getindex(x::ParseMatch{<:Transformation},a...)
     # error?
+function Base.getindex(x::ParseMatch{<:Union{Transformation}},a...)
     println("implement lazy getindex(::$(typeof(x))")
     getindex(get(x), a...)
 end

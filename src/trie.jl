@@ -48,8 +48,11 @@ end
 @inline _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state) = 
     _iterate(p, str, _prevind(str,next_i,2), posi, posi, nothing)
 
-@inline _rightof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i+x.nc
-@inline _leftof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i-x.nc
+# disambiguation
+@inline _rightof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState) =
+    i+x.nc
+@inline _leftof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState) =
+    i-x.nc
 
 children(x::Either{<:AbstractTrie}) =
     children(x.options)

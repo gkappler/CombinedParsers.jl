@@ -164,7 +164,7 @@ trim(; whitespace=horizontal_space) =
 Ignore whitespace at left and right of `p`.
 """
 trim(p; whitespace=Atomic(Repeat(horizontal_space_char))) =
-    Sequence(2, whitespace, p, whitespace)
+    Sequence(whitespace, p, whitespace)[2]
 
 
 trimmed(x) = x

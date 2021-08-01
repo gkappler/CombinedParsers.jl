@@ -37,7 +37,6 @@ export result_type
 export parser
 import Base: convert
 
-
 """
     CombinedParser{S,T} <: AbstractToken{T}
 
