@@ -156,6 +156,8 @@ unicode_class = [
         ]
         ]
 
+unicode_abbrev = Dict([ v[3]=>k for (k,v) in CombinedParsers.unicode_class])
+
 """
 
 Supported Unicode classes
@@ -233,5 +235,11 @@ function TextParse.tryparsenext(tok::UnicodeClass, str, i, till, opts=TextParse.
     end
     Nullable{Char}(), i    
 end
+
+
 regex_string_(x::UnicodeClass) =
-    join(["\\p{$s}" for s in x.class])
+    if haskey(unicode_abbrev, x.class)
+        "\\p{$(unicode_abbrev[x.class])}"
+    else
+        join([regex_string_(UnicodeClass(s)) for s in x.class])
+    end
