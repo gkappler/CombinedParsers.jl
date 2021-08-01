@@ -55,6 +55,7 @@ export JoinSubstring
     (!)(x::CombinedParser)
 
 Parser Transformation getting the matched SubString.
+Transformation does not evaluate `get(parser.transform,...)`.
 """
 @auto_hash_equals struct JoinSubstring{P,S} <: WrappedParser{P,S,SubString{String}}
     parser::P
