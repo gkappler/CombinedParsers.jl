@@ -1,4 +1,5 @@
 using CombinedParsers
+using CombinedParsers.Regexp
 using Test
 
 @testset "CombinedParsers.jl" begin
