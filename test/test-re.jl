@@ -46,8 +46,12 @@ import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
     @test parse(parse(bracket,"[]-_abc-]"),"]")==']'
     @test match(re"[-]abc]","a") === nothing
     @test parse(re"[]abc-]","-")=='-'
+    @test parse(re" b  c"xxx,"bc")==('b','c')
     @test parse(re" [a- z]"xxx,"b")=='b'
     @test tryparse(re" [a- z]"xx,"b")==nothing
+    parse(pcre_parser,
+          CombinedParsers.Regexp.with_options("xxx"," [a- z]")
+          )
     @test tryparse(re"[a- z]","b")==nothing
     @test parse(re"[a- z]"xx,"b")=='b'
     ##@test match(r" [a-z]"xxx,"b")==match(re" [a-z]"xxx,"b")

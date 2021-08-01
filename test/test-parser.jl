@@ -1,6 +1,5 @@
-using CombinedParsers.Regexp
-import CombinedParsers.Regexp: word, non_word
-import CombinedParsers: newline, inline, whitespace_maybe, whitespace_horizontal
+
+import CombinedParsers: word, non_word, newline, inline, whitespace_maybe, whitespace_horizontal
 import CombinedParsers: Repeat_max
 
 @testset "CombinedParsers" begin
@@ -14,7 +13,6 @@ end
     @test parse(map(v->length(v),re"a*"),"aaaa") == 4
     @test parse(re"^abc$"[2],"abc") == 'a'
 end
-
 
 @testset "NamedTuple" begin
     @test parse(Sequence(first = CharIn(isuppercase), second = CharIn(islowercase)),"Ab") == (first='A', second='b')
@@ -57,6 +55,7 @@ end
 
 @testset "Bytes" begin
     # simple test for binary parsing
+    _iterate(Bytes(1,UInt8),[0x33],1,1,1,nothing)
     @test parse(Bytes(1,UInt8),[0x33]) == 0x33
     @test parse(Bytes(2,UInt16),[0x33,0x66]) == 0x6633
     @test parse(Bytes(4,Float32),[0x55,0x77,0x33,0x66]) == reinterpret(Float32,0x66337755)
