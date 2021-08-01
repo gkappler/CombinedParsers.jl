@@ -269,7 +269,63 @@ bracket_char = let bracket_meta_chars = raw"]\^-"
     )
 end;
 
+"""
 
+```jldoc
+julia> CombinedParsers.Regexp.character_class
+🗄 Sequence |> map(#57)
+├─ \\[\\: 
+├─ |🗄 Either
+│  ├─ alpha  => [\\p{L}] CharIn
+│  ├─ lower  => [\\p{Ll}] CharIn
+│  ├─ upper  => [\\p{Lu}] CharIn
+│  ├─ word  => [\\p{L}\\p{Nl}\\p{Nd}\\p{Pc}] CharIn
+│  ├─ digit  => [\\p{Nd}] CharIn
+│  ├─ xdigit  => [[:xdigit:]] CharIn
+│  ├─ alnum  => [\\p{L}\\p{N}] CharIn
+│  ├─ blank  => [\\t\\p{Zs}] CharIn
+│  ├─ cntrl  => [\\p{Cc}] CharIn
+│  ├─ graph  => [^\\p{Z}\\p{C}] CharNotIn
+│  ├─ print  => [\\p{C}] CharIn
+│  ├─ punct  => [\\p{P}] CharIn
+│  └─ space  => [\\r\\v\\n\\f\\t\\p{Z}] CharIn
+└─ \\:\\] 
+::CombinedParsers.ValueMatcher
+```
+
+TODO:
+> By default, characters with values greater than 128 do not match any of the POSIX character classes. However, if the PCRE_UCP option is passed to pcre_compile(), some of the classes are changed so that Unicode character properties are used. This is achieved by replacing certain POSIX classes by other sequences, as follows:
+- [:alnum:]  becomes  \\p{Xan}
+- [:alpha:]  becomes  \\p{L}
+- [:blank:]  becomes  \\h
+- [:digit:]  becomes  \\p{Nd}
+- [:lower:]  becomes  \\p{Ll}
+- [:space:]  becomes  \\p{Xps}
+- [:upper:]  becomes  \\p{Lu}
+- [:word:]   becomes  \\p{Xwd}
+
+"""
+character_class = Sequence(
+    2,
+    "[:",
+    Either(
+        "alpha" => CharIn(UnicodeClass("L")),
+        "lower" => CharIn(UnicodeClass("Ll")),
+        "upper" => CharIn(UnicodeClass("Lu")),
+        "word"  => CharIn(UnicodeClass("L","Nl","Nd","Pc")),
+        "digit" => CharIn(UnicodeClass("Nd")),
+        "xdigit" => hex_digit,
+        "alnum" => CharIn(UnicodeClass("L","N")), # Xan
+        "blank" => CharIn(UnicodeClass("Zs"),'\t'),
+        "cntrl" => CharIn(UnicodeClass("Cc")),
+        "graph" => CharNotIn(UnicodeClass("Z","C")),
+        "print" => CharIn(UnicodeClass("C")),
+        "punct" => CharIn(UnicodeClass("P")),
+        "space" => CharIn(UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
+    ),
+    ":]")
+
+# todo: set pcre string of CharIn/CharNotIn when multi-transform is implemented
 @with_names bracket=Sequence(
     CombinedParser,
     '[',Optional('^')
@@ -277,26 +333,7 @@ end;
         bracket_range(']'),
         ']'=>']'))
     , Repeat(Either(
-        Sequence(
-            2,
-            "[:",
-            Either(
-                "alnum" => CharIn("[:alnum:]",UnicodeClass("L","N")), # Xan
-                "alpha" => CharIn("[:alpha:]",UnicodeClass("L")),
-                ##"ascii" => CharIn(UnicodeClass("InBasicLatin")),
-                "blank" => CharIn("[:blank:]",UnicodeClass("Zs"),'\t'),
-                "cntrl" => CharIn("[:cntrl:]",UnicodeClass("Cc")),
-                "digit" => CharIn("[:digit:]",UnicodeClass("Nd")),
-                "graph" => CharNotIn("[:space:]",UnicodeClass("Z","C")),
-                "lower" => CharIn("[:lower:]",UnicodeClass("Ll")),
-                "print" => CharIn("[:print:]",UnicodeClass("C")),
-                "punct" => CharIn("[:punct:]",UnicodeClass("P")),
-                "space" => CharIn("[:space:]",UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
-                "upper" => CharIn("[:upper:]",UnicodeClass("Lu")),
-                "word" => CharIn("[:word:]",UnicodeClass("L","Nl","Nd","Pc")),
-                "xdigit" => hex_digit,
-            ),
-            ":]"),
+        character_class,
         skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat) => Never(),
         "\\E" => Never(),
         with_name(:escape_sequence,map(v->CharIn(v),escape_sequence())),
