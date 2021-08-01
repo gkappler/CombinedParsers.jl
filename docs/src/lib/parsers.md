@@ -1,5 +1,4 @@
-# Parser building blocks
-See also the [internals](internals.md) section.
+# Parser Templates
 
 ## Constant and `TextParse` Conversion
 Parsing Numbers or Dates is most efficiently done with TextParse.
@@ -9,7 +8,7 @@ parser
 convert
 ```
 
-For non base 10 numbers you can use option
+For non base 10 numbers, use
 ```@docs
 CombinedParsers.integer_base
 ```
@@ -33,10 +32,8 @@ CombinedParsers.@trimmed
 
 #### Matching Space
 ```@docs
+CombinedParsers.whitespace_char
 CombinedParsers.horizontal_space_char
-CombinedParsers.whitespace_horizontal
-CombinedParsers.whitespace_maybe
-CombinedParsers.whitespace_newline
 CombinedParsers.vertical_space_char
 CombinedParsers.Regexp.bsr
 ```

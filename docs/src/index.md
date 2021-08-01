@@ -1,6 +1,8 @@
 # CombinedParsers.jl Documentation
 
-A package for combining parsers and transforming strings into julia types.
+```@docs
+CombinedParsers
+```
 
 Compose parsers parsimoneously within a functional [parser combinator paradigm](https://en.wikipedia.org/wiki/Parser_combinator),
 utilize Julia's type inference for transformations,

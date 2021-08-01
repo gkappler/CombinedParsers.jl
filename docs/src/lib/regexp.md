@@ -2,7 +2,7 @@
 You can use PCRE `@re_str` in combination with
 `CombinedParser`'s [constructors](constructors.md).
 
-### Regular expressions
+## Constructing Regular expressions
 ```@docs
 CombinedParsers.Regexp.@re_str
 CombinedParsers.Regexp
@@ -12,8 +12,9 @@ getproperty(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:A
 regex_escape
 ```
 
-## Unit Tested
+## Compatibility & Unit Tests
 ```@docs
+CombinedParsers.Regexp.character_class
 (==)(::RegexMatch,::ParseMatch)
 CombinedParsers.Regexp.@pcre_tests
 ```

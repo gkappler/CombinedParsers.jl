@@ -54,11 +54,11 @@ makedocs(;
                  "JSON" => "man/json.md",
              ],
              "Library" => Any[
-                 "Public" => "lib/public.md",
-                 "Parsers" => "lib/parsers.md",
+                 "Matching/Parsing" => "lib/public.md",
+                 "Templates" => "lib/parsers.md",
                  "Constructors" => "lib/constructors.md",
-                 "Transformations" => "lib/transformation.md",
                  "Regexp" => "lib/regexp.md",
+                 "Transformations" => "lib/transformation.md",
                  "Internals" => "lib/internals.md"
              ],
              # "Developer Guide" => "developer.md"

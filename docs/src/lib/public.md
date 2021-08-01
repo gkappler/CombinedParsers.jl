@@ -1,14 +1,27 @@
-# Matching and Parsing
-```@docs
-CombinedParsers
-```
-Documentation for `CombinedParsers.jl`'s `match` and `parse` interface.
+## Printing
+Printing `CombinedParser`s uses [`AbstractTrees.jl`](https://github.com/JuliaCollections/AbstractTrees.jl) for printing.
+The tree nodes are printed with 
+1. a colored [regular expressions](regexp.md)ish prefix
+2. `🗄` Sub-parsers are shown as children branches.
+3. [`WrappedParser`](@ref) [constructors](constructors.md) are displayed with pipe `|>` syntax.
+In the last line of printing the infered result type of the `CombinedParser` is printed.
 
-!!! note 
-    Building parsers is detailed in the sections
-	- [constructors](constructors.md),  
-	- [regex](regexp.md), and
-    - [templates](parsers.md).
+Printing is useful to understand the structure of [regular expressions](regexp.md), 
+while also learning `CombinedParser` syntax:
+```@repl
+julia> p = trim(re"(?:a+c)*b")
+🗄 Sequence[2]
+├─ (?>[\h]*) CharIn |> Repeat |> Atomic
+├─ 🗄 Sequence
+│  ├─ 🗄* Sequence |> Repeat
+│  │  ├─ a+  |> Repeat
+│  │  └─ c 
+│  └─ b 
+└─ (?>[\h]*) CharIn |> Repeat |> Atomic
+::Tuple{Vector{Tuple{Vector{Char}, Char}}, Char}
+```
+Parser [templates](parsers.md) 
+
 
 ## Matching
 ```@docs
@@ -16,20 +29,25 @@ match
 ```
 
 ## Parsing
-A [`match`](@ref) can be transformed to a Julia [`result_type`](@ref).
+`CombinedParser` comprise of a pattern as well transformation functions to produce a Julia [`result_type`](@ref) from a [`match`](@ref) with [`get`](@ref).
+```@repl
+julia> get(match(p, "aacacb"))
+([(['a', 'a'], 'c'), (['a'], 'c')], 'b')
+```@
+
 !!! note 
     Defining transformations is detailed in the [transformation](transformation.md) section.
 
 ```@docs
+get
 parse
 tryparse
 tryparse_pos
 ```
 
 ## Iterating matches
-`CombinedParsers` iterates through matches if parsing is ambiguous.
-!!! note 
-    Iteration is detailed in the [internals](internals.md) section.
+`CombinedParsers` iterates through all matches if parsing is ambiguous.
+How to write custom parser match iterations is detailed in the [internals](internals.md) section.
 
 ```@docs
 Base.iterate

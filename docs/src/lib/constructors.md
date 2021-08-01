@@ -1,8 +1,6 @@
+# Constructing Parsers
 
-
-## Constructing Parsers
-
-### Character Matchers
+## Character Matchers
 ```@docs
 AnyChar
 Bytes
@@ -15,7 +13,7 @@ CombinedParsers._ismatch
 Base.broadcasted
 ```
 
-### Repeating
+## Repeating
 ```@docs
 Repeat
 (|)(::CombinedParsers.AbstractToken{T}, ::Union{T,Missing}) where { T }
@@ -29,12 +27,12 @@ Repeat_until
 Base.join
 ```
 
-### Atomic
+## Atomic
 ```@docs
 Atomic
 ```
 
-### Sequences
+## Sequences
 ```@docs
 Sequence
 (*)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
@@ -45,7 +43,7 @@ CombinedParsers.sequence_state_type
 ```
 
 
-### Recursive [`Either`](@ref) Parsers
+## Recursive [`Either`](@ref) Parsers
 ```@docs
 Delayed
 Either
@@ -63,13 +61,13 @@ sEither
 CombinedParsers.either_result_type
 ```
 
-### Parser generating parsers
+## Parser generating parsers
 ```@docs
 CombinedParsers.FlatMap
 after
 ```
 
-### Assertions
+## Assertions
 ```@docs
 AtStart
 AtEnd
@@ -77,14 +75,14 @@ Always
 Never
 ```
 
-#### Look behind
+### Look behind
 ```@docs
 Lookbehind
 PositiveLookbehind
 NegativeLookbehind
 ```
 
-#### Look ahead
+### Look ahead
 ```@docs
 Lookahead
 PositiveLookahead
