@@ -122,10 +122,17 @@ function Base.get(parser::Either{<:Trie},
     get(state.state)
 end
 
-_copy(x::Vector) = copy(x)
-_copy(x::AbstractDict) = copy(x)
-_copy(x::AbstractSet) = copy(x)
-_copy(x) = x
+"""
+    _copy(x)
+
+`copy(x)` iif `ismutable(x)`; used when [`defaultvalue`](@ref) of [`Optional`](@ref) results in [`get`](@ref).
+"""
+_copy(x) =
+    if ismutable(x)
+        copy(x)
+    else
+        x
+    end
 
 Base.get(parser::Optional, sequence, till, after, i, state::NoMatch) = 
     _copy(parser.default)
