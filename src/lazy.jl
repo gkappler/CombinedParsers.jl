@@ -11,6 +11,7 @@ getstateindex(state::Integer, a...) = MatchState()
 function Base.getindex(x::ParseMatch{<:Sequence}, i)
     mi = x.parsings
     sequence = mi.sequence
+    inner = 
     outer_state = x.state
     inner_state = getindex(outer_state, i)
     l = lastindex(mi.parser.parts)
