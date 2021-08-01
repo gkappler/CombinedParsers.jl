@@ -140,6 +140,8 @@ Strips options.
 Base.convert(::Type{Char},y::CharWithOptions) =
     y.x
 
+import ..CombinedParsers: StringWrapper
+
 """
 A lazy element transformation type (e.g. AbstractString), 
 `getindex` wraps elements in `with_options(flags,...)`.
@@ -148,7 +150,7 @@ With parsing options
 
 TODO: make flags a transformation function?
 """
-@auto_hash_equals struct StringWithOptions{S<:AbstractString} <: AbstractString
+@auto_hash_equals struct StringWithOptions{S<:AbstractString} <: StringWrapper
     x::S
     flags::UInt32
     function StringWithOptions(x,flags)
@@ -156,6 +158,9 @@ TODO: make flags a transformation function?
         new{typeof(x)}(x,flags)
     end
 end
+import Base: Regex
+Base.Regex(x::StringWithOptions) =
+    Regex(x.x, options_string(x.flags))
 export flags
 flags(x::StringWithOptions) = x.flags
 flags(x) = UInt32(0)
@@ -202,12 +207,6 @@ with_options(set_flags::UInt32, unset_flags::UInt32,x::WithOptions) =
 with_options(set_flags::UInt32, unset_flags::UInt32,x) =
     with_options(set_flags,x)
 
-import Base: Regex
-Base.Regex(x::StringWithOptions) =
-    Regex(x.x, options_string(x.flags))
-Base.show(io::IO, x::StringWithOptions) =
-    print(io,x.x)
-
 Base.getindex(x::StringWithOptions,i::Integer) =
     with_options(x.flags,(getindex(x.x,i)))
 Base.iterate(x::StringWithOptions{<:AbstractString}) =
@@ -218,27 +217,9 @@ Base.iterate(x::StringWithOptions{<:AbstractString},i::Integer) =
     let n = iterate(x.x,i)
         n===nothing ? nothing : ( with_options(x.flags,n[1]),n[2] )
     end
-
 (==)(x::StringWithOptions{<:AbstractString},y::String) = x.x==y
-
 Base.SubString(x::StringWithOptions,start::Int,stop::Int) =
     with_options(x.flags,SubString(x.x,start,stop))
-Base.length(x::StringWithOptions) =
-    length(x.x)
-Base.lastindex(x::StringWithOptions) =
-    lastindex(x.x)
-Base.firstindex(x::StringWithOptions) =
-    firstindex(x.x)
-_prevind(x::StringWithOptions,i::Int,n::Int) =
-    _prevind(x.x,i,n)
-_nextind(x::StringWithOptions,i::Int,n::Int) =
-    _nextind(x.x,i,n)
-_prevind(x::StringWithOptions,i::Int) =
-    _prevind(x.x,i)
-_nextind(x::StringWithOptions,i::Int) =
-    _nextind(x.x,i)
-Base.ncodeunits(x::StringWithOptions) =
-    ncodeunits(x.x)
 
 
 

@@ -24,7 +24,7 @@ import TextParse
 import TextParse: AbstractToken
 
 include("ind.jl")
-
+include("StringWrappers.jl")
 using AbstractTrees
 import AbstractTrees: children
 import AbstractTrees: print_tree, printnode

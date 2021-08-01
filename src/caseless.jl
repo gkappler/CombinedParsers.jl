@@ -67,7 +67,7 @@ export MappedChars
 String implementation lazily transforming characters.
 Used for parsing with [`MappingParser`](@ref).
 """
-struct MappedChars{S,M<:Function} <: AbstractString
+struct MappedChars{S,M<:Function} <: StringWrapper
     x::S
     f::M
     function MappedChars(mem::M,x::S) where {S,M<:Function}
@@ -77,8 +77,6 @@ end
 function MappedChars(x)
     MappedChars(x,Dict())
 end
-Base.show(io::IO, x::MappedChars) =
-    print(io,x.x)
 
 @inline Base.@propagate_inbounds Base.getindex(x::MappedChars,i::Integer) =
     x.f(getindex(x.x,i))
@@ -92,13 +90,5 @@ Base.show(io::IO, x::MappedChars) =
         j===nothing && return nothing
         x.f(tuple_pos(j)), tuple_state(j)
     end
-
-@inline Base.@propagate_inbounds Base.SubString(x::MappedChars,start::Int,stop::Int) = SubString(x.x,start,stop)
-@inline Base.@propagate_inbounds Base.length(x::MappedChars) = length(x.x)
-@inline Base.@propagate_inbounds Base.lastindex(x::MappedChars) = lastindex(x.x)
-@inline Base.@propagate_inbounds Base.firstindex(x::MappedChars) = firstindex(x.x)
-@inline Base.@propagate_inbounds _prevind(x::MappedChars,i::Int,n::Int) = _prevind(x.x,i,n)
-@inline Base.@propagate_inbounds _nextind(x::MappedChars,i::Int,n::Int) = _nextind(x.x,i,n)
-@inline Base.@propagate_inbounds _prevind(x::MappedChars,i::Int) = _prevind(x.x,i)
-@inline Base.@propagate_inbounds _nextind(x::MappedChars,i::Int) = _nextind(x.x,i)
-@inline Base.@propagate_inbounds Base.ncodeunits(x::MappedChars) = ncodeunits(x.x)
+@inline Base.@propagate_inbounds Base.SubString(x::MappedChars,start::Int,stop::Int) =
+    MappedChars(SubString(x.x,start,stop), x.f)
