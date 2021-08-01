@@ -111,6 +111,7 @@ print_constructor(io::IO,x) =
 
 
 export _iterate
+
 """
     _iterate(parser, sequence, till::Int, posi::Int[, next_i[, state=nothing]])
 
@@ -134,10 +135,9 @@ Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to .
     - `Tuple{Int64,state_type(parser)}` with next position, match state if a match is found.
 
 """
-@inline _iterate(parser, sequence, till::Int, posi::Int) =
+@inline _iterate(parser::CombinedParser, sequence, till::Int, posi::Int) =
     _iterate(parser, sequence,till,posi,posi,nothing)
-@inline _iterate(parser, sequence, till::Int, posi::Int, ::Nothing) =
-    _iterate(parser, sequence,till,posi,posi,nothing)
+@deprecate _iterate(parser::CombinedParser, sequence, till::Int, posi::Int, ::Nothing) _iterate(parser, sequence,till,posi,posi,nothing)
 
 
 "Abstract type for parser wrappers, providing default methods"

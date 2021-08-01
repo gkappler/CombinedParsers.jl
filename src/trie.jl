@@ -18,12 +18,15 @@ function Either(x::Dict)
 end
 either_state_type(T::Type{<:Trie}) = NCodeunitsState{T}
 
+@inline _iterate(p::Either{<:AbstractTrie}, str, till, posi, next_i, state) =
+    _iterate(p.options, str, till, posi, next_i, state)
+
 """
     _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, ::Nothing)
 
 Match char path in `p` greedily, recording `SubTrie` in a [`NCodeunitsState`](@ref).
 """
-@inline function _iterate(p::Union{Trie{Char},SubTrie{Char}}, str, till, posi, next_i, state::Nothing)
+@inline function _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state::Nothing)
     ni = ni_ = posi
     st = st_ = p
     while st !== nothing && ni <= till
@@ -42,13 +45,8 @@ Match char path in `p` greedily, recording `SubTrie` in a [`NCodeunitsState`](@r
     end
 end
 
-@inline function _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state)
+@inline _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state) = 
     _iterate(p, str, _prevind(str,next_i,2), posi, posi, nothing)
-end
-
-function _iterate(p::Either{<:AbstractTrie}, str, till, posi, next_i, state)
-    _iterate(p.options, str, till, posi, next_i, state)
-end
 
 @inline _rightof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i+x.nc
 @inline _leftof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState)  = i-x.nc
