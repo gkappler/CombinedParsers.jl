@@ -1877,8 +1877,11 @@ See also [`@syntax`](@ref).
 """
 function Either{T}(p_...) where T
     p = Any[parser.(p_)...]
-    for x in p
-        result_type(x) <: T || error("$(result_type(x))<:$T\n$x")
+    for (i,x) in enumerate(p)
+        if !(result_type(x) <: T)
+            @info "transforming results with convert($T,::$(result_type(x)))\n$x"
+            p[i] = map(T,x)
+        end 
     end
     Either{Any,T}(p)
 end

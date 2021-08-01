@@ -147,6 +147,7 @@ julia> CombinedParsers.char_label_table(horizontal_space_char)
 """
 horizontal_space_char, horizontal_space_maybe, horizontal_space
 
+whitespace_horizontal = horizontal_space
 
 """
     trim(; whitespace=CharIn(' '))
