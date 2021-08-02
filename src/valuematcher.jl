@@ -143,7 +143,7 @@ julia> parse(l, "c")
     pcre::String
     sets::S
     function CharIn(pcre::String,x_) # <:Union{Char,Set{Char},<:Function,<:UnicodeClass,<:Tuple}}=
-        x = optimize(CharIn, x_)
+        x = flatten_valuepatterns(CharIn, x_)
         new{typeof(x),eltype(x)}(pcre,x)
     end
 end
@@ -267,7 +267,7 @@ julia> parse(p,"a")
     pcre::String
     sets::S
     function CharNotIn(pcre::String, x_) # where {T<:Union{Char,Set{Char},Function,UnicodeClass,Tuple}}=
-        x = optimize(CharNotIn, x_)
+        x = flatten_valuepatterns(CharNotIn, x_)
         new{typeof(x),eltype(x)}(pcre,x)
     end
 end
@@ -324,31 +324,32 @@ _push!(charset::Set, x) where T = push!(charset,x)
 _push!(charset::Vector, x) where T = push!(charset,x)
 _push!(charset::Nothing, x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) = Any[x]
 
-optimize!(charset,otherstuff) =
+flatten_valuepatterns!(charset,otherstuff) =
     charset,otherstuff
 
-optimize!(charset,otherstuff,x) =
+flatten_valuepatterns!(charset,otherstuff,x) =
     _push!(charset,x),otherstuff
 
-optimize!(charset,otherstuff,x::ConstantParser{Char}) =
-    optimize!(charset,otherstuff, x.parser)
+flatten_valuepatterns!(charset,otherstuff,x::ConstantParser{Char}) =
+    flatten_valuepatterns!(charset,otherstuff, x.parser)
 
-optimize!(charset,otherstuff,x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) =
+# e.g. CharIn{UnicodeClass}
+flatten_valuepatterns!(charset,otherstuff,c::CharIn) = 
+    flatten_valuepatterns!(charset,otherstuff, c.sets)
+
+flatten_valuepatterns!(charset,otherstuff,x::Union{<:Function,<:UnicodeClass,<:CharNotIn}) =
     charset, _push!(otherstuff,x)
 
-optimize!(charset,otherstuff,c::CharIn) = 
-    optimize!(charset,otherstuff, c.sets...)
+ElementIterators = Union{<:Vector,<:Tuple,<:StepRange,<:Set,<:AbstractString}
+flatten_valuepatterns!(charset,otherstuff,x::ElementIterators) =
+    flatten_valuepatterns!(charset,otherstuff,x...)
 
-ElementIterators = Union{Vector,Tuple,StepRange,Set,AbstractString}
-optimize!(charset,otherstuff,x::ElementIterators) =
-    optimize!(charset,otherstuff,x...)
-
-function optimize!(charset,otherstuff,x1,x2,x...)
-    optimize!(optimize!(charset,otherstuff,x1)...,x2,x...)
+function flatten_valuepatterns!(charset,otherstuff,x1,x2,x...)
+    flatten_valuepatterns!(flatten_valuepatterns!(charset,otherstuff,x1)...,x2,x...)
 end
 
-function optimize(::Type{<:Union{CharIn,CharNotIn}},x...)
-    charset,otherstuff = optimize!(nothing,nothing,x...)
+function flatten_valuepatterns(::Type{<:Union{CharIn,CharNotIn}},x...)
+    charset,otherstuff = flatten_valuepatterns!(nothing,nothing,x...)
     if otherstuff===nothing
         charset === nothing ? tuple() : charset
     elseif charset===nothing

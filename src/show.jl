@@ -62,9 +62,9 @@ printnode(io::IO,x::Bytes{N}) where N =
     print(io, "$(N) TypedBytes::$(result_type(x))")
 
 printnode(io::IO, x::CombinedParser) =
-    printnode_(io, x)
+    _printnode(io, x)
 
-function printnode_(io::IO, x::CombinedParser)
+function _printnode(io::IO, x::CombinedParser)
     printstyled(io, regex_prefix(x), bold=true, color=:cyan)
     if isempty(children(x))
         printstyled(io, regex_inner(x), bold=true, color=:cyan)
