@@ -1046,12 +1046,12 @@ Base.getindex(x::CombinedParser, i) = map(IndexAt(i),x)
 
 
 export sSequence
-sSequence_(x::Sequence) = sSequence_(x.parts...)
-sSequence_(x::Always) = tuple()
-sSequence_() = tuple()
-sSequence_(x1) = tuple(parser(x1))
-sSequence_(x1,x...) =
-    Iterators.flatten(tuple( sSequence_(x1), collect(Iterators.flatten( ( sSequence_(e) for e in x ) ))))
+_sSequence(x::Sequence) = _sSequence(x.parts...)
+_sSequence(x::Always) = tuple()
+_sSequence() = tuple()
+_sSequence(x1) = tuple(parser(x1))
+_sSequence(x1,x...) =
+    Iterators.flatten(tuple( _sSequence(x1), collect(Iterators.flatten( ( _sSequence(e) for e in x ) ))))
 
 """
     sSequence(x...)
@@ -1078,12 +1078,12 @@ julia> sSequence('a',CharIn("AB")*'b')
 See also [`Sequence`](@ref)
 """
 function sSequence(x...)
-    sSequence(sSequence_(parser.(x)...)...)
+    sSequence(_sSequence(parser.(x)...)...)
 end
 
 sSequence(x::CombinedParser) = x
 function sSequence(x::CombinedParser...)
-    Sequence(sSequence_(x...)...)
+    Sequence(_sSequence(x...)...)
 end
 
 
@@ -1908,11 +1908,11 @@ function Either(transform::Function, x...; kw...)
 end
 
 export sEither
-sEither_(x::Either) = sEither_(x.options...)
-sEither_(x::Never) = tuple()
-sEither_() = tuple()
-sEither_(x1) = tuple(x1)
-sEither_(x1,x...) = Iterators.flatten( Any[ sEither_(x1), ( sEither_(e) for e in x )... ] )
+_sEither(x::Either) = _sEither(x.options...)
+_sEither(x::Never) = tuple()
+_sEither() = tuple()
+_sEither(x1) = tuple(x1)
+_sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in x )... ] )
 
 """
     sEither(x...)
@@ -1941,7 +1941,7 @@ julia> sEither('a',CharIn("AB")|"bc")
 See also [`Either`](@ref)
 """
 function sEither(x...)
-    opts = collect(sEither_(x...))
+    opts = collect(_sEither(x...))
     length(opts)==1 ? opts[1] : Either(opts...)
 end
 sEither(x1::NamedParser,x...) =
