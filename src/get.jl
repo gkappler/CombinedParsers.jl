@@ -37,18 +37,6 @@ function Base.get(parser::AbstractTokenParser,
 end
 
 
-
-"""
-    Base.get(parser::CombinedParser{Nothing}, sequence, till, after, i, state)
-
-Default method for parser types returning nothing
-"""
-Base.get(::CombinedParser{<:Nothing},
-         sequence, till, after,
-         i, state) =
-             nothing
-
-
 export JoinSubstring
 """
     JoinSubstring(x)
