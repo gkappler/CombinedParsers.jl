@@ -1,5 +1,5 @@
 # PCRE Compliance
-3075 successful tests on 973 patterns.
+3080 successful tests on 978 patterns.
 
 
 
@@ -9595,6 +9595,46 @@
 (no 1187) succeeded 1 of 1 times:
 
 - ✅ `aab`
+
+---
+
+```
+/(?<=(?=.)?)/
+```
+(no 1189) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.)?+)/
+```
+(no 1190) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.)*)/
+```
+(no 1191) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.){4,5})/
+```
+(no 1192) succeeded 0 of 0 times:
+
+
+---
+
+```
+/(?<=(?=.){4,5}x)/
+```
+(no 1193) succeeded 0 of 0 times:
+
 
 ---
 
