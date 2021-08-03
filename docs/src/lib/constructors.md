@@ -102,8 +102,8 @@ with_effect
 
 ## other
 ```@docs
-CombinedParsers.MappingParser
+CombinedParsers.MappedSequenceParser
+CombinedParsers.MappedChars
 CombinedParsers.MemoizingParser
 CombinedParsers.WithMemory
-CombinedParsers.MappedChars
 ```
