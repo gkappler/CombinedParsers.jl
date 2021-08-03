@@ -184,6 +184,6 @@ end
 @test_pcre "^aaa(?<!c)b" "aaab"
 
 m = match(PositiveLookahead("a"), "aaab")
-@test m.start == 1
-@test m.stop == 1
+@test m.offset == 1
+@test m.after == 1
 @test get(m) == "a"

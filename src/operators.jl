@@ -21,7 +21,7 @@ See also [`@seq`](@ref).
 `Sequence(PositiveLookbehind(x),y)`
 
 ```jldoctest
-julia> match("is "/"match", "no match is match").start
+julia> match("is "/"match", "no match is match").offset
 13
 ```
 

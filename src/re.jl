@@ -118,8 +118,8 @@ function Base.getproperty(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key:
         [ isempty(c) ? nothing : match_string(x.match,c[end])
           for c in x.captures ]
     elseif key==:match
-        SubString(x.match,m.start,
-                  _prevind(x.match,m.stop))
+        SubString(x.match,m.offset,
+                  _prevind(x.match,m.after))
     else
         CombinedParsers._getproperty(m,key)
     end
