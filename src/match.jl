@@ -216,7 +216,11 @@ function Base.show(io::IO,m::ParseMatch{<:Any,<:AbstractString,<:Any})
     print(io,")")
 end
 
+"""
+    wrap(x::CombinedParser; log = nothing, trace = false)
 
+transform a parser by wrapping sub-parsers in logging and tracing parser types.
+"""
 function wrap(x::CombinedParser; log = nothing, trace = false)
     p = if log === nothing || log == false
         x

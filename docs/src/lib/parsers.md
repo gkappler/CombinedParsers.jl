@@ -6,6 +6,7 @@ Parsing Numbers or Dates is most efficiently done with TextParse.
 ```@docs
 parser
 convert
+CombinedParsers.wrap
 ```
 
 For non base 10 numbers, use

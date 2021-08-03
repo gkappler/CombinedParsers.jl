@@ -3,7 +3,7 @@ Printing `CombinedParser`s uses [`AbstractTrees.jl`](https://github.com/JuliaCol
 The tree nodes are printed with 
 1. a colored [regular expressions](regexp.md)ish prefix
 2. `🗄` Sub-parsers are shown as children branches.
-3. [`WrappedParser`](@ref) [constructors](constructors.md) are displayed with pipe `|>` syntax.
+3. [`CombinedParsers.WrappedParser`](@ref) [constructors](constructors.md) are displayed with pipe `|>` syntax.
 In the last line of printing the infered result type of the `CombinedParser` is printed.
 
 Printing is useful to understand the structure of [regular expressions](regexp.md), 
