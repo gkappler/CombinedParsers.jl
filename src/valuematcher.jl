@@ -131,7 +131,7 @@ julia> parse(ac, "c")
 'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
 
 julia> l = CharIn(islowercase)
-[islowercase(.)] CharIn
+[islowercase(...)] CharIn
 ::Char
 
 julia> parse(l, "c")

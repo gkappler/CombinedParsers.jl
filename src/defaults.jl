@@ -194,7 +194,7 @@ DocTestFilters = r"map\\(.+\\)"
 so, for example
 ```jldoctest
 julia> @trimmed foo = AnyChar()
-🗄 Sequence |> map(#55)
+🗄 Sequence[2]
 ├─ (?>[\\h]*) CharIn |> Repeat |> Atomic
 ├─ . AnyChar |> with_name(:foo)
 └─ (?>[\\h]*) CharIn |> Repeat |> Atomic

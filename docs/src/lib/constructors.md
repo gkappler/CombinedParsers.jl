@@ -55,7 +55,7 @@ Base.pushfirst!
 
 ```@docs
 (|)(::CombinedParsers.AbstractToken, ::CombinedParsers.AbstractToken)
-(|)(::Union{Char, Regex, AbstractString, CombinedParsers.AbstractToken}, ::Union{Char, Regex, AbstractString, CombinedParsers.AbstractToken})
+(|)(::Union{CombinedParsers.AbstractToken, AbstractString, Char}, Union{CombinedParsers.AbstractToken, AbstractString, Char})
 (|)(::Either, ::Type)
 sEither
 CombinedParsers.either_result_type

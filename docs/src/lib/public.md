@@ -8,7 +8,7 @@ In the last line of printing the infered result type of the `CombinedParser` is 
 
 Printing is useful to understand the structure of [regular expressions](regexp.md), 
 while also learning `CombinedParser` syntax:
-```@repl
+```@jldoctest
 julia> p = trim(re"(?:a+c)*b")
 🗄 Sequence[2]
 ├─ (?>[\h]*) CharIn |> Repeat |> Atomic
