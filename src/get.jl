@@ -123,6 +123,10 @@ _copy(x) =
         x
     end
 
+# a String is mutable in julia
+# ismutable("a")
+_copy(x::AbstractString) = x
+
 Base.get(parser::Optional, sequence, till, after, i, state::NoMatch) = 
     _copy(parser.default)
 
