@@ -876,7 +876,7 @@ export Sequence
 
 of `parts::P`, [`sequence_state_type`](@ref)`==S` with [`sequence_result_type`](@ref)`==T`.
 
-    Sequence(parts::CombinedParser...; tuplestate=false)
+    Sequence(parts::CombinedParser...; tuplestate=true)
 
 of `parts`, [`sequence_state_type`](@ref)`(p; tuplestate=tuplestate)` with [`sequence_result_type`](@ref).
 
@@ -912,7 +912,7 @@ julia> e1("Some Avenue 42")
 """
 @auto_hash_equals struct Sequence{P,S,T} <: CombinedParser{S,T}
     parts::P
-    function Sequence(p::CombinedParser...; tuplestate=false)
+    function Sequence(p::CombinedParser...; tuplestate=true)
         if VERSION>=v"1.6" && length(p)>4
             Sequence(Sequence(p[1:2]...; tuplestate=tuplestate),
                      Sequence(p[3:end]...; tuplestate=tuplestate);
@@ -929,7 +929,7 @@ end
 sequence_state_type(x; kw...) = sequence_state_type(typeof(x); kw...)
 
 """
-    sequence_state_type(pts::Type; tuplestate=false)
+    sequence_state_type(pts::Type; tuplestate=true)
 
 - `MatchState` if all `fieldtypes` are `MatchState`, 
 - otherwise if `tuplestate`, a tuple type with the `state_type` of `parts`,
@@ -938,7 +938,7 @@ sequence_state_type(x; kw...) = sequence_state_type(typeof(x); kw...)
 !!! note
     Todo: NCodeunitsState instead of MatchState might increase performance.
 """
-function sequence_state_type(pts::Type; tuplestate=false)
+function sequence_state_type(pts::Type; tuplestate=true)
     if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
         MatchState
     elseif tuplestate
@@ -1015,7 +1015,7 @@ Base.lastindex(x::Sequence) = lastindex(x.parts)
 
 Sequence keyword argument constructors transform the parsing into a named tuple.
 """
-Sequence(;tuplestate=false, kw...) =
+Sequence(;tuplestate=true, kw...) =
     isempty(kw) ? Always() : Sequence(kw...; tuplestate=tuplestate)
 
 
