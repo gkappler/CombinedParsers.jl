@@ -190,7 +190,7 @@ Return first next [`ParseMatch`](@ref) (as return value and state) or `nothing` 
 @inline Base.iterate(x::MatchesIterator) =
     iterate(x,ParseMatch(x))
 
-function Base.iterate(m::MatchesIterator, s::ParseMatch)
+@inline function Base.iterate(m::MatchesIterator, s::ParseMatch)
     offset,after = s.offset, s.after
     stop = m.stop
     state = _iterate(m,offset,after,s.state)
@@ -233,6 +233,7 @@ function wrap(x::CombinedParser; log = nothing, trace = false)
         p
     end
 end
+wrap(x::CombinedParser) = x
 
 """
     Base.match(parser::CombinedParser,sequence::AbstractString[, idx::Integer]; log=nothing)
