@@ -466,10 +466,9 @@ with_name(name::Symbol,x; doc="") =
 with_name(name::AbstractString,x; doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),parser(x),doc)
 
+export log_names
 log_names_(x::CombinedParser,a...;kw...) = x
 
-
-export log_names
 """
     log_names(x,names=true; exclude=nothing)
 
@@ -521,7 +520,7 @@ julia> parse(log_names(foo),"ab")
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 ```
 
-See also [`log_names(parser)`](@ref), [`@syntax`](@ref).
+See also [`log_names`](@ref) and [`@syntax`](@ref).
 """
 macro with_names(block)
     esc(with_names(block))

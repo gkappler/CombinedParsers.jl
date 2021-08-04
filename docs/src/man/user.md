@@ -45,7 +45,6 @@ p = Sequence(first = CharIn(isuppercase), second = CharIn(islowercase))
 parse(p,"Ab")
 
 parse(Sequence(CharIn(isuppercase), :second => CharIn(islowercase)),"Ab")
-
 ```
 
 
@@ -82,15 +81,21 @@ option = ( CharIn('a':'z') | missing ) * join(Repeat('b'),"-")
 
 
 ## Lazy repetitions and optional parsers
-Repetition and optional parsers are greedy by default, and can be switched to lazy matching by wrapping in [`Lazy`](@ref)`(Repeat(p))`.
+Repetition and optional parsers are greedy by default
+```@repl session
+parse_all(Repeat(AnyChar()), "abc") |> collect
+```
+Wrapping in [`Lazy`](@ref) switches to lazy matching:
+```@repl session
+parse_all(Lazy(Repeat(AnyChar())), "abc") |> collect
+```
 
-The `@re_str` macro [demonstrates][pcre.md] a parser for lazy matching.
 
 
 ## Assertions
 Parsers that do not advance the parsing position can be used to assert conditions during parsing.
-## AtStart() and AtEnd()
-The `AtStart()` only succeeds if at the start of the input, and similarly the `AtEnd()` succeeds only at the end of the input.
+### AtStart() and AtEnd()
+[`AtStart`](@ref) only succeeds if at the start of the input, and similarly the [`AtEnd`](@ref) succeeds only at the end of the input.
 By default, `parse` does not need to consume the full input but succeeds with the first match.
 With `AtEnd()` the parser can be forced to consume the full input or fail otherwise.
 ```@repl session
@@ -98,8 +103,8 @@ parse(("a"|"ab")*AtEnd(),"ab")
 ```
 
 ### Looking around
-A [`Lookahead`](@ref) and [`Lookbehind`](@ref) parsers wrap a parser `p`, 
-- succeeds iif `p` matches ([`PositiveLookahead`](@ref), [`PositiveLookbehind`](@ref)), respectively iif failed ([`NegativeLookahead`](@ref), [`NegativeLookbehind`](@ref)),
+[`Lookahead`](@ref) and [`Lookbehind`](@ref) parsers wrap a parser `p`, 
+- succeed iif `p` matches ([`PositiveLookahead`](@ref), [`PositiveLookbehind`](@ref)), respectively iif failed ([`NegativeLookahead`](@ref), [`NegativeLookbehind`](@ref)),
 - without advancing the position.
 The `@re_str` macro [demonstrates][pcre.md] a parser for lookahead and lookbehind expressions.
 

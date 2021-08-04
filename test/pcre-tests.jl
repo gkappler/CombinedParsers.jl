@@ -169,57 +169,81 @@ end
 open(joinpath(docdir,"man","pcre-compliance.md"),"w") do io
   println(io,"""
 # Compliance with the PCRE test set
-!!! note 
-    PCRE features supported by `@re_str` 
-    - ✅ sequences, alternations (`|`), repetitions (`*`,`+`,`{n}`, `{min,}`, `{min,max}`), optional matches (`?`)
-    - ✅ escaped characters and generic character types
-    - ✅ character ranges (`[]`)
-    - ✅ non-capturing groups
-    - ✅ capturing groups, backreferences, subroutines (all by index, relative index and name)
-    - ✅ simple assertions (`\\A`, `\\z`, `\\Z`, `\\b`, `\\B`, `^`, `\$`)
-    - ✅ lookaheads and lookbehinds
-    - ✅ atomic groups
-    - ✅ lazy repetitions
-    - ✅ conditional expressions
-    - ✅ internal and pattern options setting
-    - ✅ comments
-!!! warning 
-    PCRE functionality that is currently not supported:
-    - ❌ Capture groups in lookbehinds.
-    - ❌ Lookaheads within lookbehinds.
-    - ❌ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \\K
+
+PCRE features supported by `@re_str` 
+- ✅ sequences, alternations (`|`), repetitions (`*`,`+`,`{n}`, `{min,}`, `{min,max}`), optional matches (`?`)
+- ✅ escaped characters and generic character types
+- ✅ character ranges (`[]`)
+- ✅ non-capturing groups
+- ✅ capturing groups, backreferences, subroutines (all by index, relative index and name)
+- ✅ simple assertions (`\\A`, `\\z`, `\\Z`, `\\b`, `\\B`, `^`, `\$`)
+- ✅ lookaheads and lookbehinds
+- ✅ atomic groups
+- ✅ lazy repetitions
+- ✅ conditional expressions
+- ✅ internal and pattern options setting
+- ✅ comments
+
+PCRE functionality that is currently not supported:
+- ❌ Capture groups in lookbehinds.
+- ❌ Lookaheads within lookbehinds.
+- ❌ ACCEPT, SKIP, COMMIT, THEN, PRUNE, \\K
 ```@setup session
 using CombinedParsers
 using CombinedParsers.Regexp
 ```
+
+## PCRE Unit Tests
+
 CombinedParsers.jl is tested and benchmarked against the PCRE C library testset.
-The PCRE test output is downloaded from 
-[the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), 
-parsed with 
-[a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to run tests benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
+The PCRE test output is 
+
+- downloaded from [the PCRE source repository](https://github.com/rurban/pcre/blob/master/testdata/testoutput1), 
+- parsed with [a `CombinedParser`](https://github.com/gkappler/CombinedParsers.jl/blob/master/test/pcretest-parser.jl), to 
+- run tests/benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
+
 (Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
-## Test Overview
+
 $n_successes successful tests on $(n_patterns.success) patterns
-(See [list of compliant patterns](pcre-compliance-succeeded.md)).\n
+(See [list of compliant patterns](pcre-compliance-succeeded.md)).
+
 $n_failed failed tests on $(n_patterns.failed) patterns
 (See [list of failed patterns](pcre-compliance-failed.md)).
-### Performance Overview:
+
+$(n_patterns.unsupported) unsupported patterns were omitted for the following reasons:
+    """)
+    for (n,r) in sort([ s.first => length(s.second) for s in unsupported ])
+        println(io,"- `$n` excluded $r patterns.")
+    end
+    println(io,"""
+
+
+## Performance Comparison with C PCRE:
+
 The PCRE C backend of `@r_str` has arrived at a widely optimized codebase after decades of improvements.
 C PCRE2 optimized is among the fastest regex libraries ([second behind Rust](https://github.com/mariomka/regex-benchmark/tree/optimized), running [mariomka](https://github.com/mariomka)'s benchmark will position CombinedParser among its competition).
 
 Although CombinedParsers.jl is a very young package that will be optimized further, 
-`@re_str` pure Julia Regcomb is often competitive with PCRE `@r_str` Regex.\n\n
+`@re_str` pure Julia Regcomb is often competitive with PCRE `@r_str` Regex.
+
+
 PCRE benchmarks have a range between $(benchmarks.range_Regex[1])ns to $(benchmarks.range_Regex[2])ns.
 CombinedParsers benchmarks range between $(benchmarks.range_Regcomb[1])ns to $(benchmarks.range_Regcomb[2])ns.
 $(round(benchmarks.proportion_better*100))% of benchmarks are faster with CombinedParsers compared to PCRE.
-The average ratio of `time_Recomb/time_Regex` is $(round(benchmarks.mean_ratio,digits=2)).\n\n
+The average ratio of `time_Recomb/time_Regex` is $(round(benchmarks.mean_ratio,digits=2)).
+
+
 These benchmarkin results are for the first 100 test patterns in the PCRE test set, comparing `match(Regex(pattern,flags),s)` with `_iterate(Regcomb(pattern,flags),s)`.
-![](log_btimes.png)\n\n
+![](log_btimes.png)
+
+
 Benchmark timings for regular expression construction and matching comparing `Regex` (x axis) and `Regcomb` (y axis), both on a log10 scale.
 Points represent an individual benchmark for a pattern construction or match.
 Cases with `CombinedParsers` being faster than the C library PCRE are paint green, slower cases are red.
-### Benchmark ratios histogram:
-![](log_btime_ratio_histogram.svg)\n\n
+
+Benchmark ratios histogram:
+![](log_btime_ratio_histogram.svg)
+
 
 The histograms of ratios of `time_Regcomb/time_Regex` on a log scale demonstrate that `CombinedParser` implementation is competitive.
 Worst cases are investigated for further optimization [in this IJulia notebook](https://github.com/gkappler/CombinedParsers.jl/blob/master/benchmark/benchmarks.ipynb).
@@ -227,12 +251,8 @@ Worst cases are investigated for further optimization [in this IJulia notebook](
 Next steps in optimization are
 - caching codeunit lengths of matches for backtracking.
 - memoization of sub-parsings.
-## Unsupported
-$(n_patterns.unsupported) unsupported patterns were omitted for the following reasons:
+
 """)
-    for (n,r) in sort([ s.first => length(s.second) for s in unsupported ])
-        println(io,"- `$n` excluded $r patterns.")
-    end
 end
 
 open(joinpath(docdir,"man","pcre-compliance-failed.md"),"w") do io

@@ -1,3 +1,5 @@
+# Using `CombinedParsers`
+
 ## Printing
 Printing `CombinedParser`s uses [`AbstractTrees.jl`](https://github.com/JuliaCollections/AbstractTrees.jl) for printing.
 The tree nodes are printed with 
@@ -30,10 +32,13 @@ match
 
 ## Parsing
 `CombinedParser` comprise of a pattern as well transformation functions to produce a Julia [`result_type`](@ref) from a [`match`](@ref) with [`get`](@ref).
-```@repl
-julia> get(match(p, "aacacb"))
+```@jldoctest
+julia> match(trim(re"(?:a+c)*b"), "aacacb")
+ParseMatch("aacacb")
+
+julia> get(m)
 ([(['a', 'a'], 'c'), (['a'], 'c')], 'b')
-```@
+```
 
 !!! note 
     Defining transformations is detailed in the [transformation](transformation.md) section.

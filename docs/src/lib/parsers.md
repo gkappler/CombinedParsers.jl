@@ -1,19 +1,26 @@
 # Parser Templates
 
-## Constant and `TextParse` Conversion
+## Composing with `TextParse`
 Parsing Numbers or Dates is most efficiently done with TextParse.
 
 ```@docs
-parser
-convert
-CombinedParsers.wrap
+CombinedParsers.tryparsenext
+NumericParser
+DateParser
+DateTimeParser
 ```
 
 For non base 10 numbers, use
 ```@docs
 CombinedParsers.integer_base
 ```
-	
+
+## Constants and Conversion
+```@docs
+parser
+convert
+CombinedParsers.wrap
+```	
 
 ## Parser Building Blocks
 PCRE regular expressions provides established building blocks as escape sequences.
