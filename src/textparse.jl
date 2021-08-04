@@ -3,11 +3,29 @@ import TextParse: Numeric
 import Dates
 import Dates: DateFormat
 
+"""
+    NumericParser(x...) = parser(TextParse.Numeric(x...))
+"""
 NumericParser(x...) = parser(TextParse.Numeric(x...))
-DateParser(format::AbstractString...) = DateParser(Dates.DateFormat.(format)...)
-DateParser(format::DateFormat...) = sEither(parser.(TextParse.DateTimeToken.(Dates.Date,format))...)
-DateTimeParser(format::AbstractString...) = DateTimeParser(Dates.DateFormat.(format)...)
+
+DateParser(format::AbstractString...; locale="english")     = DateParser(Dates.DateFormat.(format, locale)...)
+DateTimeParser(format::AbstractString...; locale="english") = DateTimeParser(Dates.DateFormat.(format, locale)...)
+DateParser(format::DateFormat...)     = sEither(parser.(TextParse.DateTimeToken.(Dates.Date,format))...)
 DateTimeParser(format::DateFormat...) = sEither(parser.(TextParse.DateTimeToken.(Dates.DateTime,format))...)
+
+"""
+    DateParser(format::DateFormat...)
+    DateTimeParser(format::DateFormat...)
+
+Create a parser matching either one format
+using `TextParse.DateTimeToken` for `Dates.Date` and `Dates.DateTime` respectively.
+
+    DateParser(format::AbstractString...; locale="english")
+    DateTimeParser(format::AbstractString...; locale="english")
+
+Convenience functions for above using `Dates.DateFormat.(format, locale)`.
+"""
+DateParser, DateTimeParser
 
 import TextParse: tryparsenext
 
@@ -25,11 +43,14 @@ parser(x::AbstractToken) = AbstractTokenParser(x)
 
 regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
 function _printnode(io::IO, x::AbstractTokenParser)
-    print(io, x.parser)
+    print_constructor(io, x)
 end
 
 print_constructor(io::IO, x::AbstractTokenParser) =
     print(io, x.parser)
+
+print_constructor(io::IO, x::AbstractTokenParser{<:TextParse.DateTimeToken}) =
+    print(io, x.parser.format)
 
 _iterate(parser::AbstractTokenParser, sequence, till, before_i, next_i, state) = 
     _iterate_token(parser.parser, sequence, till, before_i, next_i, state)
@@ -49,7 +70,10 @@ end
 """
     TextParse.tryparsenext(x::CombinedParser,str,i,till,opts=TextParse.default_opts)
 
-TextParse.jl integrates with CombinedParsers.jl both ways.
+`TextParse.jl` integrates with `CombinedParsers.jl` both ways.
+> `tryparsenext` returns a tuple `(result, nextpos)` where `result` is of type `Nullable{T}`, `Nullable{T}()` if parsing failed, non-null containing the parsed value if it succeeded. 
+> If parsing succeeded, `nextpos` is the position the next token, if any, starts at. If parsing failed, `nextpos` is the position at which the
+parsing failed.
 
 ```jldoctest
 julia> using TextParse
