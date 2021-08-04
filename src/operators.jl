@@ -105,6 +105,8 @@ Parser transformating result `v -> InternedStrings.intern(v)`.
 
 (|)(x, y::ParserOperatorTypes) = sEither(parser(x),y)
 (|)(x::ParserOperatorTypes, y) = sEither(x,parser(y))
+(|)(x::ParserOperatorTypes, y::ParserOperatorTypes) = sEither(x,y)
+
 """
     (|)(x::AbstractToken, y)
     (|)(x, y::AbstractToken)
@@ -121,9 +123,8 @@ julia> 'a' | CharIn("AB") | "bc"
 ::Union{Char, SubString{String}}
 
 ```
-
 """
-(|)(x::ParserOperatorTypes, y::ParserOperatorTypes) = sEither(x,y)
+(|)(x::CombinedParser, y::CombinedParser)
 
 """
     (|)(x::AbstractToken{T}, default::Union{T,Missing})
