@@ -48,7 +48,7 @@ nothing # hide
 @syntax e_name = map(Symbol,cstring)            # Key name
 
 # String - The int32 is the number bytes in the (byte\*) + 1 (for the trailing '\x00'). The (byte\*) is zero or more UTF-8 encoded characters.
-@inline string_until_before(v) = Bytes{String}(v-1)
+@inline string_until_before(v) = Bytes(v-1,String)
 @syntax lstring = (after(string_until_before, String, int32) * t"\x00")[1]
 
 # Binary - The int32 is the number of bytes in the (byte*).
