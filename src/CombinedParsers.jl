@@ -466,8 +466,7 @@ with_name(name::Symbol,x; doc="") =
 with_name(name::AbstractString,x; doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),parser(x),doc)
 
-export log_names
-log_names_(x::CombinedParser,a...;kw...) = x
+_log_names(x::CombinedParser,a...;kw...) = x
 
 """
     log_names(x,names=true; exclude=nothing)
@@ -487,7 +486,7 @@ function log_names(x,names=true; exclude=nothing, kw...)
     else
         x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
     end
-    deepmap_parser(log_names_,Dict(),x, message;kw...)
+    deepmap_parser(_log_names,Dict(),x, message;kw...)
 end
 
 export @with_names
@@ -2263,7 +2262,7 @@ end
 
 include("deepmap.jl")
 
-function deepmap_parser(f::typeof(log_names_),mem::AbstractDict,x::NamedParser,message::Function;kw...)
+function deepmap_parser(f::typeof(_log_names),mem::AbstractDict,x::NamedParser,message::Function;kw...)
     get!(mem,x) do
         r = NamedParser(x.name,deepmap_parser(f,mem,x.parser,message;kw...))
         log=message(x)

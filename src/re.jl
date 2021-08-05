@@ -13,7 +13,7 @@ import ReversedStrings: reversed, reverse_index
 import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, print_constructor
 import ..CombinedParsers: _iterate, _iterate_constant
-import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, log_names_
+import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, _log_names
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
 import ..CombinedParsers: _prevind, _nextind, _leftof, _rightof
 indexed_captures_(x,a...) = x
@@ -293,7 +293,7 @@ capture_index(name,delta,index,context) =
         index
     end
 
-function deepmap_parser(::typeof(log_names_),mem::AbstractDict,x::Backreference,a...;kw...)
+function deepmap_parser(::typeof(_log_names),mem::AbstractDict,x::Backreference,a...;kw...)
     get!(mem,x) do
         with_log(regex_string(x),x;kw...)
     end
