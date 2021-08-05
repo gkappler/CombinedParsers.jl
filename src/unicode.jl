@@ -237,9 +237,9 @@ function TextParse.tryparsenext(tok::UnicodeClass, str, i, till, opts=TextParse.
 end
 
 
-regex_string_(x::UnicodeClass) =
+_regex_string(x::UnicodeClass) =
     if haskey(unicode_abbrev, x.class)
         "\\p{$(unicode_abbrev[x.class])}"
     else
-        join([regex_string_(UnicodeClass(s)) for s in x.class])
+        join([_regex_string(UnicodeClass(s)) for s in x.class])
     end

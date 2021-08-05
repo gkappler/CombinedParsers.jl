@@ -198,13 +198,13 @@ function print_constructor(io::IO,x::Capture)
     print(io, " |> Capture ", x.index )
 end
 
-regex_string(x::Capture) = regex_prefix_(x)*regex_string(x.parser)*")"
-regex_prefix_(x::Capture) =
+regex_string(x::Capture) = _regex_prefix(x)*regex_string(x.parser)*")"
+_regex_prefix(x::Capture) =
     let name = (x.name===nothing ? "" : "?<$(x.name)>")
         "($name"
     end
 regex_prefix(x::Capture) =
-    regex_prefix_(x::Capture)*regex_prefix(x.parser)
+    _regex_prefix(x::Capture)*regex_prefix(x.parser)
 regex_suffix(x::Capture) = regex_suffix(x.parser)*")"
 
 function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
@@ -212,7 +212,6 @@ function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
         Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
     end
 end
-
 
 
 Base.get(x::Capture, sequence, till, after, i, state) =
@@ -273,7 +272,7 @@ Parser matching previously captured sequence, optionally with a name.
         new(Symbol(name),-1,f)
 end
 
-regex_string_(x::Backreference) =
+_regex_string(x::Backreference) =
    if x.name !== nothing
        string(x.name)
    else
@@ -281,7 +280,7 @@ regex_string_(x::Backreference) =
    end
                                                           
 regex_inner(x::Backreference) =
-    "\\g{"*regex_string_(x) *"}"
+    "\\g{"*_regex_string(x) *"}"
 
 capture_index(name,delta,index,context) =
     if ( index<0 || delta!=Symbol("") )
@@ -486,7 +485,7 @@ Conditional parser, `_iterate` cycles conditionally on `_iterate_condition` thro
 end
 
 function regex_prefix(x::Conditional)
-    "(?("*regex_string_(x.condition)*")"
+    "(?("*_regex_string(x.condition)*")"
 end
 function regex_suffix(x::Conditional)
     ")"

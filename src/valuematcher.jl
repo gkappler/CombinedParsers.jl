@@ -164,7 +164,7 @@ CharIn(x_...) =
 CharIn(chars::StepRange) =
     CharIn("$(chars.start)-$(chars.stop)",chars)
 
-regex_string_(x) = "$x"
+_regex_string(x) = "$x"
 
 """
     CharIn(unicode_category::Symbol...)
@@ -213,27 +213,27 @@ function regex_escape(s)
 end
 export regex_string
 regex_string(x::AbstractString) = regex_escape(x)
-regex_string_(x::AbstractString) = regex_escape(x)
+_regex_string(x::AbstractString) = regex_escape(x)
 
 result_type(::Type{<:CharIn}) = Char
-regex_string_(x::Union{Vector,Set}) = join(regex_string_.(x))
+_regex_string(x::Union{Vector,Set}) = join(_regex_string.(x))
 regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
-regex_string_(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
-regex_string_(x::StepRange) =
+_regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
+_regex_string(x::StepRange) =
     if x.start == x.stop
         x.start
     else
         x.start*"-"*x.stop
     end
-regex_string_(x::Tuple) = join([regex_string_(s) for s in x])
-regex_string_(x::Function) = "$x(...)"
-regex_string_(x::CharIn) = ( x.pcre =="" ? regex_string_(x.sets) : x.pcre )
+_regex_string(x::Tuple) = join([_regex_string(s) for s in x])
+_regex_string(x::Function) = "$x(...)"
+_regex_string(x::CharIn) = ( x.pcre =="" ? _regex_string(x.sets) : x.pcre )
 regex_inner(x::CharIn) =
-    "["*regex_string_(x)*"]"
+    "["*_regex_string(x)*"]"
 
 print_constructor(io::IO,x::CharIn{Char}) = nothing
 regex_inner(x::CharIn{Char}) =
-    regex_string_(x.sets)
+    _regex_string(x.sets)
 
 
 
@@ -283,9 +283,9 @@ CharNotIn(x_...) =
     CharNotIn("",x_...)
 
 result_type(::Type{<:CharNotIn}) = Char
-regex_string_(x::CharNotIn) = ( x.pcre =="" ? "^"*regex_string_(x.sets) : x.pcre )
+_regex_string(x::CharNotIn) = ( x.pcre =="" ? "^"*_regex_string(x.sets) : x.pcre )
 regex_inner(x::CharNotIn) =
-    "["*regex_string_(x)*"]"
+    "["*_regex_string(x)*"]"
 @inline _ismatch(c,p::CharNotIn)::Bool = !_ismatch(c,p.sets)
 
 CharIn(x::Tuple{<:CharNotIn}) = x[1]
