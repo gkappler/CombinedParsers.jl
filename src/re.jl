@@ -16,7 +16,7 @@ import ..CombinedParsers: _iterate, _iterate_constant
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, _log_names
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
 import ..CombinedParsers: _prevind, _nextind, _leftof, _rightof
-indexed_captures_(x,a...) = x
+_indexed_captures(x,a...) = x
 
 import Base: SubString, ==
 
@@ -436,7 +436,7 @@ end
 
 export DupSubpatternNumbers
 """
-Parser wrapper for `ParserWithCaptures`, setting reset_index=true in `deepmap_parser(::typeof(indexed_captures_),...)`.
+Parser wrapper for `ParserWithCaptures`, setting reset_index=true in `deepmap_parser(::typeof(_indexed_captures),...)`.
 
 ```jldoctest
 julia> p = re"(?|(a)|(b))\\1"
