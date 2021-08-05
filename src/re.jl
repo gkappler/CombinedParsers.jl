@@ -13,7 +13,7 @@ import ReversedStrings: reversed, reverse_index
 import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, print_constructor
 import ..CombinedParsers: _iterate, _iterate_constant
-import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, regex_string_, regex_string, _log_names
+import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, _regex_string, regex_string, _log_names
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
 import ..CombinedParsers: _prevind, _nextind, _leftof, _rightof
 _indexed_captures(x,a...) = x
