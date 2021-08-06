@@ -30,14 +30,15 @@ For next version, a match-level state passed as _iterate argument is considered.
 
 See also [`ParserWithCaptures`](@ref)
 """
-@auto_hash_equals struct SequenceWithCaptures{S,T}
-    match::S
+@auto_hash_equals struct SequenceWithCaptures{S,T} <: StringWrapper
+    x::S
     subroutines::Vector{CombinedParser}
     captures::Vector{Vector{UnitRange{Int}}}
     names::Dict{Symbol,Vector{Int}}
     state::T
-    SequenceWithCaptures(match,subroutines, captures, names, state) =
-            new{typeof(match),typeof(state)}(match,subroutines, captures, names, state)
+    function SequenceWithCaptures(x,subroutines, captures, names, state)
+        new{typeof(x),typeof(state)}(x,subroutines, captures, names, state)
+    end
     SequenceWithCaptures(x,cs::SequenceWithCaptures,state) =
         let S=typeof(x)
             new{S,typeof(state)}(x,cs.subroutines,cs.captures,cs.names,state)
@@ -46,11 +47,6 @@ See also [`ParserWithCaptures`](@ref)
         let S=typeof(x)
             new{S,typeof(cs.state)}(x,cs.subroutines,cs.captures,cs.names,cs.state)
         end
-    function SequenceWithCaptures(cs::SequenceWithCaptures,start::Integer,stop::Integer,state)
-        m = (cs.match,start:stop)
-        caps = deepcopy(cs.captures)
-        new{typeof(m),typeof(state)}(m,cs.subroutines,caps,cs.names,state)
-    end
 end
 import Base: empty!
 Base.empty!(sequence::SequenceWithCaptures) =
@@ -58,35 +54,21 @@ Base.empty!(sequence::SequenceWithCaptures) =
         Base.empty!(c)
     end
 copy_captures(x::SequenceWithCaptures,state) =
-    SequenceWithCaptures(x.match,x.subroutines, [ copy(c) for c in x.captures ],x.names,state)
-reversed(x::SequenceWithCaptures) = SequenceWithCaptures(reversed(x.match),x)
-reverse_index(x::SequenceWithCaptures,a...) = reverse_index(x.match,a...)
+    SequenceWithCaptures(x.x,x.subroutines, [ copy(c) for c in x.captures ],x.names,state)
+reversed(x::SequenceWithCaptures) = SequenceWithCaptures(reversed(x.x),x)
+reverse_index(x::SequenceWithCaptures,a...) = reverse_index(x.x,a...)
 with_options(flags::UInt32,x::SequenceWithCaptures) =
-    SequenceWithCaptures(with_options(flags,x.match),x)
-@inline Base.lastindex(x::SequenceWithCaptures) =
-    lastindex(x.match)
-@inline Base.@propagate_inbounds _prevind(x::SequenceWithCaptures,i::Integer,n::Integer) =
-    _prevind(x.match,i,n)
-@inline Base.@propagate_inbounds _nextind(x::SequenceWithCaptures,i::Integer,n::Integer) =
-    _nextind(x.match,i,n)
-@inline Base.@propagate_inbounds _prevind(x::SequenceWithCaptures,i::Integer) =
-    _prevind(x.match,i)
-@inline Base.@propagate_inbounds _nextind(x::SequenceWithCaptures,i::Integer) =
-    _nextind(x.match,i)
-@inline Base.@propagate_inbounds Base.getindex(x::SequenceWithCaptures,i...) =
-    getindex(x.match,i...)
-@inline Base.@propagate_inbounds Base.iterate(x::SequenceWithCaptures,i...) =
-    iterate(x.match,i...)
+    SequenceWithCaptures(with_options(flags,x.x),x)
 function Base.show(io::IO, x::SequenceWithCaptures)
     print(io, "SequenceWithCaptures ")
-    show(io,x.match)
+    show(io,x.x)
 end
 Base.SubString(x::SequenceWithCaptures,a...) =
-    SubString(x.match,a...)
+    SubString(x.x,a...)
 
 with_options(set_flags::UInt32, unset_flags::UInt32,x::SequenceWithCaptures) =
     SequenceWithCaptures(
-        with_options(set_flags, unset_flags,x.match),
+        with_options(set_flags, unset_flags,x.x),
         x
     )
 
@@ -177,8 +159,8 @@ set_capture(sequence::SequenceWithCaptures, index::Int, start,stop) =
     push!((@inbounds sequence.captures[index]), start:stop)
 set_capture(sequence::SequenceWithCaptures{<:ReversedString}, index::Int, start,stop) =
     push!((@inbounds sequence.captures[index]),
-          reverse_index(sequence.match,
-                        stop):reverse_index(sequence.match,
+          reverse_index(sequence.x,
+                        stop):reverse_index(sequence.x,
                                             start))
 
 function prune_captures(sequence::SequenceWithCaptures,after_i)
@@ -274,7 +256,7 @@ capture_substring(p::ParserOptions{<:Backreference}, sequence::SequenceWithCaptu
 function capture_substring(p::Backreference, sequence::SequenceWithCaptures)
     index = resolve_index(p, sequence)
     index<0 && return nothing
-    SubString(sequence.match, sequence.captures[index][end])
+    SubString(sequence.x, sequence.captures[index][end])
 end
 
 @inline function _iterate(p::Union{Backreference,ParserOptions{<:Backreference}},
