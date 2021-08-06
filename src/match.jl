@@ -7,7 +7,7 @@ Iterator type for [`match_all`](@ref) and [`parse_all`](@ref) with `eltype` [`Pa
 
 Iteration looks for matches beginning between `start` and `stop` and ending at most at `till`.
 """
-@auto_hash_equals struct MatchesIterator{P,S}
+@auto_hash_equals struct MatchesIterator{P<:CombinedParser,S}
     "parser"
     parser::P
     "sequence"
@@ -18,8 +18,6 @@ Iteration looks for matches beginning between `start` and `stop` and ending at m
     stop::Int
     "Last index for end of [`match`](@ref)."
     till::Int
-    MatchesIterator(parser,sequence, start=firstindex(sequence),stop=lastindex(sequence),till=lastindex(sequence)) =
-        new{typeof(parser),typeof(sequence)}(parser,sequence,start,stop,till)
 end
 result_type(::Type{<:MatchesIterator{P}}) where P =
     result_type(P)
@@ -33,6 +31,15 @@ Base.IteratorSize(::Type{<:MatchesIterator}) =
 
 Base.get(x::MatchesIterator, a...)=
     get(x.parser,x.sequence,x.till, a...)
+
+"""
+    MatchesIterator(parser::CombinedParser, sequence, start=firstindex(sequence),stop=lastindex(sequence),till=lastindex(sequence))
+
+
+`MatchesIterator` dispatch can be used for parsers that require a special sequence type.
+"""
+MatchesIterator(parser, sequence, start::Int=firstindex(sequence),stop::Int=lastindex(sequence),till::Int=lastindex(sequence)) =
+    MatchesIterator{typeof(parser),typeof(sequence)}(parser,sequence,start,stop,till)
 
 export match_all
 

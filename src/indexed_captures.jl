@@ -62,9 +62,16 @@ function SequenceWithCaptures(x,cs::ParserWithCaptures)
 end
 
 import ..CombinedParsers: MatchesIterator
-function MatchesIterator(parser::ParserWithCaptures, sequence::AbstractString, a...; kw...)
-    MatchesIterator(parser, SequenceWithCaptures(sequence,parser), a...; kw...)
-end
+"""
+    MatchesIterator(parser::ParserWithCaptures, sequence, start=firstindex(sequence),stop=lastindex(sequence),till=lastindex(sequence))
+    MatchesIterator(parser::ParserWithCaptures, sequence::SequenceWithCaptures, start=firstindex(sequence),stop=lastindex(sequence),till=lastindex(sequence))
+
+If not `sequence isa SequenceWithCaptures` it is wrapped in such for `parser`.
+"""
+MatchesIterator(parser::ParserWithCaptures, sequence::SequenceWithCaptures, start::Int=firstindex(sequence),stop::Int=lastindex(sequence),till::Int=lastindex(sequence)) =
+    MatchesIterator{typeof(parser),typeof(sequence)}(parser, sequence,start,stop,till)
+MatchesIterator(parser::ParserWithCaptures, sequence, start::Int=firstindex(sequence),stop::Int=lastindex(sequence),till::Int=lastindex(sequence)) =
+    MatchesIterator(parser, SequenceWithCaptures(sequence,parser),start,stop,till)
 
 set_options(set::UInt32,unset::UInt32,parser::ParserWithCaptures) =
     ParserWithCaptures(set_options(set,unset,parser.parser),
