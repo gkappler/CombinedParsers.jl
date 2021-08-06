@@ -104,47 +104,6 @@ end
 ==(pc_m::ParseMatch,pcre_m::RegexMatch) =
     pcre_m==pc_m
 
-import Base: getproperty
-"""
-    Base.getproperty(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key::Symbol)
-
-enable `m.captures` and `m.match`.
-
-See API of `RegexMatch`.
-"""
-function Base.getproperty(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key::Symbol)
-    x = getfield(m,1).sequence
-    if key==:captures
-        [ isempty(c) ? nothing : match_string(x.match,c[end])
-          for c in x.captures ]
-    elseif key==:match
-        SubString(x.match,m.offset,
-                  _prevind(x.match,m.after))
-    else
-        CombinedParsers._getproperty(m,key)
-    end
-end
-
-"""
-    Base.getindex(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Union{Integer,Symbol})
-
-Gets capture `i` as SubString.
-
-See API of `RegexMatch`.
-"""
-function Base.getindex(x::ParseMatch{<:WrappedParser,<:SequenceWithCaptures,<:Any},i::Integer)
-    m = getfield(x,1).sequence
-    c = m.captures[i]
-    isempty(c) ? nothing : match_string(m.match,c[end])
-end
-
-function Base.getindex(m::ParseMatch{<:WrappedParser,<:SequenceWithCaptures,<:Any},i::Symbol)
-    x = getfield(m,1).sequence
-    for j in x.names[i]
-        c=getindex(m,j)
-        c !== nothing && return c
-    end
-end
 
 match_string(x::SubString,y::UnitRange{<:Integer}) =
     SubString(x.string,x.offset+y.start,x.offset+y.stop)
@@ -156,22 +115,6 @@ match_string(x::Tuple{<:AbstractString,UnitRange{<:Integer}},y::UnitRange{<:Inte
 
 match_string(x::AbstractString,y::UnitRange{<:Integer}) =
     SubString(x,y.start,y.stop)
-
-function Base.show(io::IO,m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any})
-    x = getfield(m,1).sequence
-    print(io,"ParseMatch(\"",escape_string(m.match),"\"")
-    indnames=Dict( ( i=>k.first for k in pairs(x.names) for i in k.second )... )
-    for i in 1:length(x.captures)
-        print(io, ", ",get(indnames,i,i),"=")
-        if isempty(x.captures[i])
-            print(io,"nothing")
-        else
-            print(io,"\"",match_string(x.match, x.captures[i][end]),"\"")
-        end
-    end
-    print(io,")")
-end
-
 
 export Capture
 """

@@ -211,15 +211,10 @@ Return first next [`ParseMatch`](@ref) (as return value and state) or `nothing` 
 end
 
 
-
-
-
-function Base.show(io::IO,m::ParseMatch{<:Any,<:Any,Nothing})
-    print(io,"no match")
-end
-
 function Base.show(io::IO,m::ParseMatch{<:Any,<:AbstractString,<:Any})
-    print(io,"ParseMatch(\"",escape_string(m.match),"\"")
+    print(io,"ParseMatch(\"",
+          m.state === nothing ? "no match" : escape_string(m.match),
+          "\"")
     print(io,")")
 end
 

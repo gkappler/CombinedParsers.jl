@@ -61,6 +61,70 @@ function SequenceWithCaptures(x,cs::ParserWithCaptures)
         nothing)
 end
 
+
+
+ParseMatchWithCaptures = ParseMatch{<:ParserWithCaptures,<:SequenceWithCaptures,<:Any}
+function Base.show(io::IO,m::ParseMatchWithCaptures)
+    x = getfield(m,1).sequence
+    print(io,"ParseMatch(\"",
+          m.state === nothing ? "no match" : escape_string(m.match),
+          "\"")
+    indnames=Dict( ( i=>k.first for k in pairs(x.names) for i in k.second )... )
+    for i in 1:length(x.captures)
+        print(io, ", ",get(indnames,i,i),"=")
+        if isempty(x.captures[i])
+            print(io,"nothing")
+        else
+            print(io,"\"",match_string(x.x, x.captures[i][end]),"\"")
+        end
+    end
+    print(io,")")
+end
+
+
+import Base: getproperty
+"""
+    Base.getproperty(m::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},key::Symbol)
+
+enable `m.captures` and `m.match`.
+
+See API of `RegexMatch`.
+"""
+function Base.getproperty(m::ParseMatchWithCaptures,key::Symbol)
+    x = getfield(m,1).sequence
+    if key==:captures
+        [ isempty(c) ? nothing : match_string(x.x,c[end])
+          for c in x.captures ]
+    elseif key==:match
+        SubString(x.x,m.offset,
+                  _prevind(x.x,m.after))
+    else
+        CombinedParsers._getproperty(m,key)
+    end
+end
+
+"""
+    Base.getindex(x::ParseMatch{<:Any,<:SequenceWithCaptures,<:Any},i::Union{Integer,Symbol})
+
+Gets capture `i` as SubString.
+
+See API of `RegexMatch`.
+"""
+function Base.getindex(x::ParseMatchWithCaptures,i::Integer)
+    m = getfield(x,1).sequence
+    c = m.captures[i]
+    isempty(c) ? nothing : match_string(m.x,c[end])
+end
+
+function Base.getindex(m::ParseMatchWithCaptures,i::Symbol)
+    x = getfield(m,1).sequence
+    for j in x.names[i]
+        c=getindex(m,j)
+        c !== nothing && return c
+    end
+end
+
+
 import ..CombinedParsers: MatchesIterator
 """
     MatchesIterator(parser::ParserWithCaptures, sequence, start=firstindex(sequence),stop=lastindex(sequence),till=lastindex(sequence))
