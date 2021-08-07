@@ -93,6 +93,7 @@ CombinedParsers.NamedParser
 with_name
 @with_names
 log_names
+log_parser
 with_log
 with_effect
 ```
@@ -101,7 +102,6 @@ with_effect
 ## other
 ```@docs
 CombinedParsers.MappedSequenceParser
-CombinedParsers.MappedChars
 CombinedParsers.MemoizingParser
 CombinedParsers.WithMemory
 ```

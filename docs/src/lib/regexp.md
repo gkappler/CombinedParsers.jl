@@ -7,8 +7,8 @@ You can use PCRE `@re_str` in combination with
 CombinedParsers.Regexp.@re_str
 CombinedParsers.Regexp
 CombinedParsers.Regexp.Regcomb
-getindex(::ParseMatch{<:CombinedParsers.WrappedParser,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Integer)
-getproperty(::ParseMatch{<:Any,<:CombinedParsers.Regexp.SequenceWithCaptures,<:Any},::Symbol)
+getindex(::ParseMatch{<:ParserWithCaptures,<:SequenceWithCaptures,<:Any},::Integer)
+getproperty(::ParseMatch{<:ParserWithCaptures,<:SequenceWithCaptures,<:Any},::Symbol)
 regex_escape
 ```
 

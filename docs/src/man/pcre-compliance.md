@@ -33,7 +33,7 @@ The PCRE test output is
 - run tests/benchmarks on `Base.Regex` and `CombinedParsers.Regexp.Regcomb`.
 
 (Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
-## Test Overview
+
 3080 successful tests on 978 patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).
 

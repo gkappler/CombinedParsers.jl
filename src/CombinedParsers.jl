@@ -2242,13 +2242,16 @@ function _log_names(x::CombinedParser,message::Function,a...;kw...)
         x
     end
 end
+
+export log_parser, log_names
+
 """
     log_names(x,names=true; exclude=nothing)
 
 Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
 Log all `NamedParser` instanses if `names==true` or `name in names` and not `name in exclude`.
 
-See also: [`with_log`](@ref), [`deepmap_parser`](@ref)
+See also: [`with_log`](@ref), [`log_parser`](@ref), [`deepmap_parser`](@ref)
 """
 function log_names(x, names=true; exclude=nothing)
     message = if names === true
@@ -2260,7 +2263,7 @@ function log_names(x, names=true; exclude=nothing)
     else
         x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
     end
-    log_parser(message, x; kw...)
+    log_parser(message, x)
 end
 
 iostring(f::Function, a...; kw...) =
@@ -2269,7 +2272,14 @@ iostring(f::Function, a...; kw...) =
         String(take!(sio))
     end
 
-export log_parser
+"""
+    log_parser(message::Type, x::CombinedParser, a...; kw...)
+    log_parser(message::Function, x::CombinedParser, a...; kw...)
+
+Transform parser including logging statements for sub-parsers 
+of type `message` or 
+for which calling `message` does not return `nothing`.
+"""
 function log_parser(message::Type, x::CombinedParser, a...; kw...)
     log_parser(x, a...; kw...) do p
         if p isa message
@@ -2280,7 +2290,6 @@ function log_parser(message::Type, x::CombinedParser, a...; kw...)
     end
 end
 
-export log_parser
 function log_parser(message::Function, x::CombinedParser, a...; kw...)
     deepmap_parser(_log_names,Dict(),x,message, a...;kw...)
 end
