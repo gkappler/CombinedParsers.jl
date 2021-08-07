@@ -3,8 +3,6 @@ export reversed
 using ReversedStrings
 import ReversedStrings: reversed
 
-reversed(x::Tuple) = reverse(x)
-
 function set_capture(sequence::ReversedString, index::Int, x)
     @warn "check"
     set_capture(sequence.x,index,x)
@@ -24,7 +22,7 @@ Useful for checks like "must be preceded by `parser`, don't consume its match".
 @auto_hash_equals struct PositiveLookbehind{S,T,P} <: WrappedAssertion{S,T}
     parser::P
     function PositiveLookbehind(p_,reversed_parser=true)
-        p = reversed_parser ? deepmap_parser(reversed,IdDict(),parser(p_)) : parser(p_)
+        p = reversed_parser ? reversed(parser(p_)) : parser(p_)
         new{Tuple{Int,state_type(p)},result_type(p),typeof(p)}(p)
     end
 end
@@ -50,7 +48,7 @@ julia> parse("peek"*la,"peek")
 @auto_hash_equals struct NegativeLookbehind{P} <: WrappedAssertion{MatchState,NegativeLookbehind{P}}
     parser::P
     function NegativeLookbehind(p_,reversed_parser=true)
-        p = reversed_parser ? deepmap_parser(reversed,IdDict(),parser(p_)) : parser(p_)
+        p = reversed_parser ? reversed(parser(p_)) : parser(p_)
         new{typeof(p)}(p)
     end
 end
@@ -142,47 +140,27 @@ regex_inner(x::Union{PositiveLookbehind,NegativeLookbehind}) =
 
 children(x::Union{PositiveLookbehind,NegativeLookbehind}) =
     reverse(children(x.parser))
+reversed(x::CombinedParser) = deepmap_parser(_reversed, x)
+_reversed(x::ConstantParser{<:AbstractString}) =
+    ConstantParser(reversed(x.parser))
+_reversed(x) = x
+
+_deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::Sequence) =
+    Sequence(( deepmap_parser(_reversed,mem,p) for p in reverse(x.parts) )...)
 
 for T in [PositiveLookahead,NegativeLookahead,PositiveLookbehind,NegativeLookbehind]
     eval(quote
-         deepmap_parser(f::Function,mem::AbstractDict,x_::$T,a...; kw...) =
-         let x = deepmap_parser(f,mem,x_.parser,a...; kw...)
-         $T(x,false)
-         end
+             _deepmap_parser(f::Function,mem::AbstractDict,x_::$T,a...; kw...) =
+                 $T(deepmap_parser(f,mem,x_.parser,a...; kw...),false)
          end)
 end
-reversed(x::CombinedParser) = deepmap_parser(reversed, x)
-deepmap_parser(f::Function,mem::AbstractDict,x::Union{AtStart,AtEnd,Always,Never},a...; kw...) = f(x)
-reversed(x::Union{Always,Never}) = x
-reversed(x::AtStart) = AtEnd()
-reversed(x::AtEnd) =  AtStart()
-reversed(x::NIndexParser{0}) = x
-reversed(x::NIndexParser{1}) = x
-reversed(x::ConstantParser) = x
-reversed(x::ConstantParser{<:AbstractString}) =
-    ConstantParser(reversed(x.parser))
 
-deepmap_parser(::typeof(reversed),mem::AbstractDict,x::Sequence) =
-    get!(mem,x) do
-        Sequence(( deepmap_parser(reversed,mem,p) for p in reverse(x.parts) )...)
-    end
-deepmap_parser(::typeof(reversed),mem::AbstractDict,x::Atomic) =
-    get!(mem,x) do
-        Atomic(deepmap_parser(reversed,mem,x.parser))
-    end
-deepmap_parser(::typeof(reversed),mem::AbstractDict,x::NegativeLookbehind) =
-    get!(mem,x) do
-        NegativeLookahead(x.parser) ##deepmap_parser(reversed,@show x.parser))
-    end
-deepmap_parser(::typeof(reversed),mem::AbstractDict,x::NegativeLookahead) =
-    get!(mem,x) do
-        NegativeLookbehind(x.parser) ##deepmap_parser(reversed,x.parser))
-    end
-deepmap_parser(::typeof(reversed),mem::AbstractDict,x::PositiveLookbehind) =
-    get!(mem,x) do
-        PositiveLookahead(x.parser) ##deepmap_parser(reversed,x.parser))
-    end
-deepmap_parser(::typeof(reversed),mem::AbstractDict,x::PositiveLookahead) =
-    get!(mem,x) do
-        PositiveLookbehind(x.parser) ##deepmap_parser(reversed,x.parser))
-    end
+
+_deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::NegativeLookbehind) =
+    NegativeLookahead(x.parser) ##deepmap_parser(reversed,@show x.parser))
+_deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::NegativeLookahead) =
+    NegativeLookbehind(x.parser) ##deepmap_parser(reversed,x.parser))
+_deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::PositiveLookbehind) =
+    PositiveLookahead(x.parser) ##deepmap_parser(reversed,x.parser))
+_deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::PositiveLookahead) =
+    PositiveLookbehind(x.parser) ##deepmap_parser(reversed,x.parser))

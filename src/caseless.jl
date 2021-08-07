@@ -50,14 +50,6 @@ children(x::MappedSequenceParser) = tuple(x.parser, x.f)
 @inline _iterate(parser::MappedSequenceParser, sequence, till, posi,after,state) =
     _iterate(parser.parser, MappedChars(parser.f,sequence), till,posi,after,state)
 
-
-deepmap_parser(f::Function,mem::AbstractDict,x::MappedSequenceParser,a...;kw...) =
-    get!(mem,x) do
-        ## construct replacement, e.g. if P <: WrappedParser
-        MappedSequenceParser(x.f,deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
-reversed(x::MappedSequenceParser) = MappedSequenceParser(x.f,x.parser)
-
 export MappedChars
 """
     MappedChars(f::Function,x) <: AbstractString

@@ -11,7 +11,7 @@ using ReversedStrings
 import ReversedStrings: reversed, reverse_index
 
 import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
-import ..CombinedParsers: parser, prune_captures, deepmap_parser, print_constructor
+import ..CombinedParsers: parser, prune_captures, _deepmap_parser, print_constructor
 import ..CombinedParsers: _iterate, _iterate_constant
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, _regex_string, regex_string, _log_names
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
@@ -63,8 +63,6 @@ function Base.show(io::IO, x::SequenceWithCaptures)
     print(io, "SequenceWithCaptures ")
     show(io,x.x)
 end
-Base.SubString(x::SequenceWithCaptures,a...) =
-    SubString(x.x,a...)
 
 with_options(set_flags::UInt32, unset_flags::UInt32,x::SequenceWithCaptures) =
     SequenceWithCaptures(
@@ -132,10 +130,8 @@ regex_prefix(x::Capture) =
     _regex_prefix(x::Capture)*regex_prefix(x.parser)
 regex_suffix(x::Capture) = regex_suffix(x.parser)*")"
 
-function deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
-    get!(mem,x) do
-        Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
-    end
+function _deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
+    Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
 end
 
 
@@ -217,13 +213,6 @@ capture_index(name,delta,index,context) =
     else
         index
     end
-
-function deepmap_parser(::typeof(_log_names),mem::AbstractDict,x::Backreference,a...;kw...)
-    get!(mem,x) do
-        with_log(regex_string(x),x;kw...)
-    end
-end
-
 
 function Base.get(x::Backreference, sequence, till, after, i, state)
     sequence[i:_prevind(sequence,i+state)]
@@ -317,7 +306,9 @@ function regex_prefix(x::Subroutine)
 end
 regex_suffix(x::Subroutine) = ")"
 regex_inner(x::Subroutine) = ""
-deepmap_parser(::typeof(reversed),mem::AbstractDict,x::Subroutine) = x
+
+_deepmap_parser(::Function,mem::AbstractDict,x::Subroutine) = x
+
 
 function _iterate_condition(cond::Subroutine, sequence, till, posi, next_i, state)
     sequence.state === nothing && return false
@@ -388,10 +379,8 @@ See also [pcre doc](https://www.pcre.org/original/doc/html/pcrepattern.html#dups
         new{typeof(parser),state_type(parser),result_type(parser)}(parser)
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw...) =
-    get!(mem,x) do
-        DupSubpatternNumbers(deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
+_deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw...) =
+    DupSubpatternNumbers(deepmap_parser(f,mem,x.parser,a...;kw...))
 
 
 
@@ -421,12 +410,10 @@ regex_inner(x::Conditional) =
 
 children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
-function deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...)
-    get!(mem,x) do
-        Conditional(deepmap_parser(f,mem,x.condition,a...;kw...),
-                    deepmap_parser(f,mem,x.yes,a...;kw...),
-                    deepmap_parser(f,mem,x.no,a...;kw...))
-    end
+function _deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...)
+    Conditional(deepmap_parser(f,mem,x.condition,a...;kw...),
+                deepmap_parser(f,mem,x.yes,a...;kw...),
+                deepmap_parser(f,mem,x.no,a...;kw...))
 end
 
 @inline Base.get(parser::Conditional, sequence, till, after, i, state) =

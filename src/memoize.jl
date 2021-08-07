@@ -41,10 +41,8 @@ For slow parsers with a lot of backtracking this parser can help improve speed.
     end
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::MemoizingParser,a...;kw...) =
-    get!(mem,x) do
-        MemoizingParser(deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
+_deepmap_parser(f::Function,mem::AbstractDict,x::MemoizingParser,a...;kw...) =
+    MemoizingParser(deepmap_parser(f,mem,x.parser,a...;kw...))
 
 @inline function _iterate(parser::MemoizingParser, sequence::String, till, posi,after,state)
     error("for memoizing, wrap sequence in WithMemory. Todo: automize wrapping in root parser with optimize")

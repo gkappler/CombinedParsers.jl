@@ -57,13 +57,11 @@ end
 children(x::Either{<:AbstractTrie}) =
     children(x.options)
 
-function deepmap_parser(f::typeof(lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
-    get!(mem,x) do
-        g = (lowercase.(Tries.path(st))=>get(st)
-             for st in PreOrderDFS(x.options)
+function _deepmap_parser(f::typeof(lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
+    g = (lowercase.(Tries.path(st))=>get(st)
+         for st in PreOrderDFS(x.options)
              if !isempty(Tries.path(st)))
-        Either{result_type(x)}(Trie(g))
-    end
+    Either{result_type(x)}(Trie(g))
 end
 
 

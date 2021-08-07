@@ -40,11 +40,6 @@ regex_suffix(x::ConstantParser) = ""
 
 lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
 
-deepmap_parser(f::Function,mem::AbstractDict,x::ConstantParser,a...;kw...) =
-    get!(mem,x) do
-        f(x,a...;kw...)
-    end
-
 @inline _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing) =
     _iterate_constant(parser,sequence,till,posi, next_i, state)
 

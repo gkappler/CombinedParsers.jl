@@ -1,60 +1,31 @@
 export deepmap_parser
 
 """
-    deepmap_parser(f::Function,x,a...;kw...)
+    deepmap_parser(f::Function[, mem::AbstractDict=IdDict()], x::CombinedParser,a...;kw...)
 
 Perform a deep transformation of a `x`.
-Used for [`log_names`](@ref).
 
-Calls `deepmap_parser(f,IdDict(),x,a...)`.
+Default method
+1. Returns cached result if `haskey(x, mem)` to avoid infinite recursion.
+2. construct deep transformation `dt = _deepmap_parser(f, mem, x, a...; kw...)`
+3. cache and return `f(dt, a...; kw...)`
+
+For a new `CombinedParser`, define either `deepmap_parser` or `_deepmap_parser`.
+
+For a parser transformation `f`, define either 
+- `deepmap_parser(::typeof(f),...)`
+- `_deepmap_parser(::typeof(f),...)`
+- `f`
+
+Used for [`log_names`](@ref).
 """
 deepmap_parser(f::Function,x::CombinedParser, a...;kw...) =
     deepmap_parser(f,IdDict(),x,a...;kw...)
 
-"""
-    deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...;kw...)
-
-return 
-```julia
+deepmap_parser(f::Function,mem::AbstractDict, x, a...; kw...) =
     get!(mem,x) do
-        f(x,a...;kw...)
-    end
-```
-"""
-deepmap_parser(f::Function,mem::AbstractDict,x::LeafParser,a...;kw...) =
-    get!(mem,x) do
-        f(x,a...;kw...)
-    end
-
-deepmap_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...;kw...) =
-    get!(mem,x) do
-        SideeffectParser(x.effect,
-                         deepmap_parser(f,mem,x.parser,a...;kw...),
-                         x.args...)
-    end
-
-deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...;kw...) =
-    get!(mem,x) do
-        FlatMap{result_type(x)}(x.right,# v -> deepmap_parser(f,mem,x.right(v),a...;kw...),
-                                deepmap_parser(f,mem,x.left,a...;kw...))
-    end
-
-deepmap_parser(f::Function,mem::AbstractDict,x::Sequence,a...;kw...) =
-    get!(mem,x) do
-        Sequence( ( deepmap_parser(f,mem,p,a...;kw...)
-                    for p in x.parts)... )
-    end
-
-deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...;kw...) =
-    get!(mem,x) do
-        f(Repeat(x.range,
-                 deepmap_parser(f,mem,x.parser,a...)),a...;kw...)
-    end
-
-deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
-    get!(mem,x) do
-        Optional(deepmap_parser(f,mem,x.parser,a...;kw...);
-                 default=x.default)
+        dt = _deepmap_parser(f, mem, x, a...; kw...)
+        f(dt, a...; kw...)
     end
 
 
@@ -71,22 +42,14 @@ function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Vector},a...;k
     end
 end
 
-function deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Tuple},a...;kw...)
-    get!(mem,x) do
-        Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
-    end
-end
+_deepmap_parser(f::Function,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
+    Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...;kw...) =
-    get!(mem,x) do
-        Atomic(
-            deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
+_deepmap_parser(f::Function, mem::AbstractDict, x::LeafParser,a...;kw...) = x
 
-deepmap_parser(f::Function,mem::AbstractDict,x::Lazy,a...;kw...) =
-    get!(mem,x) do
-        Lazy(deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
+_deepmap_parser(f::Function, mem::AbstractDict, x::Union{AtStart,AtEnd,Always,Never}, a...; kw...) = x
+
+_deepmap_parser(f::Function,mem::AbstractDict, x::ConstantParser,a...;kw...) = x
 
 """
     deepmap_parser(f::Function,mem::AbstractDict,x,a...;kw...)
@@ -103,21 +66,47 @@ Perform a deep transformation of a CombinedParser.
         end
     ```
 """
-deepmap_parser(f::Function,mem::AbstractDict,x::CombinedParser,a...;kw...) =
+_deepmap_parser(f::Function,mem::AbstractDict,x::CombinedParser,a...;kw...) =
     error("""
     For a custom parser `$(typeof(x))` with sub-parsers, provide a method
     ```julia
-    deepmap_parser(f::$(typeof(f)),mem::AbstractDict,x::$(typeof(x)),a...;kw...) =
-        get!(mem,x) do
-            ## construct replacement, e.g. if P <: WrappedParser
-            $(typeof(x))(deepmap_parser(f,mem,x.parser,a...;kw...))
-        end
+    _deepmap_parser(f::$(typeof(f)),mem::AbstractDict,x::$(typeof(x)),a...;kw...) =
+          ## construct replacement, e.g. if P <: WrappedParser
+          $(typeof(x))(deepmap_parser(f,mem,x.parser,a...;kw...))
     ```
 """)
 
-deepmap_parser(f::Function,mem::AbstractDict,x::NamedParser,a...;kw...) =
-    get!(mem,x) do
-        NamedParser(x.name,deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
+_deepmap_parser(f::Function,mem::AbstractDict,x::Atomic,a...;kw...) =
+    Atomic(deepmap_parser(f,mem,x.parser,a...;kw...))
 
+_deepmap_parser(f::Function,mem::AbstractDict,x::Lazy,a...;kw...) =
+    Lazy(deepmap_parser(f,mem,x.parser,a...;kw...))
 
+_deepmap_parser(f::Function,mem::AbstractDict,x::Sequence,a...;kw...) =
+    Sequence( ( deepmap_parser(f,mem,p,a...;kw...)
+                for p in x.parts)... )
+
+_deepmap_parser(f::Function,mem::AbstractDict,x::Optional,a...;kw...) =
+    Optional(deepmap_parser(f,mem,x.parser,a...;kw...);
+             default=x.default)
+
+_deepmap_parser(f::Function,mem::AbstractDict,x::NamedParser,a...;kw...) =
+    NamedParser(x.name,deepmap_parser(f,mem,x.parser,a...;kw...))
+
+_deepmap_parser(f::Function,mem::AbstractDict,x::Repeat,a...;kw...) =
+    Repeat(x.range,
+           deepmap_parser(f,mem,x.parser,a...))
+
+_deepmap_parser(f::Function,mem::AbstractDict,x::MappedSequenceParser,a...;kw...) =
+    MappedSequenceParser(x.f,deepmap_parser(f,mem,x.parser,a...;kw...))
+
+_deepmap_parser(f::Function,mem::AbstractDict,x::SideeffectParser,a...;kw...) =
+    SideeffectParser(
+        x.effect,
+        deepmap_parser(f,mem,x.parser,a...;kw...),
+        x.args...)
+
+_deepmap_parser(f::Function,mem::AbstractDict,x::FlatMap,a...;kw...) =
+    FlatMap{result_type(x)}(
+        x.right,# v -> deepmap_parser(f,mem,x.right(v),a...;kw...),
+        deepmap_parser(f,mem,x.left,a...;kw...))

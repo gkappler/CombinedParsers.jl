@@ -57,11 +57,9 @@ function print_constructor(io::IO,x::JoinSubstring)
     printstyled(io," |> !", color=:bold)
 end
 
-deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
-    get!(mem,x) do
-        JoinSubstring(
-            deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
+_deepmap_parser(f::Function,mem::AbstractDict,x::JoinSubstring,a...;kw...) =
+    JoinSubstring(
+        deepmap_parser(f,mem,x.parser,a...;kw...))
 
 export map_match
 map_match(f::Function,p_) =
@@ -245,12 +243,10 @@ Parser transforming result of a wrapped parser.
             with_name(p_.name,tp)
         end
 end
-deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
-    get!(mem,x) do
-        Transformation{result_type(x)}(
-            x.transform,
-            deepmap_parser(f,mem,x.parser,a...;kw...))
-    end
+_deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
+    Transformation{result_type(x)}(
+        x.transform,
+        deepmap_parser(f,mem,x.parser,a...;kw...))
 
 export MatchRange
 """

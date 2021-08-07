@@ -142,7 +142,7 @@ set_options(set::UInt32,unset::UInt32,parser::ParserWithCaptures) =
                        CombinedParser[ set_options(set,unset,p) for p in parser.subroutines],
                        parser.names)
 
-function deepmap_parser(f::Function,mem::AbstractDict,x::ParserWithCaptures,a...;kw...)
+function _deepmap_parser(f::Function,mem::AbstractDict,x::ParserWithCaptures,a...;kw...)
     ParserWithCaptures(deepmap_parser(f,mem,x.parser,a...;kw...),
                        [ deepmap_parser(f,mem,p,a...;kw...) for p in x.subroutines ],
                        x.names)
@@ -176,51 +176,45 @@ Transformation{T}(t,x::ParserWithCaptures) where T =
     ParserWithCaptures(Transformation{T}(t,x.parser),x.subroutines,x.names)
 
 
-function deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Backreference,context,a...)
-    get!(mem,x) do
-        idx = capture_index(x.name,Symbol(""),x.index,context)
-        if idx < 1 || idx>lastindex(context.subroutines)
-            x.name === nothing ? x.fallback() : x
-        else
-            Backreference(x.fallback,x.name, idx)
-        end
+function _deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Backreference,context,a...)
+    idx = capture_index(x.name,Symbol(""),x.index,context)
+    if idx < 1 || idx>lastindex(context.subroutines)
+        x.name === nothing ? x.fallback() : x
+    else
+        Backreference(x.fallback,x.name, idx)
     end
 end
-function deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Subroutine,context,a...)
-    get!(mem,x) do
-        index = capture_index(x.name,x.delta,x.index, context)
-        if index <= 0 || index>length(context.subroutines)
-            Subroutine{Any,Any}(x.name,Symbol(""),index)
-        else
-            sr = context.subroutines[index]
-            Subroutine{state_type(sr),result_type(sr)}(
-                x.name,Symbol(""),index)
-        end
+function _deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Subroutine,context,a...)
+    index = capture_index(x.name,x.delta,x.index, context)
+    if index <= 0 || index>length(context.subroutines)
+        Subroutine{Any,Any}(x.name,Symbol(""),index)
+    else
+        sr = context.subroutines[index]
+        Subroutine{state_type(sr),result_type(sr)}(
+            x.name,Symbol(""),index)
     end
 end
 
 """
-    deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
+    _deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
 
 set `reset_index===true'.
 """
-function deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
-    get!(mem,x) do
-        DupSubpatternNumbers(deepmap_parser(
-            _indexed_captures,mem,
-            x.parser,context,
-            true))
-    end
+function _deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
+    DupSubpatternNumbers(deepmap_parser(
+        _indexed_captures,mem,
+        x.parser,context,
+        true))
 end
 
 """
-    deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either,context,reset_index)
+    _deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either,context,reset_index)
 
 Method dispatch, resetting `lastindex(context.subroutines)` if `reset_index===true'.
 """
-deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Tuple},context,reset_index) =
+_deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Tuple},context,reset_index) =
     _indexed_captures(mem,x,context,reset_index)
-deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Vector},context,reset_index) =
+_deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Vector},context,reset_index) =
     _indexed_captures(mem,x,context,reset_index)
 function _indexed_captures(mem::AbstractDict,x::Either,context,reset_index)
     if reset_index
@@ -243,24 +237,22 @@ function _indexed_captures(mem::AbstractDict,x::Either,context,reset_index)
 end
 
 """
-    deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::Capture,context,a...)
+    _deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::Capture,context,a...)
 
 Map the capture my setting `index` to  `_nextind(context,x)`.
 
 Registers result in `context.subroutines` if no previous subroutine with the same index exists
 (see also [`DupSubpatternNumbers`](@ref)).
 """
-function deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::Capture,context,a...)
-    get!(mem,x) do
-        index,reset=subroutine_index_reset(context,x)
-        r = Capture(
-            x.name,
-            deepmap_parser(_indexed_captures,mem,x.parser,context,a...),
-            index
-        )
-        reset && ( context.subroutines[index] = r )
-        r
-    end
+function _deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::Capture,context,a...)
+    index,reset=subroutine_index_reset(context,x)
+    r = Capture(
+        x.name,
+        deepmap_parser(_indexed_captures,mem,x.parser,context,a...),
+        index
+    )
+    reset && ( context.subroutines[index] = r )
+    r
 end
 
 ##Base.getindex(x::ParserWithCaptures, i) = ParserWithCaptures(getindex(i,x)

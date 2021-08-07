@@ -466,29 +466,6 @@ with_name(name::Symbol,x; doc="") =
 with_name(name::AbstractString,x; doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),parser(x),doc)
 
-_log_names(x::CombinedParser,a...;kw...) = x
-
-"""
-    log_names(x,names=true; exclude=nothing)
-
-Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
-Log all `NamedParser` instanses if `names==true` or `name in names` and not `name in exclude`.
-
-See also: [`with_log`](@ref), [`deepmap_parser`](@ref)
-"""
-function log_names(x,names=true; exclude=nothing, kw...)
-    message = if names === true
-        if exclude === nothing
-            x -> x isa NamedParser ? x.name : nothing
-        else
-            x -> ( x isa NamedParser && !in(x.name,exclude) ) ? x.name : nothing
-        end
-    else
-        x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
-    end
-    deepmap_parser(_log_names,Dict(),x, message;kw...)
-end
-
 export @with_names
 with_names(x) = x
 function with_names(node::Expr)
@@ -1488,12 +1465,6 @@ regex_suffix(x::Repeat) =
     end
 
 
-reversed(x::Repeat) = x
-
-
-
-
-
 @inline function _leftof(str,i,parser::Repeat,x::Int)
     for e in 1:x
         i=leftof(str,i,parser.parser,MatchState())
@@ -2229,6 +2200,7 @@ end
 include("match.jl")
 
 
+include("caseless.jl")
 
 include("reverse.jl")
 
@@ -2262,22 +2234,61 @@ end
 
 include("deepmap.jl")
 
-function deepmap_parser(f::typeof(_log_names),mem::AbstractDict,x::NamedParser,message::Function;kw...)
-    get!(mem,x) do
-        r = NamedParser(x.name,deepmap_parser(f,mem,x.parser,message;kw...))
-        log=message(x)
-        if log!==nothing
-            with_log("$(log)",r)
+function _log_names(x::CombinedParser,message::Function,a...;kw...)
+    log = message(x,a...; kw...)
+    if log!==nothing
+        with_log("$(log)",x)
+    else
+        x
+    end
+end
+"""
+    log_names(x,names=true; exclude=nothing)
+
+Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
+Log all `NamedParser` instanses if `names==true` or `name in names` and not `name in exclude`.
+
+See also: [`with_log`](@ref), [`deepmap_parser`](@ref)
+"""
+function log_names(x, names=true; exclude=nothing)
+    message = if names === true
+        if exclude === nothing
+            x -> x isa NamedParser ? x.name : nothing
         else
-            r
+            x -> ( x isa NamedParser && !in(x.name,exclude) ) ? x.name : nothing
+        end
+    else
+        x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
+    end
+    log_parser(message, x; kw...)
+end
+
+iostring(f::Function, a...; kw...) =
+    let sio = IOBuffer()
+        f(sio, a...; kw...)
+        String(take!(sio))
+    end
+
+export log_parser
+function log_parser(message::Type, x::CombinedParser, a...; kw...)
+    log_parser(x, a...; kw...) do p
+        if p isa message
+            iostring(printnode, p)
+        else
+            nothing
         end
     end
+end
+
+export log_parser
+function log_parser(message::Function, x::CombinedParser, a...; kw...)
+    deepmap_parser(_log_names,Dict(),x,message, a...;kw...)
 end
 
 export optimize
 optimize(x) = deepmap_parser(_optimize,x)
 _optimize(x,a...) = x
-deepmap_parser(::typeof(_optimize),dict::AbstractDict,x::SideeffectParser) = x.parser
+_deepmap_parser(::typeof(_optimize),dict::AbstractDict,x::SideeffectParser) = x.parser
 
 include("defaults.jl")
 include("re.jl")
@@ -2286,7 +2297,6 @@ include("re.jl")
 include("show.jl")
 
 include("memoize.jl")
-include("caseless.jl")
 
 
 include("lazy.jl")
