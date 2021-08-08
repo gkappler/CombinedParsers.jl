@@ -1,3 +1,22 @@
+"""
+    wrap(x::CombinedParser; log = nothing, trace = false)
+
+transform a parser by wrapping sub-parsers in logging and tracing parser types.
+"""
+function wrap(x::CombinedParser; log = nothing, trace = false)
+    1
+    p = if log === nothing || log == false
+        x
+    else
+        log_names(x,log)
+    end 
+    if trace
+        CombinedParsers.trace(p)
+    else
+        p
+    end
+end
+
 export MatchesIterator, ParseMatch
 
 """
@@ -217,25 +236,6 @@ function Base.show(io::IO,m::ParseMatch{<:Any,<:AbstractString,<:Any})
           "\"")
     print(io,")")
 end
-
-"""
-    wrap(x::CombinedParser; log = nothing, trace = false)
-
-transform a parser by wrapping sub-parsers in logging and tracing parser types.
-"""
-function wrap(x::CombinedParser; log = nothing, trace = false)
-    p = if log === nothing || log == false
-        x
-    else
-        log_names(x,log)
-    end 
-    if trace
-        CombinedParsers.trace(p)
-    else
-        p
-    end
-end
-wrap(x::CombinedParser) = x
 
 """
     Base.match(parser::CombinedParser,sequence::AbstractString[, idx::Integer]; log=nothing)
