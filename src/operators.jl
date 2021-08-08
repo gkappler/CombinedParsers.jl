@@ -73,7 +73,7 @@ Parser Transformation getting the matched SubString.
 ```jldoctest
 julia> Repeat(AnyChar())
 .* AnyChar |> Repeat
-::Array{Char,1}
+::Vector{Char}
 
 julia> !Repeat(AnyChar())
 .* AnyChar |> Repeat |> !

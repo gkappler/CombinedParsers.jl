@@ -361,7 +361,7 @@ julia> p = re"(?|(a)|(b))\\1"
 │  ├─ (a)  |> Capture 1
 │  └─ (b)  |> Capture 1
 └─ \\g{1} Backreference
-::Tuple{Char,AbstractString}
+::Tuple{Char, AbstractString}
 
 julia> match(p, "aa")
 ParseMatch("aa", 1="a")

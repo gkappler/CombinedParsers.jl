@@ -715,7 +715,7 @@ julia> re"a+c"
 🗄 Sequence
 ├─ a+  |> Repeat
 └─ c
-::Tuple{Array{Char,1},Char}
+::Tuple{Vector{Char}, Char}
 ```
 
 See also [`Regcomb`](@ref), [`parse_options`](@ref).

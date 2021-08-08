@@ -558,7 +558,7 @@ julia> @syntax for german_street_address in street_address
 ├─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
 ├─ \\
 └─ <Int64>
-::NamedTuple{(:street, :no),Tuple{String,Int64}}
+::NamedTuple{(:street, :no), Tuple{String, Int64}}
 
 julia> german_street_address"Some Avenue 42"
 (street = "Some Avenue", no = 42)
@@ -575,7 +575,7 @@ julia> @syntax for us_street_address in street_address
 ├─ <Int64>
 ├─ \\  
 └─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
-::NamedTuple{(:street, :no),Tuple{String,Int64}}
+::NamedTuple{(:street, :no), Tuple{String, Int64}}
 
 julia> street_address"50 Oakland Ave"
 (street = "Oakland Ave", no = 50)
@@ -668,7 +668,7 @@ julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
 │  ├─ (?!b) NegativeLookahead
 │  └─ . AnyChar
 └─ . AnyChar
-::Tuple{Array{Char,1},Char}
+::Tuple{Vector{Char}, Char}
 
 julia> parse(p,"acbX")
 (['a', 'c'], 'b')
@@ -699,7 +699,7 @@ julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 │  │  └─ . AnyChar
 │  └─ b
 └─ . AnyChar
-::Tuple{Array{Char,1},Char}
+::Tuple{Vector{Char}, Char}
 
 julia> parse(p,"acbX")
 (['a', 'c'], 'X')
@@ -862,7 +862,7 @@ julia> german_street_address = !Repeat(AnyChar()) * ' ' * TextParse.Numeric(Int)
 ├─ .* AnyChar |> Repeat |> !
 ├─ \\
 └─ <Int64>
-::Tuple{SubString{String},Char,Int64}
+::Tuple{SubString{String}, Char, Int64}
 
 julia> german_street_address("Some Avenue 42")
 ("Some Avenue", ' ', 42)
@@ -945,7 +945,7 @@ julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', TextParse.Numer
 ├─ .* AnyChar |> Repeat |> !
 ├─ \\
 └─ <Int64>
-::Tuple{SubString{String},Char,Int64}
+::Tuple{SubString{String}, Char, Int64}
 
 julia> german_street_address("Some Avenue 42")
 ("Some Avenue", ' ', 42)
@@ -960,7 +960,7 @@ julia> german_street_address("Some Avenue 42")
     ├─ .* AnyChar |> Repeat |> ! |> with_name(:street)
     ├─ \\
     └─  <Int64> |> with_name(:no)
-    ::NamedTuple{(:street, :no),Tuple{SubString{String},Int64}}
+    ::NamedTuple{(:street, :no), Tuple{SubString{String}, Int64}}
 
     julia> german_street_address("Some Avenue 42")
     (street = "Some Avenue", no = 42)
@@ -1040,7 +1040,7 @@ julia> Sequence('a',CharIn("AB")*'b')
 └─ 🗄 Sequence
    ├─ [AB] CharIn
    └─ b
-::Tuple{Char,Tuple{Char,Char}}
+::Tuple{Char, Tuple{Char, Char}}
 
 
 julia> sSequence('a',CharIn("AB")*'b')
@@ -1048,7 +1048,7 @@ julia> sSequence('a',CharIn("AB")*'b')
 ├─ a
 ├─ [AB] CharIn
 └─ b
-::Tuple{Char,Char,Char}
+::Tuple{Char, Char, Char}
 ```
 See also [`Sequence`](@ref)
 """
@@ -1269,7 +1269,7 @@ julia> german_street_address = !Lazy(Repeat(AnyChar())) * Repeat1(' ') * TextPar
 ├─ .*? AnyChar |> Repeat |> Lazy |> !
 ├─ \\ +  |> Repeat
 └─ <Int64>
-::Tuple{SubString{String},Array{Char,1},Int64}
+::Tuple{SubString{String}, Vector{Char}, Int64}
 
 julia> german_street_address("Konrad Adenauer Allee    42")
 ("Konrad Adenauer Allee", [' ', ' ', ' ', ' '], 42)
@@ -1280,7 +1280,7 @@ julia> german_street_address("Konrad Adenauer Allee    42")
     ```jldoctest
     julia> re"a+?"
     a+?  |> Repeat |> Lazy
-    ::Array{Char,1}
+    ::Vector{Char}
 
     julia> re"a??"
     a?? |missing |> Lazy
@@ -1317,12 +1317,12 @@ Parser repeating pattern `x` `min:max` times.
 ```jldoctest
 julia> Repeat(2,2,'a')
 a{2}  |> Repeat
-::Array{Char,1}
+::Vector{Char}
 
 
 julia> Repeat(3,'a')
 a{3,}  |> Repeat
-::Array{Char,1}
+::Vector{Char}
 
 ```
 """
@@ -1387,7 +1387,7 @@ import Base.join
 Parser matching repeated `x.parser` separated by `delim`.
 ```jldoctest
 julia> parse(join(Repeat(AnyChar()),','),"a,b,c")
-3-element Array{Char,1}:
+3-element Vector{Char}:
  'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
  'b': ASCII/Unicode U+0062 (category Ll: Letter, lowercase)
  'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
