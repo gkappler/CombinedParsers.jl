@@ -358,7 +358,7 @@ for printing a non-string sequence when parsing.
 !!! note
     type piracy? module local `_escape_string`?
 """
-Base.escape_string(x::AbstractVector) = "$x"
+Base.escape_string(x::AbstractVector) = "["*join(repr.(x),",")*"]"
 
 """
     with_log(s::AbstractString,p, delta=5;nomatch=false)
