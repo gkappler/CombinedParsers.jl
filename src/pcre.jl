@@ -140,7 +140,7 @@ Strips options.
 Base.convert(::Type{Char},y::CharWithOptions) =
     y.x
 
-import ..CombinedParsers: StringWrapper
+using LazyStrings
 
 """
 A lazy element transformation type (e.g. AbstractString), 

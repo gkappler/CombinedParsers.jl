@@ -36,7 +36,7 @@ export MappedSequenceParser
 """
     MappedSequenceParser(f::F,parser::P) where {F<:Function,P}
 
-Match parser on [`MappedChars`](@ref)`(f,sequence)`, e.g. in a [`caseless`](@ref) parser.
+Match parser on [`CharMappedString`](@ref)`(f,sequence)`, e.g. in a [`caseless`](@ref) parser.
 """
 @auto_hash_equals struct MappedSequenceParser{P,S,T,F<:Function} <: WrappedParser{P,S,T}
     parser::P
@@ -48,34 +48,4 @@ end
 children(x::MappedSequenceParser) = tuple(x.parser, x.f)
 
 @inline _iterate(parser::MappedSequenceParser, sequence, till, posi,after,state) =
-    _iterate(parser.parser, MappedChars(parser.f,sequence), till,posi,after,state)
-
-export MappedChars
-"""
-    MappedChars(f::Function,x) <: AbstractString
-
-String implementation lazily transforming characters.
-Used for parsing with [`MappedSequenceParser`](@ref).
-"""
-struct MappedChars{S<:AbstractString,M<:Function} <: StringWrapper
-    x::S
-    f::M
-    function MappedChars(f::Function,x::AbstractString)
-        new{typeof(x),typeof(f)}(x,f)
-    end
-end
-
-@inline Base.@propagate_inbounds Base.getindex(x::MappedChars,i::Integer) =
-    x.f(getindex(x.x,i))
-@inline Base.@propagate_inbounds Base.iterate(x::MappedChars{<:AbstractString}) =
-    let i=iterate(x.x)
-        i===nothing && return nothing
-        x.f(tuple_pos(i)), tuple_state(i)
-    end
-@inline Base.@propagate_inbounds Base.iterate(x::MappedChars{<:AbstractString},i::Integer) =
-    let j=iterate(x.x,i)
-        j===nothing && return nothing
-        x.f(tuple_pos(j)), tuple_state(j)
-    end
-@inline Base.@propagate_inbounds Base.SubString(x::MappedChars,start::Int,stop::Int) =
-    MappedChars(SubString(x.x,start,stop), x.f)
+    _iterate(parser.parser, lmap(parser.f,sequence), till,posi,after,state)

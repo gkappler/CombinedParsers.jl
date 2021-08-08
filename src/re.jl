@@ -7,8 +7,8 @@ import TextParse
 import TextParse: AbstractToken
 using AutoHashEquals
 
-using ReversedStrings
-import ReversedStrings: reversed, reverse_index
+using LazyStrings
+import LazyStrings: reversed, reverse_index
 
 import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
 import ..CombinedParsers: parser, prune_captures, _deepmap_parser, print_constructor

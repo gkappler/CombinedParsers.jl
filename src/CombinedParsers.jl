@@ -17,14 +17,14 @@ import Base: ==, hash
 import Base: lowercase
 import Base: cat, get
 
-using ReversedStrings
-import ReversedStrings: reversed, reverse_index
-
 import TextParse
 import TextParse: AbstractToken
 
 include("ind.jl")
-include("StringWrappers.jl")
+
+using LazyStrings
+import LazyStrings: reversed, reverse_index
+
 using AbstractTrees
 import AbstractTrees: children
 import AbstractTrees: print_tree, printnode

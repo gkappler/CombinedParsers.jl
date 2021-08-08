@@ -1,8 +1,5 @@
 export reversed
 
-using ReversedStrings
-import ReversedStrings: reversed
-
 function set_capture(sequence::ReversedString, index::Int, x)
     @warn "check"
     set_capture(sequence.x,index,x)
