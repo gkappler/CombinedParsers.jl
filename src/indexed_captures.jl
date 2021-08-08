@@ -1,3 +1,4 @@
+export ParserWithCaptures, SequenceWithCaptures
 """
 Top level parser supporting regular expression features
 captures, backreferences and subroutines.
