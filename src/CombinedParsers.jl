@@ -1782,6 +1782,8 @@ _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state) =
 
 export alt, Either
 """
+    Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
+
 Parser that tries matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
 
 This parser has no `==` and `hash` methods because it can recurse.
@@ -1801,14 +1803,13 @@ julia> parse("a" | "bc","bc")
 """
 struct Either{Ps,S,T} <: CombinedParser{S,T}
     options::Ps
-    Either{S,T}(p::P) where {S,T,P} =
-        new{P,S,T}(p)
+    Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
 end
 
 """
     Either(p...)
 
-Create a immutable `Either{<:Tuple}` improved for performance.
+Create a immutable `Either{either_state_type(p),either_result_type(p)}(::Tuple)` improved for performance.
 Arguments `p...` are wrapped in [`parser`](@ref),
 type parameters are computed with [`either_state_type`](@ref) and [`either_result_type`](@ref).
 """
@@ -1820,7 +1821,7 @@ end
 """
     Either(p::Vector)
 
-Create a mutable `Either{Vector{Any}}` for creating recursive parsers.
+Create a mutable `Either{Any,Any}(::Vector{Any})` for creating recursive parsers.
 Arguments `p...` are wrapped in [`parser`](@ref),
 type parameters are computed with [`either_state_type`](@ref) and [`either_result_type`](@ref).
 
@@ -1835,20 +1836,23 @@ end
 
 
 """
-    Either{T}(p...)
+    Either{T}(p...; convert=false)
 
-Create a mutable `Either{<:Vector{Any}}` for creating recursive parsers.
+Create a mutable `Either{Any,T}(::Vector{Any})` for creating recursive parsers.
 Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
+
+If `convert` for any option `x` in `p` that has `!(result_type(x) <: T)`, adds [`map`](@ref)`(T,x)` instead.
+(Provide a `convert` method!)
 
 See also [`@syntax`](@ref).
 !!! note
     state type is `Any` which might cost performance.
 """
-function Either{T}(p_...) where T
+function Either{T}(p_...; convert=false) where T
     p = Any[parser.(p_)...]
     for (i,x) in enumerate(p)
         if !(result_type(x) <: T)
-            @info "transforming results with convert($T,::$(result_type(x)))\n$x"
+            convert || error("transforming results with convert($T,::$(result_type(x)))\n$x")
             p[i] = map(T,x)
         end 
     end
@@ -1857,6 +1861,7 @@ end
 
 @deprecate Either{T}(x::Vector{Any}) where T Either{T}(x...)
 @deprecate Either{T}(x::Tuple) where T Either(x...)
+@deprecate Either(x::Tuple) Either(x...)
 
 
 export Delayed
