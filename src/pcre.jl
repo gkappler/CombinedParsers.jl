@@ -231,7 +231,7 @@ respecting `Base.PCRE.CASELESS`.
 """
 parser(x::CharWithOptions) =
     if !iszero(x.flags & Base.PCRE.CASELESS)
-        CharIn(lowercase(x.x),uppercase(x.x))
+        ValueIn(lowercase(x.x),uppercase(x.x))
     else
         parser(x.x)
     end
@@ -311,7 +311,7 @@ struct MatchingNever{T} end
 returns `false`.
 """
 ismatch(c::MatchingNever,p)::Bool = false
-ismatch(c::MatchingNever,p::AnyChar)::Bool = false
+ismatch(c::MatchingNever,p::AnyValue)::Bool = false
 
 """
 Lazy wrapper for a sequence, masking elements in `getindex` with MatchingNever if any of `flags` are not set.
@@ -482,7 +482,7 @@ macro pcre_tests()
                               );
 
         Sequence(
-            :pattern => after(CharIn("/'\""),Any) do s
+            :pattern => after(ValueIn("/'\""),Any) do s
             Repeat_until(
                 AnyChar(),
                 Sequence(3, NegativeLookbehind('\\'),

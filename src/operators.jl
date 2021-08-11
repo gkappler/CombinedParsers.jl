@@ -33,19 +33,28 @@ julia> match("is "/"match", "no match is match").offset
 
 
 """
-    Base.broadcasted(::typeof((&)), x::CharNotIn, y::CharNotIn)
+    Base.broadcasted(::typeof((&)), x::ValueNotIn, y::ValueNotIn)
 
-Character matchers `m` like `Union{CharIn,CharNotIn,T}`, or any 
+Character matchers `m` like `Union{ValueIn,ValueNotIn,T}`, or any 
 type `T` providing a `ismatch(m::T,c::Char)::Bool` method represent a 
-lazy bitarray for all characters.
+"sparse" bitarray for all characters.
+
+!!! note
+    Please consider the broadcast API a draft you are invited to comment to.
+
+```jldoctest
+julia> ValueNotIn("abc") .& ValueNotIn("z")
+
+julia> ValueIn("abc") .& ValueNotIn("c")
+```
 """
-Base.broadcasted(::typeof((&)), x::CharNotIn, y::CharNotIn) =
-    CharNotIn(x.pcre*y.pcre, x.sets,y.sets)
+Base.broadcasted(::typeof((&)), x::ValueNotIn, y::ValueNotIn) =
+    ValueNotIn(x.pcre*y.pcre, x.sets, y.sets)
 
-Base.broadcasted(::typeof((&)), x::CharIn, y::CharNotIn) =
-    CharIn(setdiff(x.sets, y.sets))
+Base.broadcasted(::typeof((&)), x::ValueIn, y::ValueNotIn) =
+    ValueIn(setdiff(x.sets, y.sets))
 
-Base.broadcasted(::typeof((&)), x::Union{CharIn,CharNotIn}, ::AnyChar) =
+Base.broadcasted(::typeof((&)), x::Union{ValueIn,ValueNotIn}, ::AnyValue) =
     x
 
 
@@ -58,12 +67,6 @@ Base.broadcasted(::typeof((&)), x::JoinSubstring, y) =
 Base.broadcasted(::typeof((&)), x::Transformation, y) =
     Transformation(x.transform, x.parser .& y)
 
-Base.broadcasted(::typeof((&)), x::Repeat, y) =
-    Repeat(x.range, x.parser .& y)
-
-
-Base.broadcasted(::typeof((|)), x::CharIn, y::CharIn) =
-    CharIn(x.pcre*y.pcre, x.sets,y.sets)
 
 """
     (!)(x::CombinedParser)
@@ -100,6 +103,8 @@ Parser transformating result `v -> InternedStrings.intern(v)`.
 
 
 
+Base.broadcasted(::typeof((|)), x::ValueIn, y::ValueIn) =
+    ValueIn(x.pcre*y.pcre, x.sets,y.sets)
 
 
 
@@ -115,10 +120,10 @@ Parser transformating result `v -> InternedStrings.intern(v)`.
 Operator syntax for `sEither(x, y)`.
 
 ```jldoctest
-julia> 'a' | CharIn("AB") | "bc"
+julia> 'a' | ValueIn("AB") | "bc"
 |🗄 Either
 ├─ a
-├─ [AB] CharIn
+├─ [AB] ValueIn
 └─ bc
 ::Union{Char, SubString{String}}
 
@@ -149,10 +154,10 @@ function (|)(x::AbstractToken{T}, default::Union{T,Missing}) where { T }
     Optional(x,default=default)
 end
 function (|)(x::Char, y::Char)
-    CharIn(tuple(x,y))
+    ValueIn(tuple(x,y))
 end
-function (|)(x::CharIn, y::Char)
-    CharIn(tuple(x.sets...,y))
+function (|)(x::ValueIn, y::Char)
+    ValueIn(tuple(x.sets...,y))
 end
 
 

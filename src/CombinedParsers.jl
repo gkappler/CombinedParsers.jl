@@ -487,7 +487,7 @@ Sets names of parsers within begin/end block to match the variables they are asi
 so, for example
 ```jldoctest
 julia> @with_names foo = AnyChar()
-. AnyChar |> with_name(:foo)
+. AnyValue |> with_name(:foo)
 ::Char
 
 julia> parse(log_names(foo),"ab")
@@ -555,7 +555,7 @@ julia> @syntax for german_street_address in street_address
             end
        end
 🗄 Sequence |> map(#50) |> with_name(:german_street_address)
-├─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
+├─ .* AnyValue |> Repeat |> ! |> map(intern) |> map(String)
 ├─ \\
 └─ <Int64>
 ::NamedTuple{(:street, :no), Tuple{String, Int64}}
@@ -574,7 +574,7 @@ julia> @syntax for us_street_address in street_address
 🗄 Sequence |> map(#52) |> with_name(:us_street_address)
 ├─ <Int64>
 ├─ \\  
-└─ .* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
+└─ .* AnyValue |> Repeat |> ! |> map(intern) |> map(String)
 ::NamedTuple{(:street, :no), Tuple{String, Int64}}
 
 julia> street_address"50 Oakland Ave"
@@ -666,8 +666,8 @@ julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
 🗄 Sequence
 ├─ 🗄* Sequence[2] |> Repeat
 │  ├─ (?!b) NegativeLookahead
-│  └─ . AnyChar
-└─ . AnyChar
+│  └─ . AnyValue
+└─ . AnyValue
 ::Tuple{Vector{Char}, Char}
 
 julia> parse(p,"acbX")
@@ -1034,19 +1034,19 @@ _sSequence(x1,x...) =
 Simplifying `Sequence`, flatten `Sequence`s, remove `Always` assertions.
 
 ```jldoctest
-julia> Sequence('a',CharIn("AB")*'b')
+julia> Sequence('a',ValueIn("AB")*'b')
 🗄 Sequence
 ├─ a
 └─ 🗄 Sequence
-   ├─ [AB] CharIn
+   ├─ [AB] ValueIn
    └─ b
 ::Tuple{Char, Tuple{Char, Char}}
 
 
-julia> sSequence('a',CharIn("AB")*'b')
+julia> sSequence('a',ValueIn("AB")*'b')
 🗄 Sequence
 ├─ a
-├─ [AB] CharIn
+├─ [AB] ValueIn
 └─ b
 ::Tuple{Char, Char, Char}
 ```
@@ -1889,19 +1889,19 @@ _sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in
 Simplifying `Either`, flattens nested `Either`s, remove `Never` parsers.
 
 ```jldoctest
-julia> Either('a',CharIn("AB")|"bc")
+julia> Either('a',ValueIn("AB")|"bc")
 |🗄 Either
 ├─ a
 └─ |🗄 Either
-   ├─ [AB] CharIn
+   ├─ [AB] ValueIn
    └─ bc
 ::Union{Char, SubString{String}}
 
 
-julia> sEither('a',CharIn("AB")|"bc")
+julia> sEither('a',ValueIn("AB")|"bc")
 |🗄 Either
 ├─ a
-├─ [AB] CharIn
+├─ [AB] ValueIn
 └─ bc
 ::Union{Char, SubString{String}}
 
@@ -2207,7 +2207,7 @@ include("reverse.jl")
 include("get.jl")
 include("operators.jl")
 
-hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
+hex_digit = ValueIn("[:xdigit:]",'A':'F','a':'f','0':'9')
 export hex_digit, integer_base
 """
     integer_base(base,mind=0,maxd=Repeat_max)
@@ -2223,7 +2223,7 @@ function integer_base(base=10,mind=0,maxd=Repeat_max)
     dig = if base == 16
         hex_digit
     elseif base <= 10
-        CharIn('0':('0'+(base-1)))
+        ValueIn('0':('0'+(base-1)))
     else
         error("Base $base not supported")
     end

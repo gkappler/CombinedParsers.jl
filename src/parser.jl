@@ -22,10 +22,10 @@ parser(x) =
 """
     parser(x::StepRange{Char,<:Integer})
 
-[`CharIn`](@ref) matching x.
+[`ValueIn`](@ref) matching x.
 """
 parser(x::StepRange) =
-    CharIn(x)
+    ValueIn(x)
 parser(x::CombinedParser) = x
 
 """

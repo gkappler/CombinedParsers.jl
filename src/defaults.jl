@@ -42,22 +42,24 @@ char_label = Dict(
     '\U2029' => "Paragraph separator"
 )
 
-char_label_table(x::Union{CharIn,CharNotIn}) =
+char_label_table(x::Union{ValueIn,ValueNotIn}) =
     char_label_table(x.sets)
 function char_label_table(x)
     chars = sort(collect(x))
+    rs = [ escape_string(repr(c)) for c in chars ]
     labels = [ get(char_label, c, "") for c in chars ]
+    nr = maximum(length.(rs))
     n = maximum(length.(labels))
-    println("| Unicode | ", lpad("",n), " |")
-    println("|---------|-", "-"^n,      "-|")
-    for (c,l) in zip(chars, labels)
-        print("|  ")
-        show(convert(UInt16,c))
+    println("| ",lpad("Char",nr)," | ", lpad("",n), " |")
+    println("|-","-"^nr, "-|-", "-"^n,      "-|")
+    for (c,l) in zip(rs, labels)
+        print("| ")
+        print(lpad(c,nr))
         println(" | ", lpad(l,n), " |")
     end
 end
 
-whitespace_char = CharIn(
+whitespace_char = ValueIn(
     "[:space:]",
     " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B")
 
@@ -72,23 +74,23 @@ whitespace = !Atomic(Repeat1(whitespace_char))
 
 ```jldoc
 julia> CombinedParsers.char_label_table(whitespace_char)
-| Unicode |                     |
-|---------|---------------------|
-|  0x0009 | Horizontal tab (HT) |
-|  0x000b |   Vertical tab (VT) |
-|  0x000c |      Form feed (FF) |
-|  0x0020 |               Space |
-|  0x0085 |     Next line (NEL) |
-|  0x200e |  Left-to-right mark |
-|  0x200f |  Right-to-left mark |
-|  0x2028 |      Line separator |
-|  0x2029 | Paragraph separator |
+|      Char |                     |
+|-----------|---------------------|
+|     '\\t' | Horizontal tab (HT) |
+|     '\\v' |   Vertical tab (VT) |
+|     '\\f' |      Form feed (FF) |
+|       ' ' |               Space |
+|   '\\u85' |     Next line (NEL) |
+| '\\u200e' |  Left-to-right mark |
+| '\\u200f' |  Right-to-left mark |
+| '\\u2028' |      Line separator |
+| '\\u2029' | Paragraph separator |
 ```
 """
 whitespace_char, whitespace_maybe, whitespace
 
 
-horizontal_space_char=CharIn("\\h",
+horizontal_space_char=ValueIn("\\h",
     '\U0009', # "Horizontal tab (HT)"),
     '\U0020', # "Space"),
     '\U00A0', # "Non-break space"),
@@ -122,27 +124,27 @@ horizontal_space = Atomic(!Repeat1(horizontal_space_char))
 
 ```jldoc
 julia> CombinedParsers.char_label_table(horizontal_space_char)
-| Unicode |                           |
-|---------|---------------------------|
-|  0x0009 |       Horizontal tab (HT) |
-|  0x0020 |                     Space |
-|  0x00a0 |           Non-break space |
-|  0x1680 |          Ogham space mark |
-|  0x180e | Mongolian vowel separator |
-|  0x2000 |                   En quad |
-|  0x2001 |                   Em quad |
-|  0x2002 |                  En space |
-|  0x2003 |                  Em space |
-|  0x2004 |        Three-per-em space |
-|  0x2005 |         Four-per-em space |
-|  0x2006 |          Six-per-em space |
-|  0x2007 |              Figure space |
-|  0x2008 |         Punctuation space |
-|  0x2009 |                Thin space |
-|  0x200a |                Hair space |
-|  0x202f |     Narrow no-break space |
-|  0x205f | Medium mathematical space |
-|  0x3000 |         Ideographic space |
+|      Char |                           |
+|-----------|---------------------------|
+|     '\\t' |       Horizontal tab (HT) |
+|       ' ' |                     Space |
+|       ' ' |           Non-break space |
+|       ' ' |          Ogham space mark |
+| '\\u180e' | Mongolian vowel separator |
+|       ' ' |                   En quad |
+|       ' ' |                   Em quad |
+|       ' ' |                  En space |
+|       ' ' |                  Em space |
+|       ' ' |        Three-per-em space |
+|       ' ' |         Four-per-em space |
+|       ' ' |          Six-per-em space |
+|       ' ' |              Figure space |
+|       ' ' |         Punctuation space |
+|       ' ' |                Thin space |
+|       ' ' |                Hair space |
+|       ' ' |     Narrow no-break space |
+|       ' ' | Medium mathematical space |
+|       '　' |         Ideographic space |
 ```
 """
 horizontal_space_char, horizontal_space_maybe, horizontal_space
@@ -195,9 +197,9 @@ so, for example
 ```jldoctest
 julia> @trimmed foo = AnyChar()
 🗄 Sequence[2]
-├─ (?>[\\h]*) CharIn |> Repeat |> Atomic
-├─ . AnyChar |> with_name(:foo)
-└─ (?>[\\h]*) CharIn |> Repeat |> Atomic
+├─ (?>[\\h]*) ValueIn |> Repeat |> Atomic
+├─ . AnyValue |> with_name(:foo)
+└─ (?>[\\h]*) ValueIn |> Repeat |> Atomic
 ::Char
 
 julia> parse(log_names(foo),"  ab  ")
@@ -211,7 +213,7 @@ macro trimmed(block)
     esc(trimmed(block))
 end
 
-vertical_space_char=CharIn("\\v",
+vertical_space_char=ValueIn("\\v",
     '\U000A', # "Linefeed (LF)"),
     '\U000B', # "Vertical tab (VT)"),
     '\U000C', # "Form feed (FF)"),
@@ -230,27 +232,27 @@ vertical_space = Atomic(!Repeat1(vertical_space_char))
 
 ```jldoc
 julia> CombinedParsers.char_label_table(vertical_space_char)
-| Unicode |                      |
-|---------|----------------------|
-|  0x000a |        Linefeed (LF) |
-|  0x000b |    Vertical tab (VT) |
-|  0x000c |       Form feed (FF) |
-|  0x000d | Carriage return (CR) |
-|  0x0085 |      Next line (NEL) |
-|  0x2028 |       Line separator |
-|  0x2029 |  Paragraph separator |
+|      Char |                      |
+|-----------|----------------------|
+|     '\\n' |        Linefeed (LF) |
+|     '\\v' |    Vertical tab (VT) |
+|     '\\f' |       Form feed (FF) |
+|     '\\r' | Carriage return (CR) |
+|   '\\u85' |      Next line (NEL) |
+| '\\u2028' |       Line separator |
+| '\\u2029' |  Paragraph separator |
 ```
 """
 vertical_space_char, vertical_space_maybe, vertical_space
 
 
 "Equivalent PRCE `\\h\\v`, [`horizontal_space_char`](@ref), [`vertical_space_char`](@ref)"
-space_char  = CharIn("\\h\\v",horizontal_space_char,vertical_space_char)
+space_char  = ValueIn("\\h\\v",horizontal_space_char,vertical_space_char)
 space_maybe = Atomic(!Repeat(space_char))
-space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
+space = Atomic(!Repeat1(ValueIn("\\h\\v",space_char)))
+
 
 @deprecate whitespace_newline space
-
 
 """
     CombinedParsers.newline
@@ -262,29 +264,26 @@ newlines, PCRE `\\r` backslash R (BSR).
 julia> CombinedParsers.Regexp.bsr
 (?>|🗄) Either |> Atomic |> with_name(:bsr)
 ├─ \\r\\n 
-└─ [\\n\\x0b\\f\\r\\x85] CharIn |> !
+└─ [\\n\\x0b\\f\\r\\x85] ValueIn |> !
 ::SubString{String}
 ```
 
 """
 @with_names bsr = Atomic(Either("\r\n",
-                                !CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
+                                !ValueIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
 
 newline = bsr
 
-"`SubString` of repeated non [`vertical_space_char`](@ref)s."
-inline = !Repeat(CharNotIn(vertical_space_char))
-
 "Equivalent PRCE `\\w`: Char with unicode class `L`, `N`, or `_`."
-word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
+word_char=ValueIn("\\w",UnicodeClass("L","N"),'_')
 
 "SubString of at leat 1 repeated [`word_char`](@ref)."
 word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
 
 "SubString of at leat 1 repeated [`word_char`](@ref) or [`horizontal_space_char`](@ref)."
-words = JoinSubstring(Repeat1(CharIn("\\w\\h", horizontal_space_char, word_char))) ## "[[:alpha:] ]+"
+words = JoinSubstring(Repeat1(ValueIn("\\w\\h", horizontal_space_char, word_char))) ## "[[:alpha:] ]+"
 
-non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
+non_word_char=ValueNotIn("\\W",UnicodeClass("L","N"),'_')
 non_word = JoinSubstring(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
 
 """
@@ -311,7 +310,7 @@ julia> CombinedParsers.Regexp.at_linestart
 ├─ ^ AtStart
 └─ (?<=🗄)) Either |> Atomic |> with_name(:bsr) |> PositiveLookbehind
    ├─ \\r\\n
-   └─ [\\n\\x0b\\f\\r\\x85] CharIn |> !
+   └─ [\\n\\x0b\\f\\r\\x85] ValueIn |> !
 ::Union{AtStart, SubString}
 ```
 
@@ -331,7 +330,7 @@ julia> CombinedParsers.Regexp.at_lineend
 ├─ \$ AtEnd
 └─ (?=(?>|🗄)) Either |> Atomic |> with_name(:bsr) |> PositiveLookahead
    ├─ \\r\\n 
-   └─ [\\n\\x0b\\f\\r\\x85] CharIn |> !
+   └─ [\\n\\x0b\\f\\r\\x85] ValueIn |> !
 ::Union{AtEnd, SubString{String}}
 ```
 

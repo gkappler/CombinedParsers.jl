@@ -3,8 +3,8 @@ import ..CombinedParsers: Repeat_max
 ## TODO:
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC2
 # affect . ^ $
-# alt("(*CR)" => with_doc(CharNotIn('\r'), "carriage return"),
-#     "(*LF)" => with_doc(CharNotIn('\r'), "linefeed"),
+# alt("(*CR)" => with_doc(ValueNotIn('\r'), "carriage return"),
+#     "(*LF)" => with_doc(ValueNotIn('\r'), "linefeed"),
 #     "(*CRLF)" => with_doc("carriage return, followed by linefeed"),
 #     "(*ANYCRLF)" => with_doc("any of the three above"),
 #     "(*ANY)" => with_doc("all Unicode newline sequences"))
@@ -24,11 +24,11 @@ bracket_range(start) =
                                    bracket_char) do v
             if v[1] isa CharWithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
               cs = convert(Char,v[1]):convert(Char,v[5])
-              CharIn("$(v[1])-$(v[5])",unique([ ( lowercase(x) for x in cs )...,
+              ValueIn("$(v[1])-$(v[5])",unique([ ( lowercase(x) for x in cs )...,
                                                 ( uppercase(x) for x in cs )... ]))
             else
                 cs = convert(Char,v[1]):convert(Char,v[5])
-                CharIn("$(v[1])-$(v[5])",cs)
+                ValueIn("$(v[1])-$(v[5])",cs)
             end
         end)
 
@@ -36,7 +36,7 @@ bracket_range(start) =
 skip_whitespace_on(flags, wrap=identity) =
     with_name(:skip_ws,on_options(
         flags,
-        wrap(CharIn(whitespace_char,'\n'))=>Always()))
+        wrap(ValueIn(whitespace_char,'\n'))=>Always()))
 
 
 skip_whitespace_and_comments =
@@ -117,8 +117,8 @@ pattern = Either{CombinedParser}(
 # https://www.regular-expressions.info/refcharacters.html
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC4
 char =  Either(
-    CharNotIn(meta_chars),
-    Sequence(2,'\\', CharIn(meta_chars))) do v
+    ValueNotIn(meta_chars),
+    Sequence(2,'\\', ValueIn(meta_chars))) do v
         convert(CombinedParser,v)
     end
 repeatable = Either{CombinedParser}(Any[char])
@@ -151,8 +151,8 @@ push!(pattern,simple_assertion);
 push!(pattern,parser( "\\R" => bsr ));
 
 name = JoinSubstring(
-    Sequence(CharIn('a':'z','A':'Z','_'),
-        Repeat(CharIn('0':'9','a':'z','A':'Z','_'))))
+    Sequence(ValueIn('a':'z','A':'Z','_'),
+        Repeat(ValueIn('0':'9','a':'z','A':'Z','_'))))
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
 @with_names backreference = map(
@@ -218,26 +218,26 @@ push!(repeatable,
                  Sequence('x',integer_base(16,0,2)) do v; Char(v[2]); end,
                  #   \uhhhh    character with hex code hhhh (JavaScript mode only)
                  Sequence('h',integer_base(16,4,4)) do v; Char(v[2]); end,
-                 CharNotIn('Q','E')
+                 ValueNotIn('Q','E')
              ))
 
 chartype_letter_parser = Either(
             # "any decimal digit"),
-            'd' => CharIn("\\d",'0':'9'),
+            'd' => ValueIn("\\d",'0':'9'),
             # "any character that is not a decimal digit"),
-            'D' => CharNotIn("\\D",'0':'9'),
+            'D' => ValueNotIn("\\D",'0':'9'),
             # "any horizontal white space character"),
-            'h' => CharIn("\\h",horizontal_space_char),
+            'h' => ValueIn("\\h",horizontal_space_char),
             # "any character that is not a horizontal white space character"),
-            'H' => CharNotIn("\\H",horizontal_space_char),
+            'H' => ValueNotIn("\\H",horizontal_space_char),
             # "any white space character"),
-            's' => CharIn("\\s",horizontal_space_char,vertical_space_char),
+            's' => ValueIn("\\s",horizontal_space_char,vertical_space_char),
             # "any character that is not a white space character"),
-            'S' => CharNotIn("\\S",horizontal_space_char,vertical_space_char),
+            'S' => ValueNotIn("\\S",horizontal_space_char,vertical_space_char),
             # "any vertical white space character"),
-            'v' => CharIn("\\v",vertical_space_char),
+            'v' => ValueIn("\\v",vertical_space_char),
             # "any character that is not a vertical white space character"),
-            'V' => CharNotIn("\\V",vertical_space_char),
+            'V' => ValueNotIn("\\V",vertical_space_char),
             # "any "word" character"),
             'w' => word_char,
             # "any "non-word" character"),
@@ -249,7 +249,7 @@ chartype_letter_parser = Either(
         '\\', Either(
             chartype_letter_parser,
             Sequence(2,"p{",
-                     Either(Dict(string(k)=>CharIn("\\p{$k}",UnicodeClass(v[3]))
+                     Either(Dict(string(k)=>ValueIn("\\p{$k}",UnicodeClass(v[3]))
                                  for (k,v) in CombinedParsers.unicode_classes)) ,
                      '}')
             
@@ -260,7 +260,7 @@ push!(repeatable,generic_character_type);
 # https://www.regular-expressions.info/posixbrackets.html#class
 bracket_char = let bracket_meta_chars = raw"]\^-"
     Either(
-        CharNotIn(bracket_meta_chars),
+        ValueNotIn(bracket_meta_chars),
         "\\b" => '\x08',
         Sequence('\\',integer_base(8,1,3)) do v
         Char(v[2])
@@ -276,19 +276,19 @@ julia> CombinedParsers.Regexp.character_class
 🗄 Sequence |> map(#57)
 ├─ \\[\\: 
 ├─ |🗄 Either
-│  ├─ alpha  => [\\p{L}] CharIn
-│  ├─ lower  => [\\p{Ll}] CharIn
-│  ├─ upper  => [\\p{Lu}] CharIn
-│  ├─ word  => [\\p{L}\\p{Nl}\\p{Nd}\\p{Pc}] CharIn
-│  ├─ digit  => [\\p{Nd}] CharIn
-│  ├─ xdigit  => [[:xdigit:]] CharIn
-│  ├─ alnum  => [\\p{L}\\p{N}] CharIn
-│  ├─ blank  => [\\t\\p{Zs}] CharIn
-│  ├─ cntrl  => [\\p{Cc}] CharIn
-│  ├─ graph  => [^\\p{Z}\\p{C}] CharNotIn
-│  ├─ print  => [\\p{C}] CharIn
-│  ├─ punct  => [\\p{P}] CharIn
-│  └─ space  => [\\r\\v\\n\\f\\t\\p{Z}] CharIn
+│  ├─ alpha  => [\\p{L}] ValueIn
+│  ├─ lower  => [\\p{Ll}] ValueIn
+│  ├─ upper  => [\\p{Lu}] ValueIn
+│  ├─ word  => [\\p{L}\\p{Nl}\\p{Nd}\\p{Pc}] ValueIn
+│  ├─ digit  => [\\p{Nd}] ValueIn
+│  ├─ xdigit  => [[:xdigit:]] ValueIn
+│  ├─ alnum  => [\\p{L}\\p{N}] ValueIn
+│  ├─ blank  => [\\t\\p{Zs}] ValueIn
+│  ├─ cntrl  => [\\p{Cc}] ValueIn
+│  ├─ graph  => [^\\p{Z}\\p{C}] ValueNotIn
+│  ├─ print  => [\\p{C}] ValueIn
+│  ├─ punct  => [\\p{P}] ValueIn
+│  └─ space  => [\\r\\v\\n\\f\\t\\p{Z}] ValueIn
 └─ \\:\\] 
 ::CombinedParsers.ValueMatcher
 ```
@@ -309,23 +309,23 @@ character_class = Sequence(
     2,
     "[:",
     Either(
-        "alpha" => CharIn(UnicodeClass("L")),
-        "lower" => CharIn(UnicodeClass("Ll")),
-        "upper" => CharIn(UnicodeClass("Lu")),
-        "word"  => CharIn(UnicodeClass("L","Nl","Nd","Pc")),
-        "digit" => CharIn(UnicodeClass("Nd")),
+        "alpha" => ValueIn(UnicodeClass("L")),
+        "lower" => ValueIn(UnicodeClass("Ll")),
+        "upper" => ValueIn(UnicodeClass("Lu")),
+        "word"  => ValueIn(UnicodeClass("L","Nl","Nd","Pc")),
+        "digit" => ValueIn(UnicodeClass("Nd")),
         "xdigit" => hex_digit,
-        "alnum" => CharIn(UnicodeClass("L","N")), # Xan
-        "blank" => CharIn(UnicodeClass("Zs"),'\t'),
-        "cntrl" => CharIn(UnicodeClass("Cc")),
-        "graph" => CharNotIn(UnicodeClass("Z","C")),
-        "print" => CharIn(UnicodeClass("C")),
-        "punct" => CharIn(UnicodeClass("P")),
-        "space" => CharIn(UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
+        "alnum" => ValueIn(UnicodeClass("L","N")), # Xan
+        "blank" => ValueIn(UnicodeClass("Zs"),'\t'),
+        "cntrl" => ValueIn(UnicodeClass("Cc")),
+        "graph" => ValueNotIn(UnicodeClass("Z","C")),
+        "print" => ValueIn(UnicodeClass("C")),
+        "punct" => ValueIn(UnicodeClass("P")),
+        "space" => ValueIn(UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
     ),
     ":]")
 
-# todo: set pcre string of CharIn/CharNotIn when multi-transform is implemented
+# todo: set pcre string of ValueIn/ValueNotIn when multi-transform is implemented
 @with_names bracket=Sequence(
     CombinedParser,
     '[',Optional('^')
@@ -336,7 +336,7 @@ character_class = Sequence(
         character_class,
         skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat) => Never(),
         "\\E" => Never(),
-        with_name(:escape_sequence,map(v->CharIn(v),escape_sequence())),
+        with_name(:escape_sequence,map(v->ValueIn(v),escape_sequence())),
         generic_character_type,
         bracket_range(bracket_char),
         map(v->convert(CombinedParser,v),bracket_char),
@@ -346,9 +346,9 @@ character_class = Sequence(
         r = (filter(!(x->isa(x,Never)),v[3])...,
              filter(!(x->isa(x,Never)),v[4])...)
         if v[2]===missing
-            CharIn(r...)
+            ValueIn(r...)
         else
-            CharNotIn(r...)
+            ValueNotIn(r...)
         end
     end;
 push!(repeatable,bracket);
@@ -380,7 +380,7 @@ push!(repeatable,bracket);
     skip_whitespace_and_comments, ## for test 1130, preserve in map?
     Optional(repetition, default=1:1),
     skip_whitespace_and_comments,
-    Optional(CharIn('+','?')), # possessive quantifier, strip option
+    Optional(ValueIn('+','?')), # possessive quantifier, strip option
 ) do v
     pat = sSequence(v[1],v[2]...)
     result = if v[3] == 1:1
@@ -610,8 +610,8 @@ push!(repeatable, conditional);
 # https://www.regular-expressions.info/refbasic.html
 dot = Either(
     on_options(Base.PCRE.DOTALL,'.') => AnyChar(), ## todo: allow \n matching context 
-    '.' => CharNotIn('\n'), ## todo: allow \n matching context 
-    "\\N" => CharNotIn('\n')
+    '.' => ValueNotIn('\n'), ## todo: allow \n matching context 
+    "\\N" => ValueNotIn('\n')
 )
 push!(repeatable,dot);
 
@@ -707,8 +707,8 @@ The regex also accepts one or more flags, listed after the ending quote, to chan
 ```jldoctest
 julia> re"a|c"i
 |🗄 Either
-├─ [Aa] CharIn
-└─ [cC] CharIn
+├─ [Aa] ValueIn
+└─ [cC] ValueIn
 ::Char
 
 julia> re"a+c"
