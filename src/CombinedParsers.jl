@@ -2210,6 +2210,8 @@ include("caseless.jl")
 include("reverse.jl")
 
 include("get.jl")
+include("transformation.jl")
+
 include("operators.jl")
 
 hex_digit = ValueIn("[:xdigit:]",'A':'F','a':'f','0':'9')

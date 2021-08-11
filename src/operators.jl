@@ -1,4 +1,4 @@
-import Base: (^), (*), (~), (/), (|), (!)
+import Base: (^), (*), (~), (/), (|)
 ParserOperatorTypes = Union{AbstractToken, AbstractString, Char}
 
 (*)(x::Any, y::AbstractToken) = sSequence(parser(x),y)
@@ -66,41 +66,6 @@ Base.broadcasted(::typeof((&)), x::JoinSubstring, y) =
 
 Base.broadcasted(::typeof((&)), x::Transformation, y) =
     Transformation(x.transform, x.parser .& y)
-
-
-"""
-    (!)(x::CombinedParser)
-
-Parser Transformation getting the matched SubString.
-
-```jldoctest
-julia> Repeat(AnyChar())
-.* AnyChar |> Repeat
-::Vector{Char}
-
-julia> !Repeat(AnyChar())
-.* AnyChar |> Repeat |> !
-::SubString{String}
-
-julia> !!Repeat(AnyChar())
-.* AnyChar |> Repeat |> ! |> map(intern) |> map(String)
-::String
-
-```
-
-"""
-(!)(x::CombinedParser) = JoinSubstring(x)
-using InternedStrings
-import InternedStrings: intern
-"""
-    (!)(x::JoinSubstring)
-
-Parser transformating result `v -> InternedStrings.intern(v)`.
-"""
-(!)(x::CombinedParser{<:Any,<:SubString}) =
-    map(String, map(InternedStrings.intern, x))
-
-
 
 
 Base.broadcasted(::typeof((|)), x::ValueIn, y::ValueIn) =
