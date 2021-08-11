@@ -152,22 +152,13 @@ horizontal_space_char, horizontal_space_maybe, horizontal_space
 whitespace_horizontal = horizontal_space
 
 """
-    trim(; whitespace=CharIn(' '))
+    trim(p...; left=horizontal_space_maybe, right=horizontal_space_maybe)
 
-Match any whitespace and result in `tuple()`.
+Ignore whitespace `left` and `right` of `sSequence(p...)`.
 """
-trim(; whitespace=horizontal_space) =
-    map(whitespace) do v
-        tuple()
-    end
+trim(p...; left=horizontal_space_maybe, right=horizontal_space_maybe) =
+    Sequence(left, sSequence(p...), right)[2]
 
-"""
-    trim(p; whitespace=CharIn(' '))
-
-Ignore whitespace at left and right of `p`.
-"""
-trim(p; whitespace=Atomic(Repeat(horizontal_space_char))) =
-    Sequence(whitespace, p, whitespace)[2]
 
 
 trimmed(x) = x
