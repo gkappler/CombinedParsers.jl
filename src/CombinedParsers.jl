@@ -696,9 +696,9 @@ julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 ├─ 🗄 Sequence[1]
 │  ├─ (?>🗄*) Sequence[2] |> Repeat |> Atomic
 │  │  ├─ (?!b) NegativeLookahead
-│  │  └─ . AnyChar
+│  │  └─ . AnyValue
 │  └─ b
-└─ . AnyChar
+└─ . AnyValue
 ::Tuple{Vector{Char}, Char}
 
 julia> parse(p,"acbX")
@@ -859,7 +859,7 @@ Sequences can alternatively created with [`*`](@ref)
 ```jldoctest
 julia> german_street_address = !Repeat(AnyChar()) * ' ' * TextParse.Numeric(Int)
 🗄 Sequence
-├─ .* AnyChar |> Repeat |> !
+├─ .* AnyValue |> Repeat |> !
 ├─ \\
 └─ <Int64>
 ::Tuple{SubString{String}, Char, Int64}
@@ -871,7 +871,7 @@ Indexing (transformation) can be defined with
 ```jldoctest
 julia> e1 = Sequence(!Repeat(AnyChar()), ' ',TextParse.Numeric(Int))[1]
 🗄 Sequence[1]
-├─ .* AnyChar |> Repeat |> !
+├─ .* AnyValue |> Repeat |> !
 ├─ \\
 └─ <Int64>
 ::SubString{String}
@@ -942,7 +942,7 @@ Parts that are not `::CombinedParser` are converted with [`parser`](@ref).
 ```jldoctest
 julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', TextParse.Numeric(Int))
 🗄 Sequence
-├─ .* AnyChar |> Repeat |> !
+├─ .* AnyValue |> Repeat |> !
 ├─ \\
 └─ <Int64>
 ::Tuple{SubString{String}, Char, Int64}
@@ -957,7 +957,7 @@ julia> german_street_address("Some Avenue 42")
     ```jldoctest
     julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => TextParse.Numeric(Int))
     🗄 Sequence |> map(ntuple)
-    ├─ .* AnyChar |> Repeat |> ! |> with_name(:street)
+    ├─ .* AnyValue |> Repeat |> ! |> with_name(:street)
     ├─ \\
     └─  <Int64> |> with_name(:no)
     ::NamedTuple{(:street, :no), Tuple{SubString{String}, Int64}}
@@ -1266,7 +1266,7 @@ Lazy `x` repetition matching (instead of default greedy).
 ```jldoctest
 julia> german_street_address = !Lazy(Repeat(AnyChar())) * Repeat1(' ') * TextParse.Numeric(Int)
 🗄 Sequence
-├─ .*? AnyChar |> Repeat |> Lazy |> !
+├─ .*? AnyValue |> Repeat |> Lazy |> !
 ├─ \\ +  |> Repeat
 └─ <Int64>
 ::Tuple{SubString{String}, Vector{Char}, Int64}
