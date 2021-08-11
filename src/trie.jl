@@ -1,4 +1,13 @@
-using Tries 
+using Tries
+
+"""
+    Either(x::Vector{<:AbstractString})
+
+Create a fast `Trie{Char,Union{Missing,Nothing}}` parser.
+
+Can Trie values be CombinedParsers that need to match after path?
+(missing this is Never(), nothing is Always()
+"""
 function Either(x::Vector{<:AbstractString})
     P = Trie{Char,Union{Missing,Nothing}}
     r = P()
@@ -57,11 +66,11 @@ end
 children(x::Either{<:AbstractTrie}) =
     children(x.options)
 
-function _deepmap_parser(f::typeof(lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
+function _deepmap_parser(f::typeof(_lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
     g = (lowercase.(Tries.path(st))=>get(st)
          for st in PreOrderDFS(x.options)
              if !isempty(Tries.path(st)))
-    Either{result_type(x)}(Trie(g))
+    Either{NCodeunitsState, String}(Trie(g))
 end
 
 
