@@ -38,7 +38,9 @@ regex_string(x) = "$x::$(typeof(x))"
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
-lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
+_lowercase(x::CombinedParser) = x
+
+_lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
 
 @inline _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing) =
     _iterate_constant(parser,sequence,till,posi, next_i, state)

@@ -30,7 +30,7 @@ julia> p = parser("also"); @btime match(p,"also");
 ```
 """
 caseless(x) =
-    MappedSequenceParser(lowercase, deepmap_parser(lowercase,parser(x)))
+    MappedSequenceParser(lowercase, deepmap_parser(_lowercase,parser(x)))
 
 export MappedSequenceParser
 """
