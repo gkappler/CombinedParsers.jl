@@ -2,6 +2,9 @@
 ## get methods
 ## - reorganise result_type here?
 
+Base.map(f::Function, p::TextParse.AbstractToken) =
+    map(f, parser(p))
+
 function Base.get(parser::WrappedParser, sequence, till, after, i, state)
     get(parser.parser, sequence, till, after, i, state)
 end
