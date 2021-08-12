@@ -25,6 +25,7 @@ struct AnyValue{T} <: ValueMatcher{T} end
 AnyValue(T::Type) = AnyValue{T}()
 AnyChar() = AnyValue(Char)
 #@deprecate AnyChar() AnyValue(Char)
+@deprecate AnyValue() AnyChar()
 regex_inner(x::AnyValue{Char}) = "."
 regex_inner(x::AnyValue{T}) where T = "(.::$T)"
 
