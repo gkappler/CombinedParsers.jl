@@ -69,6 +69,7 @@ CombinedParsers.regex_suffix
 ```@docs
 CombinedParsers.deepmap_parser
 CombinedParsers._deepmap_parser
+reeinfer
 CombinedParsers.Regexp.NoDict
 ```
 

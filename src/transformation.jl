@@ -326,3 +326,26 @@ function infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::Abstr
         Tc
     end
 end
+export reinfer
+"""
+    reinfer(parser)
+
+Run julia type inference again on a parser for optimization.
+[`Either`](@ref)`{<:Vector}` parsers are converted to `Either{<:Tuple}`.
+
+Implementation is an example when the a custom [`deepmap_parser`](@ref) method is useful.
+"""
+reinfer(parser) = deepmap_parser(_reinfer, parser)
+_reinfer(parser) = parser
+function deepmap_parser(::typeof(_reinfer),mem::AbstractDict,x::Either{<:Vector},a...;kw...)
+    if haskey(mem,x)
+        mem[x]
+    else
+        mem[x] = r = Either{result_type(x)}(Any[])
+        for p in x.options
+            push!(r,deepmap_parser(_reinfer,mem,p,a...;kw...))
+        end
+        mem[x] = Either(r.options...)
+    end
+end
+
