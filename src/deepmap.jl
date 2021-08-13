@@ -98,6 +98,22 @@ _deepmap_parser(f,mem::AbstractDict,x::FlatMap,a...;kw...) =
         f(deepmap_either(f,mem,x,a...;kw...),a...;kw...)
     end
 
+"""
+    strip_either1(x::CombinedParser)
+
+Replace all `Either` parsers with one option with that option.
+
+Used in 2-stage [`substitute`](@ref) (stage 1: collect for recursion, stage 2: simplify).
+"""
+strip_either1(x::CombinedParser) = deepmap_parser(_strip_either1, x)
+_strip_either1(x::CombinedParser) = x
+deepmap_parser(::typeof(_strip_either1),mem::AbstractDict,x::Either) = 
+    if length(x.options) == 1
+        deepmap_parser(_strip_either1,mem,first(x.options))
+    else
+        deepmap_either(_strip_either1,mem,x)
+    end
+
 deepmap_either(f,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
     Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
 
