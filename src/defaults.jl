@@ -152,11 +152,12 @@ horizontal_space_char, horizontal_space_maybe, horizontal_space
 whitespace_horizontal = horizontal_space
 
 """
-    trim(p...; left=horizontal_space_maybe, right=horizontal_space_maybe)
+    trim(p...; whitespace=horizontal_space_maybe, 
+               left=whitespace, right=whitespace)
 
 Ignore whitespace `left` and `right` of `sSequence(p...)`.
 """
-trim(p...; left=horizontal_space_maybe, right=horizontal_space_maybe) =
+trim(p...; whitespace=horizontal_space_maybe, left=whitespace, right=whitespace) =
     Sequence(left, sSequence(p...), right)[2]
 
 
