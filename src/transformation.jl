@@ -1,29 +1,32 @@
 export Transformation
 """
-    Transformation{T}(f::Function, p_) where {T}
+    Transformation(T::Type, parser)
+    Transformation{T}(transform, parser) where {T}
     Base.map(f::Function, Tc::Type, p::CombinedParser, a...)
     Base.map(f::Function, p::CombinedParser, a...)
 
 Parser transforming result of a wrapped parser. 
 `a...` is passed as additional arguments to `f` (at front .
+
+
+If `parser isa NamedParser`, transformation is done within the wrapped parser
+(i.e. name applies to result-transforming parser).
 """
 @auto_hash_equals struct Transformation{F,P,S,T} <: WrappedParser{P,S,T}
     transform::F
     parser::P
-    Transformation(T::Type, p_) = 
-        let p = parser(p_)
-            new{Type,typeof(p),state_type(p),T}(T, p)
-        end
     Transformation{T}(transform, p_) where {T} =
         let p = parser(p_)
             new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
         end
-    Transformation{T}(transform, p_::NamedParser) where {T} =
-        let p = p_.parser
-            tp = new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
-            with_name(p_.name,tp)
-        end
+    function Transformation{T}(transform, p::NamedParser) where {T}
+        tp = new{typeof(transform),typeof(p.parser),state_type(p.parser),T}(transform, p.parser)
+        with_name(p.name,tp)
+    end
 end
+Transformation(T::Type, p) = 
+    Transformation{T}(T, p)
+
 _deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
     Transformation{result_type(x)}(
         x.transform,
