@@ -2286,6 +2286,8 @@ function log_names(x, names=true; exclude=nothing)
         else
             x -> ( x isa NamedParser && !in(x.name,exclude) ) ? x.name : nothing
         end
+    elseif names isa Type
+        return log_parser(names, x)
     else
         x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
     end
@@ -2298,6 +2300,15 @@ iostring(f::Function, a...; kw...) =
         String(take!(sio))
     end
 
+function lognode(message)
+    p -> 
+        if p isa message
+            iostring(printnode, p)
+        else
+            nothing
+        end
+end
+
 """
     log_parser(message::Type, x::CombinedParser, a...; kw...)
     log_parser(message::Function, x::CombinedParser, a...; kw...)
@@ -2307,13 +2318,7 @@ of type `message` or
 for which calling `message` does not return `nothing`.
 """
 function log_parser(message::Type, x::CombinedParser, a...; kw...)
-    log_parser(x, a...; kw...) do p
-        if p isa message
-            iostring(printnode, p)
-        else
-            nothing
-        end
-    end
+    log_parser(lognode(message), x, a...; kw...)
 end
 
 function log_parser(message::Function, x::CombinedParser, a...; kw...)
