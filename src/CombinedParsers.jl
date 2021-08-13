@@ -2316,4 +2316,6 @@ include("memoize.jl")
 
 
 include("lazy.jl")
+
+include("bnf.jl")
 end # module
