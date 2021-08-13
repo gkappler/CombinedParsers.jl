@@ -326,6 +326,34 @@ function infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::Abstr
         Tc
     end
 end
+
+export deepmap
+"""
+    deepmap(f, parser, predicate, a...; kw...)
+
+Create a new parser substituting with `f(sub_parser, a...; kw...)` with f iif 
+- `predicate isa Type && sub_parser isa predicate`
+- `predicate isa Function && predicate(sub_parser)`
+- `predicate isa Symbol && sub_parser isa NamedParser && sub_parser.name == predicate`.
+Otherwise keep `sub_parser`
+
+Implementation is an example when the a custom leaf [`_deepmap`](@ref) method is useful for [`deepmap_parser`](@ref).
+"""
+deepmap(f, parser, predicate, a...; kw...) = 
+    deepmap_parser(_deepmap, parser, predicate, f, a...; kw...)
+
+function _deepmap(parser, predicate, f, a...; kw...)
+    if dodeepmap(parser, predicate)
+        map(f,parser, a...; kw...)
+    else
+        parser
+    end
+end
+
+dodeepmap(parser, predicate) = parser == predicate
+dodeepmap(parser, predicate::Type) = parser isa predicate
+dodeepmap(parser::NamedParser, predicate::Symbol) = parser.name == predicate
+
 export reinfer
 """
     reinfer(parser)

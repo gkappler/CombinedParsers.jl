@@ -4,6 +4,7 @@
 CombinedParsers.Transformation
 CombinedParsers.result_type
 map
+deepmap
 ```
 
 ### String match results
