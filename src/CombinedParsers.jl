@@ -1806,6 +1806,25 @@ struct Either{Ps,S,T} <: CombinedParser{S,T}
     Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
 end
 
+
+"""
+    Base.getindex(x::Either, property::Symbol)
+
+Return parser option with name `property` if found nested in `WrappedParser`s.
+Errors otherwise.
+
+Useful with [`substitute`](@ref) and [`CombinedParsers.BNF.bnf`](@ref).
+"""
+function Base.getindex(x::Either, property::Symbol)
+    for p in x.options
+        while p isa WrappedParser
+            p isa NamedParser && p.name==property && return p
+            p = p.parser
+        end
+    end
+    error("no NamedParser $property found")
+end
+
 """
     Either(p...)
 
