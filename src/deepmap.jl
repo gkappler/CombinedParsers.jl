@@ -130,3 +130,142 @@ function deepmap_either(f,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
     end
 end
 
+export substitute
+
+struct Substitution<:CombinedParser{Nothing,Nothing}
+    name::Symbol
+end
+"""
+    substitute(name::Symbol)
+
+Define a parser substitution.
+
+    substitute(parser::CombinedParser)
+
+Apply parser substitution, respecting scope in the defined tree:
+
+- Parser variables are defined within scope of `Either`s, for all its `NamedParser` options.
+- `Substitution` parsers are replaced with parser variables.
+- [`strip_either1`](@ref) is used to simplify in a second phase.
+
+!!! note
+    Substitution implementation is experimental pending feedback. 
+
+    todo: scope NamedParser objects in WrappedParser, Sequence, etc.?
+
+```jldoctest
+julia> Either(
+  :a => !Either(
+     :b => "X", 
+     :d => substitute(:b),
+     substitute(:c)),
+  :b => "b",
+  :c => substitute(:b)
+) |> substitute
+|🗄 Either
+├─ |🗄 Either |> ! |> with_name(:a)
+│  ├─ X  |> with_name(:b)
+│  └─ 🗄 Sequence |> with_name(:c)
+│     ├─ a 
+│     └─ X  |> with_name(:b)
+├─ b  |> with_name(:b)
+└─ 🗄 Sequence |> with_name(:c)
+   ├─ c 
+   └─ b*  |> with_name(:b) |> Repeat
+::Union{SubString{String}, Tuple{SubString{String}, Vector{SubString{String}}}}
+```
+
+# Example
+With `substitute` you can write recursive parsers in a style inspired by (E)BNF.
+[`CombinedParsers.BNF.bnf`](@ref) uses `substitute`.
+
+```jldoctest
+julia> def = Either(
+  :integer => !Either("0", Sequence(Optional("-"), substitute(:natural_number))),
+  :natural_number => !Sequence(substitute(:nonzero_digit), Repeat(substitute(:digit))),
+  :nonzero_digit => re"[1-9]",
+  :digit => Either("0", substitute(:nonzero_digit))
+)
+|🗄 Either
+├─ |🗄 Either |> ! |> with_name(:integer)
+│  ├─ 0 
+│  └─ 🗄 Sequence
+│     ├─ \\-? |
+│     └─  natural_number call substitute!
+├─ 🗄 Sequence |> ! |> with_name(:natural_number)
+│  ├─  nonzero_digit call substitute!
+│  └─ * digit call substitute! |> Repeat
+├─ [123476985] ValueIn |> with_name(:nonzero_digit)
+└─ |🗄 Either |> with_name(:digit)
+   ├─ 0 
+   └─  nonzero_digit call substitute!
+::Union{Nothing, Char, SubString{String}}
+
+julia> substitute(def)
+|🗄 Either
+├─ |🗄 Either |> ! |> with_name(:integer)
+│  ├─ 0 
+│  └─ 🗄 Sequence
+│     ├─ \\-? |
+│     └─ | Either
+├─ 🗄 Sequence |> ! |> with_name(:natural_number)
+│  ├─ [123476985] ValueIn |> with_name(:nonzero_digit)
+│  └─ |🗄* Either |> with_name(:digit) |> Repeat
+│     ├─ 0 
+│     └─ [123476985] ValueIn |> with_name(:nonzero_digit)
+├─ [123476985] ValueIn |> with_name(:nonzero_digit)
+└─ |🗄 Either |> with_name(:digit)
+   ├─ 0 
+   └─ [123476985] ValueIn |> with_name(:nonzero_digit)
+::Union{Char, SubString{String}}
+```
+"""
+substitute(name::Symbol) = 
+    Substitution(name)
+substitute(name::AbstractString) = 
+    Substitution(Symbol(name))
+CombinedParsers._iterate(parser::Substitution, a...) = error(" call substitute")
+function CombinedParsers.print_constructor(io::IO, x::Substitution)
+    printstyled(io, x.name, color=:red)
+    print(io, " call substitute!")
+end
+CombinedParsers._deepmap_parser(f,mem::AbstractDict,x::Substitution,a...;kw...) = x
+
+substitute(x::CombinedParser) =
+    strip_either1(deepmap_parser(_substitute, x, Dict{Symbol,CombinedParser}()))
+
+_substitute(parser, assignments) = parser
+function _substitute(parser::Substitution, assignments::AbstractDict)
+    get(assignments,parser.name) do
+        error("parser $(parser.name) is not defined")
+    end
+end
+
+
+# set assignments
+function deepmap_parser(::typeof(_substitute), mem::AbstractDict, x::Either, assignments)
+    _assignments = copy(assignments)
+    for o in x.options
+        while o isa WrappedParser
+            if o isa NamedParser
+                _assignments[o.name] = Either(Any[])
+            end
+            o = o.parser
+        end
+    end
+    for o in x.options
+        while o isa WrappedParser
+            if o isa NamedParser
+                push!(_assignments[o.name], deepmap_parser(_substitute, mem, o, _assignments))
+            end
+            o = o.parser
+        end
+    end
+    # deepmap_parser(_strip_either1, deepmap_either(_substitute, mem, x, _assignments))
+    deepmap_either(_substitute, mem, x, _assignments)
+end
+
+# skip mem lookup (accept no assignments outside call/nesting parser stack!)
+function deepmap_parser(::typeof(_substitute), mem::AbstractDict, x::Substitution, assignments)
+    _substitute(x, assignments)
+end

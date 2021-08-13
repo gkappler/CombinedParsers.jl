@@ -43,11 +43,12 @@ CombinedParsers.sequence_state_type
 ```
 
 
-## Recursive [`Either`](@ref) Parsers
+## Recursive Parsers with [`Either`](@ref)
 ```@docs
 Delayed
 Either
 @syntax
+substitute
 Base.push!
 Base.pushfirst!
 ```
