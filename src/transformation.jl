@@ -93,7 +93,7 @@ intern(v) =
     (!)(x::CombinedParser)
     (!)(x::CombinedParser{<:Any,<:AbstractString})
 
-Parser [`Transformation`](@ref) getting 
+Parser [`map`](@ref) transformation getting 
 - either the matched `SubString` 
 - or an `InternedStrings.intern`ed copy thereof iif `result_type<:AbstractString` already.
 Transformation does not evaluate `get(parser.transform,...)`.
@@ -108,7 +108,7 @@ julia> !Repeat(AnyChar())
 ::SubString{String}
 
 julia> !!Repeat(AnyChar())
-.* AnyValue |> Repeat |> ! |> map(intern) |> map(String)
+.* AnyValue |> Repeat |> ! |> map(intern)
 ::String
 
 ```
@@ -129,7 +129,7 @@ map_match(f::Function,p_) =
     map_constant(constant, p::CombinedParser)
     parser((p,constant)::Pair)
 
-Construct a [`Transformation`](@ref)`{<:Constant}` resulting in `p` when calling [`get`](@ref) fast,
+Construct a [`map`](@ref) `Transformation{<:Constant}` resulting in `p` when calling [`get`](@ref) fast,
 instead of computing result from state, 
 if `parser(p)` matches.
 
@@ -185,7 +185,7 @@ export MatchRange
 """
     MatchRange(p::CombinedParser)
 
-Construct a [`Transformation`](@ref)`{UnitRange{Int}}` resulting in `p` when calling [`get`](@ref) fast,
+Construct a [`map`](@ref)`Transformation{UnitRange{Int}}` resulting in `p` when calling [`get`](@ref) fast,
 Succeed iif `p` succeeds, if so results in sequence match index `UnitRange`.
 Transformation does not evaluate `get(parser.transform,...)`.
 """
@@ -246,7 +246,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing results to `getindex(x,index)` or `constant`.
 
-See also: [`get`](@ref), [`Transformation`](@ref)
+See also: [`get`](@ref), [`deepmap`](@ref)
 
 """
 function Base.map(index::IndexAt{<:Integer}, p::CombinedParser)
@@ -264,7 +264,7 @@ import Base: map
 
 Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)`.
 
-See also: [`get`](@ref), [`Transformation`](@ref)
+See also: [`get`](@ref), [`deepmap`](@ref)
 """
 function Base.map(f::Function, p::CombinedParser, a...;
                   throw_empty_union=true)
@@ -283,7 +283,7 @@ end
 
 Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...)`.
 
-See also: [`get`](@ref), [`Transformation`](@ref)
+See also: [`get`](@ref), [`deepmap`](@ref)
 """
 function Base.map(Tc::Type, p::CombinedParser, a...)
     Transformation{Tc}(isempty(a) ? Tc : v -> Tc(a..., v), p)

@@ -26,8 +26,10 @@ julia> AnyChar()
 struct AnyValue{T} <: ValueMatcher{T} end
 
 AnyValue(T::Type) = AnyValue{T}()
+"""
+    AnyChar() = AnyValue(Char)
+"""
 AnyChar() = AnyValue(Char)
-#@deprecate AnyChar() AnyValue(Char)
 @deprecate AnyValue() AnyChar()
 regex_inner(x::AnyValue{Char}) = "."
 regex_inner(x::AnyValue{T}) where T = "(.::$T)"
@@ -189,7 +191,7 @@ Parser matching exactly one element (character) in a sequence, iif not in `x`.
 Flattens `x` with [`flatten_valuepatterns`](@ref), and tries to infer `T` if not provided.
 
 ```jldoctest
-julia> a_z = ValueNotIn('a':'z')
+julia> a_z = CharNotIn('a':'z')
 [^a-z] ValueNotIn
 ::Char
 

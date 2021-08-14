@@ -555,7 +555,7 @@ julia> @syntax for german_street_address in street_address
             end
        end
 🗄 Sequence |> map(#50) |> with_name(:german_street_address)
-├─ .* AnyValue |> Repeat |> ! |> map(intern) |> map(String)
+├─ .* AnyValue |> Repeat |> ! |> map(intern)
 ├─ \\
 └─ <Int64>
 ::NamedTuple{(:street, :no), Tuple{String, Int64}}
@@ -574,7 +574,7 @@ julia> @syntax for us_street_address in street_address
 🗄 Sequence |> map(#52) |> with_name(:us_street_address)
 ├─ <Int64>
 ├─ \\  
-└─ .* AnyValue |> Repeat |> ! |> map(intern) |> map(String)
+└─ .* AnyValue |> Repeat |> ! |> map(intern)
 ::NamedTuple{(:street, :no), Tuple{String, Int64}}
 
 julia> street_address"50 Oakland Ave"
@@ -952,7 +952,7 @@ julia> german_street_address("Some Avenue 42")
 ```
 
 !!! note
-    Returns a NamedTuple [`Transformation`](@ref) if any part was `Pair{Symbol}`.
+    Returns a NamedTuple [`map`](@ref) transformation if any part was `Pair{Symbol}`.
 
     ```jldoctest
     julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => TextParse.Numeric(Int))

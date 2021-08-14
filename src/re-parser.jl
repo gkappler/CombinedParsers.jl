@@ -707,7 +707,7 @@ The regex also accepts one or more flags, listed after the ending quote, to chan
 ```jldoctest
 julia> re"a|c"i
 |🗄 Either
-├─ [Aa] ValueIn
+├─ [aA] ValueIn
 └─ [cC] ValueIn
 ::Char
 

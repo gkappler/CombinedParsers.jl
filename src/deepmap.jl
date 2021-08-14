@@ -180,12 +180,10 @@ With `substitute` you can write recursive parsers in a style inspired by (E)BNF.
 [`CombinedParsers.BNF.bnf`](@ref) uses `substitute`.
 
 ```jldoctest
-julia> def = Either(
-  :integer => !Either("0", Sequence(Optional("-"), substitute(:natural_number))),
-  :natural_number => !Sequence(substitute(:nonzero_digit), Repeat(substitute(:digit))),
-  :nonzero_digit => re"[1-9]",
-  :digit => Either("0", substitute(:nonzero_digit))
-)
+julia> def = Either(:integer => !Either("0", Sequence(Optional("-"), substitute(:natural_number))),
+                    :natural_number => !Sequence(substitute(:nonzero_digit), Repeat(substitute(:digit))),
+                    :nonzero_digit => re"[1-9]",
+                    :digit => Either("0", substitute(:nonzero_digit)))
 |🗄 Either
 ├─ |🗄 Either |> ! |> with_name(:integer)
 │  ├─ 0 
