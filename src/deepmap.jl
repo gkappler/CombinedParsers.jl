@@ -154,25 +154,21 @@ Apply parser substitution, respecting scope in the defined tree:
     todo: scope NamedParser objects in WrappedParser, Sequence, etc.?
 
 ```jldoctest
-julia> Either(
-  :a => !Either(
-     :b => "X", 
-     :d => substitute(:b),
-     substitute(:c)),
-  :b => "b",
-  :c => substitute(:b)
-) |> substitute
+julia> Either(:a => !Either(
+                 :b => "X", 
+                 :d => substitute(:b),
+                 substitute(:c)),
+              :b => "b",
+              :c => substitute(:b)
+              ) |> substitute
 |🗄 Either
 ├─ |🗄 Either |> ! |> with_name(:a)
 │  ├─ X  |> with_name(:b)
-│  └─ 🗄 Sequence |> with_name(:c)
-│     ├─ a 
-│     └─ X  |> with_name(:b)
+│  ├─ X  |> with_name(:b) |> with_name(:d)
+│  └─ b  |> with_name(:b) |> with_name(:c)
 ├─ b  |> with_name(:b)
-└─ 🗄 Sequence |> with_name(:c)
-   ├─ c 
-   └─ b*  |> with_name(:b) |> Repeat
-::Union{SubString{String}, Tuple{SubString{String}, Vector{SubString{String}}}}
+└─ b  |> with_name(:b) |> with_name(:c)
+::SubString{String}
 ```
 
 # Example
@@ -193,7 +189,7 @@ julia> def = Either(:integer => !Either("0", Sequence(Optional("-"), substitute(
 ├─ 🗄 Sequence |> ! |> with_name(:natural_number)
 │  ├─  nonzero_digit call substitute!
 │  └─ * digit call substitute! |> Repeat
-├─ [123476985] ValueIn |> with_name(:nonzero_digit)
+├─ [1-9] ValueIn |> with_name(:nonzero_digit)
 └─ |🗄 Either |> with_name(:digit)
    ├─ 0 
    └─  nonzero_digit call substitute!
@@ -205,16 +201,16 @@ julia> substitute(def)
 │  ├─ 0 
 │  └─ 🗄 Sequence
 │     ├─ \\-? |
-│     └─ | Either
+│     └─ 🗄 Sequence |> ! |> with_name(:natural_number) # branches hidden
 ├─ 🗄 Sequence |> ! |> with_name(:natural_number)
-│  ├─ [123476985] ValueIn |> with_name(:nonzero_digit)
+│  ├─ [1-9] ValueIn |> with_name(:nonzero_digit)
 │  └─ |🗄* Either |> with_name(:digit) |> Repeat
 │     ├─ 0 
-│     └─ [123476985] ValueIn |> with_name(:nonzero_digit)
-├─ [123476985] ValueIn |> with_name(:nonzero_digit)
+│     └─ [1-9] ValueIn |> with_name(:nonzero_digit)
+├─ [1-9] ValueIn |> with_name(:nonzero_digit)
 └─ |🗄 Either |> with_name(:digit)
    ├─ 0 
-   └─ [123476985] ValueIn |> with_name(:nonzero_digit)
+   └─ [1-9] ValueIn |> with_name(:nonzero_digit)
 ::Union{Char, SubString{String}}
 ```
 """
