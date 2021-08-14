@@ -158,9 +158,52 @@ unicode_class = [
 
 unicode_abbrev = Dict([ v[3]=>k for (k,v) in CombinedParsers.unicode_class])
 
-"""
+unicode_classes = Dict(unicode_class...)
 
-Supported Unicode classes
+
+function in_any(x,sets)
+    for s in sets
+        x in s && return true
+    end
+    return false
+end
+
+export UnicodeClass
+struct UnicodeClass{I}
+    class::I    
+end
+
+"""
+    UnicodeClass(unicode_category::Symbol...)
+
+used in [`ValueIn`](@ref), [`ValueNotIn`](@ref) 
+and succeeds if char at cursor is in one of the unicode classes.
+
+
+```jldoctest
+julia> match(ValueIn(:L), "aB")
+ParseMatch("a")
+
+julia> match(ValueIn(:Lu), "aB")
+ParseMatch("B")
+
+julia> match(ValueIn(:N), "aA1")
+ParseMatch("1")
+```
+
+Respects boolean logic:
+```jldoctest
+julia> parse(ValueIn(CharIn("ab")),     "a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+julia> parse(ValueIn(CharNotIn("bc")),  "a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+julia> parse(ValueNotIn(CharIn("bc")),  "a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+```
+
+# Supported Unicode classes
 ```jldoctest
 julia> for (k,v) in CombinedParsers.unicode_class
          println(":",k, " is a ",v[1],", ", v[2],".")
@@ -205,20 +248,6 @@ julia> for (k,v) in CombinedParsers.unicode_class
 :Cn is a Unassigned, any code point to which no character has been assigned.
 ```
 """
-unicode_classes = Dict(unicode_class...)
-
-
-function in_any(x,sets)
-    for s in sets
-        x in s && return true
-    end
-    return false
-end
-
-export UnicodeClass
-struct UnicodeClass{I}
-    class::I
-end
 UnicodeClass(abbrev::Symbol...) =
     UnicodeClass(tuple((unicode_classes[a][3] for a in abbrev)...))
 UnicodeClass(abbrev::String...) =
@@ -227,14 +256,6 @@ _ismatch(x::Char, set::UnicodeClass{<:Tuple})::Bool =
     in_any(Base.Unicode.category_code(x),set.class)
 _ismatch(x::Char, set::UnicodeClass)::Bool =
     in(Base.Unicode.category_code(x),set.class)
-
-
-function TextParse.tryparsenext(tok::UnicodeClass, str, i, till, opts=TextParse.default_opts)
-    if i <= till
-        match_unicode_class(str[i],tok.class) && (Nullable(str[i]), _nextind(str,i))
-    end
-    Nullable{Char}(), i    
-end
 
 
 _regex_string(x::UnicodeClass) =
