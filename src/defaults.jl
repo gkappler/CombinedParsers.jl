@@ -59,7 +59,7 @@ function char_label_table(x)
     end
 end
 
-whitespace_char = ValueIn(
+whitespace_char = CharIn(
     "[:space:]",
     " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B")
 
@@ -90,7 +90,7 @@ julia> CombinedParsers.char_label_table(whitespace_char)
 whitespace_char, whitespace_maybe, whitespace
 
 
-horizontal_space_char=ValueIn("\\h",
+horizontal_space_char=CharIn("\\h",
     '\U0009', # "Horizontal tab (HT)"),
     '\U0020', # "Space"),
     '\U00A0', # "Non-break space"),
@@ -189,9 +189,9 @@ so, for example
 ```jldoctest
 julia> @trimmed foo = AnyChar()
 🗄 Sequence[2]
-├─ (?>[\\h]*) ValueIn |> Repeat |> Atomic
+├─ (?>[\\h]*) ValueIn |> Repeat |> ! |> Atomic
 ├─ . AnyValue |> with_name(:foo)
-└─ (?>[\\h]*) ValueIn |> Repeat |> Atomic
+└─ (?>[\\h]*) ValueIn |> Repeat |> ! |> Atomic
 ::Char
 
 julia> parse(log_names(foo),"  ab  ")
@@ -205,7 +205,7 @@ macro trimmed(block)
     esc(trimmed(block))
 end
 
-vertical_space_char=ValueIn("\\v",
+vertical_space_char=CharIn("\\v",
     '\U000A', # "Linefeed (LF)"),
     '\U000B', # "Vertical tab (VT)"),
     '\U000C', # "Form feed (FF)"),
@@ -239,9 +239,9 @@ vertical_space_char, vertical_space_maybe, vertical_space
 
 
 "Equivalent PRCE `\\h\\v`, [`horizontal_space_char`](@ref), [`vertical_space_char`](@ref)"
-space_char  = ValueIn("\\h\\v",horizontal_space_char,vertical_space_char)
+space_char  = CharIn("\\h\\v",horizontal_space_char,vertical_space_char)
 space_maybe = Atomic(!Repeat(space_char))
-space = Atomic(!Repeat1(ValueIn("\\h\\v",space_char)))
+space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
 
 
 @deprecate whitespace_newline space
@@ -262,20 +262,20 @@ julia> CombinedParsers.Regexp.bsr
 
 """
 @with_names bsr = Atomic(Either("\r\n",
-                                !ValueIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
+                                !CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
 
 newline = bsr
 
 "Equivalent PRCE `\\w`: Char with unicode class `L`, `N`, or `_`."
-word_char=ValueIn("\\w",UnicodeClass("L","N"),'_')
+word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 
 "SubString of at leat 1 repeated [`word_char`](@ref)."
 word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
 
 "SubString of at leat 1 repeated [`word_char`](@ref) or [`horizontal_space_char`](@ref)."
-words = JoinSubstring(Repeat1(ValueIn("\\w\\h", horizontal_space_char, word_char))) ## "[[:alpha:] ]+"
+words = JoinSubstring(Repeat1(CharIn("\\w\\h", horizontal_space_char, word_char))) ## "[[:alpha:] ]+"
 
-non_word_char=ValueNotIn("\\W",UnicodeClass("L","N"),'_')
+non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
 non_word = JoinSubstring(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
 
 """

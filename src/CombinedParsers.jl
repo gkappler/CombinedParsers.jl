@@ -1034,7 +1034,7 @@ _sSequence(x1,x...) =
 Simplifying `Sequence`, flatten `Sequence`s, remove `Always` assertions.
 
 ```jldoctest
-julia> Sequence('a',ValueIn("AB")*'b')
+julia> Sequence('a',CharIn("AB")*'b')
 🗄 Sequence
 ├─ a
 └─ 🗄 Sequence
@@ -1043,7 +1043,7 @@ julia> Sequence('a',ValueIn("AB")*'b')
 ::Tuple{Char, Tuple{Char, Char}}
 
 
-julia> sSequence('a',ValueIn("AB")*'b')
+julia> sSequence('a',CharIn("AB")*'b')
 🗄 Sequence
 ├─ a
 ├─ [AB] ValueIn
@@ -1913,7 +1913,7 @@ _sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in
 Simplifying `Either`, flattens nested `Either`s, remove `Never` parsers.
 
 ```jldoctest
-julia> Either('a',ValueIn("AB")|"bc")
+julia> Either('a',CharIn("AB")|"bc")
 |🗄 Either
 ├─ a
 └─ |🗄 Either
@@ -1922,7 +1922,7 @@ julia> Either('a',ValueIn("AB")|"bc")
 ::Union{Char, SubString{String}}
 
 
-julia> sEither('a',ValueIn("AB")|"bc")
+julia> sEither('a',CharIn("AB")|"bc")
 |🗄 Either
 ├─ a
 ├─ [AB] ValueIn
@@ -2233,7 +2233,7 @@ include("transformation.jl")
 
 include("operators.jl")
 
-hex_digit = ValueIn("[:xdigit:]",'A':'F','a':'f','0':'9')
+hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
 export hex_digit, integer_base
 """
     integer_base(base,mind=0,maxd=Repeat_max)

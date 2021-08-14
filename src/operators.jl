@@ -43,9 +43,13 @@ type `T` providing a `ismatch(m::T,c::Char)::Bool` method represent a
     Please consider the broadcast API a draft you are invited to comment to.
 
 ```jldoctest
-julia> ValueNotIn("abc") .& ValueNotIn("z")
+julia> CharNotIn("abc") .& CharNotIn("z")
+[^abcz] ValueNotIn
+::Char
 
-julia> ValueIn("abc") .& ValueNotIn("c")
+julia> CharIn("abc") .& CharNotIn("c")
+[ab] ValueIn
+::Char
 ```
 """
 Base.broadcasted(::typeof((&)), x::ValueNotIn, y::ValueNotIn) =
@@ -85,7 +89,7 @@ Base.broadcasted(::typeof((|)), x::ValueIn, y::ValueIn) =
 Operator syntax for `sEither(x, y)`.
 
 ```jldoctest
-julia> 'a' | ValueIn("AB") | "bc"
+julia> 'a' | CharIn("AB") | "bc"
 |🗄 Either
 ├─ a
 ├─ [AB] ValueIn

@@ -482,7 +482,7 @@ macro pcre_tests()
                               );
 
         Sequence(
-            :pattern => after(ValueIn("/'\""),Any) do s
+            :pattern => after(CharIn("/'\""),Any) do s
             Repeat_until(
                 AnyChar(),
                 Sequence(3, NegativeLookbehind('\\'),
