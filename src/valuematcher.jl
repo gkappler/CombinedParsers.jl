@@ -7,6 +7,9 @@ A `ValueMatcher{T}=NIndexParser{1,T}` and has `state_type` `MatchState`.
 See [`AnyValue`](@ref), [`ValueIn`](@ref), and [`ValueNotIn`](@ref).
 """
 abstract type ValueMatcher{T} <: NIndexParser{1,T} end
+regex_prefix(x::ValueMatcher) = "["
+regex_suffix(x::ValueMatcher) = "]"
+result_type(::Type{ValueMatcher{T}}) where T = T
 
 export AnyValue, AnyChar
 """
@@ -125,14 +128,14 @@ julia> a_z = ValueIn('a':'z')
 julia> parse(a_z, "a")
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 
-julia> ac = ValueIn("ac")
+julia> ac = CharIn("ac")
 [ac] ValueIn
 ::Char
 
 julia> parse(ac, "c")
 'c': ASCII/Unicode U+0063 (category Ll: Letter, lowercase)
 
-julia> l = ValueIn(islowercase)
+julia> l = CharIn(islowercase)
 [islowercase(...)] ValueIn
 ::Char
 
@@ -141,65 +144,98 @@ julia> parse(l, "c")
 
 ```
 """
-@auto_hash_equals struct ValueIn{S,T} <: ValueMatcher{T}
+@auto_hash_equals struct ValueIn{T,S} <: ValueMatcher{T}
     pcre::String
     sets::S
-    function ValueIn(pcre::String,x_) # <:Union{Char,Set{Char},<:Function,<:UnicodeClass,<:Tuple}}=
-        x = flatten_valuepatterns(ValueIn, x_)
-        new{typeof(x),eltype(x)}(pcre,x)
+    function ValueIn{T}(pcre::String, x_...) where T
+        label, x = flatten_valuepatterns(x_...)
+        new{T,typeof(x)}(pcre == "" ? label : pcre,x)
+    end
+    function ValueIn(pcre::String, x_...)
+        ## @show pcre
+        label, x = flatten_valuepatterns(x_...)
+        T = valuepattern_type(x)
+        ## @show pcre == "" ? label : pcre
+        new{T,typeof(x)}(pcre == "" ? label : pcre,x)
     end
 end
 @inline _ismatch(c,p::ValueIn)::Bool = _ismatch(c,p.sets)
+regex_inner(x::ValueIn) = ( x.pcre == "" ? _regex_string(x.sets) : x.pcre )
 
-ValueIn(pcre::String,x::ValueIn) =
-    ValueIn(pcre,x.sets)
-ValueIn(pcre::String,x::ConstantParser{Char}) =
-    ValueIn(pcre,x.parser)
-ValueIn(pcre::String,x::AbstractString) =
-    isempty(x) ? Never() : ValueIn(pcre,x...)
-ValueIn(chars::String) =
-    ValueIn(regex_escape(chars),chars)
-ValueIn(pcre::String,x_...) =
-    ValueIn(pcre,x_)
-ValueIn(x_...) =
-    ValueIn("",x_...)
-ValueIn(chars::StepRange) =
-    ValueIn("$(chars.start)-$(chars.stop)",chars)
+ValueIn{T}(x_...) where T = ValueIn{T}("",x_...)
+ValueIn(x_...) = ValueIn("",x_...)
+ValueIn{Char}(chars::String) = ValueIn{Char}(regex_escape(chars),chars)
 
-_regex_string(x) = "$x"
+parser(x::UnicodeClass) = ValueIn{Char}(x)
 
+
+
+
+@deprecate ValueIn(unicode_classes::Symbol...) ValueIn{Char}(UnicodeClass(unicode_classes...))
+
+
+
+
+export ValueNotIn
 """
-    ValueIn(unicode_category::Symbol...)
+    ValueNotIn{T}(label::AbstractString, x)
 
-succeeds if char at cursor is in one of the unicode classes.
+Parser matching exactly one element (character) in a sequence, iif not in `x`.
+
+
+    ValueNotIn([label::AbstractString="", ]x...)
+    ValueNotIn{T}([label::AbstractString="", ]x...)
+
+Flattens `x` with [`flatten_valuepatterns`](@ref), and tries to infer `T` if not provided.
 
 ```jldoctest
-julia> match(ValueIn(:L), "aB")
-ParseMatch("a")
+julia> a_z = ValueNotIn('a':'z')
+[^a-z] ValueNotIn
+::Char
 
-julia> match(ValueIn(:Lu), "aB")
-ParseMatch("B")
-
-julia> match(ValueIn(:N), "aA1")
-ParseMatch("1")
+julia> ac = CharNotIn("ca")
+[^ca] ValueNotIn
+::Char
 ```
 
 Respects boolean logic:
 ```jldoctest
-julia> parse(ValueIn(ValueIn("ab")),     "a")
-'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+julia> p = CharNotIn(CharNotIn("ab"));
 
-julia> parse(ValueIn(ValueNotIn("bc")),  "a")
-'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
-
-julia> parse(ValueNotIn(ValueIn("bc")),  "a")
+julia> parse(p,"a")
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 ```
 
-See also [`CombinedParsers.unicode_classes`](@ref).
 """
-ValueIn(unicode_classes::Symbol...) =
-    ValueIn(UnicodeClass(unicode_classes...))
+@auto_hash_equals struct ValueNotIn{T,S} <: ValueMatcher{T}
+    pcre::String
+    sets::S
+    function ValueNotIn{T}(pcre::String, x_...) where T
+        label, x = flatten_valuepatterns(x_...)
+        new{T,typeof(x)}(pcre == "" ? label : pcre,x)
+    end
+    function ValueNotIn(pcre::String, x_...) 
+        label, x = flatten_valuepatterns(x_...)
+        T = valuepattern_type(x)
+        new{T,typeof(x)}(pcre == "" ? label : pcre,x)
+    end
+end
+@inline _ismatch(c,p::ValueNotIn)::Bool = !_ismatch(c,p.sets)
+regex_inner(x::ValueNotIn) = "^"*( x.pcre =="" ? _regex_string(x.sets) : x.pcre )
+
+ValueNotIn{T}(x_...) where T = ValueNotIn{T}("",x_...)
+ValueNotIn(x_...) = ValueNotIn("",x_...)
+ValueNotIn{Char}(chars::String) = ValueNotIn{Char}(regex_escape(chars),chars)
+@deprecate ValueNotIn(unicode_classes::Symbol...) ValueNotIn(UnicodeClass(unicode_classes...))
+
+
+
+
+
+
+
+
+
 
 
 export regex_escape
@@ -216,8 +252,6 @@ end
 export regex_string
 regex_string(x::AbstractString) = regex_escape(x)
 _regex_string(x::AbstractString) = regex_escape(x)
-
-result_type(::Type{ValueIn{<:Any,T}}) where T = T
 _regex_string(x::Union{Vector,Set}) = join(_regex_string.(x),",")
 _regex_string(x::Union{Vector{<:AbstractChar},Set{<:AbstractChar}}) = join(_regex_string.(x))
 regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
@@ -237,69 +271,6 @@ regex_inner(x::ValueIn) =
 print_constructor(io::IO,x::ValueIn{Char}) = nothing
 regex_inner(x::ValueIn{Char}) =
     _regex_string(x.sets)
-
-
-
-export ValueNotIn
-"""
-    ValueNotIn(x)
-
-Parser matching exactly one element (character) in a sequence, iif not in `x`.
-
-```jldoctest
-julia> a_z = ValueNotIn('a':'z')
-[^a-z] ValueNotIn
-::Char
-
-julia> ac = ValueNotIn("ac")
-[^ac] ValueNotIn
-::Char
-
-```
-
-Respects boolean logic:
-```jldoctest
-julia> p = ValueNotIn(ValueNotIn("ab"));
-
-julia> parse(p,"a")
-'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
-```
-
-"""
-@auto_hash_equals struct ValueNotIn{S,T} <: ValueMatcher{T}
-    pcre::String
-    sets::S
-    function ValueNotIn(pcre::String, x_) # where {T<:Union{Char,Set{Char},Function,UnicodeClass,Tuple}}=
-        x = flatten_valuepatterns(ValueNotIn, x_)
-        new{typeof(x),eltype(x)}(pcre,x)
-    end
-end
-ValueNotIn(pcre::String,x...) =
-    ValueNotIn(pcre,x)
-ValueNotIn(pcre::String,x::ConstantParser{Char}) =
-    ValueNotIn(pcre,x.parser)
-ValueNotIn(chars::String) =
-    ValueNotIn(regex_escape(chars),chars)
-ValueNotIn(chars::StepRange) =
-    ValueNotIn("$(chars.start)-$(chars.stop)",chars)
-ValueNotIn(x_...) =
-    ValueNotIn("",x_...)
-
-result_type(::Type{ValueNotIn{<:Any,T}}) where T = T
-_regex_string(x::ValueNotIn) = "^"*( x.pcre =="" ? _regex_string(x.sets) : x.pcre )
-regex_inner(x::ValueNotIn) = "["*_regex_string(x)*"]"
-@inline _ismatch(c,p::ValueNotIn)::Bool = !_ismatch(c,p.sets)
-
-ValueIn(x::Tuple{<:ValueNotIn}) = x[1]
-
-"""
-    ValueIn(unicode_classes::Symbol...)
-
-succeeds if char at cursor is not in any of the `unicode_classes`.
-"""
-ValueNotIn(unicode_classes::Symbol...) =
-    ValueNotIn(UnicodeClass(unicode_classes...))
-
 
 
 
@@ -352,5 +323,5 @@ function flatten_valuepatterns(::Type{<:Union{ValueIn,ValueNotIn}},x...)
     end
 end
 
-@deprecate CharIn(a...; kw...) ValueIn(a...; kw...)
-@deprecate CharNotIn(a...; kw...) ValueNotIn(a...; kw...)
+@deprecate CharIn(a...; kw...) ValueIn{Char}(a...; kw...)
+@deprecate CharNotIn(a...; kw...) ValueNotIn{Char}(a...; kw...)
