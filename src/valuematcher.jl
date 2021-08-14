@@ -332,8 +332,6 @@ function flatten_valuepatterns(x...)
     end
 end
 
-@deprecate CharIn(a...; kw...) ValueIn{Char}(a...; kw...)
-@deprecate CharNotIn(a...; kw...) ValueNotIn{Char}(a...; kw...)
 valuepattern_type(x) =
     if x isa Tuple
         valuepattern_type(x[1])
@@ -343,4 +341,14 @@ valuepattern_type(x) =
         @info "value type" x
         typeof(x) # error()
     end
+
+"""
+    CharIn(a...; kw...) = ValueIn{Char}(a...; kw...)
+"""
+CharIn(a...; kw...) = ValueIn{Char}(a...; kw...)
+
+"""
+    CharNotIn(a...; kw...) = ValueNotIn{Char}(a...; kw...)
+"""
+CharNotIn(a...; kw...) = ValueNotIn{Char}(a...; kw...)
 
