@@ -52,7 +52,7 @@ import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
     parse(pcre_parser,
           CombinedParsers.Regexp.with_options("xxx"," [a- z]")
           )
-    @test tryparse(re"[a- z]","b")==nothing
+    @test tryparse(re"[a- z]"x,"b")==nothing
     @test parse(re"[a- z]"xx,"b")=='b'
     ##@test match(r" [a-z]"xxx,"b")==match(re" [a-z]"xxx,"b")
     @test result_type(bracket) == CombinedParser
@@ -165,6 +165,35 @@ import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference
     @test_pcre raw"\Q \Ea" " a" true "x"
     @test_pcre "a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz" "abcxyzpqrrrabbxyyyypqAzz" true
 end                 
+
+
+@testset "CombinedParsers.re_str" begin
+@testset "CharIn" begin
+    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
+end
+
+@testset "map" begin
+    @test parse(re"abc"[2:3],"abc")==('b','c')
+    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
+    @test parse(re"^abc$"[2],"abc") == 'a'
+end
+
+@testset "Repeat" begin
+    @test parse(re"a+","aa") == ['a','a']
+end
+
+@testset "parse_all" begin
+    @test collect(parse_all(re"^(a|ab|b)+$"[2],"abab")) ==
+        [ ['a','b','a','b'], ['a','b', ('a','b')], [('a','b'),'a','b'], [('a','b'),('a','b')]]
+end
+
+
+
+@testset "Either" begin
+    @test parse(re"(a|ab|ac)$","ab") == (("ab"...), AtEnd())
+    @test_throws ArgumentError parse(re"(?>a|ab|ac)$"*AtEnd(),"ab")
+end
+end
 
 
 @test_pcre raw"\\\\\"" "\\\"" true

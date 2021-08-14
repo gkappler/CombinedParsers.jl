@@ -1,17 +1,10 @@
 
-import CombinedParsers: word, non_word, newline, inline, whitespace_maybe, whitespace_horizontal
+import CombinedParsers: word, non_word, newline, whitespace_maybe, whitespace_horizontal
 import CombinedParsers: Repeat_max
 
 @testset "CombinedParsers" begin
 @testset "CharIn" begin
     @test parse(CharIn(isuppercase),"A") =='A'
-    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
-end
-
-@testset "map" begin
-    @test parse(re"abc"[2:3],"abc")==('b','c')
-    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
-    @test parse(re"^abc$"[2],"abc") == 'a'
 end
 
 @testset "NamedTuple" begin
@@ -26,8 +19,6 @@ end
 @testset "parse_all" begin
     @test collect(parse_all(Repeat("a"|"ab"),"aabab")) ==
         [ ["a","a"], ["a","ab","a"], ["a","ab","ab"], ["a","ab"], ["a"],[] ]
-    @test collect(parse_all(re"^(a|ab|b)+$"[2],"abab")) ==
-        [ ['a','b','a','b'], ['a','b', ('a','b')], [('a','b'),'a','b'], [('a','b'),('a','b')]]
 end
 
 
@@ -70,6 +61,13 @@ end
         "abab")=="ab"
     # parse(pattern,with_options(Base.PCRE.MULTILINE,"^"))
 end
+decimal = CharIn(UnicodeClass(:Nd))
+decimals = Repeat1(decimal)
+@test parse(decimals,"123") == [ "123"... ]
+
+decimal = CharIn('0':'9')
+decimals = Repeat1(decimal)
+@test parse(decimals,"123") == [ "123"... ]
 
 attribute_parser =
     map(
@@ -78,15 +76,18 @@ attribute_parser =
             !Repeat1(word), whitespace_maybe,"=", whitespace_maybe,
             Either(Sequence(2,"\"", Repeat_until(AnyChar(),"\"",wrap=JoinSubstring)),
                    Sequence(2,"'", Repeat_until(AnyChar(),"'",wrap=JoinSubstring)),
-                   !re"[0-9]+%",
-                   !re"[-+]?[0-9]+",
+                   !Sequence(decimals, "%"),
+                   !Sequence(CharIn("+-"), decimals),
                    !Repeat1(word),
-                   !re"#[0-9A-Fa-f]{6}")
+                   !Sequence("#", Repeat(6,6,hex_digit)))
         ));
 
 attributes = join(attribute_parser, whitespace_maybe);
 
-parse(attributes,"a = 1 b=6% font=\"+1asd\"")
+parse(attributes,"a = 1 b=6% font=\"+1asd\" some=word color=#ffffff increment=+1 decrement=-1") ==
+[ "a" => "1", "b" => "6%", "font" => "+1asd", "some" => "word", "color" => "#ffffff",
+  "increment" => "+1", "decrement" => "-1" ]
+
 
 
 @testset "continue options of last Either" begin
@@ -128,7 +129,7 @@ end
 
 @testset "html" begin
     inner = Either{Any}(Any[!Repeat(CharNotIn("<>"))]);
-    pushfirst!(inner,html(!re"[[:alpha:]]+",inner,attributes));
+    pushfirst!(inner,html(!Repeat1(ValueIn('a':'z')),inner,attributes));
     parse(inner,"<a font=1><b>b</b>a</a>")
     @test parse(inner,"<a font=\"+1\">i<b>bold</b>j</a>") == 
         (tag="a", attrs=["font"=>"+1"], children=[
