@@ -278,46 +278,53 @@ regex_inner(x::ValueIn{Char}) =
 
 
 
+_push!(charset::Nothing, ::Nothing) = nothing
 _push!(charset::Nothing, x) = x
 _push!(charset::T, x::T) where T = Set{T}(tuple(charset,x))
 _push!(charset::Set, x) where T = push!(charset,x)
 _push!(charset::Vector, x) where T = push!(charset,x)
 _push!(charset::Nothing, x::Union{<:Function,<:UnicodeClass,<:ValueNotIn}) = Any[x]
 
-flatten_valuepatterns!(charset,otherstuff) =
-    charset,otherstuff
 
-flatten_valuepatterns!(charset,otherstuff,x) =
-    _push!(charset,x),otherstuff
+flatten_valuepatterns!(label,charset,otherstuff,x) =
+    label*_regex_string(x), _push!(charset,x), otherstuff
 
-flatten_valuepatterns!(charset,otherstuff,x::ConstantParser{Char}) =
-    flatten_valuepatterns!(charset,otherstuff, x.parser)
+flatten_valuepatterns!(label,charset,otherstuff,x::Union{<:Function,<:UnicodeClass,<:ValueNotIn}) =
+    label*_regex_string(x), charset, _push!(otherstuff,x)
+
+flatten_valuepatterns!(label,charset,otherstuff,x::ConstantParser{Char}) =
+    flatten_valuepatterns!(label,charset,otherstuff, x.parser)
 
 # e.g. ValueIn{UnicodeClass}
-flatten_valuepatterns!(charset,otherstuff,c::ValueIn) = 
-    flatten_valuepatterns!(charset,otherstuff, c.sets)
+flatten_valuepatterns!(label,charset,otherstuff,c::ValueIn) = 
+    label * regex_inner(c), flatten_valuepatterns!(label,charset,otherstuff, c.sets)[2:3]...
 
-flatten_valuepatterns!(charset,otherstuff,x::Union{<:Function,<:UnicodeClass,<:ValueNotIn}) =
-    charset, _push!(otherstuff,x)
-
-ElementIterators = Union{<:Vector,<:Tuple,<:StepRange,<:Set,<:AbstractString}
-flatten_valuepatterns!(charset,otherstuff,x::ElementIterators) =
-    flatten_valuepatterns!(charset,otherstuff,x...)
-
-function flatten_valuepatterns!(charset,otherstuff,x1,x2,x...)
-    flatten_valuepatterns!(flatten_valuepatterns!(charset,otherstuff,x1)...,x2,x...)
+ElementIterators = Union{<:Vector,<:Tuple,<:StepRange,<:Set,<:AbstractString,<:AbstractSet}
+function flatten_valuepatterns!(label,charset,otherstuff,x::ElementIterators)
+    for e in x
+        label2, charset, otherstuff = flatten_valuepatterns!(label, charset, otherstuff,e)
+    end
+    label * _regex_string(x), charset, otherstuff
 end
 
-function flatten_valuepatterns(::Type{<:Union{ValueIn,ValueNotIn}},x...)
-    charset,otherstuff = flatten_valuepatterns!(nothing,nothing,x...)
-    if otherstuff===nothing
-        charset === nothing ? tuple() : charset
+
+"""
+    flatten_valuepatterns(x...)
+
+Used in `ValueMatcher` constructors.
+
+Heuristic is roughly:
+- collect `ElementIterators` in a `Set`
+- collect everything else in a `Tuple` (`Function`s etc.)
+- in the process the `label` is concatenated
+- return all that was collected as `Tuple{String, <:Set, <:Tuple}` or `Tuple{String, <:Set}` or `Tuple{String, <:Tuple}`.
+"""
+function flatten_valuepatterns(x...)
+    label, charset,otherstuff = flatten_valuepatterns!("",nothing,nothing,x)
+    label, if otherstuff===nothing
+        charset === nothing ? nothing : charset
     elseif charset===nothing
-        if length(otherstuff) == 1
-            otherstuff[1]
-        else
-            tuple(otherstuff...)
-        end
+        tuple(otherstuff...)
     elseif isempty(otherstuff)
         charset
     else
@@ -327,3 +334,13 @@ end
 
 @deprecate CharIn(a...; kw...) ValueIn{Char}(a...; kw...)
 @deprecate CharNotIn(a...; kw...) ValueNotIn{Char}(a...; kw...)
+valuepattern_type(x) =
+    if x isa Tuple
+        valuepattern_type(x[1])
+    elseif x isa AbstractSet
+        eltype(x)
+    else
+        @info "value type" x
+        typeof(x) # error()
+    end
+
