@@ -116,7 +116,7 @@ _ismatch(c,p::Union{StepRange,Set})::Bool = c in p
 
 
 
-export ValueIn
+export ValueIn, CharIn
 """
     ValueIn(x)
 
@@ -178,7 +178,7 @@ parser(x::UnicodeClass) = ValueIn{Char}(x)
 
 
 
-export ValueNotIn
+export ValueNotIn, CharNotIn
 """
     ValueNotIn{T}(label::AbstractString, x)
 
