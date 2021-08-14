@@ -202,10 +202,7 @@ end
 set `reset_index===true'.
 """
 function _deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)
-    DupSubpatternNumbers(deepmap_parser(
-        _indexed_captures,mem,
-        x.parser,context,
-        true))
+    DupSubpatternNumbers(deepmap_parser(_indexed_captures,mem,x.parser,context,true))
 end
 
 """
@@ -213,9 +210,9 @@ end
 
 Method dispatch, resetting `lastindex(context.subroutines)` if `reset_index===true'.
 """
-_deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Tuple},context,reset_index) =
+deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Tuple},context,reset_index) =
     _indexed_captures(mem,x,context,reset_index)
-_deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Vector},context,reset_index) =
+deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Either{<:Vector},context,reset_index) =
     _indexed_captures(mem,x,context,reset_index)
 function _indexed_captures(mem::AbstractDict,x::Either,context,reset_index)
     if reset_index

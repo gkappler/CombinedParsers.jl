@@ -11,7 +11,7 @@ using LazyStrings
 import LazyStrings: reversed, reverse_index
 
 import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
-import ..CombinedParsers: parser, prune_captures, _deepmap_parser, print_constructor
+import ..CombinedParsers: parser, prune_captures, deepmap_parser, _deepmap_parser, print_constructor
 import ..CombinedParsers: _iterate, _iterate_constant
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, _regex_string, regex_string, _log_names
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
