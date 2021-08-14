@@ -82,10 +82,11 @@ end
 (!)(x::CombinedParser) = map(JoinSubstring,x)
 
 using InternedStrings
+intern(v) =
+    InternedStrings.intern(v)::String
+
 (!)(x::CombinedParser{<:Any,<:AbstractString}) =
-    map(x) do v
-        InternedStrings.intern(v)::String
-    end
+    map(intern, x)
 
 """
     JoinSubstring(x)
