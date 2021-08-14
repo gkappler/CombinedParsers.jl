@@ -331,13 +331,11 @@ export deepmap
 """
     deepmap(f, parser, predicate, a...; kw...)
 
-Create a new parser substituting with `f(sub_parser, a...; kw...)` with f iif 
-- `predicate isa Type && sub_parser isa predicate`
-- `predicate isa Function && predicate(sub_parser)`
-- `predicate isa Symbol && sub_parser isa NamedParser && sub_parser.name == predicate`.
-Otherwise keep `sub_parser`
+Substitute all `sub_parser`s with `map(f,sub_parser, a...; kw...)` iif 
+`dodeepmap(parser, predicate)`;
+otherwise keep `sub_parser`
 
-Implementation is an example when the a custom leaf [`_deepmap`](@ref) method is useful for [`deepmap_parser`](@ref).
+Implementation is an example when the a custom leaf [`_deepmap`](@ref) method is useful and sufficient for [`deepmap_parser`](@ref).
 """
 deepmap(f, parser, predicate, a...; kw...) = 
     deepmap_parser(_deepmap, parser, predicate, f, a...; kw...)
@@ -350,7 +348,26 @@ function _deepmap(parser, predicate, f, a...; kw...)
     end
 end
 
+"""
+    dodeepmap(parser, predicate)
+
+`parser == predicate`.
+Specialize for custom predicate type.
+
+    dodeepmap(parser, predicate::Type)
+
+`sub_parser isa predicate`
+
+    dodeepmap(parser, predicate::Function)
+
+`predicate(sub_parser)`
+
+    dodeepmap(parser::NamedParser, predicate::Symbol)
+
+`sub_parser.name == predicate`
+"""
 dodeepmap(parser, predicate) = parser == predicate
+dodeepmap(parser, predicate::Function) = predicate(parser)
 dodeepmap(parser, predicate::Type) = parser isa predicate
 dodeepmap(parser::NamedParser, predicate::Symbol) = parser.name == predicate
 
