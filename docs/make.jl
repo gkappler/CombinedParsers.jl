@@ -11,6 +11,7 @@ DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
     using TextParse
     using CombinedParsers
     using CombinedParsers.Regexp
+    using CombinedParsers.BNF
 end; recursive=true)
 
 
@@ -20,7 +21,7 @@ for f in [ "pcre.jl", "example-person.jl", "example-number-ranges.jl", "example-
                       codefence = "```@repl session" => "```")
 end
 
-for f in [ "example-palindromes.jl", "bson.jl" ]
+for f in [ "example-palindromes.jl", "bson.jl", "bnf.jl" ]
     Literate.markdown(joinpath(mandir,f), mandir,
                       repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs")
 end

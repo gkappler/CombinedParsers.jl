@@ -1,13 +1,18 @@
 """
-A EBNF Syntax draft built from Wikimedia
-[Ebnf-syntax-diagram](https://upload.wikimedia.org/wikipedia/commons/0/0c/Ebnf-syntax-diagram.png).
+# (Extended) Backus-Naur Form [`CombinedParser`](@ref)
+Defining a EBNF parser can be done with the [`ebnf`](@ref) string macro.
+[`substitute`](@ref) is used to combine parts of the definition.
+
+!!! warn
+    Left recursion is not yet supported (will lead to a stack overflow).
 """
 module BNF
-using ..CombinedParsers
+using CombinedParsers
 
 # todo 
 # paddedSequence(x...) = Sequence(trim.(x)...)
-trimhv(x) = CombinedParsers.trim(x;whitespace=Atomic(Repeat(CharIn(horizontal_space_char,vertical_space_char))))
+trimhv(x; whitespace=Atomic(Repeat(CharIn(horizontal_space_char,vertical_space_char)))) =
+    CombinedParsers.trim(x; whitespace=whitespace)
 
 @generated function separatedSequence(x...; whitespace=Atomic(Repeat(CharIn(horizontal_space_char,vertical_space_char))))
     f = Expr(Symbol("->"), :v, Expr(:tuple, Any[Expr(:ref, :v, i) for i in 2*1:length(x)]))
@@ -26,36 +31,49 @@ function separatedTriple(f::Function, open,body,close; whitespace=Atomic(Repeat(
 end
 
 
-letter                              = CharIn('A':'Z','a':'z')
-decimal_digit                       = CharIn('0':'9')
-concatenate_symbol                  = ','
-defining_symbol                     = '='
-definition_separator_symbol         = CharIn("|/!")
-start_comment_symbol                = "(*"
-start_group_symbol                  = "("
-end_comment_symbol                  = "*)"
-end_group_symbol                    = ")"
-end_option_symbol                   = Either(']', "/)")
-end_repeat_symbol                   = Either('}', ":)")
+letter = CharIn('A':'Z','a':'z')
+decimal_digit = CharIn('0':'9')
+"""
+Supports BNF and EBNF variants
+```jldocs
+julia> CombinedParsers.BNF.concatenate_symbol
+```
+"""
+concatenate_symbol = ',' # Either(',', Always())
 
-except_symbol                       = '-'
-first_quote_symbol                  = '''
-repetition_symbol                   = '*'
-second_quote_symbol                 = '"'
-special_sequence_symbol             = '?'
+"""
+Supports BNF and EBNF variants
+```jldocs
+julia> CombinedParsers.BNF.defining_symbol
+```
+"""
+defining_symbol = '=' # !Either('=', "::=", ":=")
+definition_separator_symbol = CharIn("|/!")
+start_comment_symbol = "(*"
+start_group_symbol = "("
+end_comment_symbol = "*)"
+end_group_symbol = ")"
+end_option_symbol = Either(']', "/)")
+end_repeat_symbol = Either('}', ":)")
 
-start_option_symbol                 = Either('[', "(/")
-start_repeat_symbol                 = Either('{', "(:")
-terminator_symbol                   = CharIn(";.")
+except_symbol = '-'
+first_quote_symbol = '''
+repetition_symbol = '*'
+second_quote_symbol = '"'
+special_sequence_symbol = '?'
 
-other_character                     = CharIn(" :+_%@&#\$<>\\^`~") # is it `?
-space_character                     = ' '
-horizontal_tabulation_character     = horizontal_space_char#  "\t" #^-?
-new_line                            = '\n' #?
-vertical_tabulation_character       = vertical_space_char# Never() #?
-form_feed                           = '\f' # Never() #?
+start_option_symbol = Either('[', "(/")
+start_repeat_symbol = Either('{', "(:")
+terminator_symbol = CharIn(";.")
 
-terminal_character                  = !Atomic(Either(
+other_character = CharIn(" :+_%@&#\$<>\\^`~") # is it `?
+space_character = ' '
+horizontal_tabulation_character = horizontal_space_char#  "\t" #^-?
+new_line = '\n' #?
+vertical_tabulation_character = vertical_space_char# Never() #?
+form_feed = '\f' # Never() #?
+
+terminal_character = !Atomic(Either(
     letter,
     decimal_digit,
     concatenate_symbol,
@@ -78,38 +96,37 @@ terminal_character                  = !Atomic(Either(
     other_character
 ))
 
-first_terminal_character            = Sequence(NegativeLookahead(first_quote_symbol),
-                                               terminal_character)
+first_terminal_character =
+    Sequence(NegativeLookahead(first_quote_symbol), terminal_character)
 
-second_terminal_character           = Sequence(NegativeLookahead(second_quote_symbol),
-                                               terminal_character)
+second_terminal_character =
+    Sequence(NegativeLookahead(second_quote_symbol), terminal_character)
 
-@with_names terminal_string         = Either(Sequence(2,first_quote_symbol,
-                                                      !!Repeat1(first_terminal_character),
-                                                      first_quote_symbol),
-                                             Sequence(2,second_quote_symbol,
-                                                      !!Repeat1(second_terminal_character),
-                                                      second_quote_symbol))
+terminal_string =
+    Either(Sequence(2,first_quote_symbol,
+                    with_name(:terminal_string, !!Repeat1(first_terminal_character)),
+                    first_quote_symbol),
+           Sequence(2,second_quote_symbol,
+                    with_name(:terminal_string, !!Repeat1(second_terminal_character)),
+                    second_quote_symbol))
 
-gap_separator                       = CharIn(space_character, horizontal_tabulation_character,
-                                             new_line, vertical_tabulation_character, form_feed)
+gap_separator = CharIn(space_character, horizontal_tabulation_character,
+                       new_line, vertical_tabulation_character, form_feed)
 
-@with_names _integer                = CombinedParsers.Numeric(Int) #!Repeat1(decimal_digit)
+_integer = CombinedParsers.Numeric(Int) #!Repeat1(decimal_digit)
 
-meta_identifier_character           = CharIn(letter, decimal_digit, "-_ ") # optimize!
-@with_names meta_identifier         = map(Symbol,Sequence(1, 
+meta_identifier_character = CharIn(letter, decimal_digit, "-_ ") # optimize!
+@with_names meta_identifier = map(Symbol,Sequence(1, 
     !join(!Sequence(letter, Lazy(Repeat(meta_identifier_character))), gap_separator),
-    PositiveLookahead(Either(space_character,horizontal_tabulation_character,AtEnd()))
+    NegativeLookahead(meta_identifier_character .& CharNotIn(' '))
 ))
 
-special_sequence_character          = Sequence(NegativeLookahead(special_sequence_symbol),
-                                               terminal_character)
-@with_names special_sequence        = Sequence(2,
-                                               special_sequence_symbol,
-                                               trimhv(!!Lazy(Repeat(special_sequence_character))),
-                                               special_sequence_symbol)
+special_sequence_character =
+    Sequence(NegativeLookahead(special_sequence_symbol), terminal_character)
+@with_names special_sequence =
+    Sequence(2, special_sequence_symbol, trimhv(!!Lazy(Repeat(special_sequence_character))), special_sequence_symbol)
 
-commentless_symbol                  = Either(
+commentless_symbol = Either(
     Sequence(
         NegativeLookahead(Either(
             letter,
@@ -128,41 +145,41 @@ commentless_symbol                  = Either(
     special_sequence
 )
 
-comment_symbol                      = Either{Any}(Any[
+comment_symbol = Either{Any}(Any[
     other_character,
     commentless_symbol
 ])
 @with_names bracket_textual_comment = Sequence(start_comment_symbol, !Repeat(comment_symbol), end_comment_symbol)
 pushfirst!(comment_symbol, bracket_textual_comment)
 
+empty_sequence = parser(Always() => Always())
 
-empty_sequence                      = parser(Always() => Always())
-
-
-syntactic_primary                   = Either{CombinedParser}(
-    Any[map(n->Substitution(n), meta_identifier),
+@with_names syntactic_primary = Either{CombinedParser}(
+    Any[map(n->substitute(n), meta_identifier),
         map(parser,terminal_string),
         map(s->Never(),special_sequence),
         empty_sequence])
 
-syntactic_factor                    = Sequence(
-    Optional(
-        Sequence(1, _integer, trimhv(repetition_symbol));
-        default                         = 1),
-    syntactic_primary) do v 
-        v[1]                        == 1 ? v[2] : Repeat(v[1], v[2])
+import ..CombinedParsers: Repeat_max
+@with_names syntactic_factor = Sequence(
+    Either(
+        Sequence(v->v[1]:v[3], _integer, trimhv(repetition_symbol), _integer),
+        Sequence(v->v[1]:v[1], _integer, trimhv(repetition_symbol)),
+        Always() => 1:1),
+    trimhv(syntactic_primary)) do v 
+        v[1] == 1:1 ? v[2] : Repeat(v[1], v[2])
     end
 
-syntactic_exception                 = syntactic_factor
-syntactic_term                      = Sequence(1, syntactic_factor,
-                                               # todo: handle exceptions
-                                               Optional(Sequence(except_symbol, syntactic_exception)))
+syntactic_exception = syntactic_factor
+syntactic_term = Sequence(1, syntactic_factor,
+                          # todo: handle exceptions
+                          Optional(Sequence(except_symbol, syntactic_exception)))
 
-@with_names single_definition       = map(p -> sSequence(p...)::CombinedParser,
-                                          join(syntactic_term, trimhv(concatenate_symbol)))
+@with_names single_definition = map(p -> sSequence(p...)::CombinedParser,
+                                    join(syntactic_term, trimhv(concatenate_symbol)))
 
-definitions_list                    = map(p -> sEither(p...)::CombinedParser,
-                                          join(single_definition, trimhv(definition_separator_symbol)))
+definitions_list = map(p -> sEither(p...)::CombinedParser,
+                       join(single_definition, trimhv(definition_separator_symbol)))
 
 @syntax for optional_sequence in syntactic_primary
     separatedTriple(start_option_symbol, definitions_list, end_option_symbol) do v
@@ -178,9 +195,98 @@ end
     separatedTriple(identity, start_group_symbol, definitions_list, end_group_symbol)
 end
 
-@syntax syntax_rule                 = Sequence(meta_identifier, trimhv(defining_symbol), definitions_list, trimhv(terminator_symbol)) do v
+@syntax syntax_rule = Sequence(meta_identifier, trimhv(defining_symbol), definitions_list, trimhv(terminator_symbol)) do v
     with_name(v[1], v[3])
 end;
 
-@syntax ebnf  = map(Either,Repeat1(syntax_rule));
+export @ebnf_str, ebnf
+@syntax ebnf = map(v->(substitute(Either(reverse(v)...))),Repeat1(syntax_rule));
+
+
+"""
+    ebnf
+
+Parser to create a `CombinedParser` from EBNF syntax:
+```jldocs
+julia> p = ebnf\"\"\"
+       digit excluding zero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+       digit                = "0" | digit excluding zero ;
+       natural number       = digit excluding zero, { digit } ;
+       integer              = "0" | [ "-" ], natural number ;
+       \"\"\"
+|🗄 Either
+├─ |🗄 Either |> with_name(:integer)
+│  ├─ 0 
+│  └─ 🗄 Sequence
+│     ├─ \\-? |
+│     └─ 🗄 Sequence |> with_name(:natural number) # branches hidden
+├─ 🗄 Sequence |> with_name(:natural number)
+│  ├─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
+│  └─ |🗄* Either |> with_name(:digit) |> Repeat
+│     ├─ 0 
+│     └─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
+├─ |🗄 Either |> with_name(:digit)
+│  ├─ 0 
+│  └─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
+└─ |🗄 Either |> with_name(:digit excluding zero)
+   ├─ 1 
+   ├─ 2 
+   ├─ 3 
+   ├─ 4 
+   ├─ 5 
+   ├─ 6 
+   ├─ 7 
+   ├─ 8 
+   └─ 9 
+::Union{SubString{String}, Tuple{SubString{String}, Vector{SubString{String}}}, Tuple{AbstractString, Tuple{SubString{String}, Vector{SubString{String}}}}}
+
+julia> p[:integer]("42")
+("", ("4", SubString{String}["2"]))
+```
+
+A (complicated) result type is derived implicitly.
+
+You can map transform results of parts of a EBNF parser with the [`deepmap`](@ref) function (not the changed `result_type`)).
+```jldocs
+julia> pmatch = deepmap(JoinSubstring, p, :integer)
+|🗄 Either
+├─ |🗄 Either |> ! |> with_name(:integer)
+│  ├─ 0 
+│  └─ 🗄 Sequence
+│     ├─ \\-? |
+│     └─ 🗄 Sequence |> with_name(:natural number) # branches hidden
+├─ 🗄 Sequence |> with_name(:natural number)
+│  ├─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
+│  └─ |🗄* Either |> with_name(:digit) |> Repeat
+│     ├─ 0 
+│     └─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
+├─ |🗄 Either |> with_name(:digit)
+│  ├─ 0 
+│  └─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
+└─ |🗄 Either |> with_name(:digit excluding zero)
+   ├─ 1 
+   ├─ 2 
+   ├─ 3 
+   ├─ 4 
+   ├─ 5 
+   ├─ 6 
+   ├─ 7 
+   ├─ 8 
+   └─ 9 
+::Union{SubString{String}, Tuple{SubString{String}, Vector{SubString{String}}}}
+
+julia> pmatch[:integer]("42")
+"42"
+```
+
+!!! note
+    I want to support more BNF variants.  Contributions of test cases are welcome!
+    A EBNF Syntax draft built from Wikimedia
+    [Ebnf-syntax-diagram](https://upload.wikimedia.org/wikipedia/commons/0/0c/Ebnf-syntax-diagram.png).
+
+!!! warn
+    Left recursion is not yet supported (will lead to a stack overflow).
+"""
+ebnf
+
 end

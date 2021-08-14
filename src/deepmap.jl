@@ -173,7 +173,7 @@ julia> Either(:a => !Either(
 
 # Example
 With `substitute` you can write recursive parsers in a style inspired by (E)BNF.
-[`CombinedParsers.BNF.bnf`](@ref) uses `substitute`.
+[`bnf`](@ref) uses `substitute`.
 
 ```jldoctest
 julia> def = Either(:integer => !Either("0", Sequence(Optional("-"), substitute(:natural_number))),
