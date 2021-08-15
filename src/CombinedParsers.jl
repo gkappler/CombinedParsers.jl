@@ -1772,7 +1772,9 @@ _iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state) =
 
 
 
-export alt, Either
+export Either
+export Delayed
+
 """
     Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
 
@@ -1798,7 +1800,6 @@ struct Either{Ps,S,T} <: CombinedParser{S,T}
     Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
 end
 
-
 """
     Base.getindex(x::Either, property::Symbol)
 
@@ -1818,19 +1819,50 @@ function Base.getindex(x::Either, property::Symbol)
 end
 
 """
-    Either(p...)
+    Either(p...; simplify=false)
 
 Create a immutable `Either{either_state_type(p),either_result_type(p)}(::Tuple)` improved for performance.
 Arguments `p...` are wrapped in [`parser`](@ref),
 type parameters are computed with [`either_state_type`](@ref) and [`either_result_type`](@ref).
+
+If `simplify`, flattens nested `Either`s and remove `Never` parsers, if only a single option remains return that option.
+If you want to simplify a constructed parser, [`CombinedParsers.strip_either1`](@ref) provides more options.
+
+```jldoctest
+julia> Either('a', simplify=true)
+|🗄 Either
+├─ a
+└─ |🗄 Either
+   ├─ [AB] ValueIn
+   └─ bc
+::Union{Char, SubString{String}}
+
+julia> Either('a',CharIn("AB")|"bc")
+|🗄 Either
+├─ a
+└─ |🗄 Either
+   ├─ [AB] ValueIn
+   └─ bc
+::Union{Char, SubString{String}}
+
+
+julia> Either('a',CharIn("AB")|"bc", simplify=true)
+|🗄 Either
+├─ a
+├─ [AB] ValueIn
+└─ bc
+::Union{Char, SubString{String}}
+```
 """
-function Either(p_...)
-    p = tuple(parser.(p_)...)
+function Either(p_...; simplify=false)
+    os = either_options(p_...; simplify=simplify)
+    simplify && length(os)==1 && return first(os)
+    p = tuple(os...)
     Either{either_state_type(p),either_result_type(p)}(p)
 end
 
 """
-    Either(p::Vector)
+    Either(p::Vector; simplify=false)
 
 Create a mutable `Either{Any,Any}(::Vector{Any})` for creating recursive parsers.
 Arguments `p...` are wrapped in [`parser`](@ref),
@@ -1840,14 +1872,14 @@ See also [`@syntax`](@ref).
 !!! note
     state type and result type are `Any` which might cost performance.
 """
-function Either(p_::Vector)
-    p = Any[parser.(p_)...]
+function Either(p_::Vector; simplify=false)
+    p = either_options(p_...; simplify=simplify)
     Either{Any,Any}(p)
 end
 
 
 """
-    Either{T}(p...; convert=false)
+    Either{T}(p...; simplify=false, convert=false)
 
 Create a mutable `Either{Any,T}(::Vector{Any})` for creating recursive parsers.
 Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
@@ -1859,8 +1891,8 @@ See also [`@syntax`](@ref).
 !!! note
     state type is `Any` which might cost performance.
 """
-function Either{T}(p_...; convert=false) where T
-    p = Any[parser.(p_)...]
+function Either{T}(p_...; convert=false, simplify=false) where T
+    p = either_options(p_...; simplify=simplify)
     for (i,x) in enumerate(p)
         if !(result_type(x) <: T)
             convert || error("transforming results with convert($T,::$(result_type(x)))\n$x")
@@ -1870,14 +1902,12 @@ function Either{T}(p_...; convert=false) where T
     Either{Any,T}(p)
 end
 
-@deprecate Either{T}(x::Vector{Any}) where T Either{T}(x...)
-@deprecate Either{T}(x::Tuple) where T Either(x...)
-@deprecate Either(x::Tuple) Either(x...)
+@deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; kw...)
+@deprecate Either{T}(x::Tuple; kw...) where T Either(x...; kw...)
+@deprecate Either(x::Tuple; kw...) Either(x...; kw...)
 
-
-export Delayed
 """
-    Delayed(T::Type)
+    Delayed(T::Type) = 
 
 [`Either`](@ref)`{T}()`.
 """
@@ -1892,45 +1922,21 @@ function Either(transform::Function, x...; kw...)
     map(transform, Either(x...;kw...))
 end
 
-export sEither
 _sEither(x::Either) = _sEither(x.options...)
 _sEither(x::Never) = tuple()
 _sEither() = tuple()
-_sEither(x1) = tuple(x1)
+_sEither(x1) = tuple(parser(x1))
+## todo: better aggregate in argument?
 _sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in x )... ] )
 
-"""
-    sEither(x...)
-
-Simplifying `Either`, flattens nested `Either`s, remove `Never` parsers.
-
-```jldoctest
-julia> Either('a',CharIn("AB")|"bc")
-|🗄 Either
-├─ a
-└─ |🗄 Either
-   ├─ [AB] ValueIn
-   └─ bc
-::Union{Char, SubString{String}}
-
-
-julia> sEither('a',CharIn("AB")|"bc")
-|🗄 Either
-├─ a
-├─ [AB] ValueIn
-└─ bc
-::Union{Char, SubString{String}}
-
-```
-
-See also [`Either`](@ref)
-"""
-function sEither(x...)
-    opts = collect(_sEither(x...))
-    length(opts)==1 ? opts[1] : Either(opts...)
+function either_options(x...; simplify = false)
+    Any[if simplify
+            _sEither(x...)
+        else
+            parser.(x)
+        end...]
 end
-sEither(x1::NamedParser,x...) =
-    with_name(x1.name, sEither(x1.parser, x...), doc=x1.doc)
+@deprecate sEither(x...) Either(x...; simplify=true)
 
 
 either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
