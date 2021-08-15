@@ -93,7 +93,7 @@ intern(v) =
     (!)(x::CombinedParser)
     (!)(x::CombinedParser{<:Any,<:AbstractString})
 
-Parser [`map`](@ref) transformation getting 
+Parser [`Base.map`](@ref) transformation getting 
 - either the matched `SubString` 
 - or an `InternedStrings.intern`ed copy thereof iif `result_type<:AbstractString` already.
 Transformation does not evaluate `get(parser.transform,...)`.
@@ -119,7 +119,7 @@ export map_match
 """
     map_match(f::Function,p_)
 
-Map `map(f, !parser(p_))` on the matching string.
+Map [`Base.map`](@ref)`(f, !parser(p_))` on the matching string.
 """
 map_match(f::Function,p_) =
     map(f, JoinSubstring(parser(p_)))
@@ -129,7 +129,7 @@ map_match(f::Function,p_) =
     map_constant(constant, p::CombinedParser)
     parser((p,constant)::Pair)
 
-Construct a [`map`](@ref) `Transformation{<:Constant}` resulting in `p` when calling [`get`](@ref) fast,
+Construct a [`Base.map`](@ref) `Transformation{<:Constant}` resulting in `p` when calling [`get`](@ref) fast,
 instead of computing result from state, 
 if `parser(p)` matches.
 
@@ -185,7 +185,7 @@ export MatchRange
 """
     MatchRange(p::CombinedParser)
 
-Construct a [`map`](@ref)`Transformation{UnitRange{Int}}` resulting in `p` when calling [`get`](@ref) fast,
+Construct a [`Base.map`](@ref)`Transformation{UnitRange{Int}}` resulting in `p` when calling [`get`](@ref) fast,
 Succeed iif `p` succeeds, if so results in sequence match index `UnitRange`.
 Transformation does not evaluate `get(parser.transform,...)`.
 """
@@ -332,7 +332,7 @@ export deepmap
 """
     deepmap(f, parser, predicate, a...; kw...)
 
-Substitute all `sub_parser`s with `map(f,sub_parser, a...; kw...)` iif 
+Substitute all `sub_parser`s with [`Base.map`](@ref)`(f,sub_parser, a...; kw...)` iif 
 `dodeepmap(parser, predicate)`;
 otherwise keep `sub_parser`
 

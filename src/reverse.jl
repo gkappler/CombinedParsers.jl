@@ -106,7 +106,7 @@ get result of PositiveLookbehind
 
 !!! note
     The result is currently for a `reversed` sequence, and 
-    you might find it difficult to [`map`](@ref) a lookbehind parser match.
+    you might find it difficult to [`Base.map`](@ref) a lookbehind parser match.
     If you require this functionality please open an issue for discussion.
 
     Assertions do not consume input, so typically these input chars are parsed/mapped outside of the assertion.

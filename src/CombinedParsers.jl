@@ -960,7 +960,7 @@ julia> german_street_address("Some Avenue 42")
 ```
 
 !!! note
-    Returns a NamedTuple [`map`](@ref) transformation if any part was `Pair{Symbol}`.
+    Returns a NamedTuple [`Base.map`](@ref) transformation if any part was `Pair{Symbol}`.
 
     ```jldoctest
     julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => TextParse.Numeric(Int))
@@ -1350,7 +1350,7 @@ Repeat(min::Integer,p...) =
 """
     Repeat(f::Function,a...)
 
-Abbreviation for `map(f,Repeat(a...))`.
+Abbreviation for [`Base.map`](@ref)`(f,Repeat(a...))`.
 """
 Repeat(f::Union{Function,Type},a...;kw...) =
     map(f,Repeat(a...;kw...))
@@ -1365,7 +1365,7 @@ Repeat1(x) =
 """
     Repeat1(f::Function,a...)
 
-Abbreviation for `map(f,Repeat1(a...))`.
+Abbreviation for [`Base.map`](@ref)`(f,Repeat1(a...))`.
 """
 Repeat1(f::Function,a...) =
     map(f,Repeat1(a...))
@@ -1432,7 +1432,7 @@ Base.join(x::Union{TextParse.AbstractToken,CombinedParser},delim; kw...) =
 """
     Base.join(f::Function, x::CombinedParser, delim; kw...)
 
-Shorthand for `map(f,join(x,delim; kw...))`.
+Shorthand for [`Base.map`](@ref)`(f,join(x,delim; kw...))`.
 """
 Base.join(f::Function,p::CombinedParser,delim_; kw...) =
     map(f,join(p,delim_; kw...))
@@ -1860,7 +1860,7 @@ end
 Create a mutable `Either{Any,T}(::Vector{Any})` for creating recursive parsers.
 Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
 
-If `convert` for any option `x` in `p` that has `!(result_type(x) <: T)`, adds [`map`](@ref)`(T,x)` instead.
+If `convert` for any option `x` in `p` that has `!(result_type(x) <: T)`, adds [`Base.map`](@ref)`(T,x)` instead.
 (Provide a `convert` method!)
 
 See also [`@syntax`](@ref).
@@ -1894,7 +1894,7 @@ Delayed(T::Type) = Either{T}()
 """
     Either(transform::Function, x::Vararg)
 
-abbreviation for `map(transform, Either(x...))`.
+abbreviation for [`Base.map`]`(transform, Either(x...))`.
 """
 function Either(transform::Function, x...; kw...)
     map(transform, Either(x...;kw...))
