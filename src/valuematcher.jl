@@ -1,5 +1,15 @@
-include("unicode.jl")
+export regex_escape
+## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
+"""
+        regex_escape(s::AbstractString)
 
+regular expression metacharacters are escaped along with whitespace.
+"""
+function regex_escape(s)
+    res = replace(escape_string(string(s)), r"([()[\]{}?*+\-|^\$.&~#\s=!<>|:])" => s"\\\1")
+    replace(res, "\0" => "\\0")
+end
+include("unicode.jl")
 """
 `ValueMatcher` match value at point `c` iif [`ismatch`](@ref)`(c, parser)`.
 A `ValueMatcher{T}=NIndexParser{1,T}` and has `state_type` `MatchState`.
@@ -10,6 +20,27 @@ abstract type ValueMatcher{T} <: NIndexParser{1,T} end
 regex_prefix(x::ValueMatcher) = "["
 regex_suffix(x::ValueMatcher) = "]"
 result_type(::Type{ValueMatcher{T}}) where T = T
+_regex_string(x::ValueMatcher) = regex_inner(x)
+
+export regex_string
+regex_string(x) = _regex_string(x)
+
+_regex_string(x) = "$x"
+_regex_string(x::Nothing) = ""
+_regex_string(x::ConstantParser) = _regex_string(x.parser)
+_regex_string(x::AbstractString) = regex_escape(x)
+_regex_string(x::Union{Vector,Set}) = join(_regex_string.(x),",")
+_regex_string(x::Union{Vector{<:AbstractChar},Set{<:AbstractChar}}) = join(_regex_string.(x))
+_regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
+_regex_string(x::StepRange) =
+    if x.start == x.stop
+        x.start
+    else
+        x.start*"-"*x.stop
+    end
+_regex_string(x::Tuple) = join([_regex_string(s) for s in x])
+_regex_string(x::Function) = "$x(...)"
+# _regex_string(x::ValueIn) = ( x.pcre =="" ? _regex_string(x.sets) : x.pcre )
 
 export AnyValue, AnyChar
 """
@@ -33,6 +64,8 @@ AnyChar() = AnyValue(Char)
 @deprecate AnyValue() AnyChar()
 regex_inner(x::AnyValue{Char}) = "."
 regex_inner(x::AnyValue{T}) where T = "(.::$T)"
+regex_prefix(x::AnyValue) = ""
+regex_suffix(x::AnyValue) = ""
 
 """
     _iterate(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
@@ -232,57 +265,20 @@ julia> parse(CharNotIn(CharIn("bc")), "a")
         new{T,typeof(x)}(pcre == "" ? label : pcre,x)
     end
 end
+# result_type(::Type{T}) where T = T
 @inline _ismatch(c,p::ValueNotIn)::Bool = !_ismatch(c,p.sets)
 regex_inner(x::ValueNotIn) = "^"*( x.pcre =="" ? _regex_string(x.sets) : x.pcre )
 
 ValueNotIn{T}(x_...) where T = ValueNotIn{T}("",x_...)
 ValueNotIn(x_...) = ValueNotIn("",x_...)
 ValueNotIn{Char}(chars::String) = ValueNotIn{Char}(regex_escape(chars),chars)
+# ValueNotIn(chars::StepRange) =
+#     ValueNotIn{eltype(chars)}("$(chars.start)-$(chars.stop)",chars)
+# ValueNotIn(pcre::String,x::ConstantParser{Char}) =
+#     ValueNotIn{Char}(pcre,x.parser)
 @deprecate ValueNotIn(unicode_classes::Symbol...) ValueNotIn(UnicodeClass(unicode_classes...))
+# ValueIn(x::Tuple{<:ValueNotIn}) = x[1]
 
-
-
-
-
-
-
-
-
-
-
-export regex_escape
-## https://github.com/JuliaLang/julia/pull/29643/commits/dfb865385edf19b681bc0936028af23b1f282b1d
-"""
-        regex_escape(s::AbstractString)
-
-regular expression metacharacters are escaped along with whitespace.
-"""
-function regex_escape(s)
-    res = replace(escape_string(string(s)), r"([()[\]{}?*+\-|^\$.&~#\s=!<>|:])" => s"\\\1")
-    replace(res, "\0" => "\\0")
-end
-export regex_string
-regex_string(x::AbstractString) = regex_escape(x)
-_regex_string(x::AbstractString) = regex_escape(x)
-_regex_string(x::Union{Vector,Set}) = join(_regex_string.(x),",")
-_regex_string(x::Union{Vector{<:AbstractChar},Set{<:AbstractChar}}) = join(_regex_string.(x))
-regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
-_regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
-_regex_string(x::StepRange) =
-    if x.start == x.stop
-        x.start
-    else
-        x.start*"-"*x.stop
-    end
-_regex_string(x::Tuple) = join([_regex_string(s) for s in x])
-_regex_string(x::Function) = "$x(...)"
-_regex_string(x::ValueIn) = ( x.pcre =="" ? _regex_string(x.sets) : x.pcre )
-regex_inner(x::ValueIn) =
-    "["*_regex_string(x)*"]"
-
-print_constructor(io::IO,x::ValueIn{Char}) = nothing
-regex_inner(x::ValueIn{Char}) =
-    _regex_string(x.sets)
 
 
 

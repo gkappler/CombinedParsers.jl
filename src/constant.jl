@@ -34,7 +34,6 @@ children(x::ConstantParser) = ()
 regex_prefix(x::ConstantParser) = ""
 print_constructor(io::IO,x::ConstantParser) = print(io,"")
 # caveat
-regex_string(x) = "$x::$(typeof(x))"
 regex_inner(x::ConstantParser) = regex_string(x.parser)
 regex_suffix(x::ConstantParser) = ""
 
