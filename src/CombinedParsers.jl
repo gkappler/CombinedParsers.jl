@@ -1307,10 +1307,10 @@ end
 const Repeat_max = 10^6
 export Repeat1, Repeat
 """
-    Repeat(x)
-    Repeat(x; min=0,max=Repeat_max)
-    Repeat(min::Integer, x)
-    Repeat(min::Integer,max::Integer, x)
+    Repeat(minmax::UnitRange, x...)
+    Repeat(x...; min=0,max=Repeat_max)
+    Repeat(min::Integer, x...)
+    Repeat(min::Integer,max::Integer, x...)
 
 Parser repeating pattern `x` `min:max` times.
 
@@ -1331,51 +1331,43 @@ a{3,}  |> Repeat
     parser::P
     Repeat(range::UnitRange{Int},p::P) where {P<:CombinedParser} =
         new{P,repeat_state_type(state_type(p)),Vector{result_type(P)}}(range,p)
-    Repeat(p::P) where {P<:CombinedParser} =
-        new{P,repeat_state_type(state_type(p)),Vector{result_type(P)}}(0:Repeat_max,p)
+    # Repeat(p::P) where {P<:CombinedParser} =
+    #     new{P,repeat_state_type(state_type(p)),Vector{result_type(P)}}(0:Repeat_max,p)
 end
-Repeat(range::UnitRange{Int},p...) =
-    Repeat(range,sSequence(p...))
-Repeat(min::Integer,max::Integer,p...) =
-    Repeat((min:max),p...)
-Repeat(p...;min::Integer=0,max::Integer=Repeat_max) =
-    Repeat((min:max),p...)
-Repeat(min::Integer,p...) =
-    Repeat((min:Repeat_max),p...)
+Repeat(range::UnitRange{Int},p...)                  = Repeat(range,sSequence(p...))
+Repeat(min::Integer,max::Integer,p...)              = Repeat((min:max),p...)
+Repeat(p...;min::Integer=0,max::Integer=Repeat_max) = Repeat((min:max),p...)
+Repeat(min::Integer,p...)                           = Repeat((min:Repeat_max),p...)
 
 @inline repeat_state_type(::Type{MatchState}) = Int
-@inline repeat_state_type(T::Type) =
-    Vector{T}
+@inline repeat_state_type(T::Type) = Vector{T}
 
 """
     Repeat(f::Function,a...)
 
 Abbreviation for [`Base.map`](@ref)`(f,Repeat(a...))`.
 """
-Repeat(f::Union{Function,Type},a...;kw...) =
-    map(f,Repeat(a...;kw...))
+Repeat(f::Union{Function,Type},a...;kw...)           = map(f,Repeat(a...;kw...))
 
 """
     Repeat1(x)
 
 Parser repeating pattern `x` one time or more.
 """
-Repeat1(x) =
-    Repeat(1,x)
+Repeat1(x...; max=Repeat_max)                        = Repeat(1:Repeat_max,x...)
+
 """
     Repeat1(f::Function,a...)
 
 Abbreviation for [`Base.map`](@ref)`(f,Repeat1(a...))`.
 """
-Repeat1(f::Function,a...) =
-    map(f,Repeat1(a...))
+Repeat1(f::Function,a...; kw...)                     = map(f,Repeat1(a...; kw...))
 
-@deprecate Repeat(minmax::Tuple{<:Integer,<:Integer},x,y::Vararg) Repeat(minmax...,Sequence(x,y...))
+@deprecate Repeat(minmax::Tuple{<:Integer,<:Integer},x,y::Vararg) Repeat(minmax...,x,y...)
 
 @deprecate Repeat(transform::Function, T::Type, a...) map(transform, T, Repeat(a...))
 
 @deprecate Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
-
 
 @deprecate rep(a...;kw...) Repeat(a...;kw...)
 
