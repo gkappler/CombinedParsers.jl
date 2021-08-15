@@ -141,6 +141,8 @@ reversed(x::CombinedParser) = deepmap_parser(_reversed, x)
 _reversed(x::ConstantParser{<:AbstractString}) =
     ConstantParser(reversed(x.parser))
 _reversed(x) = x
+_reversed(x::AtEnd) = AtStart()
+_reversed(x::AtStart) = AtEnd()
 
 _deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::Sequence) =
     Sequence(( deepmap_parser(_reversed,mem,p) for p in reverse(x.parts) )...)
