@@ -51,6 +51,7 @@ CombinedParsers.sequence_state_type
 ```@docs
 Delayed
 Either
+(|)(::CombinedParser, ::CombinedParser)
 @syntax
 substitute
 Base.push!
@@ -59,8 +60,6 @@ Base.pushfirst!
 
 
 ```@docs
-(|)(::CombinedParser, ::CombinedParser)
-sEither
 CombinedParsers.either_result_type
 ```
 

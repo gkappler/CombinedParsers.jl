@@ -21,7 +21,7 @@ for f in [ "pcre.jl", "example-person.jl", "example-number-ranges.jl", "example-
                       codefence = "```@repl session" => "```")
 end
 
-for f in [ "example-palindromes.jl", "bson.jl", "bnf.jl" ]
+for f in [ "example-palindromes.jl", "bson.jl"]
     Literate.markdown(joinpath(mandir,f), mandir,
                       repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs")
 end

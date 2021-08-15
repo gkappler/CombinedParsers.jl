@@ -3,7 +3,7 @@
 ```@docs
 CombinedParsers.Transformation
 CombinedParsers.result_type
-map
+Base.map
 deepmap
 CombinedParsers._deepmap
 CombinedParsers.dodeepmap
@@ -12,7 +12,7 @@ CombinedParsers.dodeepmap
 ### String match results
 ```@docs
 (!)
-JoinSubstring
+MatchedSubSequence
 MatchRange
 CombinedParsers.Constant
 CombinedParsers.IndexAt
