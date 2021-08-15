@@ -27,7 +27,7 @@ stages:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --project -e 'using UUIDs; write("Project.toml", replace(read("Project.toml", String), r"uuid = .*?\n" =>"uuid = \"$(uuid4())\"\n"));'
-  - julia --project --check-bounds=yes -e 'import Pkg; Pkg.add("https://github.com/gkappler/LazyStrings.jl"); Pkg.build(); Pkg.test(; coverage=true)'
+  - julia --project --check-bounds=yes -e 'import Pkg; Pkg.add(url="https://github.com/gkappler/LazyStrings.jl"); Pkg.build(); Pkg.test(; coverage=true)'
 
 jobs:
   include:
