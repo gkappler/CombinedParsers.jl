@@ -331,4 +331,36 @@ julia> CombinedParsers.Regexp.at_lineend
 """
 @with_names at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
 
+"""
+    inline = !Atomic(Repeat(NegativeLookahead(at_lineend)*AnyChar()))
 
+See [`at_lineend`](@ref).
+"""
+@with_names inline = !Atomic(Repeat(NegativeLookahead(at_lineend)*AnyChar()))
+
+
+
+hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
+export hex_digit, integer_base
+"""
+    integer_base(base,mind=0,maxd=Repeat_max)
+
+Parser matching a integer format on base `base`.
+
+!!! note
+    Uses a second Base.parse call on match.
+    
+    A custom parser could aggregate result incrementally while matching.
+"""
+function integer_base(base=10,mind=0,maxd=Repeat_max)
+    dig = if base == 16
+        hex_digit
+    elseif base <= 10
+        ValueIn('0':('0'+(base-1)))
+    else
+        error("Base $base not supported")
+    end
+    map(!Repeat(mind:maxd,dig)) do v
+        (isempty(v) ? 0 : parse(Int,convert(String,v),base=base))::Int
+    end
+end
