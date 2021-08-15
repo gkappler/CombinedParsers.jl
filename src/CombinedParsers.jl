@@ -939,8 +939,7 @@ end
 sequence_result_type(T::Type{<:CombinedParser}...) =
     Tuple{ (result_type(t) for t in T)... }
 
-Sequence(p::Vector; kw...) =
-    Sequence(p...; kw...)
+@deprecate Sequence(p::Vector; kw...) Sequence(p...; kw...)
 
 """
     Sequence(parts...; kw...)
