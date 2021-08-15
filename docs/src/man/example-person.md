@@ -19,26 +19,26 @@ DocTestSetup = quote
 
     @syntax name = Either(Sequence(:lastname => word,  # preceding lastname
     			              trim(","),          # comma separating
-    				      :name     => words),
-    			     Sequence(words, whitespace_horizontal, word) do v
+    				      :name     => !words),
+    			     Sequence(!words, whitespace_horizontal, word) do v
                                 ( lastname = v[3], name= v[1] )
                              end
     		             );
-    @syntax street_address =
+    @syntax street_adress =
                Sequence(
                    :street => !words, whitespace_horizontal,
                    :no     => Numeric(Int));
-    @syntax address =
+    @syntax adress =
                 Sequence(
                     Optional(trim("Adresse:", whitespace=space_maybe)),
-                    :door => trim(street_address, whitespace=space_maybe),
+                    :door => trim(street_adress, whitespace=space_maybe),
                     :zip  => Numeric(Int),
                     :city => trim(!words, whitespace=space_maybe))
 					
     @syntax person_adresses = Sequence(
                     Optional(trim("Name:", whitespace=space_maybe)),
                     :person => name, space_maybe,
-                    :adresses => join(address, space_maybe));
+                    :adresses => join(adress, space_maybe));
 end
 ```
 
@@ -53,14 +53,22 @@ import CombinedParsers: word, words
             Sequence(
                  :lastname => word,
     		              trim(","),  # space-padded comma
-    		 :name     => !words),
+        		 :name     => !words),
             Sequence(!words, whitespace_horizontal, word) do v
                  # anonymous function to reverse NamedTuple order!
                  ( lastname = v[3], name= v[1] )
             end);
 ```
 
-The `CombinedParser` is callable and reads names:
+The constructors aim to be read naturally: a `name` is 
+- [`Either`](@ref) any of two options, each is a
+- [`Sequence`](@ref) that picks
+- properties [`with_name`](@ref) (provided as `Pair{Symbol, CombinedParser}`s),
+- of the[`MatchedSubString`](@ref) [`(!)`](@ref) of [`CombinedParser.words`](@ref) (or a single [`CombinedParser.word`](@ref)s), 
+- seperated by [`whitespace_horizontal`](@ref) that can be [`trim`](@ref)med (more flexibly than a lexer),
+- and the anonymous function in the second option is transforming a parsing result with [`map`](@ref).
+
+The `CombinedParser` `name` is callable to read/parse names:
 ```@jldoctest
 julia> name("Name Surname")
 (lastname = "Surname", name = "Name")
@@ -73,51 +81,59 @@ julia> name"Yours, Truely"
 ```
 
 ### Julia `NamedTuple`s are a great language feature! 
-The example creates a julia `NamedTuple`, a `struct` type without dedicated name but field names.
-Anonymous `struct` representations are as useful as anonymous functions are to write concisely.
-Why?  Omitting to name things works around solving a hard problem.
+The example converts (parses) a matching string to a
+```@jldoctest
+julia> result_type(name)
+(lastname = "Surname", name = "Name")
+```
+a type without a dedicated `struct` name but with field names.
+(For writing concisely, anonymous `struct` representations are as useful as anonymous functions.
+Why?  Omitting to name things works around solving a hard problem.)
 
-## Addresses
+## Adresses
 On a letter, the
 ```julia
-@syntax street_address =
+@syntax street_adress =
                Sequence(
                    :street => !words, whitespace_horizontal,
                    :no     => Numeric(Int));
 ```
 
 Defined parsers can be combined.
+(And composed with `TextParse.`[`Numeric`](@ref), PCRE regular expression and Backus-Naur-Form syntax.
+Any other parser can be plugged in by writing internal `CombinedParser` functions.)
 
 ```julia
-@syntax address =
+@syntax adress =
                 Sequence(
                     Optional(trim("Adresse:", whitespace=space_maybe)),
-                    :door => trim(street_address, whitespace=space_maybe),
+                    :door => trim(street_adress, whitespace=space_maybe),
                     :zip  => Numeric(Int),
                     :city => trim(!words, whitespace=space_maybe))
 ```
 
 
 ```jldoctest
-julia> address"""Allee 47
+julia> adress"""Allee 47
        80000 Augsburg
        """
+(door = (street = "Allee", no = 47), zip = 80000, city = "Augsburg")
 ```
 
-## Person's address data
+## Person's adress data
 For person entries in texts a `CombinedParser` can be intuitively written as
 
 ```julia
 @syntax person_adresses = Sequence(
                     Optional(trim("Name:", whitespace=space_maybe)),
                     :person => name, space_maybe,
-                    :adresses => join(address, space_maybe));
+                    :adresses => join(adress, space_maybe));
 ```
 
 
-Lets pirate the `NamedTuple` `Base.show` method for testing that parser with a summary
+Let's test that parser with a
 ```jldoctest
-julia> function Base.show(io::IO, p::result_type(person_adresses)) 
+julia> function summary(p::result_type(person_adresses)) 
             println(p.person.name, " ", p.person.lastname)
             for a in p.adresses; println("   ", a.city); end
        end;
@@ -132,12 +148,10 @@ julia> person_adresses"""
        Adresse:
        Allee 47
        80650 Pinienstadt
-       """
+       """ |> summary
 Gottfried Wirklich
    Glauberg
    Pinienstadt
-
-julia> Base.methods(Base.show, (IO, result_type(person_adresses))) |> first |> Base.delete_method
 ```
 
 This example demonstrated `CombinedParser.jl` for creating `NamedTuple` representation from `String`.
