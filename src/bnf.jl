@@ -1,6 +1,6 @@
 """
 # (Extended) Backus-Naur Form [`CombinedParser`](@ref)
-Defining a EBNF parser can be done with the [`ebnf`](@ref) string macro.
+Defining a EBNF parser can be done with the [`CombinedParsers.BNF.ebnf`](@ref) string macro.
 [`substitute`](@ref) is used to combine parts of the definition.
 
 !!! warn
@@ -244,38 +244,10 @@ julia> p[:integer]("42")
 ("", ("4", SubString{String}["2"]))
 ```
 
-A (complicated) result type is derived implicitly.
-
-You can map transform results of parts of a EBNF parser with the [`deepmap`](@ref) function (not the changed `result_type`)).
+A (too complicated) result type is derived implicitly.
+You can map transform results of parts of a EBNF parser with the [`deepmap`](@ref) function:
 ```jldocs
-julia> pmatch = deepmap(JoinSubstring, p, :integer)
-|🗄 Either
-├─ |🗄 Either |> ! |> with_name(:integer)
-│  ├─ 0 
-│  └─ 🗄 Sequence
-│     ├─ \\-? |
-│     └─ 🗄 Sequence |> with_name(:natural number) # branches hidden
-├─ 🗄 Sequence |> with_name(:natural number)
-│  ├─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
-│  └─ |🗄* Either |> with_name(:digit) |> Repeat
-│     ├─ 0 
-│     └─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
-├─ |🗄 Either |> with_name(:digit)
-│  ├─ 0 
-│  └─ |🗄 Either |> with_name(:digit excluding zero) # branches hidden
-└─ |🗄 Either |> with_name(:digit excluding zero)
-   ├─ 1 
-   ├─ 2 
-   ├─ 3 
-   ├─ 4 
-   ├─ 5 
-   ├─ 6 
-   ├─ 7 
-   ├─ 8 
-   └─ 9 
-::Union{SubString{String}, Tuple{SubString{String}, Vector{SubString{String}}}}
-
-julia> pmatch[:integer]("42")
+julia> deepmap(JoinSubstring, p, :integer)[:integer]("42")
 "42"
 ```
 

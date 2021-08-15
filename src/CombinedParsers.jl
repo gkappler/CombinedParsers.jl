@@ -1830,12 +1830,7 @@ If you want to simplify a constructed parser, [`CombinedParsers.strip_either1`](
 
 ```jldoctest
 julia> Either('a', simplify=true)
-|🗄 Either
-├─ a
-└─ |🗄 Either
-   ├─ [AB] ValueIn
-   └─ bc
-::Union{Char, SubString{String}}
+re"a"
 
 julia> Either('a',CharIn("AB")|"bc")
 |🗄 Either
