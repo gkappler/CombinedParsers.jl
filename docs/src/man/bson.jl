@@ -28,9 +28,7 @@ decimal128 = Bytes(16,Dec128) # (128-bit IEEE 754-2008 decimal floating point)
 # The following specifies the rest of the BSON grammar.
 # Note that quoted strings represent terminals, and should be interpreted with C semantics
 # (e.g. "\x01" represents the byte 0000 0001).
-@syntax t = Sequence("\\x", integer_base(16,2,2)) do v
-    CharIn(convert(UInt8,v[2]))
-end
+@syntax t = map(ValueIn,Sequence(2, "\\x", integer_base(16,2,2)))
 
 element = Either{Any}(Any[])
 e_list = Repeat(element)
