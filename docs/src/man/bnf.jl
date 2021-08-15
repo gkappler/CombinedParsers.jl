@@ -1,4 +1,4 @@
 # ```@docs
 # CombinedParsers.BNF
-# ebnf
+# CombinedParsers.BNF.ebnf
 # ```

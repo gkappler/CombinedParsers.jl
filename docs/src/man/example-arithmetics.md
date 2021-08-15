@@ -1,112 +1,177 @@
+# Rational Numbers
+Arithmetic expressions are sequences of integer numbers interleaved with operators +-/*, possibly in parentheses.
+Evaluating an arithmetic expression results in a rational number.
+Expressions in parentheses are evaluated first, the operators * and / take precedence over + and -.
+
+Parsing is reading and processing a sequence of characters, e.g. an arithmetic expression.
+
+## `CombinedParsers` 
+provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
+This example demonstrates reading of arithmetical terms for rational numbers.
 ```@meta
-EditURL = "https://github.com/gkappler/CombinedParsers.jl/docs/src/man/example-arithmetics.jl"
+DocTestSetup = quote
+    using BenchmarkTools
+    using CombinedParsers
+    using TextParse
+    function evaluate( (start, operation_values) )
+        aggregated_value::Rational{Int} = start
+        for (op,val) in operation_values
+            aggregated_value = eval( Expr(:call, Symbol(op), 
+    			              aggregated_value, val
+    			              ))
+        end
+        return aggregated_value
+    end
+    @syntax subterm = Either{Rational{Int}}([NumericParser(Int)]; convert=true)
+    @syntax for parentheses in subterm
+        mult = evaluate |> join(subterm, CharIn("*/"), infix=:prefix )
+        @syntax term = evaluate |> join(mult,    CharIn("+-"), infix=:prefix )
+        Sequence(2,'(',term,')')
+    end;
+end
 ```
 
-# Arithmetical terms for rational numbers
-Parsing is reading and transforming a sequence of characters.
-This example reads and evaluates arithmetical terms for rational numbers.
-Subterms can use algebraic operators `+-*/` that will be evaluated with
+Reflecting operator precedence, `term` are `subterm`s, interleaved by */, 
+and `subterm`s are [`Either`](@ref) integer numbers 
+```julia
+@syntax subterm = Either{Rational{Int}}([NumericParser(Int)]; convert=true)
+```
+or a `subterm` can also be an additive `term` in `parentheses`:
+```julia
+@syntax for parentheses in subterm
+    mult = evaluate |> join(subterm, CharIn("*/"), infix=:prefix )
+    @syntax term = evaluate |> join(mult,    CharIn("+-"), infix=:prefix )
+    Sequence(2,'(',term,')')
+end
+```
 
-```@repl session
+This `CombinedParser` definition in 5,5 lines registers a `@term_string` macro for parsing and evaluating rational arithmetics:
+```jldoctest
+julia> term"4*10+2"
+42//1
+```
+
+!!! note
+    No need to roll our own integer parser, we can use [`NumericParser`](@ref) composing `TextParse.Numeric(Int)`, automatically converted to `Rational{Int}`.
+    If `convert=false` an error would be raised on construction, the default.
+
+    
+!!! note
+    `CombinedParsers` provides constructors and operators:
+    - [`Base.join`](@ref)`(x,infix; infix=:prefix)`:  shorthand for `x `[`(*)`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
+    - `a*b`: shorthand to [`Sequence`](@ref)`(a,b)`, 
+    - `f |> parser`: shorthand for [`map`](@ref)`(f,parser)`, and
+    - `evaluate::Function` is detailed at the end of the page.
+
+You can investigate the matching process with logging.
+The defined `CombinedParser` `term` can be used as a function with a `log` keyword option.
+```jldoctest
+julia> term("(1+2)/5", log=true)
+   match subterm@2-3: (1+2)/5
+                       ^
+   match subterm@4-5: (1+2)/5
+                         ^
+   match term@2-5: (1+2)/5
+                    ^_^
+   match parentheses@1-6: (1+2)/5
+                          ^___^
+   match subterm@1-6: (1+2)/5
+                      ^___^
+   match subterm@7-8: 1+2)/5
+                           ^
+   match term@1-8: (1+2)/5
+                   ^_____^
+3//5
+```
+
+Logging technically rewrites a parser with annotation side-effects (see [`deepmap_parser`](@ref)).
+
+You can flexibly fine-tune logging by name, type or any labeling function.
+```jldoctest
+julia> term("1/((1+2)*4+3*(5*2))",log = [:parentheses])
+   match parentheses@4-9: 1/((1+2)*4+3*(
+                             ^___^
+   match parentheses@14-19: *4+3*(5*2))
+                                 ^___^
+   match parentheses@3-20: 1/((1+2)*4+3*(5*2))
+                             ^_______________^
+1//42
+julia> term("4*10+2", log = NumericParser)
+   match <Int64>@1-2: 4*10+2
+                      ^
+   match <Int64>@3-5: 4*10+2
+                        ^^
+   match <Int64>@6-7: 4*10+2
+                           ^
+42//1
+```
+
+[Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
+
+## Parser printing
+The parser representation can be printed as a tree.
+Each tree node starts with a brief oriented at PCRE regular expression syntax (blue in REPL).
+The node then lists parser constructors, delimited by ` |> `.
+This is especially useful for understanding PCRE regular expressions and BNF grammars: the tree parser representation is really clear about how you would construct the parser with `CombinedParsers`.
+```jldoctest
+julia> term
+🗄 Sequence |> map(evaluate) |> with_name(:term)
+├─ 🗄 Sequence |> map(evaluate)
+│  ├─ |🗄 Either |> with_name(:subterm)
+│  │  ├─ 🗄 Sequence |> map(#54) |> with_name(:parentheses)
+│  │  │  ├─ \( 
+│  │  │  ├─ 🗄 Sequence |> map(evaluate) |> with_name(:term) # branches hidden
+│  │  │  └─ \) 
+│  │  └─  <Int64> |> map(Rational{Int64})
+│  └─ 🗄* Sequence |> Repeat
+│     ├─ [\*/] ValueIn
+│     └─ |🗄 Either |> with_name(:subterm) # branches hidden
+└─ 🗄* Sequence |> Repeat
+   ├─ [\+\-] ValueIn
+   └─ 🗄 Sequence |> map(evaluate) # branches hidden
+::Rational{Int64}
+```
+
+
+## Benchmarks
+Parsing times for Int, operators, brackets are
+```repl
+@benchmark match(term,"(1+2)/5") 
+```
+
+in unfair benchmark-comparison with the more expressive Julia syntax parser
+```repl
+julia> @benchmark Meta.parse("(1+2)/5")
+```
+
+Parsing and transforming (here `eval`)
+```repl
+julia> @benchmark term("(1+2)/5") 
+```
+
+compared to Julia 
+```repl
+julia> @benchmark eval(Meta.parse("(1+2)/5"))
+```
+
+## Transformation by `evaluate`
+Subterms can use algebraic operators `+-*/` that will be evaluated with 
+```julia
 function evaluate( (start, operation_values) )
     aggregated_value::Rational{Int} = start
     for (op,val) in operation_values
-        aggregated_value = eval( Expr(:call, Symbol(op),
+        aggregated_value = eval( Expr(:call, Symbol(op), 
 			              aggregated_value, val
 			              ))
     end
     return aggregated_value
 end
-evaluate( (0, [ ('+',1), ('+',1) ]) )
-evaluate( (1, [ ('*',2), ('*',3) ]) )
 ```
 
-```@repl session
-using CombinedParsers
+```jldoctest
+julia> evaluate( (0, [ ('+',1), ('+',1) ]) )
+2//1
+
+julia> evaluate( (1, [ ('*',2), ('*',3) ]) )
+6//1
 ```
-
-`CombinedParsers` provides constructors to combine parsers and transform (sub-)parsings arbitrarily with julia syntax.
-Combinator constructors are discussed in the [user guide](user.md).
-
-```@repl session
-using TextParse
-```
-
-Term expressions are sequences of subterms interleaved with operators.
-Sub terms are [`Either`](@ref) fast `TextParse.Numeric(Int)` integer numbers, converted to `Rational{Int}`,
-
-```@repl session
-@syntax subterm = Either{Rational{Int}}(Any[TextParse.Numeric(Int)]);
-nothing #hide
-```
-
-A subterm can also be a nested term in parentheses
-
-```@repl session
-@syntax for parenthesis in subterm
-    mult = evaluate |> join(subterm, CharIn("*/"), infix=:prefix )
-    adds = evaluate |> join(mult,    CharIn("+-"), infix=:prefix )
-    Sequence(2,'(',adds,')')
-end;
-nothing #hide
-```
-
-This `CombinedParser` definition in 5,5 lines is sufficient for doing arithmetics:
-[`Base.join`](@ref)(x,infix; infix=:prefix) is shorthand for `x `[`(*)`](@ref)` `[`Repeat`](@ref)`( infix * x  )`,
-and `f |> parser` is shorthand for [`map`](@ref)(f,parser)`.
-
-```@repl session
-@syntax term = adds;
-nothing #hide
-```
-
-registers a `@term_string` macro for parsing and transforming.
-
-```@repl session
-term"(1+2)/5"
-```
-
-The defined `CombinedParser` `term` can be used as a function for colorful logging of the parsing process.
-
-```@repl session
-term("1/((1+2)*4+3*(5*2))",log = [:parenthesis])
-```
-
-[Is every rational answer ultimately the inverse of a universal question in life?](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_(42))
-
-The parser representation can be printed as a tree
-
-```@repl session
-term
-```
-
-### Benchmarks
-Parsing times for Int, operators, brackets are
-
-```@repl session
-using BenchmarkTools
-@benchmark match(term,"(1+2)/5")
-```
-
-in unfair benchmark-comparison with the more expressive Julia syntax parser
-
-```@repl session
-@benchmark Meta.parse("(1+2)/5")
-```
-
-Parsing and transforming (here `eval`)
-
-```@repl session
-@benchmark term("(1+2)/5")
-```
-
-compared to Julia
-
-```@repl session
-@benchmark eval(Meta.parse("(1+2)/5"))
-```
-
----
-
-*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
-

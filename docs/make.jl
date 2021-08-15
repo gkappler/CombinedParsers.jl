@@ -15,7 +15,7 @@ DocMeta.setdocmeta!(CombinedParsers, :DocTestSetup, quote
 end; recursive=true)
 
 
-for f in [ "pcre.jl", "example-person.jl", "example-number-ranges.jl", "example-either-trie.jl", "example-arithmetics.jl" ]
+for f in [ "pcre.jl", "example-person.jl", "example-number-ranges.jl", "example-either-trie.jl" ]
     Literate.markdown(joinpath(mandir,f), mandir,
                       repo_root_url="https://github.com/gkappler/CombinedParsers.jl/docs",
                       codefence = "```@repl session" => "```")
@@ -46,19 +46,20 @@ makedocs(;
                  "PCRE Compliance" => "man/pcre-compliance.md",
              ],
              "Examples" => [
-                 "What is Parsing? Names..." => "man/example-person.md",
-                 "Representations: Number sequences" => "man/example-number-ranges.md",
+                 "Names (What is Parsing?)" => "man/example-person.md",
+                 "Number sequences (What are Representations?)" => "man/example-number-ranges.md",
+                 "Arithmetics (Evaluation)" => "man/example-arithmetics.md",
                  "Regular Expressions" => "man/pcre.md",
+                 "JSON (recursion)" => "man/json.md",
+                 "BSON (`Vector{Unit8}` parsing)" => "man/bson.md",
                  "struct Palindrome<:CombinedParser" => "man/example-palindromes.md",
-                 "Arithmetics" => "man/example-arithmetics.md",
-                 "Parsing `Vector{Unit8}`: BSON" => "man/bson.md",
-                 "JSON" => "man/json.md",
              ],
              "Library" => Any[
                  "Matching/Parsing" => "lib/public.md",
                  "Templates" => "lib/parsers.md",
                  "Constructors" => "lib/constructors.md",
                  "Regexp" => "lib/regexp.md",
+                 "EBNF" => "man/bnf.md",
                  "Transformations" => "lib/transformation.md",
                  "Internals" => "lib/internals.md"
              ],

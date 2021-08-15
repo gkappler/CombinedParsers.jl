@@ -3,14 +3,18 @@
 ## Character Matchers
 ```@docs
 AnyChar
+AnyValue
 Bytes
 CombinedParsers.ValueMatcher
 CharIn
-CombinedParsers.unicode_classes
+UnicodeClass
+ValueIn
 CharNotIn
+ValueNotIn
 CombinedParsers.ismatch
 CombinedParsers._ismatch
 Base.broadcasted
+CombinedParsers.flatten_valuepatterns
 ```
 
 ## Repeating
