@@ -704,7 +704,7 @@ julia> p = Repeat_until(AnyChar(),'b') * AnyChar()
 julia> parse(p,"acbX")
 (['a', 'c'], 'X')
 
-julia> parse(Repeat_until(AnyChar(),'b';wrap=JoinSubstring),"acbX")
+julia> parse(Repeat_until(AnyChar(),'b';wrap=MatchedSubSequence),"acbX")
 "ac"
 ```
 

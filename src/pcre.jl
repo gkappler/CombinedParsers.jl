@@ -454,13 +454,13 @@ macro pcre_tests()
         
         unescaped=map(Repeat_until(
             AnyChar(), Sequence(Repeat(' '),'\n');
-            wrap=JoinSubstring)) do v
+            wrap=MatchedSubSequence)) do v
         ## join Chars after unescaping
         join(parse(Repeat(charparser),v))
         end;
         parse(unescaped,"abc\n");
         comment_or_empty = Repeat(
-            JoinSubstring(Either(
+            MatchedSubSequence(Either(
                 Sequence(
                     CombinedParsers.Regexp.at_linestart,
                     '#',Repeat_until(AnyChar(),'\n')),
@@ -490,20 +490,20 @@ macro pcre_tests()
                              AnyChar(),
                              Sequence(Repeat(
                                  CombinedParsers.Regexp.whitespace_char), '\n'),
-                             wrap=JoinSubstring)),
-                true; wrap=JoinSubstring)
+                             wrap=MatchedSubSequence)),
+                true; wrap=MatchedSubSequence)
             end,
             :test => Repeat(match_test),
             :tests_nomatch => Optional(
                 Sequence(
                     2,
                     Optional("\\= Expect no match",
-                             Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)),
+                             Repeat_until(AnyChar(), '\n'; wrap=MatchedSubSequence)),
                     Repeat(Sequence(2,
                                     Repeat1(' '),
                                     unescaped,
                                     Optional(Sequence("No match",
-                                                      Repeat_until(AnyChar(), '\n'; wrap=JoinSubstring)))
+                                                      Repeat_until(AnyChar(), '\n'; wrap=MatchedSubSequence)))
                                     ))))
         );
         end;

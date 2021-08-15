@@ -270,13 +270,13 @@ newline = bsr
 word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 
 "SubString of at leat 1 repeated [`word_char`](@ref)."
-word = JoinSubstring(Repeat1(word_char)) ## "[[:alpha:] ]+"
+@with_names word = MatchedSubSequence(Repeat1(word_char)) ## "[[:alpha:] ]+"
 
 "SubString of at leat 1 repeated [`word_char`](@ref) or [`horizontal_space_char`](@ref)."
-words = JoinSubstring(Repeat1(CharIn("\\w\\h", horizontal_space_char, word_char))) ## "[[:alpha:] ]+"
+words = join(word, whitespace_horizontal) ## "[[:alpha:] ]+"
 
 non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
-non_word = JoinSubstring(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
+non_word = MatchedSubSequence(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
 
 """
     beyond_word = Either(non_word_char,AtStart(),AtEnd())

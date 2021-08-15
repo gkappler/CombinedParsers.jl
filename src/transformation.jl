@@ -57,29 +57,30 @@ function Base.get(parser::Transformation{<:Type}, sequence, till, after, i, stat
 end
 
 
-export JoinSubstring
+export MatchedSubSequence
 import Base: (!)
-struct JoinSubstring end
+struct MatchedSubSequence end
 
-function print_constructor(io::IO,x::Transformation{JoinSubstring})
+function print_constructor(io::IO,x::Transformation{MatchedSubSequence})
     print_constructor(io,x.parser)
     printstyled(io," |> !", color=:bold)
 end
 
-@deprecate JoinSubstring(x) map(JoinSubstring(), parser(x))
+@deprecate MatchedSubSequence(x) map(MatchedSubSequence(), parser(x))
+@deprecate JoinSubstring(x) map(MatchedSubSequence(), parser(x))
 
-Base.map(::Type{JoinSubstring}, x::CombinedParser) = 
-    map(JoinSubstring(), x)
-function Base.map(::JoinSubstring, x::CombinedParser)
-    Transformation{SubString{String}}(JoinSubstring(),x)
+Base.map(::Type{MatchedSubSequence}, x::CombinedParser) = 
+    map(MatchedSubSequence(), x)
+function Base.map(::MatchedSubSequence, x::CombinedParser)
+    Transformation{SubString{String}}(MatchedSubSequence(),x)
 end
 
-function Base.get(x::Union{Transformation{JoinSubstring},ConstantParser{<:AbstractString}}, sequence, till, after, i, state)
+function Base.get(x::Union{Transformation{MatchedSubSequence},ConstantParser{<:AbstractString}}, sequence, till, after, i, state)
     li = _prevind(sequence,after)
     li<i ? "" : @inbounds SubString(sequence,i,li)
 end
 
-(!)(x::CombinedParser) = map(JoinSubstring,x)
+(!)(x::CombinedParser) = map(MatchedSubSequence,x)
 
 using InternedStrings
 intern(v) =
@@ -89,7 +90,7 @@ intern(v) =
     map(intern, x)
 
 """
-    JoinSubstring(x)
+    MatchedSubSequence(x)
     (!)(x::CombinedParser)
     (!)(x::CombinedParser{<:Any,<:AbstractString})
 
@@ -112,17 +113,12 @@ julia> !!Repeat(AnyChar())
 ::String
 
 ```
-"""
-(!), JoinSubstring
 
-export map_match
+!!! warn
+    MatchedSubSequence currently only support `SubString`, extension to Vector views requires minor effort.
 """
-    map_match(f::Function,p_)
+(!), MatchedSubSequence
 
-Map [`Base.map`](@ref)`(f, !parser(p_))` on the matching string.
-"""
-map_match(f::Function,p_) =
-    map(f, JoinSubstring(parser(p_)))
 
 
 """
@@ -347,7 +343,7 @@ julia> p = re"(a+)b+"
 julia> p("aaabb")
 (['a', 'a', 'a'], ['b', 'b'])
 
-julia> deepmap(JoinSubstring, p, Capture)("aaabb")
+julia> deepmap(MatchedSubSequence, p, Capture)("aaabb")
 ("aaa", ['b', 'b'])
 
 julia> deepmap(length, p, re"b+")("abb")

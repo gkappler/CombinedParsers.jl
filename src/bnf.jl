@@ -247,7 +247,7 @@ julia> p[:integer]("42")
 A (too complicated) result type is derived implicitly.
 You can map transform results of parts of a EBNF parser with the [`deepmap`](@ref) function:
 ```jldocs
-julia> deepmap(JoinSubstring, p, :integer)[:integer]("42")
+julia> deepmap(MatchedSubSequence, p, :integer)[:integer]("42")
 "42"
 ```
 

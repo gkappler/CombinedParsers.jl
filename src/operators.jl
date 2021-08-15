@@ -65,8 +65,8 @@ Base.broadcasted(::typeof((&)), x::Union{ValueIn,ValueNotIn}, ::AnyValue) =
 Base.broadcasted(::typeof((&)), x::NamedParser, y) =
     NamedParser(x.name,x.parser .& y; doc=x.doc)
 
-Base.broadcasted(::typeof((&)), x::JoinSubstring, y) =
-    JoinSubstring(x.parser .& y)
+Base.broadcasted(::typeof((&)), x::MatchedSubSequence, y) =
+    MatchedSubSequence(x.parser .& y)
 
 Base.broadcasted(::typeof((&)), x::Transformation, y) =
     Transformation(x.transform, x.parser .& y)

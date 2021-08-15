@@ -52,7 +52,7 @@ skip_whitespace_and_comments =
                     Repeat_until(
                         AnyChar(),
                         Sequence(Repeat(whitespace_char),Either(bsr,AtEnd())),
-                        wrap = JoinSubstring
+                        wrap = MatchedSubSequence
                     )) do v
                 with_log(v[3],Always())
                 end
@@ -64,7 +64,7 @@ skip_whitespace_and_comments =
                 Repeat_until(
                     AnyChar(),
                     Sequence(Repeat(whitespace_char),')'),
-                    wrap = JoinSubstring
+                    wrap = MatchedSubSequence
                 )) do v
         with_log(v[3],Always())
         end))) do v
@@ -128,7 +128,7 @@ escape_sequence(stop=AtEnd()) =
     Sequence(2,"\\Q",
         Repeat_until(AnyChar(),
                   Either("\\E",PositiveLookahead(stop)),
-                  wrap=JoinSubstring));
+                  wrap=MatchedSubSequence));
 push!(pattern,
       map(parser, with_name(:escape_sequence, escape_sequence())));
     
@@ -150,7 +150,7 @@ push!(pattern,simple_assertion);
 
 push!(pattern,parser( "\\R" => bsr ));
 
-name = JoinSubstring(
+name = MatchedSubSequence(
     Sequence(CharIn('a':'z','A':'Z','_'),
         Repeat(CharIn('0':'9','a':'z','A':'Z','_'))))
 
@@ -630,24 +630,24 @@ push!(repeatable,sequence_with_options);
     2,"(*",
     Either(
         throw_unsupported(
-            Sequence("ACCEPT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            Sequence("ACCEPT",Optional(Sequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
             "ACCEPT"),
-        Sequence(Either("FAIL","F"),Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))) do v; Never(); end,
+        Sequence(Either("FAIL","F"),Optional(Sequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))) do v; Never(); end,
         throw_unsupported(
-            Sequence("PRUNE",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            Sequence("PRUNE",Optional(Sequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
             "PRUNE"),
         throw_unsupported(
-            Sequence("SKIP",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            Sequence("SKIP",Optional(Sequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
             "SKIP"),
         Sequence(Optional(parser("MARK")),':',
-                 JoinSubstring(Repeat_stop(AnyChar(),parser(')')))) do v;
+                 MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))) do v;
         with_log(v[3],Always());
         end,
         throw_unsupported(
-            Sequence("COMMIT",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            Sequence("COMMIT",Optional(Sequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
             "COMMIT"),
         throw_unsupported(
-            Sequence("THEN",Optional(Sequence(2,":",JoinSubstring(Repeat_stop(AnyChar(),parser(')')))))),
+            Sequence("THEN",Optional(Sequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
             "THEN")),
     ")");
 push!(pattern,backtrack_control);
