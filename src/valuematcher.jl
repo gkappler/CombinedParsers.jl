@@ -292,13 +292,17 @@ _push!(charset::Vector, x) where T = push!(charset,x)
 _push!(charset::Nothing, x::Union{<:Function,<:UnicodeClass,<:ValueNotIn}) = Any[x]
 
 
+# This case might occur during construction from Regexp brackets.
+flatten_valuepatterns!(label,charset,otherstuff,x::Nothing) =
+    label, charset, otherstuff
+
 flatten_valuepatterns!(label,charset,otherstuff,x) =
     label*_regex_string(x), _push!(charset,x), otherstuff
 
 flatten_valuepatterns!(label,charset,otherstuff,x::Union{<:Function,<:UnicodeClass,<:ValueNotIn}) =
     label*_regex_string(x), charset, _push!(otherstuff,x)
 
-flatten_valuepatterns!(label,charset,otherstuff,x::ConstantParser{Char}) =
+flatten_valuepatterns!(label,charset,otherstuff,x::ConstantParser) =
     flatten_valuepatterns!(label,charset,otherstuff, x.parser)
 
 # e.g. ValueIn{UnicodeClass}
@@ -344,7 +348,6 @@ valuepattern_type(x) =
     elseif x isa AbstractSet
         eltype(x)
     else
-        @info "value type" x
         typeof(x) # error()
     end
 
