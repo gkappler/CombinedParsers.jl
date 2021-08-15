@@ -899,7 +899,15 @@ julia> e1("Some Avenue 42")
         end
     end
 end
+print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
+children(x::Sequence) = isliteralsequence(x) ? tuple() : x.parts
+regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
+isliteralsequence(c::ConstantParser) = true
+isliteralsequence(c) = false
+function isliteralsequence(c::Sequence)
+    (&)(isliteralsequence.(c.parts)...)
+end
 
 sequence_state_type(x; kw...) = sequence_state_type(typeof(x); kw...)
 
@@ -1010,12 +1018,6 @@ function Sequence(::Val{transform},tokens...; kw...) where {transform}
     # map(IndexAt(transform), s)
 end
 
-
-
-
-
-print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
-children(x::Sequence) = x.parts
 
 Base.getindex(x::CombinedParser, i) = map(IndexAt(i),x)
 
@@ -1253,8 +1255,6 @@ end
     R
 end
 
-
-regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
 export Lazy
 """
