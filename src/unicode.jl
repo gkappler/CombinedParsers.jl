@@ -191,18 +191,6 @@ julia> match(ValueIn(:N), "aA1")
 ParseMatch("1")
 ```
 
-Respects boolean logic:
-```jldoctest
-julia> parse(ValueIn(CharIn("ab")),     "a")
-'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
-
-julia> parse(ValueIn(CharNotIn("bc")),  "a")
-'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
-
-julia> parse(ValueNotIn(CharIn("bc")),  "a")
-'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
-```
-
 # Supported Unicode classes
 ```jldoctest
 julia> for (k,v) in CombinedParsers.unicode_class

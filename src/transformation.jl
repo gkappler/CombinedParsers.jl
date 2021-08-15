@@ -336,11 +336,41 @@ Substitute all `sub_parser`s with [`Base.map`](@ref)`(f,sub_parser, a...; kw...)
 `dodeepmap(parser, predicate)`;
 otherwise keep `sub_parser`
 
+
+```jldocs
+julia> p = re"(a+)b+"
+🗄 Sequence |> regular expression combinator with 1 capturing groups
+├─ (a+)  |> Repeat |> Capture 1
+└─ b+  |> Repeat
+::Tuple{Vector{Char}, Vector{Char}}
+
+julia> p("aaabb")
+(['a', 'a', 'a'], ['b', 'b'])
+
+julia> deepmap(JoinSubstring, p, Capture)("aaabb")
+("aaa", ['b', 'b'])
+
+julia> deepmap(length, p, re"b+")("abb")
+(['a'], 2)
+```
+
 Implementation is an example when the a custom leaf [`_deepmap`](@ref) method is useful and sufficient for [`deepmap_parser`](@ref).
 """
 deepmap(f, parser, predicate, a...; kw...) = 
     deepmap_parser(_deepmap, parser, predicate, f, a...; kw...)
 
+"""
+    _deepmap(parser, predicate, f, a...; kw...)
+
+Implementation example when the a custom leaf [`_deepmap`](@ref) method is useful and sufficient for [`deepmap_parser`](@ref).
+```julia
+if dodeepmap(parser, predicate)
+    map(f,parser, a...; kw...)
+else
+    parser
+end
+```
+"""
 function _deepmap(parser, predicate, f, a...; kw...)
     if dodeepmap(parser, predicate)
         map(f,parser, a...; kw...)

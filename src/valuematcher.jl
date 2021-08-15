@@ -188,7 +188,7 @@ Parser matching exactly one element (character) in a sequence, iif not in `x`.
     ValueNotIn([label::AbstractString="", ]x...)
     ValueNotIn{T}([label::AbstractString="", ]x...)
 
-Flattens `x` with [`flatten_valuepatterns`](@ref), and tries to infer `T` if not provided.
+Flattens `x` with [`CombinedParsers.flatten_valuepatterns`](@ref), and tries to infer `T` if not provided.
 
 ```jldoctest
 julia> a_z = CharNotIn('a':'z')
@@ -202,9 +202,19 @@ julia> ac = CharNotIn("ca")
 
 Respects boolean logic:
 ```jldoctest
-julia> p = CharNotIn(CharNotIn("ab"));
+julia> CharNotIn(CharNotIn("ab"))("a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+```
 
-julia> parse(p,"a")
+Respects boolean logic:
+```jldoctest
+julia> CharIn(CharIn("ab"))("a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+julia> CharIn(CharNotIn("bc"))("a")
+'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+
+julia> parse(CharNotIn(CharIn("bc")), "a")
 'a': ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
 ```
 

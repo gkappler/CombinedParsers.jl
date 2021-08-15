@@ -24,7 +24,10 @@ julia> using BenchmarkTools;
 julia> @btime match(p,"also");
   51.983 ns (2 allocations: 176 bytes)
 
-julia> p = parser("also"); @btime match(p,"also");
+julia> p = parser("also")
+re"also"
+
+julia> @btime match(p,"also");
   44.759 ns (2 allocations: 176 bytes)
 
 ```

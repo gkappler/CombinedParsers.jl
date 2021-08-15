@@ -10,14 +10,16 @@ Default method
 2. construct deep transformation `dt = _deepmap_parser(f, mem, x, a...; kw...)`
 3. cache and return `f(dt, a...; kw...)`
 
-For a new `CombinedParser`, define either `deepmap_parser` or `_deepmap_parser`.
-
-For a parser transformation `f`, define either 
-- `deepmap_parser(::typeof(f),...)`
-- `_deepmap_parser(::typeof(f),...)`
-- `f`
-
 Used for [`log_names`](@ref).
+
+## For a new `CombinedParser`, 
+define either `deepmap_parser` or `_deepmap_parser`.
+
+## For a parser transformation `f`, 
+define either custom
+- `deepmap_parser(::typeof(f),...)` (see example implementation [`substitute`](@ref))
+- construction method `_deepmap_parser(::typeof(f),...)`  (see example implementation [`caseless`](@ref))
+- leaf method `f` (see example implementation [`deepmap`](@ref))
 """
 deepmap_parser(f,x::CombinedParser, a...;kw...) =
     deepmap_parser(f,IdDict(),x,a...;kw...)
@@ -173,7 +175,7 @@ julia> Either(:a => !Either(
 
 # Example
 With `substitute` you can write recursive parsers in a style inspired by (E)BNF.
-[`bnf`](@ref) uses `substitute`.
+[`CombinedParsers.BNF.ebnf`](@ref) uses `substitute`.
 
 ```jldoctest
 julia> def = Either(:integer => !Either("0", Sequence(Optional("-"), substitute(:natural_number))),
