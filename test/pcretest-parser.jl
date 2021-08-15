@@ -228,6 +228,13 @@ test_pcre"""/abc[\10]de/
  0: abc@0
  1: abc
 """
+
+    test_pcre"""
+/$(?<=^(a))/
+    a
+ 0: 
+ 1: a
+"""
     
     @test parse(Repeat(Sequence(comment_or_empty,
                         pcre_test)),"""

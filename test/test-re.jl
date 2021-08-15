@@ -62,8 +62,10 @@ import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
 end
 
 
+@test_pcre raw"[s[:digit:]\Q\E-H]+" "s09-H"
+@test_pcre raw"^[a-\Q\E]" "-"
+@test_pcre raw"^[a-\Q\E]" "a"
 
-parse(re"\v(?#ss=)","\n")
 
 
 
@@ -190,7 +192,7 @@ end
 
 
 @testset "Either" begin
-    @test parse(re"(a|ab|ac)$","ab") == (("ab"...), AtEnd())
+    @test parse(re"(a|ab|ac)$","ab") == (tuple("ab"...), AtEnd())
     @test_throws ArgumentError parse(re"(?>a|ab|ac)$"*AtEnd(),"ab")
 end
 end

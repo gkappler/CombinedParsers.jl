@@ -5,6 +5,7 @@ import CombinedParsers: Repeat_max
 @testset "CombinedParsers" begin
 @testset "CharIn" begin
     @test parse(CharIn(isuppercase),"A") =='A'
+    @test CharIn(CombinedParsers.ConstantParser('a')) == CharIn('a')
 end
 
 @testset "NamedTuple" begin
