@@ -1,12 +1,10 @@
 export NumericParser, DateParser, DateTimeParser
-import TextParse: Numeric
+using TextParse
 import Dates
 import Dates: DateFormat
 
-"""
-    NumericParser(x...) = parser(TextParse.Numeric(x...))
-"""
-NumericParser(x...) = parser(TextParse.Numeric(x...))
+
+@deprecate Numeric(x...) NumericParser(x...)
 
 DateParser(format::AbstractString...; locale="english")     = DateParser(Dates.DateFormat.(format, locale)...)
 DateTimeParser(format::AbstractString...; locale="english") = DateTimeParser(Dates.DateFormat.(format, locale)...)
@@ -34,10 +32,19 @@ result_type(::Type{<:AbstractToken{T}}) where T = T
 
 struct AbstractTokenParser{P<:AbstractToken,T} <: LeafParser{NCodeunitsState{T},T}
     parser::P
-    function AbstractTokenParser(p::AbstractToken) 
+    function AbstractTokenParser(p::AbstractToken)
+        new{typeof(p), result_type(p)}(p)
+    end
+    function AbstractTokenParser{T}(a...; kw...) where T
+        p = T(a...; kw...)
         new{typeof(p), result_type(p)}(p)
     end
 end
+"""
+    NumericParser(x...) = parser(TextParse.Numeric(x...))
+"""
+NumericParser{T} = AbstractTokenParser{T} where {T <: TextParse.Numeric}
+NumericParser(x...) = parser(TextParse.Numeric(x...))
 
 parser(x::AbstractToken) = AbstractTokenParser(x)
 
