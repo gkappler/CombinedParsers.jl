@@ -1021,7 +1021,6 @@ end
 Base.getindex(x::CombinedParser, i) = map(IndexAt(i),x)
 
 
-export sSequence
 _sSequence(x::Sequence) = _sSequence(x.parts...)
 _sSequence(x::Always) = tuple()
 _sSequence() = tuple()
@@ -1029,6 +1028,7 @@ _sSequence(x1) = tuple(parser(x1))
 _sSequence(x1,x...) =
     Iterators.flatten(tuple( _sSequence(x1), collect(Iterators.flatten( ( _sSequence(e) for e in x ) ))))
 
+export sSequence
 """
     sSequence(x...)
 
@@ -1052,6 +1052,9 @@ julia> sSequence('a',CharIn("AB")*'b')
 ::Tuple{Char, Char, Char}
 ```
 See also [`Sequence`](@ref)
+
+!!! note
+    This function will be removed and replaced with a keyword argument
 """
 function sSequence(x...)
     sSequence(_sSequence(parser.(x)...)...)
