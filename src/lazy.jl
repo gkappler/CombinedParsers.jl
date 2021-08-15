@@ -46,7 +46,7 @@ function Base.getindex(x::ParseMatch{<:Repeat}, i)
                     start, stop, inner_state)
 end
 
-function Base.getindex(x::ParseMatch{<:JoinSubstring},a...)
+function Base.getindex(x::ParseMatch{<:MatchedSubSequence},a...)
     getindex(x.parsings.sequence, ( nextind(x.parsings.sequence,x.start,i-1) for i in a)...)
 end
 

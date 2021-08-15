@@ -67,7 +67,7 @@ function print_constructor(io::IO,x::Transformation{MatchedSubSequence})
 end
 
 @deprecate MatchedSubSequence(x) map(MatchedSubSequence(), parser(x))
-@deprecate JoinSubstring(x) map(MatchedSubSequence(), parser(x))
+@deprecate JoinSubstring MatchedSubSequence
 
 Base.map(::Type{MatchedSubSequence}, x::CombinedParser) = 
     map(MatchedSubSequence(), x)
