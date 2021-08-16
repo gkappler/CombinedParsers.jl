@@ -73,6 +73,13 @@ function Base.get(parser::Either{<:Trie},
     get(state.state)
 end
 
+
+if VERSION<v"1.5"
+    @warn "julia < 1.5: defining ismutable function for creating copies of default Optional values (only on Union{AbstractDict, AbstractVector, AbstractSet})."
+    ismutable(x::Union{AbstractDict, AbstractVector, AbstractSet}) = true
+    ismutable(x) = false
+end
+
 """
     _copy(x)
 
