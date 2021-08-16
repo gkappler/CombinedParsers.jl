@@ -67,12 +67,20 @@ function print_constructor(io::IO,x::Transformation{MatchedSubSequence})
 end
 
 @deprecate MatchedSubSequence(x) map(MatchedSubSequence(), parser(x))
-@deprecate JoinSubstring MatchedSubSequence
+export JoinSubstring
+"""
+    JoinSubstring = MatchedSubSequence
+
+Deprecated but kept (because legacy `join(...; wrap=JoinSubstring)` syntax does not word with `@deprecate`).
+"""
+JoinSubstring = MatchedSubSequence
 
 Base.map(::Type{MatchedSubSequence}, x::CombinedParser) = 
     map(MatchedSubSequence(), x)
-function Base.map(::MatchedSubSequence, x::CombinedParser)
-    Transformation{SubString{String}}(MatchedSubSequence(),x)
+
+Base.map(::MatchedSubSequence, x::CombinedParser) = Base.map(MatchedSubSequence(), SubString{String}, x)
+function Base.map(::MatchedSubSequence, result::Type, x::CombinedParser)
+    Transformation{result}(MatchedSubSequence(),x)
 end
 
 function Base.get(x::Union{Transformation{MatchedSubSequence},ConstantParser{<:AbstractString}}, sequence, till, after, i, state)
@@ -116,6 +124,9 @@ julia> !!Repeat(AnyChar())
 
 !!! warn
     MatchedSubSequence currently only support `SubString`, extension to Vector views requires minor effort.
+    - `map(MatchedSubSequence(), SubArray{Int,1}, parser)` constructor is required (currently no sequence type is known at construction).
+    - `get` function currently missing
+
 """
 (!), MatchedSubSequence
 

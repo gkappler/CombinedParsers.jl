@@ -24,7 +24,7 @@ using Test
         """)
 
     @test bnf[:integer]("120") == ("", ("1", [ "2", "0" ]))
-    @test deepmap(JoinSubstring, bnf, :integer)[:integer]("120") == "120"
+    @test deepmap(MatchedSubSequence, bnf, :integer)[:integer]("120") == "120"
 
     @test ebnf("""
     twelve a                          = "1", "2" ;

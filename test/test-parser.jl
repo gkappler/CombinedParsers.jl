@@ -85,13 +85,11 @@ attribute_parser =
 
 attributes = join(attribute_parser, whitespace_maybe);
 
-parse(attributes,"a = 1 b=6% font=\"+1asd\" some=word color=#ffffff increment=+1 decrement=-1") ==
-[ "a" => "1", "b" => "6%", "font" => "+1asd", "some" => "word", "color" => "#ffffff",
-  "increment" => "+1", "decrement" => "-1" ]
 
-
-
-@testset "continue options of last Either" begin
+@testset "html attributes" begin
+    @test parse(attributes,"a = 1 b=6% font=\"+1asd\" some=word color=#ffffff increment=+1 decrement=-1") ==
+    [ "a" => "1", "b" => "6%", "font" => "+1asd", "some" => "word", "color" => "#ffffff",
+      "increment" => "+1", "decrement" => "-1" ]
     @test parse(attributes, "size=10% class=1") == [ "size"=>"10%", "class"=>"1" ]
 end
 
