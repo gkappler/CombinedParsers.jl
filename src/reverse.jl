@@ -73,8 +73,8 @@ children(x::PositiveLookbehind) =
 function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing)
     rseq=reversed(str)
     next_i < 1 && return next_i, MatchState()
-    r = _iterate(t.parser, rseq, till,
-                 reverse_index(rseq,_prevind(str,next_i)), nothing)
+    p = reverse_index(rseq,_prevind(str,next_i))
+    r = _iterate(t.parser, rseq, till, p, p, nothing)
     if r === nothing
         next_i,MatchState()
     else
