@@ -37,6 +37,7 @@ jobs:
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                                Pkg.instantiate(); Pkg.add("Documenter"); '
+        - julia --project --check-bounds=yes -e 'import Pkg; Pkg.add(url="https://github.com/gkappler/LazyStrings.jl"); Pkg.build(); '
         - julia --project=docs/ docs/make.jl
       after_success: skip
     - stage: test
