@@ -25,5 +25,6 @@ jobs:
       language: julia
       julia: 1.6
       script:
+        - julia --project=docs/ --check-bounds=yes -e 'using Pkg; Pkg.add(url="https://github.com/gkappler/LazyStrings.jl"); Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl
       after_success: skip
