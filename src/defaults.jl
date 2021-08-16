@@ -269,10 +269,10 @@ newline = bsr
 "Equivalent PRCE `\\w`: Char with unicode class `L`, `N`, or `_`."
 word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 
-"SubString of at leat 1 repeated [`word_char`](@ref)."
+"SubString of at least 1 repeated [`CombinedParsers.word_char`](@ref)."
 @with_names word = MatchedSubSequence(Repeat1(word_char)) ## "[[:alpha:] ]+"
 
-"SubString of at leat 1 repeated [`word_char`](@ref) or [`horizontal_space_char`](@ref)."
+"Vector of at least 1 repeated [`CombinedParsers.word`](@ref)s delimited by [`CombinedParsers.whitespace_horizontal`](@ref)."
 words = join(word, whitespace_horizontal) ## "[[:alpha:] ]+"
 
 non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')

@@ -64,7 +64,7 @@ The constructors aim to be read naturally: a `name` is
 - [`Either`](@ref) any of two options, each is a
 - [`Sequence`](@ref) that picks
 - properties [`with_name`](@ref) (provided as `Pair{Symbol, CombinedParser}`s),
-- of the[`MatchedSubSequence`](@ref) [`(!)`](@ref) of [`CombinedParser.words`](@ref) (or a single [`CombinedParser.word`](@ref)s), 
+- of the[`MatchedSubSequence`](@ref) [`(!)`](@ref) of [`CombinedParsers.words`](@ref) (or a single [`CombinedParsers.word`](@ref)s), 
 - seperated by [`whitespace_horizontal`](@ref) that can be [`trim`](@ref)med (more flexibly than a lexer),
 - and the anonymous function in the second option is transforming a parsing result with [`map`](@ref).
 

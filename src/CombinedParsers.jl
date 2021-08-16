@@ -81,6 +81,7 @@ include("state.jl")
 
 
 export regex_string
+
 """
     regex_string(x::CombinedParser)
 
@@ -972,7 +973,6 @@ julia> german_street_address("Some Avenue 42")
     julia> german_street_address("Some Avenue 42")
     (street = "Some Avenue", no = 42)
     ``` 
-
 """
 function Sequence(p...; kw...)
     s = Sequence(( parser(x) for x = p )...; kw...)
@@ -989,6 +989,8 @@ function Sequence(p...; kw...)
     end
     map(ntuple, NT, s)
 end
+
+
 
 Base.lastindex(x::Sequence) = lastindex(x.parts)
 
@@ -1064,7 +1066,6 @@ sSequence(x::CombinedParser) = x
 function sSequence(x::CombinedParser...)
     Sequence(_sSequence(x...)...)
 end
-
 
 
 @inline function _leftof(str,i,parser::Sequence,x::MatchState)
