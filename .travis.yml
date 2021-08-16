@@ -10,12 +10,14 @@ jobs:
       language: julia
       julia: 1.5
       script:
+        - julia --project --check-bounds=yes -e 'using Pkg; Pkg.add(url="https://github.com/gkappler/LazyStrings.jl"); Pkg.instantiate()'
         - julia --project --check-bounds=yes -e 'using Pkg; Pkg.build(); Pkg.test(; coverage=false)'
       after_success: skip
-    - stage: test-coverage
+    - stage: test
       language: julia
       julia: 1.6
       script:
+        - julia --project --check-bounds=yes -e 'using Pkg; Pkg.add(url="https://github.com/gkappler/LazyStrings.jl"); Pkg.instantiate()'
         - julia --project --check-bounds=yes -e 'using Pkg; Pkg.build(); Pkg.test(; coverage=true)'
       after_success: |
         julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
