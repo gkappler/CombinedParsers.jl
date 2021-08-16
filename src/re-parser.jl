@@ -485,7 +485,7 @@ option_sequences = map(
                     push!(r,CombinedParser[ x ])
                 end
             end
-            sEither( ( sSequence(x...) for x in r)... )
+            Either( ( sSequence(x...) for x in r)... ; simplify=true)
         end;
 alternation = option_sequences;
 

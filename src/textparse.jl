@@ -8,8 +8,8 @@ import Dates: DateFormat
 
 DateParser(format::AbstractString...; locale="english")     = DateParser(Dates.DateFormat.(format, locale)...)
 DateTimeParser(format::AbstractString...; locale="english") = DateTimeParser(Dates.DateFormat.(format, locale)...)
-DateParser(format::DateFormat...)     = sEither(parser.(TextParse.DateTimeToken.(Dates.Date,format))...)
-DateTimeParser(format::DateFormat...) = sEither(parser.(TextParse.DateTimeToken.(Dates.DateTime,format))...)
+DateParser(format::DateFormat...)     = Either(parser.(TextParse.DateTimeToken.(Dates.Date,format))...; simplify=true)
+DateTimeParser(format::DateFormat...) = Either(parser.(TextParse.DateTimeToken.(Dates.DateTime,format))...; simplify=true)
 
 """
     DateParser(format::DateFormat...)

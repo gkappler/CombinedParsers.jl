@@ -178,7 +178,7 @@ syntactic_term = Sequence(1, syntactic_factor,
 @with_names single_definition = map(p -> sSequence(p...)::CombinedParser,
                                     join(syntactic_term, trimhv(concatenate_symbol)))
 
-definitions_list = map(p -> sEither(p...)::CombinedParser,
+definitions_list = map(p -> Either(p...; simplify=true)::CombinedParser,
                        join(single_definition, trimhv(definition_separator_symbol)))
 
 @syntax for optional_sequence in syntactic_primary

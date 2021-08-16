@@ -77,16 +77,16 @@ Base.broadcasted(::typeof((|)), x::ValueIn, y::ValueIn) =
 
 
 
-(|)(x, y::ParserOperatorTypes) = sEither(parser(x),y)
-(|)(x::ParserOperatorTypes, y) = sEither(x,parser(y))
-(|)(x::ParserOperatorTypes, y::ParserOperatorTypes) = sEither(x,y)
+(|)(x, y::ParserOperatorTypes) = Either(parser(x),y; simplify=true)
+(|)(x::ParserOperatorTypes, y) = Either(x,parser(y); simplify=true)
+(|)(x::ParserOperatorTypes, y::ParserOperatorTypes) = Either(x,y; simplify=true)
 
 """
     (|)(x::AbstractToken, y)
     (|)(x, y::AbstractToken)
     (|)(x::AbstractToken, y::AbstractToken)
 
-Operator syntax for `sEither(x, y)`.
+Operator syntax for `Either(x, y; simplify=true)`.
 
 ```jldoctest
 julia> 'a' | CharIn("AB") | "bc"
