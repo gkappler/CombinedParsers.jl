@@ -63,9 +63,10 @@ whitespace_char = CharIn(
     "[:space:]",
     " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B")
 
-whitespace_maybe = !Atomic(Repeat(whitespace_char))
-whitespace = !Atomic(Repeat1(whitespace_char))
-
+@with_names begin
+    whitespace_maybe = !Atomic(Repeat(whitespace_char))
+    whitespace = !Atomic(Repeat1(whitespace_char))
+end
 
 """
     whitespace_char  = re"[[:space:]]"
@@ -112,9 +113,12 @@ horizontal_space_char=CharIn("\\h",
     '\U3000' # "Ideographic space"))
 )
 
-horizontal_space_maybe = Atomic(!Repeat(horizontal_space_char))
-horizontal_space = Atomic(!Repeat1(horizontal_space_char))
-
+horizontal_space_maybe = with_name(:horizontal_space_maybe,
+                                   !Atomic(Repeat(horizontal_space_char)),
+                                   "\\h*")
+horizontal_space = with_name(:horizontal_space,
+                             !Atomic(Repeat1(horizontal_space_char)),
+                             "\\h+")
 
 
 """
@@ -205,7 +209,8 @@ macro trimmed(block)
     esc(trimmed(block))
 end
 
-vertical_space_char=CharIn("\\v",
+vertical_space_char=CharIn(
+    "\\v",
     '\U000A', # "Linefeed (LF)"),
     '\U000B', # "Vertical tab (VT)"),
     '\U000C', # "Form feed (FF)"),
@@ -214,8 +219,12 @@ vertical_space_char=CharIn("\\v",
     '\U2028', # "Line separator"),
     '\U2029') # "Paragraph separator"))
 
-vertical_space_maybe = Atomic(!Repeat(vertical_space_char))
-vertical_space = Atomic(!Repeat1(vertical_space_char))
+vertical_space_maybe = with_name(:vertical_space_maybe,
+                                 !Atomic(Repeat(vertical_space_char)),
+                                 "\\v*")
+vertical_space = with_name(:vertical_space,
+                           !Atomic(Repeat1(vertical_space_char)),
+                           "\\v+")
 
 """
     vertical_space_char  = re"[\\v]"
@@ -240,9 +249,10 @@ vertical_space_char, vertical_space_maybe, vertical_space
 
 "Equivalent PRCE `\\h\\v`, [`horizontal_space_char`](@ref), [`vertical_space_char`](@ref)"
 space_char  = CharIn("\\h\\v",horizontal_space_char,vertical_space_char)
-space_maybe = Atomic(!Repeat(space_char))
-space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
-
+@with_names begin
+    space_maybe = Atomic(!Repeat(space_char))
+    space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
+end
 
 @deprecate whitespace_newline space
 
@@ -253,16 +263,22 @@ space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
 newlines, PCRE `\\r` backslash R (BSR).
 
 ```jldoctest
-julia> CombinedParsers.Regexp.bsr
-(?>|🗄) Either |> Atomic |> with_name(:bsr)
+julia> CombinedParsers.bsr
+\\r with_name(:bsr)
+::SubString{String}
+
+julia> CombinedParsers.bsr.parser
+(?>|🗄) Either |> Atomic |> !
 ├─ \\r\\n 
-└─ [\\n\\x0b\\f\\r\\x85] ValueIn |> !
+└─ [\\n\\x0b\\f\\r\\x85] ValueIn
 ::SubString{String}
 ```
 
 """
-@with_names bsr = Atomic(Either("\r\n",
-                                !CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029')));
+bsr = with_name(
+    :bsr, !Atomic(Either("\r\n",
+                        CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))),
+    "\\r");
 
 newline = bsr
 
@@ -270,20 +286,22 @@ newline = bsr
 word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 
 "SubString of at least 1 repeated [`CombinedParsers.word_char`](@ref)."
-@with_names word = MatchedSubSequence(Repeat1(word_char)) ## "[[:alpha:] ]+"
+word = with_name(:word, !Repeat1(word_char), ## "[[:alpha:] ]+"
+                 "\\w+")
 
 "Vector of at least 1 repeated [`CombinedParsers.word`](@ref)s delimited by [`CombinedParsers.whitespace_horizontal`](@ref)."
 words = join(word, whitespace_horizontal) ## "[[:alpha:] ]+"
 
 non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
-non_word = MatchedSubSequence(Repeat1(non_word_char)) ## "[[:alpha:] ]+"
+non_word = with_name(:non_word, !Repeat1(non_word_char),
+                     "\\W+")## "[[:alpha:] ]+"
 
 """
     beyond_word = Either(non_word_char,AtStart(),AtEnd())
 
 Parser part of `word_boundary`.
 """
-beyond_word = Either(non_word_char,AtStart(),AtEnd())
+@with_names beyond_word = Either(non_word_char,AtStart(),AtEnd())
 
 """
     word_boundary = re"\b"

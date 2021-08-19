@@ -441,7 +441,7 @@ Struct with
 @auto_hash_equals struct NamedParser{P,S,T} <: WrappedParser{P,S,T}
     name::Symbol
     parser::P
-    doc::String
+    doc::String ## rename -> label
     NamedParser(name::Symbol,p_,doc="") =
         let p=parser(p_)
             new{typeof(p),state_type(p),result_type(p)}(name,p,doc)
@@ -450,7 +450,7 @@ end
 function print_constructor(io::IO,x::NamedParser)
     if x.doc==""
         print_constructor(io,x.parser)
-        print(io, " |>")
+        print(io, " |> ")
     end
     print(io, "with_name(:")
     printstyled(io, x.name, bold=true,color=:red)
