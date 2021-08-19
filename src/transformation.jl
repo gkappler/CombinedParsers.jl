@@ -21,7 +21,7 @@ If `parser isa NamedParser`, transformation is done within the wrapped parser
         end
     function Transformation{T}(transform, p::NamedParser) where {T}
         tp = new{typeof(transform),typeof(p.parser),state_type(p.parser),T}(transform, p.parser)
-        with_name(p.name,tp)
+        with_name(p.name, tp, p.doc)
     end
 end
 Transformation(T::Type, p) = 

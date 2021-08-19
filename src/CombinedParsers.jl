@@ -430,6 +430,7 @@ export NamedParser, with_name
 """
     NamedParser{P,S,T} <: WrappedParser{P,S,T}
 
+if doc!="", printing will print the node with this label, and hides constructors.
 Struct with
 ```julia
     name::Symbol
@@ -447,11 +448,19 @@ Struct with
         end
 end
 function print_constructor(io::IO,x::NamedParser)
-    print_constructor(io,x.parser)
-    print(io, " |> with_name(:")
+    if x.doc==""
+        print_constructor(io,x.parser)
+        print(io, " |>")
+    end
+    print(io, "with_name(:")
     printstyled(io, x.name, bold=true,color=:red)
     print(io, ")")
 end
+
+children(x::NamedParser)     = x.doc=="" ? children(x.parser)     : tuple()
+regex_prefix(x::NamedParser) = x.doc=="" ? regex_prefix(x.parser) : ""
+regex_inner(x::NamedParser)  = x.doc=="" ? regex_inner(x.parser)  : x.doc
+regex_suffix(x::NamedParser) = x.doc=="" ? regex_suffix(x.parser) : ""
 
 """
     with_name(name::Symbol,x; doc="")
@@ -461,10 +470,10 @@ Labels are useful in printing and logging.
 
 See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
-with_name(name::Symbol,x; doc="") = 
+with_name(name::Symbol, x, doc="") = 
     NamedParser(name,parser(x),doc)
 
-with_name(name::AbstractString,x; doc="") =
+with_name(name::AbstractString,x, doc="") =
     name=="" && doc=="" ? x : NamedParser(Symbol(name),parser(x),doc)
 
 export @with_names
