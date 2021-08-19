@@ -91,11 +91,15 @@ end
 (!)(x::CombinedParser) = map(MatchedSubSequence,x)
 
 using InternedStrings
-intern(v) =
+intern(v::AbstractString) =
     InternedStrings.intern(v)::String
+
+intern(v::Nothing) = ""
 
 (!)(x::CombinedParser{<:Any,<:AbstractString}) =
     map(intern, x)
+
+map(::typeof(intern), x::Transformation{typeof(intern)}) = x
 
 """
     MatchedSubSequence(x)
