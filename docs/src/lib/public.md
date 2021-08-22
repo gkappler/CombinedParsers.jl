@@ -46,8 +46,6 @@ julia> get(m)
 ```@docs
 get
 parse
-tryparse
-tryparse_pos
 ```
 
 ## Iterating matches

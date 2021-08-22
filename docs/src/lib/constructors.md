@@ -96,6 +96,7 @@ NegativeLookahead
 CombinedParsers.NamedParser
 with_name
 @with_names
+CombinedParsers.log_names
 log_names
 log_parser
 with_log

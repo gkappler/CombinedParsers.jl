@@ -140,7 +140,11 @@ Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to .
 @deprecate _iterate(parser::CombinedParser, sequence, till::Int, posi::Int, ::Nothing) _iterate(parser, sequence,till,posi,posi,nothing)
 
 
-"Abstract type for parser wrappers, providing default methods"
+"""
+    WrappedParser{P,S,T}
+
+Abstract type for parser wrappers, providing default methods."
+"""
 abstract type WrappedParser{P,S,T} <: CombinedParser{S,T} end
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
