@@ -14,7 +14,7 @@ function Either(x::Vector{<:AbstractString})
     for e in x
         r[e...] = nothing
     end
-    Either{NCodeunitsState, String}(r)
+    !Either{NCodeunitsState, Nothing}(r)
 end
 
 function Either(x::Dict)
@@ -66,13 +66,16 @@ end
 children(x::Either{<:AbstractTrie}) =
     children(x.options)
 
-function _deepmap_parser(f::typeof(_lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
+function deepmap_either(f::typeof(_lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
     g = (lowercase.(Tries.path(st))=>get(st)
          for st in PreOrderDFS(x.options)
              if !isempty(Tries.path(st)))
     Either{NCodeunitsState, String}(Trie(g))
 end
 
+function deepmap_either(f,mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
+    x ##?
+end
 
 # struct InternedParser{E, I<:Either{<:AbstractTrie}} <: WrappedParser{E,NCodeunitsState,T} where {P}
 #     interned::I

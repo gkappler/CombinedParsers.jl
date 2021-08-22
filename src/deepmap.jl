@@ -120,16 +120,11 @@ deepmap_either(f,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
     Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
 
 function deepmap_either(f,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
-    if haskey(mem,x)
-        mem[x]
-    else
-        mem[x] = r = Either{result_type(x)}(Any[])
-        ## f(x,a...)
-        for p in x.options
-            push!(r,deepmap_parser(f,mem,p,a...;kw...))
-        end
-        r
+    mem[x] = r = Either{result_type(x)}(Any[])
+    for p in x.options
+        push!(r,deepmap_parser(f,mem,p,a...;kw...))
     end
+    r
 end
 
 export substitute

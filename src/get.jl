@@ -67,9 +67,9 @@ function Base.get(parser::Either,
         after, i, either_state_state(state))
 end
 
-function Base.get(parser::Either{<:Trie},
+function Base.get(parser::Either{<:AbstractTrie},
                   sequence, till,
-                  after, i, state::NCodeunitsState)
+                  after, i, state)
     get(state.state)
 end
 
