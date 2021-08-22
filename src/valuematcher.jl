@@ -25,13 +25,14 @@ _regex_string(x::ValueMatcher) = regex_inner(x)
 export regex_string
 regex_string(x) = _regex_string(x)
 
+_regex_string(x::AbstractString) = x # regex_escape(x)
+_regex_string(x::Char) = ("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
+
 _regex_string(x) = "$x"
 _regex_string(x::Nothing) = ""
 _regex_string(x::ConstantParser) = _regex_string(x.parser)
-_regex_string(x::AbstractString) = regex_escape(x)
 _regex_string(x::Union{Vector,Set}) = join(_regex_string.(x),",")
 _regex_string(x::Union{Vector{<:AbstractChar},Set{<:AbstractChar}}) = join(_regex_string.(x))
-_regex_string(x::Char) = regex_escape("$x") ##x == '\\' ? "\\\\" : "$x" ## for [] char ranges
 _regex_string(x::StepRange) =
     if x.start == x.stop
         x.start
@@ -199,7 +200,9 @@ regex_inner(x::ValueIn) = ( x.pcre == "" ? _regex_string(x.sets) : x.pcre )
 
 ValueIn{T}(x_...) where T = ValueIn{T}("",x_...)
 ValueIn(x_...) = ValueIn("",x_...)
-ValueIn{Char}(chars::String) = ValueIn{Char}(regex_escape(chars),chars)
+ValueIn{Char}(chars::String) = ValueIn{Char}(chars,chars)
+ValueIn{T}(label::AbstractString=constructor_name(T)) where T = 
+    ValueIn{T}(label, x-> x isa T)
 
 parser(x::UnicodeClass) = ValueIn{Char}(x)
 
@@ -270,8 +273,10 @@ end
 regex_inner(x::ValueNotIn) = "^"*( x.pcre =="" ? _regex_string(x.sets) : x.pcre )
 
 ValueNotIn{T}(x_...) where T = ValueNotIn{T}("",x_...)
+ValueNotIn{T}(label::AbstractString=constructor_name(T)) where T = 
+    ValueNotIn{T}(label, x-> x isa T)
 ValueNotIn(x_...) = ValueNotIn("",x_...)
-ValueNotIn{Char}(chars::String) = ValueNotIn{Char}(regex_escape(chars),chars)
+ValueNotIn{Char}(chars::String) = ValueNotIn{Char}(chars,chars)
 # ValueNotIn(chars::StepRange) =
 #     ValueNotIn{eltype(chars)}("$(chars.start)-$(chars.stop)",chars)
 # ValueNotIn(pcre::String,x::ConstantParser{Char}) =
