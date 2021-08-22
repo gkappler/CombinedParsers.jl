@@ -1,3 +1,4 @@
+import Base: map
 export Transformation
 """
     Transformation(T::Type, parser)
@@ -83,7 +84,9 @@ function Base.map(::MatchedSubSequence, result::Type, x::CombinedParser)
     Transformation{result}(MatchedSubSequence(),x)
 end
 
-function Base.get(x::Union{Transformation{MatchedSubSequence},ConstantParser{<:AbstractString}}, sequence, till, after, i, state)
+function Base.get(x::Union{Transformation{MatchedSubSequence},
+                           ConstantParser{<:AbstractString}},
+                  sequence, till, after, i, state)
     li = _prevind(sequence,after)
     li<i ? "" : @inbounds SubString(sequence,i,li)
 end
@@ -269,7 +272,6 @@ function Base.map(index::IndexAt{<:UnitRange}, p::CombinedParser)
     Transformation{T}(index, p)
 end
 
-import Base: map
 """
     map(f::Function, p::CombinedParser, a...)
 
