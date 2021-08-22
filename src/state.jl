@@ -38,7 +38,9 @@ NCodeunitsState(posi::Int,after::Int,state) =
 @inline NCodeunitsState{S}(posi::Int,after::Int,state) where S =
     after, NCodeunitsState{S}(after-posi,state)
 
-
+# Needed in Wiktionary parser
+Base.convert(::Type{NCodeunitsState{S}}, x::NCodeunitsState) where S =
+    NCodeunitsState{S}(x.nc,convert(S,x.state))
 
 """
     tuple_pos(pos_state::Tuple)
