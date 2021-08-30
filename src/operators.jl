@@ -1,8 +1,8 @@
 import Base: (^), (*), (~), (/), (|)
 ParserOperatorTypes = Union{AbstractToken, AbstractString, Char}
 
-(*)(x::Any, y::AbstractToken) = sSequence(parser(x),y)
-(*)(x::AbstractToken, y::Any) = sSequence(x,parser(y))
+(*)(x, y::AbstractToken) = sSequence(parser(x),y)
+(*)(x::AbstractToken, y) = sSequence(x,parser(y))
 """
     (*)(x::Any, y::AbstractToken)
     (*)(x::AbstractToken, y::Any)
@@ -80,6 +80,7 @@ Base.broadcasted(::typeof((|)), x::ValueIn, y::ValueIn) =
 (|)(x, y::ParserOperatorTypes) = Either(parser(x),y; simplify=true)
 (|)(x::ParserOperatorTypes, y) = Either(x,parser(y); simplify=true)
 (|)(x::ParserOperatorTypes, y::ParserOperatorTypes) = Either(x,y; simplify=true)
+(|)(x::AbstractToken, y::ParserOperatorTypes) = Either(x,y; simplify=true)
 
 """
     (|)(x::AbstractToken, y)
@@ -119,9 +120,10 @@ abc? |missing
 ```
 
 """
-function (|)(x::AbstractToken{T}, default::Union{T,Missing}) where { T }
-    Optional(x,default=default)
-end
+(|)(x::AbstractToken{T}, default::Union{T,Missing}) where { T } = Optional(x,default=default)
+
+(|)(x::AbstractToken{Any}, y::AbstractToken) = Either(x, y; simplify=true)
+
 function (|)(x::Char, y::Char)
     ValueIn(tuple(x,y))
 end

@@ -52,6 +52,19 @@ end
     @test parse(Bytes(2,UInt16),[0x33,0x66]) == 0x6633
     @test parse(Bytes(4,Float32),[0x55,0x77,0x33,0x66]) == reinterpret(Float32,0x66337755)
 end
+
+@testset "@with_names #29" begin
+    p = @with_names begin
+        foo =  Either{Any}(Any["A", "B"])
+        bar = Repeat1("b")
+
+        foobar = foo | bar
+    end
+    @test p("A") == "A"
+    @test p("B") == "B"
+    @test p("bbb") == ["b","b","b"]
+end
+
 end
 
 @testset "FlatMap" begin
