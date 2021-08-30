@@ -18,7 +18,8 @@ _prevind(x::AbstractVector,i::Int,n::Int=1) =
     leftof(str,i,parser,state)
 
 Left of `parser` match in `str` *before* `i` encoded by `state`,
-or `i` if `state===nothing`.
+dispatching on state with priority, e.g. 
+`i` if `state===nothing`.
 
 !!! note
     override with [`_leftof`](@ref) and  [`_rightof`](@ref).
@@ -29,6 +30,7 @@ or `i` if `state===nothing`.
     rightof(str,i,parser,state)
 
 Left of `parser` match in `str` at `i` encoded by `state`,
+dispatching on state with priority, e.g. 
 or `i` if `state===nothing`.
 
 !!! note

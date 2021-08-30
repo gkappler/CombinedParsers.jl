@@ -22,8 +22,8 @@ struct NCodeunitsState{S}
     nc::Int
     state::S
 end
-@inline _leftof(str,i,parser::CombinedParser,x::NCodeunitsState) = i-x.nc
-@inline _rightof(str,i,parser::CombinedParser,x::NCodeunitsState) = i+x.nc
+@inline leftof(str,i,parser,x::NCodeunitsState) = i-x.nc
+@inline rightof(str,i,parser,x::NCodeunitsState) = i+x.nc
 """
     NCodeunitsState(posi::Int,after::Int,state)
     NCodeunitsState{S}(posi::Int,after::Int,state)

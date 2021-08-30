@@ -26,7 +26,7 @@ include("pcre.jl")
 SequenceWithCaptures ensapsulates a sequence to be parsed, and parsed captures.
 
 This struct will allow for captures a sequence-level state.
-For next version, a match-level state passed as _iterate argument is considered.
+For next version, a match-level state passed as `iterate_state` argument is considered.
 
 See also [`ParserWithCaptures`](@ref)
 """
