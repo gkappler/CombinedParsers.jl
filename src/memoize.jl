@@ -44,20 +44,14 @@ end
 _deepmap_parser(f::Function,mem::AbstractDict,x::MemoizingParser,a...;kw...) =
     MemoizingParser(deepmap_parser(f,mem,x.parser,a...;kw...))
 
-@inline function _iterate(parser::MemoizingParser, sequence::String, till, posi,after,state)
+@inline function iterate_state(parser::MemoizingParser, sequence, till, posi,after,state)
     error("for memoizing, wrap sequence in WithMemory. Todo: automize wrapping in root parser with optimize")
-    _iterate(parser.parser, sequence, till,posi,after,state)
+    iterate_state(parser.parser, sequence, till,posi,after,state)
 end
 
-@inline Base.@propagate_inbounds function _iterate(parser::MemoizingParser, sequence::WithMemory, till, posi,after,state)
+@inline Base.@propagate_inbounds function iterate_state(parser::MemoizingParser, sequence::WithMemory, till, posi,after,state)
     get!(sequence.mem,(parser.parser,posi,state)) do
-        copy(_iterate(parser.parser, sequence,till,posi,after,state))
-    end
-end
-
-@inline Base.@propagate_inbounds function _iterate(parser, sequence::WithMemory, till, posi,after,state)
-    get!(sequence.mem,(parser,posi,state)) do
-        copy(_iterate(parser, sequence,till,posi,after,state))
+        copy(iterate_state(parser.parser, sequence,till,posi,after,state))
     end
 end
 

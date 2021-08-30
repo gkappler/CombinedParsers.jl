@@ -215,7 +215,7 @@ substitute(name::Symbol) =
     Substitution(name)
 substitute(name::AbstractString) = 
     Substitution(Symbol(name))
-CombinedParsers._iterate(parser::Substitution, a...) = error(" call substitute")
+CombinedParsers.iterate_state(parser::Substitution, a...) = error(" call substitute")
 function CombinedParsers.print_constructor(io::IO, x::Substitution)
     printstyled(io, x.name, color=:red)
     print(io, " call substitute!")

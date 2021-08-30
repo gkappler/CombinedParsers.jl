@@ -96,7 +96,7 @@ end
 Base.isascii(x::CharWithOptions) = isascii(x.x)
 Base.isprint(x::CharWithOptions) = isprint(x.x)
 
-@inline function _iterate(p::CharWithOptions, sequence, till, posi, next_i, state::Nothing, nc=0)
+@inline function iterate_state(p::CharWithOptions, sequence, till, posi, next_i, state::Nothing, nc=0)
     @inbounds sc,j=iterate(sequence,posi)
     if ismatch(p,sc)
         j, MatchState()
@@ -292,8 +292,8 @@ end
         till, after, i, state)
 
 
-@inline function _iterate(parser::ParserOptions, sequence, till, posi, next_i, state)
-    _iterate(parser.parser,
+@inline function iterate_state(parser::ParserOptions, sequence, till, posi, next_i, state)
+    iterate_state(parser.parser,
              with_options(parser.set_flags,parser.unset_flags,sequence),
              till, posi, next_i, state)
 end
@@ -425,8 +425,8 @@ Either(
 on_options(flags::Integer,p) =
     OnOptionsParser(parser(p),UInt32(flags))
 
-@inline function _iterate(parser::OnOptionsParser, sequence, till, posi, next_i, state)
-    _iterate(parser.parser,
+@inline function iterate_state(parser::OnOptionsParser, sequence, till, posi, next_i, state)
+    iterate_state(parser.parser,
              (if_options(parser.flags,sequence)), till, posi, next_i, state)
 end
 

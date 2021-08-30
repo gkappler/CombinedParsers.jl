@@ -27,15 +27,15 @@ function Either(x::Dict)
 end
 either_state_type(T::Type{<:Trie}) = NCodeunitsState{T}
 
-@inline _iterate(p::Either{<:AbstractTrie}, str, till, posi, next_i, state) =
-    _iterate(p.options, str, till, posi, next_i, state)
+@inline iterate_state(p::Either{<:AbstractTrie}, str, till, posi, next_i, state) =
+    iterate_state(p.options, str, till, posi, next_i, state)
 
 """
-    _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, ::Nothing)
+    iterate_state(p::AbstractTrie{Char}, str, till, posi, next_i, ::Nothing)
 
 Match char path in `p` greedily, recording `SubTrie` in a [`NCodeunitsState`](@ref).
 """
-@inline function _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state::Nothing)
+@inline function iterate_state(p::AbstractTrie{Char}, str, till, posi, next_i, state::Nothing)
     ni = ni_ = posi
     st = st_ = p
     while st !== nothing && ni <= till
@@ -54,8 +54,8 @@ Match char path in `p` greedily, recording `SubTrie` in a [`NCodeunitsState`](@r
     end
 end
 
-@inline _iterate(p::AbstractTrie{Char}, str, till, posi, next_i, state) = 
-    _iterate(p, str, _prevind(str,next_i,2), posi, posi, nothing)
+@inline iterate_state(p::AbstractTrie{Char}, str, till, posi, next_i, state) = 
+    iterate_state(p, str, _prevind(str,next_i,2), posi, posi, nothing)
 
 # disambiguation
 @inline _rightof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState) =

@@ -59,13 +59,13 @@ print_constructor(io::IO, x::AbstractTokenParser) =
 print_constructor(io::IO, x::AbstractTokenParser{<:TextParse.DateTimeToken}) =
     print(io, x.parser.format)
 
-_iterate(parser::AbstractTokenParser, sequence, till, before_i, next_i, state) = 
-    _iterate_token(parser.parser, sequence, till, before_i, next_i, state)
+iterate_state(parser::AbstractTokenParser, sequence, till, before_i, next_i, state) = 
+    iterate_state_token(parser.parser, sequence, till, before_i, next_i, state)
 
 
-_iterate_token(parser::AbstractToken, sequence, till, before_i, next_i, state) =
+iterate_state_token(parser::AbstractToken, sequence, till, before_i, next_i, state) =
     nothing
-function _iterate_token(parser::AbstractToken, sequence, till, before_i, next_i, state::Nothing, opts=TextParse.default_opts)
+function iterate_state_token(parser::AbstractToken, sequence, till, before_i, next_i, state::Nothing, opts=TextParse.default_opts)
         r,next_i_ = tryparsenext(parser, sequence, next_i, till,opts)
         if isnull(r)
             nothing
@@ -101,7 +101,7 @@ julia> TextParse.tryparsenext(p, "Number:    42")
 
 """
 function TextParse.tryparsenext(x::CombinedParser,str,i,till,opts=TextParse.default_opts)
-    s = _iterate(x,str,till,i,nothing)
+    s = iterate_state(x,str,till,i,nothing)
     if s === nothing
         Nullable{result_type(x)}(),i
     else

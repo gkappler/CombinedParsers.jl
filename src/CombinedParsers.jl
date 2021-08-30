@@ -1,6 +1,6 @@
 # TODO:
 # - remove after from get (nextind with state and i)
-# - (Feedback appreciated: Would is be more efficient change the `_iterate` internal API for the first match to arity 4?)
+# - (Feedback appreciated: Would is be more efficient change the `iterate_state` internal API for the first match to arity 4?)
 # - Base.get(parser, sequence, till, after, i, state) to
 #   Base.get(parser, sequence, i, after, till, state) 
 """
@@ -32,7 +32,7 @@ import AbstractTrees: print_tree, printnode
 export CombinedParser
 export result_type
 
-"Julia types that provide CombinedParser methods result_type, state_type, _iterate, get, nextind, prevind."
+"Julia types that provide CombinedParser methods result_type, state_type, iterate_state, get, nextind, prevind."
 ## Pair{<:Union{AbstractToken, AbstractString, Char, Regex, Pair},<:Any} }
 export parser
 import Base: convert
@@ -110,10 +110,10 @@ print_constructor(io::IO,x) =
     end
 
 
-export _iterate
+export iterate_state
 
 """
-    _iterate(parser, sequence, till::Int, posi::Int[, next_i[, state=nothing]])
+    iterate_state(parser, sequence, till::Int, posi::Int[, next_i=posi[, state=nothing]])
 
 Return position `after` next match of `parser` in `sequence` at `posi`.
 The next match is following current match `state` (first match iif `state==nothing`).
@@ -127,17 +127,15 @@ If no next match is found, return `nothing`.
     - `rightof(sequence,posi,parser,state)==next_i`, the position after the `state`-matching subsequence.
     - `sequence[leftof(sequence,next_i,parser,state):_prevind(sequence,next_i)]` is the matched subsequence.
 
-Dispatches to `_iterate(parser, sequence,till,posi,posi,nothing)` to .
-
 !!! note 
-    custom `_iterate` implementations *must* return
+    Writing a custom `iterate_state` implementations *must* return
     - `nothing` if no match is found
     - `Tuple{Int64,state_type(parser)}` with next position, match state if a match is found.
 
 """
-@inline _iterate(parser::CombinedParser, sequence, till::Int, posi::Int) =
-    _iterate(parser, sequence,till,posi,posi,nothing)
-@deprecate _iterate(parser::CombinedParser, sequence, till::Int, posi::Int, ::Nothing) _iterate(parser, sequence,till,posi,posi,nothing)
+@inline iterate_state(parser::CombinedParser, sequence, till::Int, posi::Int) =
+    iterate_state(parser, sequence,till,posi,posi,nothing)
+@deprecate iterate_state(parser::CombinedParser, sequence, till::Int, posi::Int, ::Nothing) iterate_state(parser, sequence,till,posi,posi,nothing)
 
 
 """
@@ -173,8 +171,8 @@ Convienience function for overriding [`rightof`](@ref) that guarantees that not 
 @inline _leftof(str,i,parser::WrappedParser,x::NCodeunitsState) = i-x.nc
 @inline _rightof(str,i,parser::WrappedParser,x::NCodeunitsState) = i+x.nc
 
-@inline _iterate(parser::WrappedParser, sequence, till, posi, after, state) =
-    _iterate(parser.parser, sequence, till, posi, after, state)
+@inline iterate_state(parser::WrappedParser, sequence, till, posi, after, state) =
+    iterate_state(parser.parser, sequence, till, posi, after, state)
 
 export FilterParser
 """
@@ -200,10 +198,10 @@ filter_result(f::Function, x) =
     end
         
 
-@inline function _iterate(parser::FilterParser, sequence, till, posi, next_i, state)
+@inline function iterate_state(parser::FilterParser, sequence, till, posi, next_i, state)
     r::Union{Nothing,Tuple{Int,state_type(parser.parser)}} = nothing
     while r === nothing
-        r = _iterate(parser.parser, sequence, till, posi, next_i, state)
+        r = iterate_state(parser.parser, sequence, till, posi, next_i, state)
         if r === nothing
             return nothing
         elseif !parser.state_filter(sequence, till, posi, r...)
@@ -224,7 +222,7 @@ Used for dispatch in [`deepmap_parser`](@ref).
 abstract type LeafParser{S,T} <: CombinedParser{S,T} end
 
 # for convenience
-_iterate(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
+iterate_state(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
 
 
 """
@@ -243,7 +241,7 @@ abstract type NIndexParser{N,T} <: LeafParser{MatchState,T} end
 @inline _rightof(str,i,parser::NIndexParser{L},state) where L =
     _nextind(str,i,L)
 
-@inline function _iterate(parser::NIndexParser, sequence, till, posi, next_i, state::Nothing)
+@inline function iterate_state(parser::NIndexParser, sequence, till, posi, next_i, state::Nothing)
     posi > till && return nothing # prevents BoundsError
     ni = rightof(sequence,posi,parser,MatchState())
     if ni <= till+1
@@ -345,8 +343,8 @@ Call `f(sequence,before_i,after_i,state,a...)` if `p` matches,
 with_effect(f::Function,p,a...) =
     SideeffectParser(f,p,a...)
 
-@inline function _iterate(parser::SideeffectParser, sequence, till, posi, next_i, state)
-    r = _iterate(parser.parser, sequence, till, posi, next_i, state)
+@inline function iterate_state(parser::SideeffectParser, sequence, till, posi, next_i, state)
+    r = iterate_state(parser.parser, sequence, till, posi, next_i, state)
     if r!==nothing
         parser.effect(sequence,posi,r...,parser.args...)
     else
@@ -803,17 +801,17 @@ regex_inner(x::FlatMap)  = error("regex determined at runtime!")
     end
 
     
-function _iterate(tokf::FlatMap, str, till, posi, next_i, state::Nothing)
+function iterate_state(tokf::FlatMap, str, till, posi, next_i, state::Nothing)
     posi = next_i
-    lr = _iterate(tokf.left, str, till, posi, next_i, nothing)
+    lr = iterate_state(tokf.left, str, till, posi, next_i, nothing)
     lr === nothing && return nothing
     next_i_ = tuple_pos(lr)
     rightp = parser(tokf.right(get(tokf.left, str, till, next_i_,next_i,tuple_state(lr))))
     rr = nothing
     while rr === nothing
-        rr = _iterate(rightp, str, till, next_i_, next_i_, nothing)
+        rr = iterate_state(rightp, str, till, next_i_, next_i_, nothing)
         if rr === nothing
-            lr = _iterate(tokf.left, str, till, posi, next_i_, tuple_state(lr))
+            lr = iterate_state(tokf.left, str, till, posi, next_i_, tuple_state(lr))
             lr === nothing && return nothing
             next_i_ = tuple_pos(lr)
             rightp = parser(tokf.right(get(tokf.left, str, till, next_i_,posi,tuple_state(lr))))
@@ -824,16 +822,16 @@ function _iterate(tokf::FlatMap, str, till, posi, next_i, state::Nothing)
     nothing
 end
 
-function _iterate(tokf::FlatMap, str, till, posi, next_i, state)
+function iterate_state(tokf::FlatMap, str, till, posi, next_i, state)
     lstate,rightp,rstate = left_state(state), right_parser(state), right_state(state)
 
     next_i_=next_i
     posi_ = leftof(str,next_i_,rightp,rstate)
     rr = nothing
     while rr === nothing
-        rr = _iterate(rightp, str, till, posi_, next_i_, rstate)
+        rr = iterate_state(rightp, str, till, posi_, next_i_, rstate)
         if rr === nothing
-            lr = _iterate(tokf.left, str, till, posi, next_i_, lstate)
+            lr = iterate_state(tokf.left, str, till, posi, next_i_, lstate)
             lr === nothing && return nothing
             next_i_,lstate = lr
             rightp = parser(tokf.right(get(tokf.left, str, till, next_i_,posi,lstate)))
@@ -1127,14 +1125,14 @@ sequence_state(statettype::Type{MatchState}) = MatchState()
 sequence_state(statettype::Type{<:Tuple}) = tuple( )
 sequence_state(statettype::Type) = Any[]
 
-function _iterate_(parser::Sequence, sequence, till, posi, next_i, states::Nothing)
+function iterate_state_(parser::Sequence, sequence, till, posi, next_i, states::Nothing)
     length(parser.parts) == 0 && return next_i, sequence_state(state_type(parser))
     sss = Vector{Any}(undef,length(parser.parts))
     sss[1] = nothing
-    _iterate(parser, sequence, till, posi, next_i, sss, 1)
+    iterate_state(parser, sequence, till, posi, next_i, sss, 1)
 end
 
-function _iterate_(parser::Sequence, sequence, till, posi, next_i, substate::Vector{Any}, p=length(substate))
+function iterate_state_(parser::Sequence, sequence, till, posi, next_i, substate::Vector{Any}, p=length(substate))
     next_i_ = next_i
     part=parser.parts
     length(part) == 0 && return nothing
@@ -1150,7 +1148,7 @@ function _iterate_(parser::Sequence, sequence, till, posi, next_i, substate::Vec
         if (@inbounds substate[p]) === nothing
             pposi[p+1] = pposi[p]
         end
-        r = _iterate(part[p], sequence, till, pposi[p], pposi[p+1], substate[p])
+        r = iterate_state(part[p], sequence, till, pposi[p], pposi[p+1], substate[p])
 
         if r === nothing
             prune_captures(sequence, pposi[p])
@@ -1171,11 +1169,11 @@ function _iterate_(parser::Sequence, sequence, till, posi, next_i, substate::Vec
 end
 
 # unambigously
-@generated function _iterate(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states::MatchState) where {pts<:Tuple,sts}
+@generated function iterate_state(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states::MatchState) where {pts<:Tuple,sts}
     nothing
 end
 
-@generated function _iterate(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,sts}} where {pts<:Tuple,sts}
+@generated function iterate_state(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,sts}} where {pts<:Tuple,sts}
     fpts = fieldtypes(pts)
     spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
     n = length(fpts)
@@ -1243,7 +1241,7 @@ end
             $(pposi[p+1]) = $(pposi[p])
         end
         ## TODO: gc happening in next line?
-        $(subresult[p]) = _iterate($(part[p]), sequence, till, $(pposi[p]), $(pposi[p+1]), @inbounds $(substate[p]))
+        $(subresult[p]) = iterate_state($(part[p]), sequence, till, $(pposi[p]), $(pposi[p+1]), @inbounds $(substate[p]))
         if $(subresult[p]) === nothing
         prune_captures(sequence,$(pposi[p]))
         @inbounds $(substate[p]) = nothing
@@ -1542,7 +1540,7 @@ end
     j::Int = i
     state_ = state
     tp = t.parser
-    while state_length(t,state_) < t.range.stop && ( x = _iterate(t.parser,sequence, till, j, j,nothing) )!==nothing
+    while state_length(t,state_) < t.range.stop && ( x = iterate_state(t.parser,sequence, till, j, j,nothing) )!==nothing
         ## @info "rep fill..." x state_
         ## e.g. match(re"(?:a|(?=b)|.)*\z","abc")
         j_=j
@@ -1576,7 +1574,7 @@ end
     fill_rep(t_,sequence,till,tuple_pos(x),state_)
 end
 
-function _iterate(t::Repeat, sequence, till, posi, next_i, state)
+function iterate_state(t::Repeat, sequence, till, posi, next_i, state)
     next_i_::Int,outer_state::state_type(typeof(t)),goback::Bool = if state === nothing
         es = emptystate(state_type(typeof(t)))
         fill_rep(t,sequence,till,next_i, es)
@@ -1607,7 +1605,7 @@ function _iterate(t::Repeat, sequence, till, posi, next_i, state)
         inner_state, outer_state=poplast!(outer_state,t.parser)
         posi = leftof(sequence,next_i_,t.parser,inner_state) ##state[end][1]
         prune_captures(sequence,posi)
-        x = _iterate(t.parser,sequence, till, posi, next_i_, inner_state)
+        x = iterate_state(t.parser,sequence, till, posi, next_i_, inner_state)
         x === nothing && state_length(t,outer_state) in t.range && return posi, outer_state
         next_i_,outer_state,goback = push_rep(t,sequence, till, posi, x, outer_state)
     end
@@ -1621,21 +1619,21 @@ end
 @inline function fill_rep(t_::Lazy{<:Repeat}, sequence, till::Int, j::Int, state_)
     t = t_.parser
     tp = t.parser
-    while state_length(t,state_) < t.range.start && (x = _iterate(t.parser,sequence, till,j, j,nothing))!==nothing 
+    while state_length(t,state_) < t.range.start && (x = iterate_state(t.parser,sequence, till,j, j,nothing))!==nothing 
         j_=j
         j, state_ = fill_rep_j_state(x,state_,tp)
         j_==j && break
     end
     j,state_,false
 end
-function _iterate(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
+function iterate_state(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
     t = t_.parser
     next_i_::Int,state_::state_type(typeof(t)),goback::Bool = if state === nothing
         es = emptystate(state_type(typeof(t)))
         fill_rep(t_,sequence,till,next_i, es)
     else
         if state_length(t,state)<t.range.stop
-            x = _iterate(t.parser,sequence, till, next_i, next_i, nothing)
+            x = iterate_state(t.parser,sequence, till, next_i, next_i, nothing)
             if x!==nothing && ( tuple_pos(x)>next_i || state_length(t,state)==0)
                 return fill_rep_j_state(x,state,t.parser) #tuple_pos(x),pushstate!(state,t.parser,tuple_state(x))
             end
@@ -1649,7 +1647,7 @@ function _iterate(t_::Lazy{<:Repeat}, sequence, till, posi, next_i, state)
         end
         lstate, state_=poplast!(state,t.parser)
         posi = leftof(sequence,next_i_,t.parser,lstate) ##state[end][1]
-        x = _iterate(t.parser,sequence, till, posi, next_i_, lstate)
+        x = iterate_state(t.parser,sequence, till, posi, next_i_, lstate)
         if x === nothing
             next_i_ = posi
             prune_captures(sequence,next_i_)
@@ -1757,17 +1755,17 @@ end
 
 
 
-function _iterate(t::Optional, str, till, posi, next_i, state::MatchState)
+function iterate_state(t::Optional, str, till, posi, next_i, state::MatchState)
     prune_captures(str,posi)
     posi, NoMatch()
 end
 
-_iterate(t::Optional, str, till, posi, next_i, state::NoMatch) =
+iterate_state(t::Optional, str, till, posi, next_i, state::NoMatch) =
     nothing
 
-function _iterate(t::Optional, str, till, posi, next_i, state)
+function iterate_state(t::Optional, str, till, posi, next_i, state)
     posi = state === nothing ? next_i : leftof(str,next_i,t.parser,state) ##state[end][1]
-    r = _iterate(t.parser, str, till, posi, next_i, state)
+    r = iterate_state(t.parser, str, till, posi, next_i, state)
     if r === nothing
         prune_captures(str,posi)
         return tuple(posi, NoMatch())
@@ -1776,12 +1774,12 @@ function _iterate(t::Optional, str, till, posi, next_i, state)
     end
 end
 
-_iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::Nothing) =
+iterate_state(t::Lazy{<:Optional}, str, till, posi, next_i, state::Nothing) =
     next_i, NoMatch()
-_iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state::NoMatch) =
-    _iterate(t.parser.parser, str, till, posi, next_i, nothing)
-_iterate(t::Lazy{<:Optional}, str, till, posi, next_i, state) =
-    _iterate(t.parser.parser, str, till, posi, next_i, state)
+iterate_state(t::Lazy{<:Optional}, str, till, posi, next_i, state::NoMatch) =
+    iterate_state(t.parser.parser, str, till, posi, next_i, nothing)
+iterate_state(t::Lazy{<:Optional}, str, till, posi, next_i, state) =
+    iterate_state(t.parser.parser, str, till, posi, next_i, state)
 
 
 
@@ -2105,50 +2103,50 @@ end
 end
 
 
-@inline function __iterate_paired(first,state,sstate::Nothing)
+@inline function iterate_state_paired(first,state,sstate::Nothing)
     nothing
 end
 
-@inline function __iterate_paired(first, state, sstate::Tuple)
-    __iterate_paired(first, state, sstate...)
+@inline function iterate_state_paired(first, state, sstate::Tuple)
+    iterate_state_paired(first, state, sstate...)
 end
 
-@inline function __iterate_paired(first, state, next_i_::Int, nstate_)
+@inline function iterate_state_paired(first, state, next_i_::Int, nstate_)
     next_i_, with_state!(state,first,nstate_)
 end
 
-function _iterate_paired(first, t, str, till, posi, next_i, state)
-    __iterate_paired(first, state, _iterate(t, str, till, posi, next_i, either_state_state(state)))
+function iterate_state_paired(first, t, str, till, posi, next_i, state)
+    iterate_state_paired(first, state, iterate_state(t, str, till, posi, next_i, either_state_state(state)))
 end
 
-function _iterate(t::Either{<:Vector}, str, till, posi, next_i, state::Nothing)
+function iterate_state(t::Either{<:Vector}, str, till, posi, next_i, state::Nothing)
     r = nothing
     for (j,o) in enumerate(t.options)
-        r = _iterate_paired(j,o,str,till,posi, next_i,nothing)
+        r = iterate_state_paired(j,o,str,till,posi, next_i,nothing)
         r!== nothing && return r
     end
     nothing
 end
 
-function _iterate(t::Either{<:Vector}, str, till, posi, next_i, state)
+function iterate_state(t::Either{<:Vector}, str, till, posi, next_i, state)
     @inbounds opt = t.options[either_state_option(state)]
     fromindex = either_state_option(state)+1
     posi = leftof(str,next_i,opt,either_state_state(state)) ##state[end][1]
-    r = _iterate_paired(either_state_option(state),opt,str,till,posi, next_i,state)
+    r = iterate_state_paired(either_state_option(state),opt,str,till,posi, next_i,state)
     r !== nothing && return r
     prune_captures(str,posi)
     ##sstate = nothing
     for j in fromindex:length(t.options)
-        @inbounds r2 = _iterate_paired(j,t.options[j],str,till,posi,posi,nothing)
+        @inbounds r2 = iterate_state_paired(j,t.options[j],str,till,posi,posi,nothing)
         r2 !== nothing && return r2
     end
     nothing
 end
 
 
-function _iterate(parser::Either{<:Tuple}, sequence, till, posi, next_i, state)
+function iterate_state(parser::Either{<:Tuple}, sequence, till, posi, next_i, state)
     either_first(parser,posi,next_i,state) do index, option, ni, sstate
-        _iterate_paired(index, option, sequence, till, posi, ni, sstate)
+        iterate_state_paired(index, option, sequence, till, posi, ni, sstate)
     end
 end
 
@@ -2166,7 +2164,7 @@ end
         @label $(subsearch[p])
         j > $p && @goto $(subsearch[p+1])
         $(subresult[p]) = f($p,$(part[p]), next_i_, sstate)
-        $(subresult[p]) !== nothing && return $(subresult[p])# __iterate_paired($p,state, $(subresult[p]))
+        $(subresult[p]) !== nothing && return $(subresult[p])# iterate_state_paired($p,state, $(subresult[p]))
         next_i_ = posi
         sstate = nothing
         end
@@ -2212,15 +2210,15 @@ Atomic(p) = Atomic(parser(x))
 regex_prefix(x::Atomic) = "(?>"*regex_prefix(x.parser)
 regex_suffix(x::Atomic) = regex_suffix(x.parser)*")"
 function Base.get(parser::Atomic, sequence, till, after, i, state::AtomicState)
-    a, s = _iterate(parser.parser, sequence, till, i, i, nothing)
+    a, s = iterate_state(parser.parser, sequence, till, i, i, nothing)
     get(parser.parser, sequence, till, after, i, s)
 end
 
-@inline _iterate(parser::Atomic, sequence, till, posi, next_i, state::Nothing) =
-    _iterate(parser.parser, sequence, till, posi, next_i, state)
-@inline _iterate(parser::Atomic{<:Any,AtomicState}, sequence, till, posi, next_i, state::Nothing) =
-    AtomicState(_iterate(parser.parser, sequence, till, posi, next_i, state))
-@inline _iterate(parser::Atomic, sequence, till, posi, next_i, state) =
+@inline iterate_state(parser::Atomic, sequence, till, posi, next_i, state::Nothing) =
+    iterate_state(parser.parser, sequence, till, posi, next_i, state)
+@inline iterate_state(parser::Atomic{<:Any,AtomicState}, sequence, till, posi, next_i, state::Nothing) =
+    AtomicState(iterate_state(parser.parser, sequence, till, posi, next_i, state))
+@inline iterate_state(parser::Atomic, sequence, till, posi, next_i, state) =
     nothing
 
 

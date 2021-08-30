@@ -22,14 +22,14 @@ function print_constructor(io::IO, x::ParserWithCaptures)
           ( length(x.subroutines)>0 ? " with $(length(x.subroutines)) capturing groups" : "" ) )
 end
 """
-    _iterate(p::ParserWithCaptures, sequence::SequenceWithCaptures,a...)
+    iterate_state(p::ParserWithCaptures, sequence::SequenceWithCaptures,a...)
 
 `Base.empty!(sequence)` before iteration.
 (Why?)
 """
-function _iterate(p::ParserWithCaptures, sequence::SequenceWithCaptures,a...)
+function iterate_state(p::ParserWithCaptures, sequence::SequenceWithCaptures,a...)
     Base.empty!(sequence)
-    _iterate(p.parser, sequence, a...)
+    iterate_state(p.parser, sequence, a...)
 end
 
 """
@@ -49,8 +49,6 @@ function ParserWithCaptures(x)
     isempty(r.subroutines) ? r.parser : r
 end
 
-# _iterate(parser::ParserWithCaptures, sequence::AbstractString, till, next_i, after, state::Nothing) =
-#     _iterate(parser, sequence, till, next_i, next_i, state)
 
 SequenceWithCaptures(x,cs::CombinedParser) = x
 function SequenceWithCaptures(x,cs::ParserWithCaptures)

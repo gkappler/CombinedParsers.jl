@@ -69,11 +69,11 @@ regex_prefix(x::AnyValue) = ""
 regex_suffix(x::AnyValue) = ""
 
 """
-    _iterate(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
+    iterate_state(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
 
 When implementing a `Custom<:ValueMatcher` it suffices to provide a method [`CombinedParsers._ismatch`](@ref)`(c, parser::Custom)`.
 """
-@inline function _iterate(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
+@inline function iterate_state(parser::ValueMatcher, sequence, till, posi, next_i, state::Nothing)
     next_i>till && return nothing
     @inbounds c,ni = sequence[next_i], _nextind(sequence, next_i)
     !ismatch(c,parser) && return nothing

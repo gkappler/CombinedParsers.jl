@@ -12,7 +12,7 @@ import LazyStrings: reversed, reverse_index
 
 import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
 import ..CombinedParsers: parser, prune_captures, deepmap_parser, _deepmap_parser, print_constructor
-import ..CombinedParsers: _iterate, _iterate_constant
+import ..CombinedParsers: iterate_state, iterate_state_constant
 import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, _regex_string, regex_string, _log_names
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
 import ..CombinedParsers: _prevind, _nextind, _leftof, _rightof
@@ -26,7 +26,7 @@ include("pcre.jl")
 SequenceWithCaptures ensapsulates a sequence to be parsed, and parsed captures.
 
 This struct will allow for captures a sequence-level state.
-For next version, a match-level state passed as `iterate_state` argument is considered.
+For next version, a match-level state passed as iterate_state argument is considered.
 
 See also [`ParserWithCaptures`](@ref)
 """
@@ -138,8 +138,8 @@ end
 Base.get(x::Capture, sequence, till, after, i, state) =
     get(x.parser, sequence, till, after, i, state)
 
-@inline function _iterate(parser::Capture, sequence, till, posi, next_i, state)
-    r = _iterate(parser.parser, sequence, till, posi, next_i, state)
+@inline function iterate_state(parser::Capture, sequence, till, posi, next_i, state)
+    r = iterate_state(parser.parser, sequence, till, posi, next_i, state)
     if r !== nothing ## set only if found (e.g. if repeated capture capture last)
         set_capture(sequence,parser.index,posi,_prevind(sequence,tuple_pos(r)))
     elseif state !== nothing
@@ -248,17 +248,17 @@ function capture_substring(p::Backreference, sequence::SequenceWithCaptures)
     SubString(sequence.x, sequence.captures[index][end])
 end
 
-@inline function _iterate(p::Union{Backreference,ParserOptions{<:Backreference}},
+@inline function iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}},
                           sequence::SequenceWithCaptures, till,
                           posi, next_i, state::Nothing)
-    r = _iterate_constant(
+    r = iterate_state_constant(
         ConstantParser(capture_substring(p, sequence)),
         sequence, till, posi, next_i, state)
     r === nothing && return nothing
     tuple_pos(r), tuple_pos(r)-next_i
 end
 
-@inline function _iterate(p::Union{Backreference,ParserOptions{<:Backreference}},
+@inline function iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}},
                           sequence::SequenceWithCaptures, till,
                           posi, next_i, state)
     return nothing
@@ -267,7 +267,7 @@ end
 
 
 
-_iterate_condition(p::Backreference, sequence, till, posi, next_i, state) =
+iterate_state_condition(p::Backreference, sequence, till, posi, next_i, state) =
     resolve_index(p, sequence)>0
 
 
@@ -310,7 +310,7 @@ regex_inner(x::Subroutine) = ""
 _deepmap_parser(::Function,mem::AbstractDict,x::Subroutine) = x
 
 
-function _iterate_condition(cond::Subroutine, sequence, till, posi, next_i, state)
+function iterate_state_condition(cond::Subroutine, sequence, till, posi, next_i, state)
     sequence.state === nothing && return false
     if cond.name === nothing && cond.index < 0
         true
@@ -342,8 +342,8 @@ Index of a subroutine.
 index(parser::Subroutine,sequence) =
     parser.index <= 0 ? first(sequence.names[parser.name]) : parser.index
 
-@inline function _iterate(parser::Subroutine, sequence::SequenceWithCaptures, till, posi, next_i, state)
-    _iterate(
+@inline function iterate_state(parser::Subroutine, sequence::SequenceWithCaptures, till, posi, next_i, state)
+    iterate_state(
         sequence.subroutines[index(parser,sequence)].parser,
         copy_captures(sequence,parser), till, posi, next_i, state)
 end
@@ -386,7 +386,7 @@ _deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw..
 
 export Conditional
 """
-Conditional parser, `_iterate` cycles conditionally on `_iterate_condition` through matches in field `yes` and `no` respectively.
+Conditional parser, `iterate_state` cycles conditionally on `iterate_state_condition` through matches in field `yes` and `no` respectively.
 """
 @auto_hash_equals struct Conditional{C,Y,N,S,T} <: CombinedParser{S,T}
     condition::C
@@ -419,10 +419,10 @@ end
 @inline Base.get(parser::Conditional, sequence, till, after, i, state) =
     get(state.first == :yes ? parser.yes : parser.no, sequence, till, after, i, state.second)
 
-_iterate_condition(cond::WrappedParser, sequence, till, posi, next_i, state) =
-    _iterate_condition(cond.parser, sequence, till, posi, next_i, state)
-_iterate_condition(cond, sequence, till, posi, next_i, state) =
-    _iterate(cond, sequence, till, posi, next_i, state) !== nothing
+iterate_state_condition(cond::WrappedParser, sequence, till, posi, next_i, state) =
+    iterate_state_condition(cond.parser, sequence, till, posi, next_i, state)
+iterate_state_condition(cond, sequence, till, posi, next_i, state) =
+    iterate_state(cond, sequence, till, posi, next_i, state) !== nothing
 
 
 
@@ -434,17 +434,17 @@ end
     rightof(str,i,state.first == :yes ? parser.yes : parser.no, state.second)
 end
 
-@inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Nothing)
-    c = _iterate_condition(parser.condition, sequence, till, posi, next_i, state)
+@inline function iterate_state(parser::Conditional, sequence, till, posi, next_i, state::Nothing)
+    c = iterate_state_condition(parser.condition, sequence, till, posi, next_i, state)
     cparse = c ? parser.yes : parser.no
-    s = _iterate(cparse,
+    s = iterate_state(cparse,
                  sequence, till, posi, next_i, state)
     s === nothing && return nothing
     tuple_pos(s), (c ? :yes : :no) => tuple_state(s)
 end
 
-@inline function _iterate(parser::Conditional, sequence, till, posi, next_i, state::Pair)
-    _iterate(state.first == :yes ? parser.yes : parser.no, sequence, till, posi, next_i, state.second)
+@inline function iterate_state(parser::Conditional, sequence, till, posi, next_i, state::Pair)
+    iterate_state(state.first == :yes ? parser.yes : parser.no, sequence, till, posi, next_i, state.second)
 end
 
 include("indexed_captures.jl")

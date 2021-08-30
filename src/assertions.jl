@@ -6,7 +6,7 @@ Parsers that do not consume any input can inherit `Assertion{S,T}`.
 abstract type Assertion{S,T} <: CombinedParser{S,T} end
 @inline _leftof(str,i,parser::Assertion,x...) = i
 @inline _rightof(str,i,parser::Assertion,x...) = i
-@inline _iterate(t::Assertion{MatchState}, str, till, posi, next_i, state::MatchState) = nothing
+@inline iterate_state(t::Assertion{MatchState}, str, till, posi, next_i, state::MatchState) = nothing
 
 """
     Base.get(parser::Assertion{MatchState, <:Assertion}, sequence, till, after, i, state)
@@ -33,7 +33,7 @@ re"^"
 """
 struct AtStart <: Assertion{MatchState,AtStart} end
 regex_inner(x::AtStart) = "^"
-_iterate(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
+iterate_state(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
     next_i == 1 ? (next_i, MatchState()) : nothing
 
 print_constructor(io::IO, x::AtStart) = print(io,"AtStart")
@@ -51,7 +51,7 @@ re"\$"
 """
 struct AtEnd <: Assertion{MatchState,AtEnd} end
 regex_inner(x::AtEnd) = "\$"
-_iterate(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
+iterate_state(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
 print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
 
@@ -73,7 +73,7 @@ struct Never <: Assertion{MatchState,Never} end
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
-_iterate(x::Never,str,posi, next_i,till,state::Nothing) =
+iterate_state(x::Never,str,posi, next_i,till,state::Nothing) =
     nothing
 
 
@@ -97,9 +97,8 @@ children(x::Union{Never,Always}) = tuple()
 regex_prefix(x::Always) = ""
 regex_inner(x::Always) = ""
 regex_suffix(x::Always) = ""
-_iterate(parser::Always, str, till, posi, next_i, s::Nothing) =
+iterate_state(parser::Always, str, till, posi, next_i, s::Nothing) =
     next_i, MatchState()
-##_iterate(parser::Never, str, till, posi, next_i, s) = nothing
 
 
 Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
@@ -147,8 +146,8 @@ julia> parse(la*AnyChar(),"peek")
         end
 end
 regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
-function _iterate(t::PositiveLookahead, str, till, posi, next_i, state)
-    r = _iterate(t.parser, str, till, posi, tuple_pos(state,posi), tuple_state(state))
+function iterate_state(t::PositiveLookahead, str, till, posi, next_i, state)
+    r = iterate_state(t.parser, str, till, posi, tuple_pos(state,posi), tuple_state(state))
     if r === nothing
         nothing
     else
@@ -186,8 +185,8 @@ julia> parse(la*AnyChar(),"seek")
         end
 end
 regex_prefix(x::NegativeLookahead) = "(?!"*regex_prefix(x.parser)
-function _iterate(t::NegativeLookahead, str, till, posi, next_i, state::Nothing)
-    r = _iterate(t.parser, str, till, posi, next_i, nothing)
+function iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::Nothing)
+    r = iterate_state(t.parser, str, till, posi, next_i, nothing)
     if r === nothing
         next_i,MatchState()
     else

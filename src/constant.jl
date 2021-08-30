@@ -41,13 +41,13 @@ _lowercase(x::CombinedParser) = x
 
 _lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
 
-@inline _iterate(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing) =
-    _iterate_constant(parser,sequence,till,posi, next_i, state)
+@inline iterate_state(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing) =
+    iterate_state_constant(parser,sequence,till,posi, next_i, state)
 
-@inline _iterate_constant(parser::ConstantParser, sequence, till, posi, next_i, state) =
-    _iterate_constant(parser.parser,sequence,till,posi, next_i, state, _ncodeunits(parser))
+@inline iterate_state_constant(parser::ConstantParser, sequence, till, posi, next_i, state) =
+    iterate_state_constant(parser.parser,sequence,till,posi, next_i, state, _ncodeunits(parser))
 
-@inline function _iterate_constant(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L)
+@inline function iterate_state_constant(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L)
     till, posi, next_i
     j::Int = next_i
     k::Int = 1
@@ -62,7 +62,7 @@ _lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
     return j, MatchState()
 end
 
-@inline function _iterate_constant(parser, sequence, till, posi, next_i, state::Nothing, L)
+@inline function iterate_state_constant(parser, sequence, till, posi, next_i, state::Nothing, L)
     state !== nothing || next_i>till || next_i < 1 && return nothing
     if next_i<=till && ismatch(sequence[next_i],parser)
         next_i+L, MatchState()

@@ -70,11 +70,11 @@ end
 children(x::PositiveLookbehind) =
     children(x.parser)
 
-function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing)
+function iterate_state(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing)
     rseq=reversed(str)
     next_i < 1 && return next_i, MatchState()
     p = reverse_index(rseq,_prevind(str,next_i))
-    r = _iterate(t.parser, rseq, till, p, p, nothing)
+    r = iterate_state(t.parser, rseq, till, p, p, nothing)
     if r === nothing
         next_i,MatchState()
     else
@@ -83,14 +83,14 @@ function _iterate(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing
 end
 
 
-_iterate(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
+iterate_state(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
     nothing
 
-function _iterate(t::PositiveLookbehind, str, till, posi, next_i, state)
+function iterate_state(t::PositiveLookbehind, str, till, posi, next_i, state)
     rseq=reversed(str)
     ri = reverse_index(rseq,_prevind(str,next_i))
     next_i < 1 && return nothing
-    r = _iterate(t.parser, rseq, till, ri, tuple_pos(state,ri), tuple_state(state))
+    r = iterate_state(t.parser, rseq, till, ri, tuple_pos(state,ri), tuple_state(state))
     if r === nothing
         nothing
     else

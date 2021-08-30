@@ -45,8 +45,8 @@ Base.eltype(T::Type{<:MatchesIterator{P,S}}) where {P,S} =
 Base.IteratorSize(::Type{<:MatchesIterator}) =
     Base.SizeUnknown()
 
-@inline _iterate(mi::MatchesIterator,a...) =
-    _iterate(mi.parser, mi.sequence, mi.till, a...)
+@inline iterate_state(mi::MatchesIterator, posi, a...) =
+    iterate_state(mi.parser, mi.sequence, mi.till, posi, a...)
 
 Base.get(x::MatchesIterator, a...)=
     get(x.parser,x.sequence,x.till, a...)
@@ -152,8 +152,8 @@ end
 
 
 result_type(::Type{<:ParseMatch{P}}) where P = result_type(P)
-@inline _iterate(m::ParseMatch) =
-    _iterate(m.parsings,m.offset,m.after,m.state)
+@inline iterate_state(m::ParseMatch) =
+    iterate_state(m.parsings,m.offset,m.after,m.state)
 
 """
     Base.get(x::ParseMatch{<:MatchTuple})
@@ -183,10 +183,10 @@ Base.IteratorSize(::Type{<:ParseMatch}) = Base.SizeUnknown()
 """
     Base.iterate(x::ParseMatch[, m::ParseMatch=x])
 
-Returns next [`ParseMatch`](@ref) at `m.offset` after `m.state`, see [`_iterate`](@ref)(m).
+Returns next [`ParseMatch`](@ref) at `m.offset` after `m.state`, see [`iterate_state`](@ref)(m).
 """
 function Base.iterate(x::ParseMatch, m=x)
-    i = _iterate(m)
+    i = iterate_state(m)
     parsematch_tuple(m.parsings,m.offset,i)
 end
 
@@ -219,12 +219,12 @@ Return first next [`ParseMatch`](@ref) (as return value and state) or `nothing` 
 @inline function Base.iterate(m::MatchesIterator, s::ParseMatch)
     offset,after = s.offset, s.after
     stop = m.stop
-    state = _iterate(m,offset,after,s.state)
+    state = iterate_state(m,offset,after,s.state)
     while offset <= stop+1 && state===nothing
         # state = iterate(m.parsings,(offset,nothing))
         offset > stop && break
         offset = _nextind(m.sequence,offset)
-        state = _iterate(m,offset,offset,nothing)
+        state = iterate_state(m,offset,offset,nothing)
     end
     parsematch_tuple(m,offset,state)
 end
@@ -290,7 +290,7 @@ function Base.tryparse(p::AbstractToken, s, pos...; kw...)
 end
 
 function tryparse_pos(p,s, idx=firstindex(s), till=lastindex(s); kw...)
-    i = _iterate(wrap(p; kw...),s,till,idx,idx,nothing)
+    i = iterate_state(wrap(p; kw...),s,till,idx,idx,nothing)
     i === nothing && return nothing
     get(p,s,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)
 end

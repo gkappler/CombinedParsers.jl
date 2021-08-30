@@ -50,5 +50,5 @@ Match parser on [`CharMappedString`](https://github.com/gkappler/LazyStrings.jl)
 end
 children(x::MappedSequenceParser) = tuple(x.parser, x.f)
 
-@inline _iterate(parser::MappedSequenceParser, sequence, till, posi,after,state) =
-    _iterate(parser.parser, lmap(parser.f,sequence), till,posi,after,state)
+@inline iterate_state(parser::MappedSequenceParser, sequence, till, posi,after,state) =
+    iterate_state(parser.parser, lmap(parser.f,sequence), till,posi,after,state)

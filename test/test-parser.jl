@@ -47,7 +47,7 @@ end
 
 @testset "Bytes" begin
     # simple test for binary parsing
-    _iterate(Bytes(1,UInt8),[0x33],1,1,1,nothing)
+    iterate_state(Bytes(1,UInt8),[0x33],1,1,1,nothing)
     @test parse(Bytes(1,UInt8),[0x33]) == 0x33
     @test parse(Bytes(2,UInt16),[0x33,0x66]) == 0x6633
     @test parse(Bytes(4,Float32),[0x55,0x77,0x33,0x66]) == reinterpret(Float32,0x66337755)
