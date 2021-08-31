@@ -113,7 +113,7 @@ print_constructor(io::IO,x) =
 export iterate_state
 
 """
-    iterate_state(parser, sequence, till::Int, posi::Int[, next_i=posi[, state=nothing]])
+    iterate_state(parser, sequence[, till::Int=lastindex(sequence)[, posi::Int=firstindex(sequence)[, next_i=posi[, state=nothing]]]])
 
 Return position `after` next match of `parser` in `sequence` at `posi`.
 The next match is following current match `state` (first match iif `state==nothing`).
@@ -133,9 +133,8 @@ If no next match is found, return `nothing`.
     - `Tuple{Int64,state_type(parser)}` with next position, match state if a match is found.
 
 """
-@inline iterate_state(parser::CombinedParser, sequence, till::Int, posi::Int) =
+@inline iterate_state(parser::CombinedParser, sequence, till=lastindex(sequence), posi=firstindex(sequence)) =
     iterate_state(parser, sequence,till,posi,posi,nothing)
-@deprecate iterate_state(parser::CombinedParser, sequence, till::Int, posi::Int, ::Nothing) iterate_state(parser, sequence,till,posi,posi,nothing)
 
 
 """

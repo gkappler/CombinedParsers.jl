@@ -82,8 +82,11 @@ function iterate_state(t::NegativeLookbehind, str, till, posi, next_i, state::No
     end
 end
 
+@inline iterate_state(t::NegativeLookbehind, str, till, posi, next_i, state::MatchState) =
+    nothing
 
-iterate_state(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
+
+@inline iterate_state(t::PositiveLookbehind, str, till, posi, next_i, state::MatchState) =
     nothing
 
 function iterate_state(t::PositiveLookbehind, str, till, posi, next_i, state)

@@ -6,7 +6,6 @@ Parsers that do not consume any input can inherit `Assertion{S,T}`.
 abstract type Assertion{S,T} <: CombinedParser{S,T} end
 @inline _leftof(str,i,parser::Assertion,x...) = i
 @inline _rightof(str,i,parser::Assertion,x...) = i
-@inline iterate_state(t::Assertion{MatchState}, str, till, posi, next_i, state::MatchState) = nothing
 
 """
     Base.get(parser::Assertion{MatchState, <:Assertion}, sequence, till, after, i, state)
@@ -104,6 +103,7 @@ iterate_state(parser::Always, str, till, posi, next_i, s::Nothing) =
 Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
     print(io,"re\"",regex_string(x),"\"")
 
+@inline iterate_state(t::Union{AtStart,AtEnd,Never,Always}, str, till, posi, next_i, state::MatchState) = nothing
 
 """
 An assertion with an inner parser, like WrappedParser interface.
@@ -146,6 +146,7 @@ julia> parse(la*AnyChar(),"peek")
         end
 end
 regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
+
 function iterate_state(t::PositiveLookahead, str, till, posi, next_i, state)
     r = iterate_state(t.parser, str, till, posi, tuple_pos(state,posi), tuple_state(state))
     if r === nothing
@@ -193,6 +194,8 @@ function iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::Not
         nothing
     end
 end
+
+@inline iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::MatchState) = nothing
 
 export Lookahead
 

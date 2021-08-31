@@ -59,19 +59,16 @@ print_constructor(io::IO, x::AbstractTokenParser) =
 print_constructor(io::IO, x::AbstractTokenParser{<:TextParse.DateTimeToken}) =
     print(io, x.parser.format)
 
-iterate_state(parser::AbstractTokenParser, sequence, till, before_i, next_i, state) = 
-    iterate_state_token(parser.parser, sequence, till, before_i, next_i, state)
-
-
-iterate_state_token(parser::AbstractToken, sequence, till, before_i, next_i, state) =
+iterate_state(parser::AbstractTokenParser, sequence, till, before_i, next_i, state::NCodeunitsState) =
     nothing
-function iterate_state_token(parser::AbstractToken, sequence, till, before_i, next_i, state::Nothing, opts=TextParse.default_opts)
-        r,next_i_ = tryparsenext(parser, sequence, next_i, till,opts)
-        if isnull(r)
-            nothing
-        else
-            NCodeunitsState(next_i,next_i_,get(r))
-        end
+
+function iterate_state(parser::AbstractTokenParser, sequence, till, before_i, next_i, state::Nothing, opts=TextParse.default_opts)
+    r,next_i_ = tryparsenext(parser.parser, sequence, next_i, till,opts)
+    if isnull(r)
+        nothing
+    else
+        NCodeunitsState(next_i,next_i_,get(r))
+    end
 end
 
 """

@@ -248,9 +248,7 @@ function capture_substring(p::Backreference, sequence::SequenceWithCaptures)
     SubString(sequence.x, sequence.captures[index][end])
 end
 
-@inline function iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}},
-                          sequence::SequenceWithCaptures, till,
-                          posi, next_i, state::Nothing)
+@inline function iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}}, sequence::SequenceWithCaptures, till, posi, next_i, state::Nothing)
     r = iterate_state_constant(
         ConstantParser(capture_substring(p, sequence)),
         sequence, till, posi, next_i, state)
@@ -258,14 +256,8 @@ end
     tuple_pos(r), tuple_pos(r)-next_i
 end
 
-@inline function iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}},
-                          sequence::SequenceWithCaptures, till,
-                          posi, next_i, state)
+@inline iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}}, sequence::SequenceWithCaptures, till, posi, next_i, state::Int) =
     return nothing
-end
-
-
-
 
 iterate_state_condition(p::Backreference, sequence, till, posi, next_i, state) =
     resolve_index(p, sequence)>0
