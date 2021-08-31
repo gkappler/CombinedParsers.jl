@@ -291,9 +291,9 @@ ValueNotIn{Char}(chars::String) = ValueNotIn{Char}(chars,chars)
 
 _push!(charset::Nothing, ::Nothing) = nothing
 _push!(charset::Nothing, x) = x
-_push!(charset::T, x::T) where T = Set{T}(tuple(charset,x))
-_push!(charset::Set, x) where T = push!(charset,x)
-_push!(charset::Vector, x) where T = push!(charset,x)
+_push!(charset, x) = Set{Union{typeof(charset),typeof(x)}}(tuple(charset,x))
+_push!(charset::Set, x) = push!(charset,x)
+_push!(charset::Vector, x) = push!(charset,x)
 _push!(charset::Nothing, x::Union{<:Function,<:UnicodeClass,<:ValueNotIn}) = Any[x]
 
 
