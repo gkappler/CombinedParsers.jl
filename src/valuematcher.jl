@@ -183,11 +183,11 @@ julia> parse(l, "c")
 @auto_hash_equals struct ValueIn{T,S} <: ValueMatcher{T}
     pcre::String
     sets::S
-    function ValueIn{T}(pcre::String, x_...) where T
+    function ValueIn{T}(pcre::AbstractString, x_...) where T
         label, x = flatten_valuepatterns(x_...)
         new{T,typeof(x)}(pcre == "" ? label : pcre,x)
     end
-    function ValueIn(pcre::String, x_...)
+    function ValueIn(pcre::AbstractString, x_...)
         ## @show pcre
         label, x = flatten_valuepatterns(x_...)
         T = valuepattern_type(x)
@@ -200,7 +200,7 @@ regex_inner(x::ValueIn) = ( x.pcre == "" ? _regex_string(x.sets) : x.pcre )
 
 ValueIn{T}(x_...) where T = ValueIn{T}("",x_...)
 ValueIn(x_...) = ValueIn("",x_...)
-ValueIn{Char}(chars::String) = ValueIn{Char}(chars,chars)
+ValueIn{Char}(chars::AbstractString) = isempty(chars) ? Never() : ValueIn{Char}(chars,chars...)
 ValueIn{T}(label::AbstractString=constructor_name(T)) where T = 
     ValueIn{T}(label, x-> x isa T)
 
