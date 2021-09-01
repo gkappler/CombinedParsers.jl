@@ -68,22 +68,22 @@ match(re, s)</code></pre><pre class="documenter-example-output"><code class="noh
 ::Tuple{AtStart, Vector{Char}, Union{Always, Tuple{Any, Any, Any, Vararg{Any, N} where N}}, Vector{Char}, AtEnd}
 </code></pre><p>Why no backreference <code>\1</code>, why no subroutine <code>(?2)</code>? Theoretical linguists, I wonder, is the minimum number of capture groups 4, for a regular expression matching palindromes?</p><p>Writing a palindrome parser should be easier. And with julia compiler it should be faster.</p><h3 id="Regular-Expression-performance"><a class="docs-heading-anchor" href="#Regular-Expression-performance">Regular Expression performance</a><a id="Regular-Expression-performance-1"></a><a class="docs-heading-anchor-permalink" href="#Regular-Expression-performance" title="Permalink"></a></h3><p>PCRE matching example 3 is fast</p><pre><code class="language-julia hljs">using BenchmarkTools
 @benchmark match(re, s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 10 evaluations.
- Range (min … max):  1.530 μs …   4.817 μs  ┊ GC (min … max): 0.00% … 0.00%
- Time  (median):     1.693 μs               ┊ GC (median):    0.00%
- Time  (mean ± σ):   1.671 μs ± 160.236 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+ Range (min … max):  1.560 μs …   4.764 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     1.740 μs               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   1.719 μs ± 178.690 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-  ▇█▆▅▄▃▂▂▁  ▅▇▆▆▅▅▄▃▂▂▁▁▁                                    ▂
-  █████████████████████████▇████▇████▇██▇▆▆▅▆▄▅▅▅▁▃▁▅▃▄▆▅▅▃▃▅ █
-  1.53 μs      Histogram: log(frequency) by time      2.36 μs &lt;
+  ▆█▆▅▄▄▃▂▁▁  ▁▅▇▆▅▅▅▄▄▄▃▂▂▁▁▁                                ▂
+  █████████████████████████████▇▇▇▇▇▇▇▇▇▆▇▇▇▇▆▅▅▆▄▅▃▄▄▃▅▃▂▄▃▄ █
+  1.56 μs      Histogram: log(frequency) by time      2.34 μs &lt;
 
  Memory estimate: 352 bytes, allocs estimate: 5.</code></pre><p>In practice <code>CombinedParsers</code> <a href="../../lib/regexp/#CombinedParsers.Regexp.Regcomb"><code>Regcomb</code></a> of the regular expression will detect palindromes too. Palindrome matching provides an interesting cross-parser performance benchmark.</p><pre><code class="language-julia hljs">@benchmark match(cp, s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 1 evaluation.
- Range (min … max):  111.621 μs …  12.364 ms  ┊ GC (min … max):  0.00% … 98.32%
- Time  (median):     122.716 μs               ┊ GC (median):     0.00%
- Time  (mean ± σ):   145.396 μs ± 459.272 μs  ┊ GC (mean ± σ):  12.51% ±  3.91%
+ Range (min … max):  117.104 μs …  13.807 ms  ┊ GC (min … max):  0.00% … 96.97%
+ Time  (median):     129.463 μs               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   155.034 μs ± 532.220 μs  ┊ GC (mean ± σ):  13.49% ±  3.89%
 
-       ▃███▅▃▁                                                   
-  ▂▂▃▅████████▇▆▅▅▄▄▄▄▄▃▃▃▃▃▃▃▃▂▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂ ▃
-  112 μs           Histogram: frequency by time          184 μs &lt;
+       ▂▅███▆▃▂                                                  
+  ▂▃▃▄██████████▇▆▅▅▅▄▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂ ▃
+  117 μs           Histogram: frequency by time          191 μs &lt;
 
  Memory estimate: 138.23 KiB, allocs estimate: 1140.</code></pre><p><code>CombinedParsers.Regexp.Subroutine</code> matching is slow because the current implementation is using state-copies of captures. (TODO: Capture Subroutines could be implemented as a stack?).</p><h2 id=".-A-non-word-skipping-Palindrome:CombinedParser"><a class="docs-heading-anchor" href="#.-A-non-word-skipping-Palindrome:CombinedParser">2. A non-word skipping <code>Palindrome&lt;:CombinedParser</code></a><a id=".-A-non-word-skipping-Palindrome:CombinedParser-1"></a><a class="docs-heading-anchor-permalink" href="#.-A-non-word-skipping-Palindrome:CombinedParser" title="Permalink"></a></h2><p>This example of <code>Palindrome&lt;:CombinedParser</code> is a much faster palindrome parser and more interesting and more easy to write. It mimics the human readable palindrome rule that is clear and quite easy to comprehend:</p><p>the text is identical when read from left to right, as we are used to do, or when read from right to left in reverse, when we read only the letters and skip all non-word characters.</p><p>This rule is efficient programming in natural language. After defining the parser, the third part of the example discusses the design of match iteration in <code>CombinedParsers</code>.</p><h3 id="Parsing-strategy"><a class="docs-heading-anchor" href="#Parsing-strategy">Parsing strategy</a><a id="Parsing-strategy-1"></a><a class="docs-heading-anchor-permalink" href="#Parsing-strategy" title="Permalink"></a></h3><p>A custom parser needs a method to determine if there is a match and its extent at a position. How can this be implemented for a palindrome? There are two strategies:</p><ol><li>inside-out: start at a position as <code>center</code><ul><li>expand <code>left</code> and <code>right</code> from <code>center</code> until they are at word characters</li><li>until word character left does not match word character at right.</li><li>Succeed if a minimal length is met. Fail otherwise.</li></ul></li><li>outside-in: start <code>left</code> and <code>right</code>,<ul><li>move positions towards <code>center</code> until they are at word characters and</li><li>succeed if left and right positions meet at the center,</li><li>compare these characters, and proceed to the next positions if the word characters match or fail if there is a mismatch.</li></ul>(This might be <a href="https://stackoverflow.com/questions/21403782/the-fastest-method-of-determining-if-a-string-is-a-palindrome">the-fastest-method-of-determining-if-a-string-is-a-palindrome</a>.  But I figure finding all palindrome matches in a string is slow because you would be required to test for all possible substrings.)</li></ol><p>The inside out strategy seems easier and faster.</p><h4 id="Prerequisite:-Skipping-whitespace"><a class="docs-heading-anchor" href="#Prerequisite:-Skipping-whitespace">Prerequisite: Skipping whitespace</a><a id="Prerequisite:-Skipping-whitespace-1"></a><a class="docs-heading-anchor-permalink" href="#Prerequisite:-Skipping-whitespace" title="Permalink"></a></h4><p>For the string <code>&quot;two   words&quot;</code>,  from the point of index 4 (<code>&#39; &#39;</code> after &quot;from&quot;) the next word character after skipping whitespace left and right are indices of 3 (tw<code>o</code>) and 7 (<code>w</code>ords). In Julia syntax, this is expressed in terms of <code>direction</code> (functions <code>Base.prevind</code> and <code>Base.nextind</code> return next index to left or right), and <code>word_char::T</code>, what makes up a word character (provided method <code>CombinedParser.ismatch(char,parser::T)::Bool</code>.)</p><pre><code class="language-julia hljs">@inline function seek_word_char(direction,str,i,
                                 till=lastindex(str),
@@ -184,13 +184,13 @@ get.(match_all(p,s)) |&gt; collect</code></pre><pre class="documenter-example-ou
  &quot;ana&quot;
  &quot;ana&quot;
  &quot;ama&quot;</code></pre><h3 id="Performance-Optimization"><a class="docs-heading-anchor" href="#Performance-Optimization">Performance Optimization</a><a id="Performance-Optimization-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-Optimization" title="Permalink"></a></h3><pre><code class="language-julia hljs">@benchmark match(long_palindrome,s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 9 evaluations.
- Range (min … max):  2.146 μs …  11.041 μs  ┊ GC (min … max): 0.00% … 0.00%
- Time  (median):     2.256 μs               ┊ GC (median):    0.00%
- Time  (mean ± σ):   2.323 μs ± 213.688 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+ Range (min … max):  2.124 μs …   5.749 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     2.234 μs               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   2.304 μs ± 202.824 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-   ▅█▆                                                         
-  ▄████▆▅▃▃▃▃▆██▇▆▆▅▄▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂▂▂▂▂▂▁▂▂ ▃
-  2.15 μs         Histogram: frequency by time        3.18 μs &lt;
+   ▄█▃                                                         
+  ▃███▇▆▅▃▃▃▃▅▇▇▆▆▆▅▄▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▁▂▁▂▂▂▂▂ ▃
+  2.12 μs         Histogram: frequency by time        3.18 μs &lt;
 
  Memory estimate: 464 bytes, allocs estimate: 5.</code></pre><p>After writing a <code>CombinedParser</code></p><pre><code class="language-julia hljs"># using Profile</code></pre><p>is recommended to investigate options to optimize.</p><pre><code class="language-julia hljs"># f(n) = for _ in 1:n; match(fast_palindrome,s); end
 # @profile f(10000)
@@ -198,13 +198,13 @@ get.(match_all(p,s)) |&gt; collect</code></pre><pre class="documenter-example-ou
 # @profile f(1000000)
 # ProfileView.view()</code></pre><p><img src="../profile-palindrome-unicodeclass.png" alt/>\n\n <code>Combinedparsers</code> was optimized for minimal garbage collection (Red bars indicating garbage collection are in the <code>f</code> function).</p><p>Here, replacing the <code>UnicodeClass</code> matcher (calling <code>categorycode</code>) with a fast tuple <code>==</code> check shaves off some extra time:</p><pre><code class="language-julia hljs">fast_palindrome = filter(islong,Palindrome(CharNotIn(tuple(&quot; ,!:&quot;...))))
 @benchmark match(fast_palindrome,s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 10 evaluations.
- Range (min … max):  1.942 μs …   8.484 μs  ┊ GC (min … max): 0.00% … 0.00%
- Time  (median):     2.073 μs               ┊ GC (median):    0.00%
- Time  (mean ± σ):   2.116 μs ± 191.117 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
+ Range (min … max):  1.943 μs …   5.031 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     2.100 μs               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   2.123 μs ± 178.753 ns  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-    ▄█▄          ▁                                             
-  ▂▄███▇▅▄▃▃▃▂▃▅██▇▇▆▅▄▄▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▁▂▂▂▂▁▂ ▃
-  1.94 μs         Histogram: frequency by time        2.79 μs &lt;
+    █▆▁        ▁                                               
+  ▂▇███▇▆▅▄▃▃▃▄███▇▇▇▅▄▄▄▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▁▂▂▂▂ ▃
+  1.94 μs         Histogram: frequency by time        2.83 μs &lt;
 
  Memory estimate: 464 bytes, allocs estimate: 5.</code></pre><p>Note, that <code>CharNotIn(tuple(&quot; ,!:&quot;...))</code> is faster than the default <code>CharNotIn(&quot; ,!:&quot;...)</code> using <code>Base.Set</code> in case of very few <code>Char</code>s.. Further possible optimization are</p><ul><li>Caching prevind, nextind</li><li>Memoization</li></ul><h3 id="Padding-and-combining"><a class="docs-heading-anchor" href="#Padding-and-combining">Padding and combining</a><a id="Padding-and-combining-1"></a><a class="docs-heading-anchor-permalink" href="#Padding-and-combining" title="Permalink"></a></h3><p>Note that the PCRE pattern included outside non-words, specifically the tailing <code>!</code>.</p><pre><code class="language-julia hljs">re = Regex(pt.pattern...)
 match(re,&quot;  &quot;*s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RegexMatch(&quot;  A man, a plan, a canal: Panama!&quot;, 1=nothing, 2=nothing, 3=&quot;A man, a plan, a canal: Panama&quot;, 4=&quot;A&quot;)</code></pre><p>`<code>CombinedParsers</code> are designed with iteration in mind, and a small match set reduces computational time when iterating through all matches. <code>Palindrome</code> matches palindromes with word-char boundaries. The PCRE pattern includes non-words matches in the padding of palindromes, a superset of <code>Palindrome</code>. PCRE-equivalent matching can be achieved by combining the stricly matching <code>Palindrome</code> with parsers for the padding.</p><pre><code class="language-julia hljs">padding=Repeat(CharNotIn(fast_palindrome.parser.word_char))
@@ -221,12 +221,12 @@ match(fast_palindrome*padding*AtEnd(),s) |&gt; get</code></pre><pre class="docum
 ::SubString
 </code></pre><p>Now we can express the full pattern</p><pre><code class="language-julia hljs">p = padding * (palindrome) * padding * AtEnd()
 match(p,&quot;skipped: &quot;*s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ParseMatch(&quot;: A man, a plan, a canal: Panama!&quot;)</code></pre><p>This extra complexity comes at a cost:</p><pre><code class="language-julia hljs">@benchmark match(p,$(&quot;skipped: &quot;*s))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 1 evaluation.
- Range (min … max):  26.069 μs … 50.952 μs  ┊ GC (min … max): 0.00% … 0.00%
- Time  (median):     26.573 μs              ┊ GC (median):    0.00%
- Time  (mean ± σ):   27.135 μs ±  1.705 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+ Range (min … max):  26.165 μs … 86.219 μs  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     26.733 μs              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   27.372 μs ±  2.076 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-  ▂▆██▇▅▃▂     ▃▄▄▄▃▃▂▂▁  ▁▁▂▁                                ▂
-  ████████▇▆▁▄███████████████████▇▇▇▆▇▆▆▆▆▆▅▆▆▆▆▅▅▃▄▅▄▅▅▄▄▄▅▃ █
-  26.1 μs      Histogram: log(frequency) by time        34 μs &lt;
+  ▁▆██▇▅▃▁    ▃▄▄▃▃▂▂▁ ▁▁ ▁                                   ▂
+  ████████▇▆▆██████████████▇█▇▇▇▇▆▇▇▆▆▆▆▅▄▄▅▅▄▄▄▄▅▄▅▅▄▃▄▄▃▃▅▃ █
+  26.2 μs      Histogram: log(frequency) by time      35.4 μs &lt;
 
- Memory estimate: 1.11 KiB, allocs estimate: 5.</code></pre><h2 id="Next..."><a class="docs-heading-anchor" href="#Next...">Next...</a><a id="Next...-1"></a><a class="docs-heading-anchor-permalink" href="#Next..." title="Permalink"></a></h2><ul><li>optimize with memoization</li><li>match also palindromes with odd number of letters</li><li>elaborate on iteration documentation</li><li>comparative benchmarking, conditional on palindrome length</li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bson/">« BSON (<code>Vector{Unit8}</code> parsing)</a><a class="docs-footer-nextpage" href="../../lib/public/">Matching/Parsing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 31 August 2021 15:33">Tuesday 31 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ Memory estimate: 1.11 KiB, allocs estimate: 5.</code></pre><h2 id="Next..."><a class="docs-heading-anchor" href="#Next...">Next...</a><a id="Next...-1"></a><a class="docs-heading-anchor-permalink" href="#Next..." title="Permalink"></a></h2><ul><li>optimize with memoization</li><li>match also palindromes with odd number of letters</li><li>elaborate on iteration documentation</li><li>comparative benchmarking, conditional on palindrome length</li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bson/">« BSON (<code>Vector{Unit8}</code> parsing)</a><a class="docs-footer-nextpage" href="../../lib/public/">Matching/Parsing »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Wednesday 1 September 2021 10:27">Wednesday 1 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

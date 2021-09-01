@@ -12,46 +12,46 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
 (re&quot;^&quot;, Union{Char, Tuple{Char, Char}}[(&#39;a&#39;, &#39;b&#39;), &#39;a&#39;, &#39;b&#39;], re&quot;$&quot;)
 (re&quot;^&quot;, Union{Char, Tuple{Char, Char}}[(&#39;a&#39;, &#39;b&#39;), (&#39;a&#39;, &#39;b&#39;)], re&quot;$&quot;)</code></pre><h2 id="Performance"><a class="docs-heading-anchor" href="#Performance">Performance</a><a id="Performance-1"></a><a class="docs-heading-anchor-permalink" href="#Performance" title="Permalink"></a></h2><p><code>CombinedParsers</code> are fast, utilizing parametric types and generated functions in the Julia compiler.</p><p>Compared with the Base.Regex (PCRE C implementation)</p><pre><code class="language-julia hljs">using BenchmarkTools
 pattern = r&quot;[aB]+c&quot;;
-@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 690 evaluations.
- Range (min … max):  186.032 ns …  21.359 μs  ┊ GC (min … max):  0.00% … 98.71%
- Time  (median):     195.680 ns               ┊ GC (median):     0.00%
- Time  (mean ± σ):   237.227 ns ± 836.590 ns  ┊ GC (mean ± σ):  14.53% ±  4.07%
+@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 685 evaluations.
+ Range (min … max):  182.696 ns …  23.352 μs  ┊ GC (min … max):  0.00% … 98.72%
+ Time  (median):     194.700 ns               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   246.010 ns ± 939.095 ns  ┊ GC (mean ± σ):  15.69% ±  4.07%
 
-    ▇█▂                                                          
-  ▂████▅▅▅▄▄▄▃▄▃▄▃▃▃▃▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
-  186 ns           Histogram: frequency by time          286 ns &lt;
+   ▃▆▇█▇▅▅▅▄▄▄▄▄▃▃▄▄▃▃▂▂▂▂▂▂▂▂▁▁▁▁                  ▁▁▂▂▂▁▁▁▁   ▂
+  ▆███████████████████████████████████▇▇▇▇█▇▇▇▇█▇▅▇▇█████████▇▇ █
+  183 ns        Histogram: log(frequency) by time        293 ns &lt;
 
  Memory estimate: 224 bytes, allocs estimate: 3.</code></pre><p><code>CombinedParsers</code> are slightly faster in this case, <a href="../pcre-compliance/">and for many other tested parsers</a>.</p><pre><code class="language-julia hljs">pattern = re&quot;[aB]+c&quot;;
-@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 198 evaluations.
- Range (min … max):  460.066 ns … 70.567 μs  ┊ GC (min … max):  0.00% … 99.06%
- Time  (median):     476.838 ns              ┊ GC (median):     0.00%
- Time  (mean ± σ):   581.603 ns ±  2.336 μs  ┊ GC (mean ± σ):  13.88% ±  3.43%
+@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 200 evaluations.
+ Range (min … max):  407.675 ns … 83.605 μs  ┊ GC (min … max):  0.00% … 99.27%
+ Time  (median):     426.668 ns              ┊ GC (median):     0.00%
+ Time  (mean ± σ):   554.985 ns ±  2.818 μs  ┊ GC (mean ± σ):  17.55% ±  3.43%
 
-  ▄██▇▇▇▅▃▃▃▂▂▂▂▂▂▃▃▃▂▁▁▁▁▁   ▁    ▁▂▂▃▂▂▂▂▂▁▁▁▁               ▂
-  ███████████████████████████████████████████████▇▇█▇▇▆▇▇▆▅▅▃▅ █
-  460 ns        Histogram: log(frequency) by time       680 ns &lt;
+  ▁▆██▇▅▅▄▃▃▃▂▃▃▄▃▃▃▂▂▁▁▁ ▁▁▁ ▁▁   ▁▂▁▂▂▂▂▂▁▁▁▁▁               ▂
+  ████████████████████████████████████████████████▇▇▇▆▇▆▆▅▄▅▆▅ █
+  408 ns        Histogram: log(frequency) by time       662 ns &lt;
 
  Memory estimate: 544 bytes, allocs estimate: 5.</code></pre><p>Matching Regex captures are supported for compatibility</p><pre><code class="language-julia hljs">pattern = r&quot;([aB])+c&quot;
-@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 516 evaluations.
- Range (min … max):  221.141 ns … 34.833 μs  ┊ GC (min … max):  0.00% … 98.99%
- Time  (median):     231.125 ns              ┊ GC (median):     0.00%
- Time  (mean ± σ):   304.502 ns ±  1.328 μs  ┊ GC (mean ± σ):  17.42% ±  3.96%
+@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 520 evaluations.
+ Range (min … max):  220.108 ns … 38.836 μs  ┊ GC (min … max):  0.00% … 99.17%
+ Time  (median):     230.817 ns              ┊ GC (median):     0.00%
+ Time  (mean ± σ):   317.465 ns ±  1.554 μs  ┊ GC (mean ± σ):  20.15% ±  4.08%
 
-  ▃██▅▅▄▄▄▃▃▃▄▃▃▃▂▂▂▁▁▁▁▁▁▁▁            ▁▁▁▁▁▁▁                ▂
-  ██████████████████████████████▇█▇▇█████████████▇▆▆▇▆▇▇▆▆▆▇▅▆ █
-  221 ns        Histogram: log(frequency) by time       403 ns &lt;
+  ██▆▅▅▄▄▄▄▃▃▂▂▁▁       ▁▂▃▂▂▁                                 ▂
+  ██████████████████▇█▇█████████▇▇▅▅▅▆▆▆▆▆▄▄▅▅▅▄▅▄▅▆▅▄▄▄▅▆▆▇▅▆ █
+  220 ns        Histogram: log(frequency) by time       514 ns &lt;
 
  Memory estimate: 288 bytes, allocs estimate: 4.</code></pre><p><code>CombinedParsers.Regexp.Capture</code>s are slow compared with PCRE,</p><pre><code class="language-julia hljs">pattern = re&quot;([aB])+c&quot;;
-@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 143 evaluations.
- Range (min … max):  719.399 ns … 91.442 μs  ┊ GC (min … max):  0.00% … 98.93%
- Time  (median):     743.392 ns              ┊ GC (median):     0.00%
- Time  (mean ± σ):   956.376 ns ±  3.888 μs  ┊ GC (mean ± σ):  18.59% ±  4.53%
+@benchmark match(pattern,&quot;aBaBc&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 136 evaluations.
+ Range (min … max):  728.029 ns … 108.046 μs  ┊ GC (min … max):  0.00% … 99.00%
+ Time  (median):     756.779 ns               ┊ GC (median):     0.00%
+ Time  (mean ± σ):     1.008 μs ±   4.703 μs  ┊ GC (mean ± σ):  20.83% ±  4.42%
 
-  ▄██▆▅▅▄▄▅▄▃▃▃▃▃▂▁▁ ▁  ▁ ▁                                    ▂
-  ████████████████████████████▇▇▇▆▆▅▄▄▄▄▅▄▅▅▅▆▆▇▇████▇▇▇▇▇▆▆▄▅ █
-  719 ns        Histogram: log(frequency) by time      1.15 μs &lt;
+  ▂▇█▇▅▅▅▄▃▂▂▂▂▃▃▃▂▂▁▁                                          ▂
+  ████████████████████████████▇▇▇▇▆▆▆▆▆▄▆▇▆▆▇▇▇▇▇██▇▇███▆▆▅▆▅▆▅ █
+  728 ns        Histogram: log(frequency) by time       1.21 μs &lt;
 
- Memory estimate: 1.28 KiB, allocs estimate: 10.</code></pre><p>But with <code>CombinedParsers</code> you capture more flexibly with transformations anyway.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; pattern = re&quot;[aB]+c&quot;;</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @btime (mre = match(pattern,&quot;aBaBc&quot;))</code><code class="nohighlight hljs ansi" style="display:block;">  457.665 ns (5 allocations: 544 bytes)
-ParseMatch(&quot;aBaBc&quot;)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @btime get(mre)</code><code class="nohighlight hljs ansi" style="display:block;">  63.683 ns (2 allocations: 128 bytes)
+ Memory estimate: 1.28 KiB, allocs estimate: 10.</code></pre><p>But with <code>CombinedParsers</code> you capture more flexibly with transformations anyway.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; pattern = re&quot;[aB]+c&quot;;</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @btime (mre = match(pattern,&quot;aBaBc&quot;))</code><code class="nohighlight hljs ansi" style="display:block;">  430.015 ns (5 allocations: 544 bytes)
+ParseMatch(&quot;aBaBc&quot;)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @btime get(mre)</code><code class="nohighlight hljs ansi" style="display:block;">  64.111 ns (2 allocations: 128 bytes)
 ([&#39;a&#39;, &#39;B&#39;], &#39;c&#39;)</code></pre><h2 id="Transformations"><a class="docs-heading-anchor" href="#Transformations">Transformations</a><a id="Transformations-1"></a><a class="docs-heading-anchor-permalink" href="#Transformations" title="Permalink"></a></h2><p>Transform the result of a parsing with <a href="../../lib/transformation/#Base.map"><code>map</code></a>. The <a href="../../lib/transformation/#CombinedParsers.result_type"><code>result_type</code></a> is inferred automatically using julia type inference.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; p = map(length,re&quot;(ab)*&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">(ab)* Sequence |&gt; Capture 1 |&gt; Repeat |&gt; map(length) |&gt; regular expression combinator with 1 capturing groups
-::Int64</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(p,&quot;abababab&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">4</code></pre><p>Conveniently, calling <code>getindex(::CombinedParser,::Integer)</code> and <code>map(::Integer,::CombinedParser)</code> create a transforming parser selecting from the result of the parsing.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(map(IndexAt(2),re&quot;abc&quot;),&quot;abc&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">&#39;b&#39;: ASCII/Unicode U+0062 (category Ll: Letter, lowercase)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(re&quot;abc&quot;[2],&quot;abc&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">&#39;b&#39;: ASCII/Unicode U+0062 (category Ll: Letter, lowercase)</code></pre><p>Next: The <a href="../user/">User guide</a> provides a summary of CombinedParsers types.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../user/">User Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Tuesday 31 August 2021 15:33">Tuesday 31 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+::Int64</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(p,&quot;abababab&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">4</code></pre><p>Conveniently, calling <code>getindex(::CombinedParser,::Integer)</code> and <code>map(::Integer,::CombinedParser)</code> create a transforming parser selecting from the result of the parsing.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(map(IndexAt(2),re&quot;abc&quot;),&quot;abc&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">&#39;b&#39;: ASCII/Unicode U+0062 (category Ll: Letter, lowercase)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(re&quot;abc&quot;[2],&quot;abc&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">&#39;b&#39;: ASCII/Unicode U+0062 (category Ll: Letter, lowercase)</code></pre><p>Next: The <a href="../user/">User guide</a> provides a summary of CombinedParsers types.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../user/">User Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Wednesday 1 September 2021 10:27">Wednesday 1 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
