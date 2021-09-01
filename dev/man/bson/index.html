@@ -98,31 +98,31 @@ parse(document,s, log=true)</code></pre><pre class="documenter-example-output"><
  :b =&gt; 3.0
  :d =&gt; true
  :c =&gt; &quot;yeay&quot;</code></pre><p>Aim of this page is demonstrating the straightforward implementation of a BSON parser. The parser is untested and not feature-complete regarding subtypes etc. Parsing logic can be plugged into the <code>element</code>s with <code>map</code>.</p><h3 id="Benchmarking"><a class="docs-heading-anchor" href="#Benchmarking">Benchmarking</a><a id="Benchmarking-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmarking" title="Permalink"></a></h3><pre><code class="language-julia hljs">using BenchmarkTools</code></pre><p>BSON has an optimized parser, used for comparison</p><pre><code class="language-julia hljs">@benchmark BSON.parse(IOBuffer(s))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 10 evaluations.
- Range (min … max):  1.659 μs …  1.313 ms  ┊ GC (min … max):  0.00% … 99.60%
- Time  (median):     1.911 μs              ┊ GC (median):     0.00%
- Time  (mean ± σ):   2.298 μs ± 18.514 μs  ┊ GC (mean ± σ):  11.37% ±  1.41%
+ Range (min … max):  1.701 μs …  1.333 ms  ┊ GC (min … max):  0.00% … 99.52%
+ Time  (median):     1.964 μs              ┊ GC (median):     0.00%
+ Time  (mean ± σ):   2.435 μs ± 22.601 μs  ┊ GC (mean ± σ):  16.04% ±  1.72%
 
-    ▇█▅▁                                                      
-  ▂▆████▆▅▅▅▅▅▄▄▅▄▄▄▄▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
-  1.66 μs        Histogram: frequency by time        3.35 μs &lt;
+    ▅██▅▃▂▁                                                   
+  ▂▆█████████▇█▇█▇▇▇▆▅▆▅▅▅▄▄▄▄▃▄▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▂ ▄
+  1.7 μs         Histogram: frequency by time         3.2 μs &lt;
 
  Memory estimate: 1.50 KiB, allocs estimate: 19.</code></pre><p>The <code>CombinedParser</code> matching is slower.</p><pre><code class="language-julia hljs">@benchmark match(document,s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 1 evaluation.
- Range (min … max):  15.366 μs …   9.221 ms  ┊ GC (min … max):  0.00% … 99.14%
- Time  (median):     17.849 μs               ┊ GC (median):     0.00%
- Time  (mean ± σ):   22.247 μs ± 155.028 μs  ┊ GC (mean ± σ):  11.95% ±  1.71%
+ Range (min … max):  15.734 μs …   8.759 ms  ┊ GC (min … max): 0.00% … 98.79%
+ Time  (median):     18.111 μs               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   21.466 μs ± 121.981 μs  ┊ GC (mean ± σ):  7.99% ±  1.40%
 
-    ▄██▅▃                                                       
-  ▂▆██████▇▆▅▄▄▃▃▄▃▃▃▃▄▄▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
-  15.4 μs         Histogram: frequency by time         35.3 μs &lt;
+    ▂██▆▃▁                                                      
+  ▁▄██████▇▆▅▄▄▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
+  15.7 μs         Histogram: frequency by time         34.4 μs &lt;
 
  Memory estimate: 15.64 KiB, allocs estimate: 120.</code></pre><p>Transformation is doing too much work currently - lazy access optimizations are planned.</p><pre><code class="language-julia hljs">@benchmark parse(document,s)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 1 evaluation.
- Range (min … max):  29.378 μs …  11.805 ms  ┊ GC (min … max):  0.00% … 98.37%
- Time  (median):     34.913 μs               ┊ GC (median):     0.00%
- Time  (mean ± σ):   42.265 μs ± 256.735 μs  ┊ GC (mean ± σ):  13.50% ±  2.21%
+ Range (min … max):  30.094 μs …  11.930 ms  ┊ GC (min … max):  0.00% … 99.19%
+ Time  (median):     36.957 μs               ┊ GC (median):     0.00%
+ Time  (mean ± σ):   44.729 μs ± 260.389 μs  ┊ GC (mean ± σ):  12.90% ±  2.21%
 
-     ▂▅▅███▇▆▄▄▃▂▁▁                                             
-  ▂▄▇███████████████▇▆▆▅▅▅▅▅▅▅▄▄▄▄▃▃▃▃▃▃▃▃▂▃▂▂▃▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂ ▄
-  29.4 μs         Histogram: frequency by time         58.2 μs &lt;
+      ▃▆▇██▇▆▆▅▃▂▁                                              
+  ▁▂▅██████████████▇▅▅▅▄▄▄▄▄▃▃▃▃▂▂▂▂▂▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▃
+  30.1 μs         Histogram: frequency by time         66.8 μs &lt;
 
  Memory estimate: 27.02 KiB, allocs estimate: 368.</code></pre><h3 id="Profiling"><a class="docs-heading-anchor" href="#Profiling">Profiling</a><a id="Profiling-1"></a><a class="docs-heading-anchor-permalink" href="#Profiling" title="Permalink"></a></h3><p>Profiling reveals that most time is lost due to the <code>Either</code> state type.</p><pre><code class="language-julia hljs"># using Profile
 # Profile.clear()
@@ -136,9 +136,9 @@ parse(document,s, log=true)</code></pre><pre class="documenter-example-output"><
  :a =&gt; 1
  :b =&gt; 3.0
  :d =&gt; true
- :e =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;DateTime&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]]], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;UTInstant&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; 63766174963648]]]]]]
+ :e =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;DateTime&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]]], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;UTInstant&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; Any[:tag =&gt; &quot;struct&quot;, :type =&gt; Any[:tag =&gt; &quot;datatype&quot;, :params =&gt; Any[], :name =&gt; Any[Symbol(&quot;0&quot;) =&gt; &quot;Dates&quot;, Symbol(&quot;1&quot;) =&gt; &quot;Millisecond&quot;]], :data =&gt; Any[Symbol(&quot;0&quot;) =&gt; 63766177005737]]]]]]
  :c =&gt; &quot;yeay&quot;</code></pre><p>This parser does not do any of the magic in <code>BSON.jl</code> to reassemble into julia types. BSON dates work though:</p><pre><code class="language-julia hljs">let d = now()
     Any[:e =&gt; d] ==
         parse(document,UInt8[0x10,0x0,0x0,0x0, # we actually ignore the 4 byte length of the vector
                              0x09,0x65,0x0,reinterpret(UInt8,[Dates.value(d)])...,0x0], log=true)
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../json/">« JSON (recursion)</a><a class="docs-footer-nextpage" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Wednesday 1 September 2021 10:27">Wednesday 1 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">true</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../json/">« JSON (recursion)</a><a class="docs-footer-nextpage" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Wednesday 1 September 2021 11:01">Wednesday 1 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
