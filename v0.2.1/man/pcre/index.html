@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Regular Expressions · CombinedParsers.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://gkappler.github.io/CombinedParsers.jl/man/pcre/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">CombinedParsers.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../guide/">Overview</a></li><li><a class="tocitem" href="../user/">User Guide</a></li><li><a class="tocitem" href="../example-either-trie/">Prefix-Tree Matching</a></li><li><a class="tocitem" href="../pcre-compliance/">PCRE Compliance</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../example-person/">Names (What is Parsing?)</a></li><li><a class="tocitem" href="../example-number-ranges/">Number sequences (What are Representations?)</a></li><li><a class="tocitem" href="../example-arithmetics/">Arithmetics (Evaluation)</a></li><li class="is-active"><a class="tocitem" href>Regular Expressions</a><ul class="internal"><li><a class="tocitem" href="#What-is-a-regular-expression?"><span>What is a regular expression?</span></a></li><li><a class="tocitem" href="#Characters-and-Escaped-Characters"><span>Characters and Escaped Characters</span></a></li><li><a class="tocitem" href="#Repeated-patterns"><span>Repeated patterns</span></a></li><li><a class="tocitem" href="#[Either](@ref)"><span><code>Either</code></span></a></li><li><a class="tocitem" href="#Repeatable-patterns,-[Optional](@ref),-[Lazy](@ref)-and-[Atomic](@ref)"><span>Repeatable patterns, <code>Optional</code>, <code>Lazy</code> and <code>Atomic</code></span></a></li><li><a class="tocitem" href="#[Sequence](@ref)s-and-Alternations"><span><code>Sequence</code>s and Alternations</span></a></li><li><a class="tocitem" href="#[Capture](@ref)s"><span><code>Capture</code>s</span></a></li><li><a class="tocitem" href="#[Lookahead](@ref)-and-[Lookbehind](@ref)"><span><code>Lookahead</code> and <code>Lookbehind</code></span></a></li><li><a class="tocitem" href="#Regular-Expression-Brackets"><span>Regular Expression Brackets</span></a></li></ul></li><li><a class="tocitem" href="../json/">JSON (recursion)</a></li><li><a class="tocitem" href="../bson/">BSON (<code>Vector{Unit8}</code> parsing)</a></li><li><a class="tocitem" href="../example-palindromes/">struct Palindrome&lt;:CombinedParser</a></li></ul></li><li><span class="tocitem">Library</span><ul><li><a class="tocitem" href="../../lib/public/">Matching/Parsing</a></li><li><a class="tocitem" href="../../lib/parsers/">Templates</a></li><li><a class="tocitem" href="../../lib/constructors/">Constructors</a></li><li><a class="tocitem" href="../../lib/regexp/">Regexp</a></li><li><a class="tocitem" href="../bnf/">EBNF</a></li><li><a class="tocitem" href="../../lib/transformation/">Transformations</a></li><li><a class="tocitem" href="../../lib/internals/">Internals</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Regular Expressions</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Regular Expressions</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/gkappler/CombinedParsers.jl/docs/../../../.julia/packages/CombinedParsers/vz0pA/docs/src/man/pcre.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Regular-Expressions-[CombinedParser](@ref)"><a class="docs-heading-anchor" href="#Regular-Expressions-[CombinedParser](@ref)">Regular Expressions <a href="../../lib/internals/#CombinedParsers.CombinedParser"><code>CombinedParser</code></a></a><a id="Regular-Expressions-[CombinedParser](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#Regular-Expressions-[CombinedParser](@ref)" title="Permalink"></a></h1><p>Parsing is reading by a computer program, formally transforming character sequences into defined and structured representations.</p><p>– name parser slide</p><p>Representation and Transformation</p><p>– number list slide</p><p>So parsing is a fundamental obstacle before you can begin working with data. Writing parsers is ubiquitous.</p><h2 id="What-is-a-regular-expression?"><a class="docs-heading-anchor" href="#What-is-a-regular-expression?">What is a regular expression?</a><a id="What-is-a-regular-expression?-1"></a><a class="docs-heading-anchor-permalink" href="#What-is-a-regular-expression?" title="Permalink"></a></h2><p>Regular expressions and state machines are the most common tools of the parsing trade. Most programmers and data scientists are familiar with regular expressions.</p><p>A regular expression is a textual representation of a parser program. The syntax of regular expressions is condensed and arcane.</p><p>Parsing has been a painpoint in all of my work as a developer and a researcher with a focus on text while I accumulated plenty of regular expressions. I still use these regexps at many places and do not want to rewrite all regular expressions I still need. So I wrote a CombinedParser that parses regex, and transforms it into an equivalent julia parser program,</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using CombinedParsers</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p>This guide demonstrates constructing a recursive <code>CombinedParser</code> with the <strong><a href="../../lib/constructors/#CombinedParsers.@syntax"><code>@syntax</code></a> or <a href="../../lib/constructors/#Base.push!"><code>push!</code></a> to <a href="../../lib/constructors/#CombinedParsers.Either"><code>Either</code></a></strong> technique. This page outlines essentials of the <a href="../../lib/regexp/#CombinedParsers.Regexp.@re_str"><code>@re_str</code></a> macro</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using CombinedParsers.Regexp</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><h2 id="Characters-and-Escaped-Characters"><a class="docs-heading-anchor" href="#Characters-and-Escaped-Characters">Characters and Escaped Characters</a><a id="Characters-and-Escaped-Characters-1"></a><a class="docs-heading-anchor-permalink" href="#Characters-and-Escaped-Characters" title="Permalink"></a></h2><p>The simplest regular expression pattern is a character matcher.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; import CombinedParsers.Regexp: meta_chars</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; char_matcher =  Either(
+           CharNotIn(meta_chars), # character
+           Sequence( # escaped_meta
+       	2,    # transform: emit unescaped at index
+               &#39;\\&#39;, CharIn(meta_chars)
+           )
+       )</code><code class="nohighlight hljs ansi" style="display:block;">|🗄 Either
+├─ [^\\\^\$\.\[\|\(\)\?\*\+\{] ValueNotIn
+└─ 🗄 Sequence |&gt; map(#54)
+   ├─ \\
+   └─ [\\\^\$\.\[\|\(\)\?\*\+\{] ValueIn
+::Char</code></pre><p>The <code>char_matcher</code> unescapes regex <code>meta_chars</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(Repeat(char_matcher),raw&quot;a\[b&quot;; log=true)</code><code class="nohighlight hljs ansi" style="display:block;">3-element Vector{Char}:
+ &#39;a&#39;: ASCII/Unicode U+0061 (category Ll: Letter, lowercase)
+ &#39;[&#39;: ASCII/Unicode U+005B (category Ps: Punctuation, open)
+ &#39;b&#39;: ASCII/Unicode U+0062 (category Ll: Letter, lowercase)</code></pre><h2 id="Repeated-patterns"><a class="docs-heading-anchor" href="#Repeated-patterns">Repeated patterns</a><a id="Repeated-patterns-1"></a><a class="docs-heading-anchor-permalink" href="#Repeated-patterns" title="Permalink"></a></h2><h3 id="Number-of-Repetitions:-Transforming-a-Parsing"><a class="docs-heading-anchor" href="#Number-of-Repetitions:-Transforming-a-Parsing">Number of Repetitions: Transforming a Parsing</a><a id="Number-of-Repetitions:-Transforming-a-Parsing-1"></a><a class="docs-heading-anchor-permalink" href="#Number-of-Repetitions:-Transforming-a-Parsing" title="Permalink"></a></h3><p>A basic feature of regular expression is whether a repeatable pattern (e.g. a char) is optional <code>?</code> (repeated 0 or 1 times), or should be repeated at least once <code>+</code>, any times <code>*</code>, or <code>{min,max}</code> times (<a href="https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17">pcre spec</a>). The syntax of regex repetitions require mapping such <code>SubString</code>s to representions as <code>UnitRange{Int}</code>.</p><p>Above, the <code>:escaped_meta</code> mapped the parsing to emit the unescaped character at the second position in its sequence. Any Julia function can be used for transformations with the <code>do</code> syntax after a <code>CombinedParser</code> constructor to implicitly call <a href="../../lib/transformation/#Base.map"><code>map</code></a> creating a <a href="../../lib/transformation/#CombinedParsers.Transformation"><code>Transformation</code></a> parser.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; import CombinedParsers.Regexp: integer, Repeat_max</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @with_names repetitions = Either(
+           &#39;?&#39; =&gt; 0:1,
+           &#39;+&#39; =&gt; 1:Repeat_max,
+           &#39;*&#39; =&gt; 0:Repeat_max,
+           Sequence(
+               &#39;{&#39;,
+               :min =&gt; integer,
+               :max =&gt; Optional(
+       	    Sequence(2,
+       		     &#39;,&#39;, integer | Repeat_max)),
+               &#39;}&#39;
+           ) do v
+           if v.max isa Missing
+           v.min:v.min
+           else
+           v.min:v.max
+           end::UnitRange{Int}
+           end
+       )</code><code class="nohighlight hljs ansi" style="display:block;">|🗄 Either |&gt; with_name(:repetitions)
+├─ \?  =&gt; 0:1
+├─ \+  =&gt; 1:1000000
+├─ \*  =&gt; 0:1000000
+└─ 🗄 Sequence |&gt; map(ntuple) |&gt; map(#1)
+   ├─ \{
+   ├─ 🗄 Sequence |&gt; map(#31) |&gt; with_name(:min)
+   │  ├─ \-? |missing
+   │  └─ [0-9]+ ValueIn |&gt; Repeat |&gt; ! |&gt; map(#187)
+   ├─ 🗄? Sequence |&gt; map(#54)|missing |&gt; with_name(:max)
+   │  ├─ ,
+   │  └─ 🗄? Sequence |&gt; map(#31)|1000000
+   │     ├─ \-? |missing
+   │     └─ [0-9]+ ValueIn |&gt; Repeat |&gt; ! |&gt; map(#187)
+   └─ \}
+::UnitRange{Int64}</code></pre><p><code>repetitions</code> parses PCRE repetitions syntax into a <code>(min, max)</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(repetitions, &quot;?&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">0:1</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(repetitions, &quot;*&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">0:1000000</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(repetitions, &quot;+&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">1:1000000</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(repetitions, &quot;{2}&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">2:2</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(repetitions, &quot;{5,}&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">5:1000000</code></pre><h2 id="[Either](@ref)"><a class="docs-heading-anchor" href="#[Either](@ref)"><a href="../../lib/constructors/#CombinedParsers.Either"><code>Either</code></a></a><a id="[Either](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Either](@ref)" title="Permalink"></a></h2><p>Regular expressions can repeat character matchers and other sub-patterns when appending the <code>repetitions</code> suffix.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; repeatable = Either{CombinedParser}(
+           map(CharIn,char_matcher),
+           &#39;.&#39; =&gt; AnyChar()
+       )</code><code class="nohighlight hljs ansi" style="display:block;">|🗄 Either
+├─ |🗄 Either |&gt; map(CharIn)
+│  ├─ [^\\\^\$\.\[\|\(\)\?\*\+\{] ValueNotIn
+│  └─ 🗄 Sequence |&gt; map(#54)
+│     ├─ \\
+│     └─ [\\\^\$\.\[\|\(\)\?\*\+\{] ValueIn
+└─ \.  =&gt; . AnyValue
+
+::CombinedParser</code></pre><p>We will add capture groups and other sub-patterns to <code>repeatable</code> later.</p><h2 id="Repeatable-patterns,-[Optional](@ref),-[Lazy](@ref)-and-[Atomic](@ref)"><a class="docs-heading-anchor" href="#Repeatable-patterns,-[Optional](@ref),-[Lazy](@ref)-and-[Atomic](@ref)">Repeatable patterns, <a href="../../lib/constructors/#CombinedParsers.Optional"><code>Optional</code></a>, <a href="../../lib/constructors/#CombinedParsers.Lazy"><code>Lazy</code></a> and <a href="../../lib/constructors/#CombinedParsers.Atomic"><code>Atomic</code></a></a><a id="Repeatable-patterns,-[Optional](@ref),-[Lazy](@ref)-and-[Atomic](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#Repeatable-patterns,-[Optional](@ref),-[Lazy](@ref)-and-[Atomic](@ref)" title="Permalink"></a></h2><p>The CombinedParser to parse a repeated pattern from PCRE syntax</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @with_names quantified=Sequence(
+               repeatable,
+               Optional(repetitions, default=(1,1)),
+               Optional(map(v-&gt;convert(Char,v),with_name(&quot;possessive_quantifier&quot;,CharIn(&#39;+&#39;,&#39;?&#39;))))
+           ) do v
+               pat = v[1]
+               result = if v[2]==(1,1)
+                   pat
+               elseif v[2]==(0,1)
+                   Optional(pat)
+               else
+                   Repeat(v[2],pat)
+               end
+               if v[3] === missing
+                   result
+               elseif v[3]==&#39;+&#39;
+                   Atomic(result)
+               elseif v[3]==&#39;?&#39;
+                   Lazy(result)
+               else
+                   result
+               end
+           end</code><code class="nohighlight hljs ansi" style="display:block;">🗄 Sequence |&gt; map(#3) |&gt; with_name(:quantified)
+├─ |🗄 Either
+│  ├─ |🗄 Either |&gt; map(CharIn)
+│  │  ├─ [^\\\^\$\.\[\|\(\)\?\*\+\{] ValueNotIn
+│  │  └─ 🗄 Sequence |&gt; map(#54)
+│  │     ├─ \\
+│  │     └─ [\\\^\$\.\[\|\(\)\?\*\+\{] ValueIn
+│  └─ \.  =&gt; . AnyValue
+│
+├─ |🗄? Either |&gt; with_name(:repetitions)|(1, 1)
+│  ├─ \?  =&gt; 0:1
+│  ├─ \+  =&gt; 1:1000000
+│  ├─ \*  =&gt; 0:1000000
+│  └─ 🗄 Sequence |&gt; map(ntuple) |&gt; map(#1)
+│     ├─ \{
+│     ├─ 🗄 Sequence |&gt; map(#31) |&gt; with_name(:min)
+│     │  ├─ \-? |missing
+│     │  └─ [0-9]+ ValueIn |&gt; Repeat |&gt; ! |&gt; map(#187)
+│     ├─ 🗄? Sequence |&gt; map(#54)|missing |&gt; with_name(:max)
+│     │  ├─ ,
+│     │  └─ 🗄? Sequence |&gt; map(#31)|1000000
+│     │     ├─ \-? |missing
+│     │     └─ [0-9]+ ValueIn |&gt; Repeat |&gt; ! |&gt; map(#187)
+│     └─ \}
+└─ [\+\?]? ValueIn |&gt; map(#4) |&gt; with_name(:possessive_quantifier)|missing
+::Any</code></pre><p>PCRE repetitions syntax can be <code>quantified</code>:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; p = quantified(raw&quot;\++?&quot;, log=true)</code><code class="nohighlight hljs ansi" style="display:block;">   match repetitions@3-4: \\++?
+                             ^
+   match possessive_quantifier@4-5: \\++?
+                                        ^
+   match quantified@1-5: \\++?
+                         ^___^
+[\+]+? ValueIn |&gt; Repeat |&gt; Lazy
+::Vector{Char}</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(p, &quot;+++&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">1-element Vector{Char}:
+ &#39;+&#39;: ASCII/Unicode U+002B (category Sm: Symbol, math)</code></pre><h2 id="[Sequence](@ref)s-and-Alternations"><a class="docs-heading-anchor" href="#[Sequence](@ref)s-and-Alternations"><a href="../../lib/constructors/#CombinedParsers.Sequence"><code>Sequence</code></a>s and Alternations</a><a id="[Sequence](@ref)s-and-Alternations-1"></a><a class="docs-heading-anchor-permalink" href="#[Sequence](@ref)s-and-Alternations" title="Permalink"></a></h2><p>Regular expression patterns can be written in sequence, delimited by <code>|</code> for matching either one of several alternatives.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; subpattern = Either{CombinedParser}(
+           &#39;^&#39; =&gt; AtStart(),
+           &#39;$&#39; =&gt; AtEnd(),
+           quantified);</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: transforming results with convert(CombinedParser,::Any)
+🗄 Sequence |&gt; map(#3) |&gt; with_name(:quantified)
+├─ |🗄 Either
+│  ├─ |🗄 Either |&gt; map(CharIn)
+│  │  ├─ [^\\\^\$\.\[\|\(\)\?\*\+\{] ValueNotIn
+│  │  └─ 🗄 Sequence |&gt; map(#54)
+│  │     ├─ \\
+│  │     └─ [\\\^\$\.\[\|\(\)\?\*\+\{] ValueIn
+│  └─ \.  =&gt; . AnyValue
+│
+├─ |🗄? Either |&gt; with_name(:repetitions)|(1, 1)
+│  ├─ \?  =&gt; 0:1
+│  ├─ \+  =&gt; 1:1000000
+│  ├─ \*  =&gt; 0:1000000
+│  └─ 🗄 Sequence |&gt; map(ntuple) |&gt; map(#1)
+│     ├─ \{
+│     ├─ 🗄 Sequence |&gt; map(#31) |&gt; with_name(:min)
+│     │  ├─ \-? |missing
+│     │  └─ [0-9]+ ValueIn |&gt; Repeat |&gt; ! |&gt; map(#187)
+│     ├─ 🗄? Sequence |&gt; map(#54)|missing |&gt; with_name(:max)
+│     │  ├─ ,
+│     │  └─ 🗄? Sequence |&gt; map(#31)|1000000
+│     │     ├─ \-? |missing
+│     │     └─ [0-9]+ ValueIn |&gt; Repeat |&gt; ! |&gt; map(#187)
+│     └─ \}
+└─ [\+\?]? ValueIn |&gt; map(#4) |&gt; with_name(:possessive_quantifier)|missing
+::Any</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @with_names sequence =
+           map( v-&gt;sSequence(v...),
+                Repeat( subpattern ));</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: subpattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; p = sequence(raw&quot;\++?$&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: sequence not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(p, &quot;+++&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">1-element Vector{Char}:
+ &#39;+&#39;: ASCII/Unicode U+002B (category Sm: Symbol, math)</code></pre><p>The alternation parser transforms a regex string into a parser</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @with_names pattern = join(sequence, &#39;|&#39;) do v
+           sEither(v...)::CombinedParser
+       end;</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: sequence not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; result_type(pattern)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; p = parse(pattern, &quot;ab|c&quot;, log=(:sequence, :pattern))</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; parse(p, &quot;c&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: ArgumentError: no successfull parsing.</code></pre><h2 id="[Capture](@ref)s"><a class="docs-heading-anchor" href="#[Capture](@ref)s"><a href="../../lib/regexp/#CombinedParsers.Regexp.Capture"><code>Capture</code></a>s</a><a id="[Capture](@ref)s-1"></a><a class="docs-heading-anchor-permalink" href="#[Capture](@ref)s" title="Permalink"></a></h2><p>Parentheses allow groupings that are repeatable.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; import CombinedParsers.Regexp: name</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p>The <a href="../../lib/constructors/#Base.push!"><code>push!</code></a> to <a href="../../lib/constructors/#CombinedParsers.Either"><code>Either</code></a> technique allows for the construction of recursive parsers.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @with_names capture_group =
+           map(Capture, Sequence(2, &#39;(&#39;, pattern, &#39;)&#39;));</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; push!(repeatable,capture_group);</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: capture_group not defined</code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p>Conveniently, the <a href="../../lib/constructors/#CombinedParsers.@syntax"><code>@syntax</code></a> with a <code>for &lt;name&gt; in &lt;either&gt;</code> calls <code>push!</code>.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @syntax for noncapture_group in repeatable
+           Sequence(2, &quot;(?:&quot;, pattern, &#39;)&#39;)
+       end;</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; import CombinedParsers.Regexp: ParserWithCaptures</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; regcomb = map(ParserWithCaptures,pattern);</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; match(regcomb(&quot;(1a(2b?)*)*0&quot;),&quot;1a1a21a2b22b0&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: regcomb not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; match(CombinedParsers.Regexp.Regcomb(&quot;(1a(2b?)*)*0&quot;),&quot;1a1a21a2b22b0&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ParseMatch(&quot;1a1a21a2b22b0&quot;, 1=&quot;1a2b22b&quot;, 2=&quot;2b&quot;)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; match(Regex(&quot;(1a(2b?)*)*0&quot;),&quot;1a1a21a2b22b0&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">RegexMatch(&quot;1a1a21a2b22b0&quot;, 1=&quot;1a2b22b&quot;, 2=&quot;2b&quot;)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; pattern(&quot;(1a(2b?)*)*0&quot;)(&quot;1a1a21a2b22b0&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code></pre><h2 id="[Lookahead](@ref)-and-[Lookbehind](@ref)"><a class="docs-heading-anchor" href="#[Lookahead](@ref)-and-[Lookbehind](@ref)"><a href="../../lib/constructors/#CombinedParsers.Lookahead"><code>Lookahead</code></a> and <a href="../../lib/constructors/#CombinedParsers.Lookbehind"><code>Lookbehind</code></a></a><a id="[Lookahead](@ref)-and-[Lookbehind](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Lookahead](@ref)-and-[Lookbehind](@ref)" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @syntax for lookaround in repeatable
+           Sequence(
+               &quot;(?&quot;,
+               :direction =&gt; Either(
+                   &#39;&lt;&#39; =&gt; Lookbehind,
+                   Always() =&gt; Lookahead),
+               :doesmatch =&gt; Either(
+                   &#39;=&#39; =&gt; true,
+                   &#39;!&#39; =&gt; false),
+               :pattern =&gt; pattern,
+               &#39;)&#39;) do v
+                   v.direction(v.doesmatch,v.pattern)::CombinedParser
+                   # annotation needed for type inference
+                   # obfuscated by :direction
+               end
+       end;</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; match(pattern(&quot;a(?=c|d).&quot;),&quot;abad&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: pattern not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; match(Regex(&quot;a(?=c|d).&quot;),&quot;abad&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">RegexMatch(&quot;ad&quot;)</code></pre><h2 id="Regular-Expression-Brackets"><a class="docs-heading-anchor" href="#Regular-Expression-Brackets">Regular Expression Brackets</a><a id="Regular-Expression-Brackets-1"></a><a class="docs-heading-anchor-permalink" href="#Regular-Expression-Brackets" title="Permalink"></a></h2><p>The regular expression parser packaged with CombinedParser is widely compliant with the PCRE C library used in Julia <code>Base.Regex</code> – and in more than half the tests actually faster than C <a href="../pcre-compliance/">see testing and benchmarking against PCRE tests</a>.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; import CombinedParsers.Regexp: bracket, ParserWithCaptures</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; push!(repeatable,bracket);</code><code class="nohighlight hljs ansi" style="display:block;"></code><code class="nohighlight hljs ansi" style="display:block;"></code></pre><p><a href="../../lib/regexp/#CombinedParsers.Regexp.@re_str"><code>@re_str</code></a> is tested and benchmarked against the PCRE C library testset (see <a href="../pcre-compliance/">compliance report</a>).</p><p>Syntax is essential, semantics is high-brow. What is the semantics of a regular expression? The semantics of regular expression is a parser program that reads a context free regular language.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../example-arithmetics/">« Arithmetics (Evaluation)</a><a class="docs-footer-nextpage" href="../json/">JSON (recursion) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Wednesday 1 September 2021 11:46">Wednesday 1 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
