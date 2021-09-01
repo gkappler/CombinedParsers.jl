@@ -278,20 +278,20 @@ end
 import Base: tryparse, parse
 export tryparse_pos
 function Base.parse(p::AbstractToken, s, pos...; kw...)
-    i = tryparse_pos(p, s, pos...; kw...)
-    i === nothing && throw(ArgumentError("no successfull parsing."))
+    i = tryparse_pos(p, s, pos...; sentinel = NoMatch(), kw...)
+    i === NoMatch() && throw(ArgumentError("no successfull parsing."))
     i[1]
 end
 
-function Base.tryparse(p::AbstractToken, s, pos...; kw...)
-    i = tryparse_pos(p, s, pos...; kw...)
-    i === nothing && return nothing
+function Base.tryparse(p::AbstractToken, s, pos...; sentinel=nothing, kw...)
+    i = tryparse_pos(p, s, pos...; sentinel=sentinel, kw...)
+    i === sentinel && return sentinel
     i[1]
 end
 
-function tryparse_pos(p,s, idx=firstindex(s), till=lastindex(s); kw...)
+function tryparse_pos(p,s, idx=firstindex(s), till=lastindex(s); sentinel=nothing, kw...)
     i = iterate_state(wrap(p; kw...),s,till,idx,idx,nothing)
-    i === nothing && return nothing
+    i === nothing && return sentinel
     get(p,s,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)
 end
 
@@ -301,12 +301,15 @@ end
 Parse `sequence` with `parser` at start and produce an instance of `result_type(parser)`.
 If `log!==nothing`, parser is transformed with [`log_names`](@ref)`(p, log)` before matching.
 
-    tryparse(parser::CombinedParser, sequence[, idx=firstindex(sequence)[, till=lastindex(sequence)]]; log=nothing)
+Throws an `ArgumentError` if parsing is not successful (like `Base.parse`).
 
-returns either a result value or `nothing` if sequence does not start with with a match.
+    tryparse(parser::CombinedParser, sequence[, idx=firstindex(sequence)[, till=lastindex(sequence)]]; sentinel=nothing, log=nothing)
 
-    tryparse_pos(parser::CombinedParser, str::AbstractString[, idx=firstindex(sequence)[, till=lastindex(s)]]; log=nothing)
-returns either a tuple of result value and the position after the match, or `nothing` if sequence does not start with with a match.
+returns either a result value or `sentinel` if sequence does not start with with a match.
+(Consider `sentinel=CombinedParsers.NoMatch()` for parsers what might result in `nothing` after success.)
+
+    tryparse_pos(parser::CombinedParser, str::AbstractString[, idx=firstindex(sequence)[, till=lastindex(s)]]; sentinel=nothing, log=nothing)
+returns either a tuple of result value and the position after the match, or `sentinel` if sequence does not start with with a match.
 
 # Example
 
