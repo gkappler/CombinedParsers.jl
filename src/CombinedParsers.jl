@@ -1825,22 +1825,8 @@ struct Either{Ps,S,T} <: CombinedParser{S,T}
 end
 
 """
-    Base.getindex(x::Either, property::Symbol)
 
-Return parser option with name `property` if found nested in `WrappedParser`s.
-Errors otherwise.
 
-Useful with [`substitute`](@ref) and [`CombinedParsers.BNF.bnf`](@ref).
-"""
-function Base.getindex(x::Either, property::Symbol)
-    for p in x.options
-        while p isa WrappedParser
-            p isa NamedParser && p.name==property && return p
-            p = p.parser
-        end
-    end
-    error("no NamedParser $property found")
-end
 
 """
     Either(p...; simplify=false)
@@ -1956,6 +1942,25 @@ function either_options(x...; simplify = false)
         end...]
 end
 @deprecate sEither(x...) Either(x...; simplify=true)
+
+
+"""
+    Base.getindex(x::Either, property::Symbol)
+
+Return parser option with name `property` if found nested in `WrappedParser`s.
+Errors otherwise.
+
+Useful with [`substitute`](@ref) and [`CombinedParsers.BNF.bnf`](@ref).
+"""
+function Base.getindex(x::Either, property::Symbol)
+    for p in x.options
+        while p isa WrappedParser
+            p isa NamedParser && p.name==property && return p
+            p = p.parser
+        end
+    end
+    error("no NamedParser $property found")
+end
 
 
 either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
