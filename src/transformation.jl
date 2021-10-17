@@ -13,23 +13,29 @@ Parser transforming result of a wrapped parser.
 If `parser isa NamedParser`, transformation is done within the wrapped parser
 (i.e. name applies to result-transforming parser).
 """
-@auto_hash_equals struct Transformation{F,P,S,T} <: WrappedParser{P,S,T}
+@auto_hash_equals struct Transformation{F,P,S} <: WrappedParser{P,S}
     transform::F
     parser::P
-    Transformation{T}(transform, p_) where {T} =
+    Transformation(transform, p_) where {T} =
         let p = parser(p_)
-            new{typeof(transform),typeof(p),state_type(p),T}(transform, p)
+            new{typeof(transform),typeof(p),state_type(p)}(transform, p)
         end
-    function Transformation{T}(transform, p::NamedParser) where {T}
-        tp = new{typeof(transform),typeof(p.parser),state_type(p.parser),T}(transform, p.parser)
+    function Transformation(transform, p::NamedParser) where {T}
+        tp = new{typeof(transform),typeof(p.parser),state_type(p.parser)}(transform, p.parser)
         with_name(p.name, tp, p.doc)
     end
 end
-Transformation(T::Type, p) = 
-    Transformation{T}(T, p)
+
+result_type(p::Transformation{<:Function}, sequence::Type; throw_empty_union=true) =
+    infer_result_type(p.transform, Any, p.parser, sequence,
+                      "call seq(function,type,parts...)";
+                      throw_empty_union=throw_empty_union)
+
+result_type(p::Transformation{<:Type}, sequence::Type) =
+    p.transform
 
 _deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
-    Transformation{result_type(x)}(
+    Transformation(
         x.transform,
         deepmap_parser(f,mem,x.parser,a...;kw...))
 
@@ -84,6 +90,9 @@ function Base.map(::MatchedSubSequence, result::Type, x::CombinedParser)
     Transformation{result}(MatchedSubSequence(),x)
 end
 
+result_type(p::Transformation{MatchedSubSequence}, sequence::Type{<:AbstractString}) =
+    SubString{sequence}
+
 function Base.get(x::Union{Transformation{MatchedSubSequence},
                            ConstantParser{<:AbstractString}},
                   sequence, till, after, i, state)
@@ -98,10 +107,7 @@ intern(v::AbstractString) =
     InternedStrings.intern(v)::String
 
 intern(v::Nothing) = ""
-
-(!)(x::CombinedParser{<:Any,<:AbstractString}) =
-    map(intern, x)
-
+(!)(x::Transformation{MatchedSubSequence}) = map(intern, x)
 map(::typeof(intern), x::Transformation{typeof(intern)}) = x
 
 """
@@ -176,9 +182,11 @@ function print_constructor(io::IO,x::Transformation{<:Constant})
 end
 
 function map_constant(transform, p::CombinedParser)
-    T=typeof(transform)
-    Transformation{T}(Constant(transform), p)
+    Transformation(Constant(transform), p)
 end
+
+result_type(p::Transformation{<:Constant}, sequence::Type) =
+    typeof(p.transform.value)
 
 parser(constant::Pair) =
     map_constant(constant.second, parser(constant.first))
@@ -241,13 +249,16 @@ end
 
 `getindex(get(parser.parser,a...).parser.transform)`
 """
-function Base.get(parser::Transformation{IndexAt{I}}, sequence, till, after, i, state) where {I <: Integer}
+function Base.get(parser::Transformation{<:IndexAt{<:Integer}}, sequence, till, after, i, state)
     v = get(parser.parser,sequence, till, after, i, state)
     v[parser.transform.i]
 end
 function Base.get(parser::Transformation{IndexAt{Is}}, sequence, till, after, i, state) where {Is <: Union{Tuple, Vector, UnitRange}}
     tuple(get(parser.parser,sequence, till, after, i, state)[parser.transform.i]...)
 end
+
+result_type(p::Transformation{<:IndexAt{<:Integer}}, sequence::Type) =
+    fieldtypes(result_type(p.parser, sequence))[p.transform.i]
 
 function print_constructor(io::IO,x::Transformation{<:IndexAt})
     print_constructor(io,x.parser)
@@ -264,12 +275,10 @@ See also: [`get`](@ref), [`deepmap`](@ref)
 
 """
 function Base.map(index::IndexAt{<:Integer}, p::CombinedParser)
-    T=result_type(p)    
-    Transformation{fieldtype(T,index.i)}(index, p)
+    Transformation(index, p)
 end
 function Base.map(index::IndexAt{<:UnitRange}, p::CombinedParser)
-    T=Tuple{fieldtypes(result_type(p))[index.i]...}
-    Transformation{T}(index, p)
+    Transformation(index, p)
 end
 
 """
@@ -281,14 +290,15 @@ See also: [`get`](@ref), [`deepmap`](@ref)
 """
 function Base.map(f::Function, p::CombinedParser, a...;
                   throw_empty_union=true)
-    T = infer_result_type(f,Any,p,"call seq(function,type,parts...)",typeof.(a)...;
-                          throw_empty_union=throw_empty_union)
-    Transformation{T}(isempty(a) ? f : v -> f(v, a...), p)
+    Transformation(isempty(a) ? f : v -> f(v, a...), p)
 end
 
+
+
+
 function Base.map(f::Function, Tc::Type, p::CombinedParser, a...)
-    T = infer_result_type(f,Tc,p,"call seq(function,type,parts...)",typeof.(a)...)
-    Transformation{Tc}(isempty(a) ? f : v -> f(v, a...), p)
+    Transformation(Tc, 
+                   Transformation(isempty(a) ? f : v -> f(v, a...), p))
 end
 
 """
@@ -319,6 +329,8 @@ Base.map(f::typeof(identity), p::CombinedParser) = p
 @deprecate map(T::Type, f::Function, p::CombinedParser, a...) map(f,T,p,a...)
 @deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
 
+infer_result_type(f::Function,Tc::Type,p::CombinedParser, sequence,onerror::AbstractString,ts::Type...; kw...) =
+    infer_result_type(f,Tc,p, typeof(sequence),onerror,ts...; kw...)
 
 """
     infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::AbstractString,ts::Type...; throw_empty_union=true)
@@ -326,8 +338,8 @@ Base.map(f::typeof(identity), p::CombinedParser) = p
 Used by Parser Transformations to infer result type of a parser.
 Throws error if type inference fails, if throw_empty_union=true.
 """
-function infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::AbstractString,ts::Type...; throw_empty_union=true)
-    Ts = Base.return_types(f, tuple(result_type(p),ts...))
+function infer_result_type(f::Function,Tc::Type,p::CombinedParser, sequence::Type,onerror::AbstractString,ts::Type...; throw_empty_union=true)
+    Ts = Base.return_types(f, tuple(result_type(p,sequence),ts...))
     isempty(Ts) && error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     T = first(Ts)

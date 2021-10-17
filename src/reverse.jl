@@ -16,11 +16,11 @@ Parser that succeeds if and only if `parser` succeeds **before cursor**. Consume
 The match is returned.
 Useful for checks like "must be preceded by `parser`, don't consume its match".
 """
-@auto_hash_equals struct PositiveLookbehind{S,T,P} <: WrappedAssertion{S,T}
+@auto_hash_equals struct PositiveLookbehind{S,P} <: WrappedAssertion{S}
     parser::P
     function PositiveLookbehind(p_,reversed_parser=true)
         p = reversed_parser ? reversed(parser(p_)) : parser(p_)
-        new{Tuple{Int,state_type(p)},result_type(p),typeof(p)}(p)
+        new{Tuple{Int,state_type(p)},typeof(p)}(p)
     end
 end
 # result_type(p::Type{PositiveLookbehind{T}}) where T = T
@@ -42,7 +42,7 @@ julia> parse("peek"*la,"peek")
 ("peek", re"(?<!keep)")
 ```
 """
-@auto_hash_equals struct NegativeLookbehind{P} <: WrappedAssertion{MatchState,NegativeLookbehind{P}}
+@auto_hash_equals struct NegativeLookbehind{P} <: WrappedAssertion{MatchState}
     parser::P
     function NegativeLookbehind(p_,reversed_parser=true)
         p = reversed_parser ? reversed(parser(p_)) : parser(p_)

@@ -12,19 +12,19 @@ julia> parser(1) isa CombinedParsers.ConstantParser
 true
 ```
 """
-@auto_hash_equals struct ConstantParser{P,T} <: LeafParser{MatchState,T}
+@auto_hash_equals struct ConstantParser{P} <: LeafParser{MatchState}
     parser::P
     function ConstantParser(x::T) where {T<:AbstractString}
-        new{T,SubString{T}}(x)
+        new{T}(x)
     end
     function ConstantParser(x)
-        new{typeof(x),typeof(x)}(x)
+        new{typeof(x)}(x)
     end
 end
 @inline _ncodeunits(x::Union{Char,AbstractString}) = ncodeunits(x)
 @inline _ncodeunits(x) = 1
 @inline _ncodeunits(x::ConstantParser) = _ncodeunits(x.parser)
-
+result_type(::ConstantParser{P}, sequence::Type) where P = P
 @inline _rightof(str,i,parser::ConstantParser,x) =
     i+_ncodeunits(parser)
 @inline _leftof(str,i,parser::ConstantParser,x) = 

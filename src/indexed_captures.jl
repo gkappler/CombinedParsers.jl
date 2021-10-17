@@ -9,12 +9,12 @@ indices of named capture groups in field `names::Dict`.
     implicitly called in [`match`](@ref)
 See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
 """
-@auto_hash_equals struct ParserWithCaptures{P,S,T} <: WrappedParser{P,S,T}
+@auto_hash_equals struct ParserWithCaptures{P,S} <: WrappedParser{P,S}
     parser::P
     subroutines::Vector{CombinedParser} ## todo: rename subroutines
     names::Dict{Symbol,Vector{Int}}
     ParserWithCaptures(parser,captures,names) =
-        new{typeof(parser),state_type(parser),result_type(parser)}(parser,captures,names)
+        new{typeof(parser),state_type(parser)}(parser,captures,names)
 end
 function print_constructor(io::IO, x::ParserWithCaptures)
     print_constructor(io,x.parser)
@@ -171,8 +171,8 @@ end
 import ..CombinedParsers: MatchedSubSequence, Transformation
 MatchedSubSequence(x::ParserWithCaptures) =
     ParserWithCaptures(MatchedSubSequence(x.parser),x.subroutines,x.names)
-Transformation{T}(t,x::ParserWithCaptures) where T =
-    ParserWithCaptures(Transformation{T}(t,x.parser),x.subroutines,x.names)
+Transformation(t,x::ParserWithCaptures)  =
+    ParserWithCaptures(Transformation(t,x.parser),x.subroutines,x.names)
 
 
 function _deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Backreference,context,a...)
@@ -186,13 +186,17 @@ end
 function _deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Subroutine,context,a...)
     index = capture_index(x.name,x.delta,x.index, context)
     if index <= 0 || index>length(context.subroutines)
-        Subroutine{Any,Any}(x.name,Symbol(""),index)
+        Subroutine{Any}(x.name,Symbol(""),index)
     else
         sr = context.subroutines[index]
-        Subroutine{state_type(sr),result_type(sr)}(
-            x.name,Symbol(""),index)
+        map(result_type(sr), # can map be avoided? e.g. by Subroutine storing context
+            Subroutine{state_type(sr)}(
+                x.name,Symbol(""),index))
     end
 end
+
+result_type(p::Subroutine, sequence::Type) =
+    Any
 
 """
     _deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)

@@ -30,7 +30,7 @@ import TextParse: tryparsenext
 result_type(x::AbstractToken) = result_type(typeof(x))
 result_type(::Type{<:AbstractToken{T}}) where T = T
 
-struct AbstractTokenParser{P<:AbstractToken,T} <: LeafParser{NCodeunitsState{T},T}
+struct AbstractTokenParser{P<:AbstractToken,T} <: LeafParser{NCodeunitsState{T}}
     parser::P
     function AbstractTokenParser(p::AbstractToken)
         new{typeof(p), result_type(p)}(p)
@@ -40,6 +40,8 @@ struct AbstractTokenParser{P<:AbstractToken,T} <: LeafParser{NCodeunitsState{T},
         new{typeof(p), result_type(p)}(p)
     end
 end
+result_type(::AbstractTokenParser{<:AbstractToken,T}, sequence::Type) where T = T
+
 """
     NumericParser(x...) = parser(TextParse.Numeric(x...))
 """

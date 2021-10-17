@@ -129,7 +129,7 @@ end
 
 export substitute
 
-struct Substitution<:CombinedParser{Nothing,Nothing}
+struct Substitution<:CombinedParser{Nothing}
     name::Symbol
 end
 """
