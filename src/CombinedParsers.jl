@@ -632,9 +632,7 @@ macro syntax(block)
                 macro $(Symbol(string(name)*"_str"))(x)
                     $name(x)
                 end
-                global $name = begin
-                    $(expr...)
-                end
+                $(expr...)
                 pushfirst!($within_expr, $name)
                 $name
             end

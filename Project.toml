@@ -1,7 +1,7 @@
 name = "CombinedParsers"
 uuid = "5ae71ed2-6f8a-4ed1-b94f-e14e8158f19e"
 authors = ["Gregor Kappler"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -21,7 +21,7 @@ Nullables = "1.0.0"
 TextParse = "0.9, 1.0.0"
 LazyStrings = "0.1.1"
 Tries = "0.1.4"
-julia = "1.4.2, 1.5, 1.6"
+julia = "1.4.2, 1.5, 1.6, 1.7, 1.8"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
