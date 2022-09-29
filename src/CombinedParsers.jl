@@ -283,8 +283,6 @@ struct Bytes{N} <: NIndexParser{N} end
 
 If available before end of sequence, parse `N` bytes successfully with `result_type` `T`, fail otherwise.
 """
-struct Bytes{N} <: NIndexParser{N} end
-
 Bytes(N::Integer, T::Type=Vector{UInt8}) = map(T,Bytes{N}())
 @deprecate Bytes{T}(N::Integer) where T Bytes(N,T)
 
@@ -518,25 +516,6 @@ macro with_names(block)
     esc(with_names(block))
 end
 
-export @seq
-"""
-    @seq(x...)
-
-Create a sequence interleaved with whitespace (horizontal or vertical).
-The result_type is omitting whitespace.
-"""
-macro seq(x...)
-    r = if length(x)==1
-        x
-    else
-        quote
-            x_ = [$(x...)]
-            sSequence( (i < lastindex(x_) ? (e*CombinedParsers.Regexp.whitespace_newline)[1] : e for (i,e) in enumerate(x_))...)
-        end
-    end
-    esc(r)
-end
-
 
 export @syntax
 """
@@ -674,6 +653,9 @@ export Repeat_stop, Repeat_until
 Repeat `p` until `stop` (`NegativeLookahead`), not matching `stop`.
 Sets cursor **before** `stop`. Tries `min:max` times
 Returns results of `p`.
+
+!!! note
+Can be wrapped with Lazy.
 
 ```jldoctest
 julia> p = Repeat_stop(AnyChar(),'b') * AnyChar()
@@ -1819,12 +1801,11 @@ julia> parse("a" | "bc","bc")
 
 ```
 """
-struct Either{Ps,S,T} <: CombinedParser{S,T}
+struct Either{Ps,S,T} <: CombinedParser{S}
     options::Ps
     Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
 end
 
-"""
 
 
 
