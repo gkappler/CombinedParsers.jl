@@ -12,7 +12,7 @@ import CombinedParsers.Regexp: char, integer_base, escape_sequence, escaped_char
     @test parse(integer_base(8),"765")==501
     @test parse(integer_base(10),"765")==765
     @test parse(integer_base(16),"765")==1893
-    @test parse(integer_base(16),"")==0
+    @test tryparse(integer_base(16),"")===nothing
     @test parse(Sequence(v->Char(v[2]),"\\x{",integer_base(16),"}"),"\\x{10}") == '\x10'
     @test parse(Repeat(escaped_character),raw"\a\t\r\n") == collect("\a\t\r\n")
     @test parse(parser(parse(escaped_character,"\\o{100}")),"@")=='@'

@@ -282,6 +282,9 @@ bsr = with_name(
 
 newline = bsr
 
+alpha = CharIn('a':'z','A':'Z')
+alphanum = CharIn('a':'z','A':'Z','0':'9')
+
 "Equivalent PRCE `\\w`: Char with unicode class `L`, `N`, or `_`."
 word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 
@@ -361,7 +364,7 @@ See [`at_lineend`](@ref).
 hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
 export hex_digit, integer_base
 """
-    integer_base(base,mind=0,maxd=Repeat_max)
+    integer_base(base,mind=1,maxd=Repeat_max)
 
 Parser matching a integer format on base `base`.
 
@@ -370,7 +373,7 @@ Parser matching a integer format on base `base`.
     
     A custom parser could aggregate result incrementally while matching.
 """
-function integer_base(base=10,mind=0,maxd=Repeat_max)
+function integer_base(base=10,mind=1,maxd=Repeat_max)
     dig = if base == 16
         hex_digit
     elseif base <= 10
