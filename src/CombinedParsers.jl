@@ -2260,7 +2260,7 @@ See also: [`with_log`](@ref), [`log_parser`](@ref), [`deepmap_parser`](@ref)
 function log_names(x, names=true; exclude=nothing)
     message = if names === true
         if exclude === nothing
-            x -> x isa NamedParser ? x.name : nothing
+            x -> x isa NamedParser && x.doc=="" ? x.name : nothing
         else
             x -> ( x isa NamedParser && !in(x.name,exclude) ) ? x.name : nothing
         end
