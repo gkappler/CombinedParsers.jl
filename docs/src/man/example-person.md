@@ -5,7 +5,7 @@ can be written in different ways, e.g.
 
 
 ## Reading, technically, is Parsing
-When humany read names, we identify different writings with the same name of course.
+When a human read names, we identify different writings with the same name of course.
 Our smart brains analyzes the series of letter symbols
 like we move muscles without being aware of every detail, intuitively.
 Reading texts, we understand what the words mean.
