@@ -289,6 +289,9 @@ function Base.tryparse(p::AbstractToken, s, pos...; sentinel=nothing, kw...)
     i[1]
 end
 
+tryparse_pos(p,s::Char, a...; kw...) =
+    error("cannot parse a Char - probably a Combinedparsers bug!")
+
 function tryparse_pos(p,s, idx=firstindex(s), till=lastindex(s); sentinel=nothing, kw...)
     i = iterate_state(wrap(p; kw...),s,till,idx,idx,nothing)
     i === nothing && return sentinel
