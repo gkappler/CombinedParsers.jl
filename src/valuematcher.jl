@@ -188,7 +188,7 @@ julia> parse(l, "c")
 @auto_hash_equals struct ValueIn{S} <: ValueMatcher
     pcre::String
     sets::S
-    function ValueIn(pcre::AbstractString, x_...) where T
+    function ValueIn(pcre::AbstractString, x_...)
         label, x = flatten_valuepatterns(x_...)
         new{typeof(x)}(pcre == "" ? label : pcre,x)
     end

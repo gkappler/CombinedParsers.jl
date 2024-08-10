@@ -14,7 +14,7 @@ function Either(x::Vector{<:AbstractString})
     for e in x
         r[e...] = nothing
     end
-    !Either{NCodeunitsState, Nothing}(r)
+    !Either(r, NCodeunitsState)
 end
 
 function Either(x::Dict)
@@ -23,7 +23,7 @@ function Either(x::Dict)
     for (e,v) in pairs(x)
         r[e...] = v
     end
-    Either{NCodeunitsState, valtype(x)}(r)
+    Either(r, NCodeunitsState)
 end
 either_state_type(T::Type{<:Trie}) = NCodeunitsState{T}
 
@@ -62,6 +62,17 @@ end
     i+x.nc
 @inline _leftof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState) =
     i-x.nc
+
+result_type(x::Either{<:AbstractTrie}, sequence::Type; kw...) =
+    SubString{sequence}
+
+
+function Base.get(x::Either{<:AbstractTrie},
+                  sequence, till, after, i, state)
+    li = _prevind(sequence,after)
+    li<i ? "" : @inbounds SubString(sequence,i,li)
+end
+
 
 children(x::Either{<:AbstractTrie}) =
     children(x.options)

@@ -102,7 +102,7 @@ integer = _integer(Repeat_max)
 
 # pattern alternatives
 # circumflex and dollar https://www.pcre.org/original/doc/html/pcrepattern.html#SEC6
-pattern = Either{CombinedParser}(
+pattern = Either(
     Any[ on_options(Base.PCRE.MULTILINE, '^' => at_linestart),
          parser('^' => AtStart()),
          on_options(Base.PCRE.MULTILINE, '$' => at_lineend),
@@ -121,7 +121,7 @@ char =  Either(
     Sequence(2,'\\', CharIn(meta_chars))) do v
         convert(CombinedParser,v)
     end
-repeatable = Either{CombinedParser}(Any[char])
+repeatable = map(CombinedParser,Either(Any[char]))
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC5
 escape_sequence(stop=AtEnd()) =
@@ -402,11 +402,9 @@ push!(repeatable,bracket);
 end;
 push!(pattern, quantified)
 throw_unsupported(p) =
-    map(v -> throw(UnsupportedError(v)), p;
-        throw_empty_union=false)
+    map(String, map(v -> throw(UnsupportedError(v)), p))
 throw_unsupported(p,s) =
-    map(v -> throw(UnsupportedError(s)), p;
-        throw_empty_union=false)
+    map(String, map(v -> throw(UnsupportedError(s)), p));
 
 pushfirst!(pattern,throw_unsupported(parser("\\K")));
 

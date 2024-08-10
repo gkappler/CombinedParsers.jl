@@ -249,12 +249,13 @@ vertical_space_char, vertical_space_maybe, vertical_space
 
 "Equivalent PRCE `\\h\\v`, [`horizontal_space_char`](@ref), [`vertical_space_char`](@ref)"
 space_char  = CharIn("\\h\\v",horizontal_space_char,vertical_space_char)
+
 @with_names begin
     space_maybe = Atomic(!Repeat(space_char))
     space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
 end
 
-@deprecate whitespace_newline space
+#@deprecate whitespace_newline space
 
 """
     CombinedParsers.newline

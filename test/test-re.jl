@@ -21,12 +21,17 @@ import CombinedParsers.Regexp: char, integer_base, escape_sequence, escaped_char
     @test parse(escaped_character,"\\t")==('\t')
     @test parse(escaped_character,"\\x{0065}") == ('e')
     @test parse(integer_base(8,3,3),"100")==64
-    match(r"\100","@")
-    match(r"\x100","@")
-    match(r"\o{100}","@")
-    match(r"\x1","\U0010")
+    @test match(r"\100","@") !== nothing
+    @test match(r"\x100","@") === nothing
+    @test match(r"\o{100}","@") !== nothing
+    @test match(r"\x1","\U0010") === nothing
+    @test match(re"\100","@") !== nothing
+    @test match(re"\x100","@") === nothing
+    @test match(re"\o{100}","@") !== nothing
+    @test match(re"\x1","\U0010") === nothing
 end
 
+re"\d"
 import CombinedParsers.Regexp: @test_pcre
 @testset "char groups" begin
     @test_pcre "\\d+" "1123"

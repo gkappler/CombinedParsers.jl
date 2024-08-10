@@ -145,7 +145,7 @@ commentless_symbol = Either(
     special_sequence
 )
 
-comment_symbol = Either{Any}(Any[
+comment_symbol = Either(Any[
     other_character,
     commentless_symbol
 ])

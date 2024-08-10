@@ -55,7 +55,7 @@ end
 
 @testset "@with_names #29" begin
     p = @with_names begin
-        foo =  Either{Any}(Any["A", "B"])
+        foo =  Either(Any["A", "B"])
         bar = Repeat1("b")
 
         foobar = foo | bar
@@ -116,7 +116,7 @@ function html(inner::Function, T::Type, tags::CombinedParser, attrs_parser=attri
     A = eltype(result_type(attrs_parser))
     function nested_html(x,)
         (tag,attrs) = x
-        Either{Any}(map(parser("/>")) do v
+        Either(map(parser("/>")) do v
                     (tag=tag, attrs=attrs, children=T[])
                     end,
                     Sequence(">",
@@ -140,7 +140,7 @@ end
 
 
 @testset "html" begin
-    inner = Either{Any}(Any[!Repeat(CharNotIn("<>"))]);
+    inner = Either(Any[!Repeat(CharNotIn("<>"))]);
     pushfirst!(inner,html(!Repeat1(ValueIn('a':'z')),inner,attributes));
     parse(inner,"<a font=1><b>b</b>a</a>")
     @test parse(inner,"<a font=\"+1\">i<b>bold</b>j</a>") == 

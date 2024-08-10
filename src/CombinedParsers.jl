@@ -66,7 +66,7 @@ The result type is a CombinedParser type parameter.
 Most of the time it is type-inferred within constructors
 by [`infer_result_type`](@ref).
 """
-result_type(x::CombinedParser, sequence::Type) =
+result_type(x::CombinedParser, sequence::Type; kw...) =
     error("implement result_type(::$(typeof(x)), sequence::Type)!")
 
 result_type(x::CombinedParser) =
@@ -146,7 +146,7 @@ If no next match is found, return `nothing`.
 Abstract type for parser wrappers, providing default methods."
 """
 abstract type WrappedParser{P,S} <: CombinedParser{S} end
-result_type(p::WrappedParser, sequence::Type) = result_type(p.parser, sequence)
+result_type(p::WrappedParser, sequence::Type; kw...) = result_type(p.parser, sequence; kw...)
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
 function print_constructor(io::IO,x::WrappedParser)
@@ -727,7 +727,7 @@ See [`after`](@ref)
 @auto_hash_equals struct FlatMap{P,S,Q<:Function} <: CombinedParser{S}
     left::P
     right::Q
-    function FlatMap(right::Q, left::P) where {T, P<:CombinedParser, Q<:Function}
+    function FlatMap(right::Q, left::P) where {P<:CombinedParser, Q<:Function}
         new{P,Tuple{<:Any,<:Any,<:Any},Q}(left, right)
     end
 end
@@ -736,8 +736,8 @@ left_state(state::Tuple) = state[1]
 right_parser(state::Tuple) = state[2]
 right_state(state::Tuple) = state[3]
 
-result_type(x::FlatMap, sequence::Type) =
-    result_type(x.right, sequence)
+result_type(x::FlatMap, sequence::Type; kw...) =
+    result_type(x.right, sequence; kw...)
 
 children(x::FlatMap) = ( x.left, x.right )
 function print_constructor(io::IO,x::FlatMap)
@@ -902,16 +902,16 @@ print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
 children(x::Sequence) = isliteralsequence(x) ? tuple() : x.parts
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
-result_type(p::Sequence, sequence::Type) =
-    sequence_result_type(p.parts, sequence)
+result_type(p::Sequence, sequence::Type; kw...) =
+    sequence_result_type(p.parts, sequence; kw...)
 
 """
     sequence_result_type(parts, sequence)
 
 `Tuple` type, internally used for `Sequence` result_type.
 """
-sequence_result_type(parts, sequence::Type) =
-    Tuple{ (result_type(p, sequence) for p in parts)... }
+sequence_result_type(parts, sequence::Type; kw...) =
+    Tuple{ (result_type(p, sequence; kw...) for p in parts)... }
 
 isliteralsequence(c::ConstantParser) = true
 isliteralsequence(c) = false
@@ -1339,7 +1339,7 @@ Repeat(min::Integer,max::Integer,p...)              = Repeat((min:max),p...)
 Repeat(p...;min::Integer=0,max::Integer=Repeat_max) = Repeat((min:max),p...)
 Repeat(min::Integer,p...)                           = Repeat((min:Repeat_max),p...)
 
-result_type(p::Repeat, sequence::Type) = Vector{result_type(p.parser, sequence)}
+result_type(p::Repeat, sequence::Type; kw...) = Vector{result_type(p.parser, sequence; kw...)}
 
 @inline repeat_state_type(::Type{MatchState}) = Int
 @inline repeat_state_type(T::Type) = Vector{T}
@@ -1711,8 +1711,8 @@ julia> parse(Optional("a", default=42),"b")
     end
 end
 
-function result_type(p::Optional, sequence::Type)
-    T,D = typeof(p.default), result_type(p.parser, sequence)
+function result_type(p::Optional, sequence::Type; kw...)
+    T,D = typeof(p.default), result_type(p.parser, sequence; kw...)
     T_ = promote_type(T,D)
     T_ === Any ? Union{T,D} : T_
 end
@@ -1801,11 +1801,17 @@ julia> parse("a" | "bc","bc")
 
 ```
 """
-struct Either{Ps,S,T} <: CombinedParser{S}
+struct Either{Ps,S} <: CombinedParser{S}
     options::Ps
-    Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
+    function Either(p, S::Type)
+        ##S isa Type && error("no types please")
+        new{typeof(p),S}(p)
+    end
 end
 
+
+result_type(x::Either, sequence::Type; kw...) =
+    either_result_type(x.options, sequence::Type; kw...)
 
 
 
@@ -1844,7 +1850,7 @@ function Either(p_...; simplify=false)
     os = either_options(p_...; simplify=simplify)
     simplify && length(os)==1 && return first(os)
     p = tuple(os...)
-    Either{either_state_type(p),either_result_type(p)}(p)
+    Either(p, either_state_type(p))
 end
 
 """
@@ -1860,24 +1866,24 @@ See also [`@syntax`](@ref).
 """
 function Either(p_::Vector; simplify=false)
     p = either_options(p_...; simplify=simplify)
-    Either{Any,Any}(p)
+    Either(p, Any)
 end
 
 
-"""
-    Either{T}(p...; simplify=false, convert=false)
+# """
+#     Either{T}(p...; simplify=false, convert=false)
 
-Create a mutable `Either{Any,T}(::Vector{Any})` for creating recursive parsers.
-Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
+# Create a mutable `Either{Any,T}(::Vector{Any})` for creating recursive parsers.
+# Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
 
-If `convert` for any option `x` in `p` that has `!(result_type(x) <: T)`, adds [`Base.map`](@ref)`(T,x)` instead.
-(Provide a `convert` method!)
+# If `convert` for any option `x` in `p` that has `!(result_type(x) <: T)`, adds [`Base.map`](@ref)`(T,x)` instead.
+# (Provide a `convert` method!)
 
-See also [`@syntax`](@ref).
-!!! note
-    state type is `Any` which might cost performance.
-"""
-function Either{T}(p_...; convert=false, simplify=false) where T
+# See also [`@syntax`](@ref).
+# !!! note
+#     state type is `Any` which might cost performance.
+# """
+function Either{T}(p_...; convert=true, simplify=false) where {T}
     p = either_options(p_...; simplify=simplify)
     for (i,x) in enumerate(p)
         if !(result_type(x) <: T)
@@ -1885,7 +1891,7 @@ function Either{T}(p_...; convert=false, simplify=false) where T
             p[i] = map(T,x)
         end 
     end
-    Either{Any,T}(p)
+    Either(p, Any)
 end
 
 @deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; kw...)
@@ -1897,7 +1903,7 @@ end
 
 [`Either`](@ref)`{T}()`.
 """
-Delayed(T::Type) = Either{T}()
+Delayed(T::Type) = map(T, Either())
 
 """
     Either(transform::Function, x::Vararg)
@@ -1957,8 +1963,8 @@ function promote_type_union(Ts...)
 end
 
 "return tuple(state_type,result_type)"
-function either_result_type(ts)
-    promote_type_union(result_type.(ts)...)
+function either_result_type(ts, sequence::Type; kw...)
+    promote_type_union(result_type.(ts, sequence; kw...)...)
 end
 
 children(x::Either) = x.options
@@ -1980,8 +1986,8 @@ See also [`pushfirst!`](@ref) and [`@syntax`](@ref).
 """
 function Base.push!(x::Either{<:Vector,<:Any}, y_)
     y = parser(y_)
-    promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
-    promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
+#    promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
+    # promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
     push!(x.options,y)
     y
 end
@@ -1997,8 +2003,8 @@ See also [`push!`](@ref) and [`@syntax`](@ref).
 """
 function Base.pushfirst!(x::Either{<:Vector,<:Any}, y_)
     y = parser(y_)
-    promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
-    promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
+    #promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
+    #promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
     pushfirst!(x.options,y)
     x
 end
@@ -2074,7 +2080,7 @@ end
     ## @show i
     rightof(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
-@inline function _rightof(str,i,parser::Either{P,T},x::Tuple{Int,T}) where {P,T}
+@inline function _rightof(str,i,parser::Either{P,S},x::Tuple{Int,S}) where {P,S}
     rightof(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
  

@@ -26,11 +26,7 @@ end
 """
 function Base.get(parser::Bytes{N}, sequence::Vector{UInt8}, till,
                   after, i, state) where {N}
-    if isbitstype(T)
-        reinterpret(T,sequence[i:after-1])[1]
-    else
-        T(sequence[i:after-1])
-    end
+    sequence[i:after-1]
 end
 
 function Base.get(parser::AbstractTokenParser,
@@ -65,12 +61,6 @@ function Base.get(parser::Either,
     get(parser.options[either_state_option(state)],
         sequence, till,
         after, i, either_state_state(state))
-end
-
-function Base.get(parser::Either{<:AbstractTrie},
-                  sequence, till,
-                  after, i, state)
-    get(state.state)
 end
 
 

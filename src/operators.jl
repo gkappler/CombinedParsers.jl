@@ -1,8 +1,8 @@
 import Base: (^), (*), (~), (/), (|)
-ParserOperatorTypes = Union{AbstractToken, AbstractString, Char}
+ParserOperatorTypes = Union{CombinedParser, AbstractToken, AbstractString, Char}
 
-(*)(x, y::AbstractToken) = sSequence(parser(x),y)
-(*)(x::AbstractToken, y) = sSequence(x,parser(y))
+(*)(x, y::CombinedParser) = sSequence(parser(x),y)
+(*)(x::CombinedParser, y) = sSequence(x,parser(y))
 """
     (*)(x::Any, y::AbstractToken)
     (*)(x::AbstractToken, y::Any)
@@ -11,7 +11,7 @@ ParserOperatorTypes = Union{AbstractToken, AbstractString, Char}
 Chain parsers in [`sSequence`](@ref).
 See also [`@seq`](@ref).
 """
-(*)(x::AbstractToken, y::AbstractToken) = sSequence(x,y)
+(*)(x::CombinedParser, y::CombinedParser) = sSequence(x,y)
 
 ## todo: cuts
 
@@ -148,5 +148,5 @@ Return new Either with `T` added to result_type(x).
 todo: Note that the options array is kept. As a consequence `push!`on result will also push to `x`.
 """
 (|)(x::Either, T::Type) =
-    Either{Union{result_type(x),T}}(x.options)
+    Either(x.options)
 

@@ -16,20 +16,20 @@ If `parser isa NamedParser`, transformation is done within the wrapped parser
 @auto_hash_equals struct Transformation{F,P,S} <: WrappedParser{P,S}
     transform::F
     parser::P
-    Transformation(transform, p_) where {T} =
+    Transformation(transform, p_) =
         let p = parser(p_)
             new{typeof(transform),typeof(p),state_type(p)}(transform, p)
         end
-    function Transformation(transform, p::NamedParser) where {T}
+    function Transformation(transform, p::NamedParser) 
         tp = new{typeof(transform),typeof(p.parser),state_type(p.parser)}(transform, p.parser)
         with_name(p.name, tp, p.doc)
     end
 end
 
-result_type(p::Transformation{<:Function}, sequence::Type; throw_empty_union=true) =
+result_type(p::Transformation{<:Function}, sequence::Type; kw...) =
     infer_result_type(p.transform, Any, p.parser, sequence,
                       "call seq(function,type,parts...)";
-                      throw_empty_union=throw_empty_union)
+                      kw...)
 
 result_type(p::Transformation{<:Type}, sequence::Type) =
     p.transform
@@ -58,9 +58,15 @@ function Base.get(parser::Transformation{<:Function}, sequence, till, after, i, 
     v = get(parser.parser, sequence, till, after, i, state)
     parser.transform(v)
 end
-function Base.get(parser::Transformation{<:Type}, sequence, till, after, i, state)
+
+function Base.get(parser::Transformation{T}, sequence, till, after, i, state) where {T<:Type}
     v = get(parser.parser, sequence, till, after, i, state)
-    v isa parser.transform ? v : parser.transform(v)
+    if isbitstype(parser.transform)
+        reinterpret(parser.transform,v)[1]
+    else
+        v isa parser.transform ? v : parser.transform(v)
+        #T(sequence[i:after-1])
+    end
 end
 
 
@@ -83,12 +89,9 @@ Deprecated but kept (because legacy `join(...; wrap=JoinSubstring)` syntax does 
 JoinSubstring = MatchedSubSequence
 
 Base.map(::Type{MatchedSubSequence}, x::CombinedParser) = 
-    map(MatchedSubSequence(), x)
-
-Base.map(::MatchedSubSequence, x::CombinedParser) = Base.map(MatchedSubSequence(), SubString{String}, x)
-function Base.map(::MatchedSubSequence, result::Type, x::CombinedParser)
-    Transformation{result}(MatchedSubSequence(),x)
-end
+    Transformation(MatchedSubSequence(), x)
+Base.map(::MatchedSubSequence, x::CombinedParser) = #
+    Transformation(MatchedSubSequence(), x)
 
 result_type(p::Transformation{MatchedSubSequence}, sequence::Type{<:AbstractString}) =
     SubString{sequence}
@@ -288,9 +291,8 @@ Parser matching `p`, transforming parsing results (`x`) with function `f(x,a...)
 
 See also: [`get`](@ref), [`deepmap`](@ref)
 """
-function Base.map(f::Function, p::CombinedParser, a...;
-                  throw_empty_union=true)
-    Transformation(isempty(a) ? f : v -> f(v, a...), p)
+function Base.map(f::Function, p::CombinedParser, a...; kw...)
+    Transformation(isempty(a) ? f : v -> f(v, a...; kw...), p)
 end
 
 
@@ -309,11 +311,11 @@ Parser matching `p`, transforming `p`s parsing result with constructor `T(x,a...
 See also: [`get`](@ref), [`deepmap`](@ref)
 """
 function Base.map(Tc::Type, p::CombinedParser, a...)
-    Transformation{Tc}(isempty(a) ? Tc : v -> Tc(a..., v), p)
+    Transformation(isempty(a) ? Tc : v -> Tc(a..., v), p)
 end
 
 function instance(Tc::Type, p::CombinedParser, a...)
-    Transformation{Tc}((v) -> Tc(a..., v), p)
+    Transformation((v) -> Tc(a..., v), p)
 end
 
 function instance(Tc::Type, p::CombinedParser)
@@ -321,7 +323,7 @@ function instance(Tc::Type, p::CombinedParser)
 end
 
 function Base.map(inner::CombinedParser, p::CombinedParser)
-    Transformation{result_type(inner)}(s -> parse(inner,s), p)
+    Transformation(s -> parse(inner,s), p)
 end
 
 Base.map(f::typeof(identity), p::CombinedParser) = p
@@ -344,6 +346,7 @@ function infer_result_type(f::Function,Tc::Type,p::CombinedParser, sequence::Typ
     ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     T = first(Ts)
     if throw_empty_union && T <: Union{}
+        println(p)
         error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     elseif T <: Tc
         T
