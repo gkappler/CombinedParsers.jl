@@ -318,7 +318,7 @@ Parser part of `word_boundary`.
     at_linestart
 
 ```jldoctest
-julia> CombinedParsers.Regexp.at_linestart
+julia> CombinedParsers.at_linestart
 |🗄 Either |> with_name(:at_linestart)
 ├─ ^ AtStart
 └─ (?<=🗄)) Either |> Atomic |> with_name(:bsr) |> PositiveLookbehind
@@ -331,14 +331,13 @@ julia> CombinedParsers.Regexp.at_linestart
     used in `re"^"` if `Base.PCRE.MULTILINE` is set.
 """
 @with_names at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
-# lineend   = Either(AtEnd(),bsr)
 
 
 """
     at_lineend
 
 ```jldoctest
-julia> CombinedParsers.Regexp.at_lineend
+julia> CombinedParsers.at_lineend
 |🗄 Either |> with_name(:at_lineend)
 ├─ \$ AtEnd
 └─ (?=(?>|🗄)) Either |> Atomic |> with_name(:bsr) |> PositiveLookahead
@@ -351,6 +350,7 @@ julia> CombinedParsers.Regexp.at_lineend
     used in `re"\$"` if `Base.PCRE.MULTILINE` is set.
 """
 @with_names at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
+#@deprecate lineend at_lineend
 
 """
     inline = !Atomic(Repeat(NegativeLookahead(at_lineend)*AnyChar()))

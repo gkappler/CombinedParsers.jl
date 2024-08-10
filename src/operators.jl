@@ -55,11 +55,20 @@ julia> CharIn("abc") .& CharNotIn("c")
 Base.broadcasted(::typeof((&)), x::ValueNotIn, y::ValueNotIn) =
     ValueNotIn(x.pcre*y.pcre, x.sets, y.sets)
 
+Base.broadcasted(::typeof((&)), x::ValueIn, y::ValueIn) =
+    ValueIn(union(x.sets, y.sets))
+
 Base.broadcasted(::typeof((&)), x::ValueIn, y::ValueNotIn) =
     ValueIn(setdiff(x.sets, y.sets))
 
+Base.broadcasted(::typeof((&)), x::ConstantParser, y) =
+    ValueIn(x) .& y
+
 Base.broadcasted(::typeof((&)), x::Union{ValueIn,ValueNotIn}, ::AnyValue) =
     x
+
+Base.broadcasted(::typeof((&)), x::CombinedParser, y) =
+    error("(&) not implemented for types")
 
 
 Base.broadcasted(::typeof((&)), x::NamedParser, y) =
