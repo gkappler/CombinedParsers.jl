@@ -2191,7 +2191,7 @@ end
 include("trie.jl")
 
 
-AtomicState = NCodeunitsState{MatchState}
+# AtomicState = NCodeunitsState{MatchState}
 
 export Atomic
 """
@@ -2205,21 +2205,15 @@ A parser matching `p`, and failing when required to backtrack
     Atomic(p::CombinedParser) =
         new{typeof(p),state_type(p)}(p)
     Atomic{MatchState}(p::CombinedParser) =
-        new{typeof(p),AtomicState}(p)
+        error("unsupported")
 end
 Atomic(p) = Atomic(parser(x))
 
 regex_prefix(x::Atomic) = "(?>"*regex_prefix(x.parser)
 regex_suffix(x::Atomic) = regex_suffix(x.parser)*")"
-function Base.get(parser::Atomic, sequence, till, after, i, state::AtomicState)
-    a, s = iterate_state(parser.parser, sequence, till, i, i, nothing)
-    get(parser.parser, sequence, till, after, i, s)
-end
 
 @inline iterate_state(parser::Atomic, sequence, till, posi, next_i, state::Nothing) =
     iterate_state(parser.parser, sequence, till, posi, next_i, state)
-@inline iterate_state(parser::Atomic{<:Any,AtomicState}, sequence, till, posi, next_i, state::Nothing) =
-    AtomicState(iterate_state(parser.parser, sequence, till, posi, next_i, state))
 @inline iterate_state(parser::Atomic, sequence, till, posi, next_i, state) =
     nothing
 
