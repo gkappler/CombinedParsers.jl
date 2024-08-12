@@ -41,11 +41,11 @@ export MappedSequenceParser
 
 Match parser on [`CharMappedString`](https://github.com/gkappler/LazyStrings.jl)`(f,sequence)`, e.g. in a [`caseless`](@ref) parser.
 """
-@auto_hash_equals struct MappedSequenceParser{P,S,F<:Function} <: WrappedParser{P,S}
+@auto_hash_equals struct MappedSequenceParser{P,F<:Function} <: WrappedParser{P}
     parser::P
     f::F
     function MappedSequenceParser(f::F,p::P) where {F<:Function,P}
-        new{P,state_type(p),F}(p,f)
+        new{P,F}(p,f)
     end
 end
 children(x::MappedSequenceParser) = tuple(x.parser, x.f)

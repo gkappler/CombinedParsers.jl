@@ -30,17 +30,20 @@ import TextParse: tryparsenext
 result_type(x::AbstractToken) = result_type(typeof(x))
 result_type(::Type{<:AbstractToken{T}}) where T = T
 
-struct AbstractTokenParser{P<:AbstractToken,T} <: LeafParser{NCodeunitsState{T}}
+@auto_hash_equals struct AbstractTokenParser{P<:AbstractToken} <: CombinedParser
     parser::P
     function AbstractTokenParser(p::AbstractToken)
-        new{typeof(p), result_type(p)}(p)
+        new{typeof(p)}(p)
     end
     function AbstractTokenParser{T}(a...; kw...) where T
         p = T(a...; kw...)
-        new{typeof(p), result_type(p)}(p)
+        new{typeof(p)}(p)
     end
 end
-result_type(::AbstractTokenParser{<:AbstractToken,T}, sequence::Type) where T = T
+result_type(::AbstractTokenParser{AT}, sequence::Type) where {AT<:AbstractToken} =
+    result_type(AT)
+@inline state_type(::Type{<:AbstractTokenParser}) =
+    MatchState
 
 """
     NumericParser(x...) = parser(TextParse.Numeric(x...))

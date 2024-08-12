@@ -103,16 +103,16 @@ Capture a parser result, optionally with a name.
 
 [`ParserWithCaptures`](@ref)
 """
-@auto_hash_equals struct Capture{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct Capture{P} <: WrappedParser{P}
     parser::P
     name::Union{Nothing,Symbol}
     index::Int
     Capture(name::Union{Nothing,Symbol},x_,index=-1) =
         let x = parser(x_)
-            new{typeof(x),state_type(x)}(x,name==Symbol("") ? nothing : name,index)
+            new{typeof(x)}(x,name==Symbol("") ? nothing : name,index)
         end
     Capture(x::Capture,index) =
-        new{typeof(x.parser),state_type(x)}(x.parser,x.name,index)
+        new{typeof(x.parser)}(x.parser,x.name,index)
 end
 Capture(x,index=-1) =
     Capture(nothing,x,index)
@@ -181,7 +181,7 @@ export Backreference
 Parser matching previously captured sequence, optionally with a name.
 `index` field is recursively set when calling 'ParserWithCaptures` on the parser.
 """
-@auto_hash_equals struct Backreference <: LeafParser{Int}
+@auto_hash_equals struct Backreference <: LeafParser
     name::Union{Nothing,Symbol}
     index::Int
     fallback::Function
@@ -192,6 +192,8 @@ Parser matching previously captured sequence, optionally with a name.
     Backreference(f::Function,name::AbstractString) =
         new(Symbol(name),-1,f)
 end
+@inline state_type(::Type{<:Backreference}) =
+    Int
 
 result_type(p::Backreference, sequence::Type) =
     SubString{String}
@@ -271,21 +273,26 @@ export Subroutine
 Parser matching preceding capture, optionally with a name.
 `index` field is recursively set when calling `ParserWithCaptures` on the parser.
 """
-@auto_hash_equals struct Subroutine{S} <: CombinedParser{S}
+@auto_hash_equals struct Subroutine <: CombinedParser
     name::Union{Nothing,Symbol}
     delta::Symbol
     index::Int
-    Subroutine{S}(name::Union{Nothing,Symbol},delta::Symbol,index::Integer) where {S} =
-        new{S}(name,delta,index)
     Subroutine(name::Union{Nothing,Symbol},delta::Symbol,index::Integer) =
-        new{Any}(name,delta,index)
+        new(name,delta,index)
     Subroutine(index::Int) =
-        new{Any}(nothing,Symbol(""),index)
+        new(nothing,Symbol(""),index)
     Subroutine(name::AbstractString) =
-        new{Any}(Symbol(name),Symbol(""),-1)
+        new(Symbol(name),Symbol(""),-1)
     Subroutine() =
-        new{Any}(nothing,Symbol(""),-1)
+        new(nothing,Symbol(""),-1)
 end
+
+@inline state_type(::Type{<:Subroutine}) =
+    Any
+
+result_type(p::Subroutine, sequence::Type) =
+    Any
+
 children(x::Subroutine) = tuple()
 function regex_prefix(x::Subroutine)
     "(?" *
@@ -368,10 +375,10 @@ ParseMatch("bb", 1="b")
 
 See also [pcre doc](https://www.pcre.org/original/doc/html/pcrepattern.html#dupsubpatternnumber)
 """
-@auto_hash_equals struct DupSubpatternNumbers{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct DupSubpatternNumbers{P} <: WrappedParser{P}
     parser::P
     DupSubpatternNumbers(parser) =
-        new{typeof(parser),state_type(parser)}(parser)
+        new{typeof(parser)}(parser)
 end
 
 _deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw...) =
@@ -383,15 +390,17 @@ export Conditional
 """
 Conditional parser, `iterate_state` cycles conditionally on `iterate_state_condition` through matches in field `yes` and `no` respectively.
 """
-@auto_hash_equals struct Conditional{C,Y,N,S} <: CombinedParser{S}
+@auto_hash_equals struct Conditional{C,Y,N} <: CombinedParser
     condition::C
     yes::Y
     no::N
     Conditional(condition,yes,no) =
-        new{typeof(condition),typeof(yes),typeof(no),
-            Pair{Symbol,Union{state_type(yes),state_type(no)}}}(
+        new{typeof(condition),typeof(yes),typeof(no)}(
                 condition,yes,no)
 end
+
+@inline state_type(::Type{Conditional{C,Y,N}}) where {C,Y,N} =
+    Pair{Symbol,Union{state_type(Y),state_type(N)}}
 
 result_type(p::Conditional, sequence::Type) =
     Union{result_type(yes, sequence),result_type(no, sequence)}

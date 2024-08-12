@@ -9,12 +9,12 @@ indices of named capture groups in field `names::Dict`.
     implicitly called in [`match`](@ref)
 See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
 """
-@auto_hash_equals struct ParserWithCaptures{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct ParserWithCaptures{P} <: WrappedParser{P}
     parser::P
     subroutines::Vector{CombinedParser} ## todo: rename subroutines
     names::Dict{Symbol,Vector{Int}}
     ParserWithCaptures(parser,captures,names) =
-        new{typeof(parser),state_type(parser)}(parser,captures,names)
+        new{typeof(parser)}(parser,captures,names)
 end
 function print_constructor(io::IO, x::ParserWithCaptures)
     print_constructor(io,x.parser)
@@ -62,7 +62,7 @@ end
 
 
 
-ParseMatchWithCaptures = ParseMatch{<:ParserWithCaptures,<:SequenceWithCaptures,<:Any}
+ParseMatchWithCaptures = ParseMatch{<:ParserWithCaptures,<:SequenceWithCaptures}
 function Base.show(io::IO,m::ParseMatchWithCaptures)
     x = getfield(m,1).sequence
     print(io,"ParseMatch(\"",
@@ -186,17 +186,13 @@ end
 function _deepmap_parser(::typeof(_indexed_captures),mem::AbstractDict,x::Subroutine,context,a...)
     index = capture_index(x.name,x.delta,x.index, context)
     if index <= 0 || index>length(context.subroutines)
-        Subroutine{Any}(x.name,Symbol(""),index)
+        Subroutine(x.name,Symbol(""),index)
     else
         sr = context.subroutines[index]
         map(result_type(sr), # can map be avoided? e.g. by Subroutine storing context
-            Subroutine{state_type(sr)}(
-                x.name,Symbol(""),index))
+            Subroutine(x.name,Symbol(""),index))
     end
 end
-
-result_type(p::Subroutine, sequence::Type) =
-    Any
 
 """
     _deepmap_parser(f::typeof(_indexed_captures),mem::AbstractDict,x::DupSubpatternNumbers,context,reset_index)

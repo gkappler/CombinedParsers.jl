@@ -16,13 +16,18 @@ Parser that succeeds if and only if `parser` succeeds **before cursor**. Consume
 The match is returned.
 Useful for checks like "must be preceded by `parser`, don't consume its match".
 """
-@auto_hash_equals struct PositiveLookbehind{S,P} <: WrappedAssertion{S}
+@auto_hash_equals struct PositiveLookbehind{P} <: WrappedAssertion
     parser::P
     function PositiveLookbehind(p_,reversed_parser=true)
         p = reversed_parser ? reversed(parser(p_)) : parser(p_)
-        new{Tuple{Int,state_type(p)},typeof(p)}(p)
+        new{typeof(p)}(p)
     end
 end
+
+@inline state_type(::Type{PositiveLookbehind{P}}) where P =
+    Tuple{Int,state_type(P)}
+
+
 # result_type(p::Type{PositiveLookbehind{T}}) where T = T
 regex_prefix(x::PositiveLookbehind) = "(?<="
 
@@ -42,7 +47,7 @@ julia> parse("peek"*la,"peek")
 ("peek", re"(?<!keep)")
 ```
 """
-@auto_hash_equals struct NegativeLookbehind{P} <: WrappedAssertion{MatchState}
+@auto_hash_equals struct NegativeLookbehind{P} <: WrappedAssertion
     parser::P
     function NegativeLookbehind(p_,reversed_parser=true)
         p = reversed_parser ? reversed(parser(p_)) : parser(p_)
@@ -50,6 +55,9 @@ julia> parse("peek"*la,"peek")
     end
 end
 regex_prefix(x::NegativeLookbehind) = "(?<!"
+
+state_type(::Type{<:NegativeLookbehind})  =
+    MatchState
 
 export Lookbehind
 """

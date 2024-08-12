@@ -38,12 +38,12 @@ export parser
 import Base: convert
 
 """
-    CombinedParser{S}
+    CombinedParser
 
 Abstract parser type for parsers returning matches transformed to `::T` and 
 state::`S`.
 """
-abstract type CombinedParser{S} end
+abstract type CombinedParser end
 
 """
     (x::CombinedParser)(str;kw...)
@@ -73,11 +73,13 @@ result_type(x::CombinedParser) =
     result_type(x, String)
 
 """
-    CombinedParsers.state_type(x::CombinedParser{S}) where S
+    CombinedParsers.state_type(x::Type{<:CombinedParser}) where S
+    @inline state_type(x::CombinedParser) = state_type(typeof(x))
 
-Return `S`, the state type of `x`
+Return the state type of `x`.
 """
-@inline state_type(::Type{<:CombinedParser{S}}) where {S} = S
+@inline state_type(t::Type{<:CombinedParser}) =
+    error("implement @inline state_type(::Type{$t})")
 @inline state_type(x::CombinedParser) = state_type(typeof(x))
 
 include("state.jl")
@@ -141,12 +143,15 @@ If no next match is found, return `nothing`.
 
 
 """
-    WrappedParser{P,S}
+    WrappedParser{P}
 
 Abstract type for parser wrappers, providing default methods."
 """
-abstract type WrappedParser{P,S} <: CombinedParser{S} end
+abstract type WrappedParser{P} <: CombinedParser end
 result_type(p::WrappedParser, sequence::Type; kw...) = result_type(p.parser, sequence; kw...)
+@inline state_type(::Type{<:WrappedParser{P}}) where P =
+    state_type(P)
+
 children(x::WrappedParser) = children(x.parser)
 children_char = '\U1F5C4'
 function print_constructor(io::IO,x::WrappedParser)
@@ -183,12 +188,12 @@ A parser succeeds ony if
 1. the wrapped `parser` succeeds 
 2. and a predicate function `state_filter(sequence, till, posi, r...)` returns `true` the `after,state = r` tuple.
 """
-struct FilterParser{P,S,F} <: WrappedParser{P,S}
+struct FilterParser{P,F} <: WrappedParser{P}
     parser::P
     state_filter::F
     FilterParser(f::Function,parser_) =
         let p = parser(parser_)
-            new{typeof(p),state_type(p),typeof(f)}(p,f)
+            new{typeof(p),typeof(f)}(p,f)
         end
 end
 Base.filter(f::Function, x::Union{TextParse.AbstractToken,CombinedParser}) =
@@ -217,12 +222,12 @@ end
 
 
 """
-    LeafParser{S} <: CombinedParser{S}
+    LeafParser <: CombinedParser
 
 Abstract parser type for parsers that have no sub-parser (e.g. [`ConstantParser`](@ref)).
 Used for dispatch in [`deepmap_parser`](@ref).
 """
-abstract type LeafParser{S} <: CombinedParser{S} end
+abstract type LeafParser <: CombinedParser end
 
 # for convenience
 iterate_state(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
@@ -236,7 +241,9 @@ accounting for `Base.ncodeunits` length of unicode chars.
 
 See [`Bytes`](@ref) and [`ValueMatcher`](@ref).
 """
-abstract type NIndexParser{N} <: LeafParser{MatchState} end
+abstract type NIndexParser{N} <: LeafParser end
+@inline state_type(::Type{<:NIndexParser}) =
+    MatchState
 @inline _leftof(str,i,parser::NIndexParser{0},state) = i
 @inline _rightof(str,i,parser::NIndexParser{0},state) = i
 @inline _leftof(str,i,parser::NIndexParser{L},state) where L =
@@ -311,15 +318,14 @@ function Base.showerror(io::IO, x::PartialMatchException)
     println(io, "parsing stopped at postion $(x.index) in:")
     println(io, "$(x.str)")
     println(io, "."^(x.index-1),"^")
-    ##println(io, x.pattern)
 end
 
-@auto_hash_equals struct SideeffectParser{P,S,A} <: WrappedParser{P,S}
+@auto_hash_equals struct SideeffectParser{P,A} <: WrappedParser{P}
     parser::P
     args::A
     effect::Function
     SideeffectParser(f::Function, p::CombinedParser,a...) =
-        new{typeof(p),state_type(p),typeof(a)}(p,a,f)
+        new{typeof(p),typeof(a)}(p,a,f)
 end
 children(x::SideeffectParser) = children(x.parser)
 function print_constructor(io::IO,x::SideeffectParser)
@@ -432,7 +438,7 @@ end
 
 export NamedParser, with_name
 """
-    NamedParser{P,S} <: WrappedParser{P,S}
+    NamedParser{P} <: WrappedParser{P}
 
 if doc!="", printing will print the node with this label, and hides constructors.
 Struct with
@@ -442,13 +448,13 @@ Struct with
     doc::String
 ```
 """
-@auto_hash_equals struct NamedParser{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct NamedParser{P} <: WrappedParser{P}
     name::Symbol
     parser::P
     doc::String ## rename -> label
     NamedParser(name::Symbol,p_,doc="") =
         let p=parser(p_)
-            new{typeof(p),state_type(p)}(name,p,doc)
+            new{typeof(p)}(name,p,doc)
         end
 end
 function print_constructor(io::IO,x::NamedParser)
@@ -719,22 +725,25 @@ Repeat_until(p,until, with_until=false;wrap=identity,min=0,max=Repeat_max) =
 
 export FlatMap,after
 """
-    FlatMap{P,S,Q<:Function} <: CombinedParser{S}
+    FlatMap{P,Q<:Function} <: CombinedParser
 
 Like Scala's [fastparse FlatMap](https://www.lihaoyi.com/fastparse/#FlatMap).
 See [`after`](@ref)
 """
-@auto_hash_equals struct FlatMap{P,S,Q<:Function} <: CombinedParser{S}
+@auto_hash_equals struct FlatMap{P,Q<:Function} <: CombinedParser
     left::P
     right::Q
     function FlatMap(right::Q, left::P) where {P<:CombinedParser, Q<:Function}
-        new{P,Tuple{<:Any,<:Any,<:Any},Q}(left, right)
+        new{P,Q}(left, right)
     end
 end
 flatmap_state(old,ls,rp,rs) = tuple_pos(rs), (ls,rp,tuple_state(rs))
 left_state(state::Tuple) = state[1]
 right_parser(state::Tuple) = state[2]
 right_state(state::Tuple) = state[3]
+
+@inline state_type(::Type{<:FlatMap}) =
+    Tuple{<:Any,<:Any,<:Any}
 
 result_type(x::FlatMap, sequence::Type; kw...) =
     result_type(x.right, sequence; kw...)
@@ -835,11 +844,11 @@ export ParserPair
 
 of `parts::P`, [`sequence_state_type`](@ref)==S and [`sequence_result_type`](@ref).
 """
-@auto_hash_equals struct ParserPair{P,Q,S} <: CombinedParser{S}
+@auto_hash_equals struct ParserPair{P,Q} <: CombinedParser
     first::P
     second::Q
     ParserPair(first::CombinedParser, second::CombinedParser) =
-        new{typeof(first),typeof(second),Tuple{first,second}}(p)
+        new{typeof(first),typeof(second)}(p)
 end
 
 
@@ -884,7 +893,7 @@ julia> e1("Some Avenue 42")
     State is managed as [`sequence_state_type`](@ref)`(parts; tuplestate)`.
     Overwrite to optimize state types special cases.
 """
-@auto_hash_equals struct Sequence{P,S} <: CombinedParser{S}
+@auto_hash_equals struct Sequence{P} <: CombinedParser
     parts::P
     function Sequence(p::CombinedParser...; tuplestate=true)
         if VERSION>=v"1.6" && length(p)>4
@@ -894,7 +903,7 @@ julia> e1("Some Avenue 42")
                          tuple(v[1]..., v[2]...)
                      end
         else
-            new{typeof(p),sequence_state_type(p; tuplestate=tuplestate)}(p)
+            new{typeof(p)}(p)
         end
     end
 end
@@ -919,10 +928,8 @@ function isliteralsequence(c::Sequence)
     (&)(isliteralsequence.(c.parts)...)
 end
 
-sequence_state_type(x; kw...) = sequence_state_type(typeof(x); kw...)
-
 """
-    sequence_state_type(pts::Type; tuplestate=true)
+    state_type(pts::Type; tuplestate=true)
 
 - `MatchState` if all `fieldtypes` are `MatchState`, 
 - otherwise if `tuplestate`, a tuple type with the `state_type` of `parts`,
@@ -931,15 +938,15 @@ sequence_state_type(x; kw...) = sequence_state_type(typeof(x); kw...)
 !!! note
     Todo: NCodeunitsState instead of MatchState might increase performance.
 """
-function sequence_state_type(pts::Type; tuplestate=true)
+function state_type(::Type{<:Sequence{pts}}) where {pts <: Tuple}
     if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
         MatchState
-    elseif tuplestate
-        Tuple{(state_type(p) for p in fieldtypes(pts))...}
     else
-        Vector{Any}
+        Tuple{(state_type(p) for p in fieldtypes(pts))...}
     end
 end
+state_type(::Type{<:Sequence{Vector{P}}}) where P =
+    Vector{state_type(P)}
 
 @deprecate Sequence(p::Vector; kw...) Sequence(p...; kw...)
 
@@ -1155,11 +1162,11 @@ function iterate_state_(parser::Sequence, sequence, till, posi, next_i, substate
 end
 
 # unambigously
-@generated function iterate_state(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states::MatchState) where {pts<:Tuple,sts}
+@generated function iterate_state(parser::Sequence{pts}, sequence, till, posi, next_i, states::MatchState) where {pts<:Tuple}
     nothing
 end
 
-@generated function iterate_state(parser::Sequence{pts,sts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,sts}} where {pts<:Tuple,sts}
+@generated function iterate_state(parser::Sequence{pts}, sequence, till, posi, next_i, states)::Union{Nothing,Tuple{Int,state_type(Sequence{pts})}} where {pts<:Tuple}
     fpts = fieldtypes(pts)
     spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
     n = length(fpts)
@@ -1287,11 +1294,11 @@ julia> german_street_address("Konrad Adenauer Allee    42")
     ::Union{Missing, Char}
     ```
 """
-@auto_hash_equals struct Lazy{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct Lazy{P} <: WrappedParser{P}
     parser::P
     Lazy(p_) =
         let p = parser(p_)
-            new{typeof(p),state_type(p)}(p)
+            new{typeof(p)}(p)
         end
 end
 
@@ -1326,11 +1333,11 @@ a{3,}  |> Repeat
 
 ```
 """
-@auto_hash_equals struct Repeat{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct Repeat{P} <: WrappedParser{P}
     range::UnitRange{Int}
     parser::P
-    Repeat(range::UnitRange{Int},p::P) where {P<:CombinedParser} =
-        new{P,repeat_state_type(state_type(p))}(range,p)
+    Repeat(range::UnitRange{Int},p::CombinedParser)  =
+        new{typeof(p)}(range,p)
     # Repeat(p::P) where {P<:CombinedParser} =
     #     new{P,repeat_state_type(state_type(p)),Vector{result_type(P)}}(0:Repeat_max,p)
 end
@@ -1340,6 +1347,10 @@ Repeat(p...;min::Integer=0,max::Integer=Repeat_max) = Repeat((min:max),p...)
 Repeat(min::Integer,p...)                           = Repeat((min:Repeat_max),p...)
 
 result_type(p::Repeat, sequence::Type; kw...) = Vector{result_type(p.parser, sequence; kw...)}
+
+@inline state_type(t::Type{Repeat{P}}) where P =
+    repeat_state_type(state_type(P))
+
 
 @inline repeat_state_type(::Type{MatchState}) = Int
 @inline repeat_state_type(T::Type) = Vector{T}
@@ -1489,36 +1500,28 @@ end
 
 
 @inline emptystate(::Type{Int}) = 0
-@inline state_length(parser,state::Int) = state
-@inline pushstate!(state::Int,parser,substate::MatchState) =
-    state + 1
+@inline emptystate(::Type{Vector{T}}) where T = T[]
 
+@inline state_length(parser,state::Int) = state
+@inline state_length(parser::Repeat,x::Vector) = length(x)
+
+@inline pushstate!(state::Int,parser,substate::MatchState) =  state + 1
+@inline pushstate!(state::Vector,parser,substate) =  push!(state,substate)
+
+@inline poplast!(outer_state,inner_parser) = poplast!(outer_state)
 @inline poplast!(outer_state::Int) =
     if iszero(outer_state)
         nothing, 0
     else
         MatchState(), outer_state - 1
     end
-
-@inline poplast!(outer_state,inner_parser) =
-    poplast!(outer_state)
-
-@inline state_length(parser::Repeat,x::Vector) =
-    length(x)
-@inline emptystate(::Type{Vector{T}}) where T =
-    T[]
-
-@inline function pushstate!(state::Vector,parser,substate)
-    push!(state,substate)
-end
-
 @inline function poplast!(outer_state::Vector)
     l=pop!(outer_state)
     l,outer_state
 end
 
 ## kernel function (function barrier)
-@inline function fill_rep_j_state(x::Tuple{Int,S},state_,tparser) where S
+@inline function fill_rep_j_state(x::Tuple{Int,<:Any},state_,tparser)
     pos, state = x
     pos, pushstate!(state_,tparser, state)
 end
@@ -1533,7 +1536,7 @@ end
         ## e.g. match(re"(?:a|(?=b)|.)*\z","abc")
         j_=j
         ##j, state_ = fill_rep_j_state(x,state_,tp)
-        j, state_ = fill_rep_j_state(x,state_,tp)
+        j, state_ = fill_rep_j_state(x, state_,tp)
         state_length(t,state_)>t.range.start && j_==j && break
     end
     j,state_,state_length(t,state_) < t.range.start
@@ -1703,13 +1706,17 @@ julia> parse(Optional("a", default=42),"b")
 42
 ```
 """
-@auto_hash_equals struct Optional{P,S,T} <: WrappedParser{P,S}
+@auto_hash_equals struct Optional{P,T} <: WrappedParser{P}
     parser::P
     default::T
     function Optional(p::CombinedParser; default=defaultvalue(p))
-        new{typeof(p),Union{NoMatch,state_type(p)},typeof(default)}(p, default)
+        new{typeof(p),typeof(default)}(p, default)
     end
 end
+
+
+state_type(p::Type{<:Optional{P}}) where P =
+    Union{NoMatch,state_type(P)}
 
 function result_type(p::Optional, sequence::Type; kw...)
     T,D = typeof(p.default), result_type(p.parser, sequence; kw...)
@@ -1782,7 +1789,7 @@ export Either
 export Delayed
 
 """
-    Either{S,T}(p) where {S,T} = new{typeof(p),S,T}(p)
+    Either{T}(p...) where {T} = map(T, Either(p...))
 
 Parser that tries matching the provided parsers in order, accepting the first match, and fails if all parsers fail.
 
@@ -1801,19 +1808,6 @@ julia> parse("a" | "bc","bc")
 
 ```
 """
-struct Either{Ps,S} <: CombinedParser{S}
-    options::Ps
-    function Either(p, S::Type)
-        ##S isa Type && error("no types please")
-        new{typeof(p),S}(p)
-    end
-end
-
-
-result_type(x::Either, sequence::Type; kw...) =
-    either_result_type(x.options, sequence::Type; kw...)
-
-
 
 """
     Either(p...; simplify=false)
@@ -1845,15 +1839,9 @@ julia> Either('a',CharIn("AB")|"bc", simplify=true)
 └─ bc
 ::Union{Char, SubString{String}}
 ```
-"""
-function Either(p_...; simplify=false)
-    os = either_options(p_...; simplify=simplify)
-    simplify && length(os)==1 && return first(os)
-    p = tuple(os...)
-    Either(p, either_state_type(p))
-end
 
-"""
+
+
     Either(p::Vector; simplify=false)
 
 Create a mutable `Either{Any,Any}(::Vector{Any})` for creating recursive parsers.
@@ -1863,63 +1851,61 @@ type parameters are computed with [`either_state_type`](@ref) and [`either_resul
 See also [`@syntax`](@ref).
 !!! note
     state type and result type are `Any` which might cost performance.
-"""
-function Either(p_::Vector; simplify=false)
-    p = either_options(p_...; simplify=simplify)
-    Either(p, Any)
-end
 
 
-# """
-#     Either{T}(p...; simplify=false, convert=false)
-
-# Create a mutable `Either{Any,T}(::Vector{Any})` for creating recursive parsers.
-# Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
-
-# If `convert` for any option `x` in `p` that has `!(result_type(x) <: T)`, adds [`Base.map`](@ref)`(T,x)` instead.
-# (Provide a `convert` method!)
-
-# See also [`@syntax`](@ref).
-# !!! note
-#     state type is `Any` which might cost performance.
-# """
-function Either{T}(p_...; convert=true, simplify=false) where {T}
-    p = either_options(p_...; simplify=simplify)
-    for (i,x) in enumerate(p)
-        if !(result_type(x) <: T)
-            convert || error("transforming results with convert($T,::$(result_type(x)))\n$x")
-            p[i] = map(T,x)
-        end 
-    end
-    Either(p, Any)
-end
-
-@deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; kw...)
-@deprecate Either{T}(x::Tuple; kw...) where T Either(x...; kw...)
-@deprecate Either(x::Tuple; kw...) Either(x...; kw...)
-
-"""
-    Delayed(T::Type) = 
-
-[`Either`](@ref)`{T}()`.
-"""
-Delayed(T::Type) = map(T, Either())
-
-"""
     Either(transform::Function, x::Vararg)
 
 abbreviation for [`Base.map`]`(transform, Either(x...))`.
+
+
+
+    Either{T}(p...; simplify=false, convert=false)
+
+Create a mutable `map(T,Either(Any[p...]))` for creating recursive parsers.
+Options can be added with [`push!`](@ref) and [`pushfirst!`](@ref).
+
+If `convert` for any option `x` in `p` that has `!(result_type(x) <: T)`, adds [`Base.map`](@ref)`(T,x)` instead.
+(Provide a `convert` method!)
+
+See also [`@syntax`](@ref).
+!!! note
+    state type is `Any` which might cost performance.
 """
+struct Either{Ps} <: CombinedParser
+    options::Ps
+
+    function Either(p_::Vector; simplify=false)
+        p = either_options(p_...; simplify=simplify)
+        simplify && length(os)==1 && return first(os)
+        new{typeof(p)}(p)
+    end
+    function Either(p_...; simplify=false)
+        os = either_options(p_...; simplify=simplify)
+        simplify && length(os)==1 && return first(os)
+        p = tuple(os...)
+        new{typeof(p)}(p)
+    end
+
+    function Either{T}(p_...; convert=true, simplify=false) where {T}
+        p = either_options(p_...; simplify=simplify)
+        simplify && length(os)==1 && return first(os)
+        for (i,x) in enumerate(p)
+            if !(result_type(x) <: T)
+                convert || error("transforming results with convert($T,::$(result_type(x)))\n$x")
+                p[i] = map(T,x)
+            end 
+        end
+        new{typeof(p)}(p)
+    end
+
+end
 function Either(transform::Function, x...; kw...)
-    map(transform, Either(x...;kw...))
+    map(transform, Either(x...); kw...)
 end
 
-_sEither(x::Either) = _sEither(x.options...)
-_sEither(x::Never) = tuple()
-_sEither() = tuple()
-_sEither(x1) = tuple(parser(x1))
-## todo: better aggregate in argument?
-_sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in x )... ] )
+@deprecate Either(p::Tuple; kw...) Either(p...; kw...) 
+@deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; convert=true, kw...)
+@deprecate Either{T}(x::Tuple; kw...) where T Either{T}(x...; convert=true, kw...)
 
 function either_options(x...; simplify = false)
     Any[if simplify
@@ -1928,7 +1914,36 @@ function either_options(x...; simplify = false)
             parser.(x)
         end...]
 end
+
+_sEither(x::Either) = _sEither(x.options...)
+_sEither(x::Never) = tuple()
+_sEither() = tuple()
+_sEither(x1) = tuple(parser(x1))
+## todo: better aggregate in argument?
+_sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in x )... ] )
 @deprecate sEither(x...) Either(x...; simplify=true)
+
+
+result_type(x::Either, sequence::Type; kw...) =
+    either_result_type(x.options, sequence::Type; kw...)
+
+
+either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
+either_state_type(ts::Type{<:CombinedParser}) = Tuple{Int,Any}
+either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
+either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
+either_state_type(ts::Type...) = Tuple{Int,promote_type(state_type.(ts))}
+@inline with_state!(x::Nothing,k::Int,s) = (k,s)
+
+state_type(::Type{<:CombinedParsers.Either{P}}) where {P} =
+    either_state_type(P)
+
+"""
+    Delayed(T::Type) = 
+
+[`Either`](@ref)`{T}()`.
+"""
+Delayed(T::Type) = map(T, Either())
 
 
 """
@@ -1950,13 +1965,6 @@ function Base.getindex(x::Either, property::Symbol)
 end
 
 
-either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
-either_state_type(ts::Type{<:CombinedParser}) = Tuple{Int,Any}
-either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
-either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
-either_state_type(ts::Type...) = Tuple{Int,promote_type(state_type.(ts))}
-either_state_type(x) = either_state_type(typeof(x))
-@inline with_state!(x::Nothing,k::Int,s) = (k,s)
 function promote_type_union(Ts...)
     T = promote_type(Ts...)
     Any <: T ? Union{Ts...} : T
@@ -1984,7 +1992,7 @@ Recursive parsers can be built with `push!` to `Either`.
 
 See also [`pushfirst!`](@ref) and [`@syntax`](@ref).
 """
-function Base.push!(x::Either{<:Vector,<:Any}, y_)
+function Base.push!(x::Either{<:Vector}, y_)
     y = parser(y_)
 #    promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
     # promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
@@ -2001,7 +2009,7 @@ Recursive parsers can be built with `pushfirst!` to `Either`.
 
 See also [`push!`](@ref) and [`@syntax`](@ref).
 """
-function Base.pushfirst!(x::Either{<:Vector,<:Any}, y_)
+function Base.pushfirst!(x::Either{<:Vector}, y_)
     y = parser(y_)
     #promote_type(result_type(y),result_type(x)) <: result_type(x) || error("$(result_type(y)) <: $(result_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
     #promote_type(state_type(y),state_type(x)) <: state_type(x) || error("$(state_type(y)) <: $(state_type(x)). Fix with `push!(x|$(typeof(y)),y)`.\n$y")
@@ -2080,7 +2088,7 @@ end
     ## @show i
     rightof(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
-@inline function _rightof(str,i,parser::Either{P,S},x::Tuple{Int,S}) where {P,S}
+@inline function _rightof(str,i,parser::Either{P},x::Tuple{Int}) where {P}
     rightof(str,i,(@inbounds parser.options[either_state_option(x)]),either_state_state(x))
 end
  
@@ -2200,10 +2208,10 @@ export Atomic
 A parser matching `p`, and failing when required to backtrack
 (behaving like an atomic group in regular expressions).
 """
-@auto_hash_equals struct Atomic{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct Atomic{P} <: WrappedParser{P}
     parser::P
     Atomic(p::CombinedParser) =
-        new{typeof(p),state_type(p)}(p)
+        new{typeof(p)}(p)
     Atomic{MatchState}(p::CombinedParser) =
         error("unsupported")
 end

@@ -1,9 +1,12 @@
 """
-Parsers that do not consume any input can inherit `Assertion{S}`.
+Parsers that do not consume any input can inherit `Assertion`.
 !!! note
     TODO: allow to keep state and return wrapped get
 """
-abstract type Assertion{S} <: CombinedParser{S} end
+abstract type Assertion <: CombinedParser end
+@inline state_type(::Type{<:Assertion}) =
+    MatchState
+
 @inline _leftof(str,i,parser::Assertion,x...) = i
 @inline _rightof(str,i,parser::Assertion,x...) = i
 result_type(x::Assertion, sequence::Type) = typeof(x)
@@ -16,7 +19,7 @@ Most assertions return the assertion parser as a result
 [`Always`](@ref), [`Never`](@ref), 
 [`NegativeLookahead`](@ref), [`NegativeLookbehind`](@ref)).
 """
-Base.get(parser::Assertion{MatchState}, sequence, till, after, i, state) =
+Base.get(parser::Assertion, sequence, till, after, i, state) =
     parser
 
 export AtStart, AtEnd
@@ -31,7 +34,7 @@ re"^"
 
 ```
 """
-struct AtStart <: Assertion{MatchState} end
+struct AtStart <: Assertion end
 regex_inner(x::AtStart) = "^"
 iterate_state(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
     next_i == 1 ? (next_i, MatchState()) : nothing
@@ -49,7 +52,7 @@ re"\$"
 
 ```
 """
-struct AtEnd <: Assertion{MatchState} end
+struct AtEnd <: Assertion end
 regex_inner(x::AtEnd) = "\$"
 iterate_state(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
@@ -69,7 +72,7 @@ re"(*FAIL)"
 
 ```
 """
-struct Never <: Assertion{MatchState} end
+struct Never <: Assertion end
 regex_prefix(x::Never) = "(*"
 regex_inner(x::Never) = "FAIL"
 regex_suffix(x::Never) = ")"
@@ -90,7 +93,7 @@ re""
 
 ```
 """
-struct Always <: Assertion{MatchState}
+struct Always <: Assertion
 end
 Base.show(io::IO,x::Always) = print(io,"re\"\"")
 children(x::Union{Never,Always}) = tuple()
@@ -109,7 +112,7 @@ Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
 """
 An assertion with an inner parser, like WrappedParser interface.
 """
-abstract type WrappedAssertion{S} <: Assertion{S} end
+abstract type WrappedAssertion <: Assertion end
 children(x::WrappedAssertion) = children(x.parser)
 regex_suffix(x::WrappedAssertion) = regex_suffix(x.parser)*")"
 regex_inner(x::WrappedAssertion) = regex_inner(x.parser)
@@ -139,14 +142,17 @@ julia> parse(la*AnyChar(),"peek")
 
 ```
 """
-@auto_hash_equals struct PositiveLookahead{S,P} <: WrappedAssertion{S}
+@auto_hash_equals struct PositiveLookahead{P} <: WrappedAssertion
     parser::P
     PositiveLookahead(p_,reversed=true) =
         let p = parser(p_)
-            new{Tuple{Int,state_type(p)},typeof(p)}(p)
+            new{typeof(p)}(p)
         end
 end
 regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
+
+@inline state_type(::Type{PositiveLookahead{P}}) where P =
+    Tuple{Int,state_type(P)}
 
 result_type(x::PositiveLookahead, sequence::Type) = result_type(x.parser, sequence)
 
@@ -181,13 +187,17 @@ julia> parse(la*AnyChar(),"seek")
 
 ```
 """
-@auto_hash_equals struct NegativeLookahead{P} <: WrappedAssertion{MatchState}
+@auto_hash_equals struct NegativeLookahead{P} <: WrappedAssertion
     parser::P
     NegativeLookahead(p_,reversed=true) =
         let p = parser(p_)
             new{typeof(p)}(p)
         end
 end
+@inline state_type(::Type{NegativeLookahead{P}}) where P =
+    MatchState
+
+result_type(x::NegativeLookahead, sequence::Type) = typeof(x)
 regex_prefix(x::NegativeLookahead) = "(?!"*regex_prefix(x.parser)
 function iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::Nothing)
     r = iterate_state(t.parser, str, till, posi, next_i, nothing)
@@ -198,7 +208,6 @@ function iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::Not
     end
 end
 
-result_type(x::NegativeLookahead, sequence::Type) = typeof(x)
 
 @inline iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::MatchState) = nothing
 

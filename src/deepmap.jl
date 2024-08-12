@@ -129,9 +129,11 @@ end
 
 export substitute
 
-struct Substitution<:CombinedParser{Nothing}
+struct Substitution<:CombinedParser
     name::Symbol
 end
+state_type(::Type{Substitution}) =
+    Nothing
 """
     substitute(name::Symbol)
 

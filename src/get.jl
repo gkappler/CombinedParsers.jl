@@ -129,7 +129,8 @@ end
 #     1
 #     tuple(r...)
 # end
-@generated function get(parser::Sequence{pts,sts}, sequence, till::Int, after::Int, posi::Int, states) where {pts,sts}
+@generated function get(parser::Sequence{pts}, sequence, till::Int, after::Int, posi::Int, states) where {pts}
+    sts = state_type(Sequence{pts})
     fpts = fieldtypes(pts)
     spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
     n = length(fpts)

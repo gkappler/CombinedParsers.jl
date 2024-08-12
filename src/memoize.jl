@@ -27,17 +27,17 @@ Base.show(io::IO, x::WithMemory) =
     print(io,x.x)
 
 """
-    MemoizingParser{P,S}
+    MemoizingParser{P}
 
 [`WrappedParser`](@ref) memoizing all match states.
 For slow parsers with a lot of backtracking this parser can help improve speed.
 
 (Sharing a good example where memoization makes a difference is appreciated.)
 """
-@auto_hash_equals struct MemoizingParser{P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct MemoizingParser{P} <: WrappedParser{P}
     parser::P
     function MemoizingParser(p)
-        new{typeof(p),state_type(p)}(p)
+        new{typeof(p)}(p)
     end
 end
 

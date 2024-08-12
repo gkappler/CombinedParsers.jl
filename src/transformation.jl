@@ -13,15 +13,15 @@ Parser transforming result of a wrapped parser.
 If `parser isa NamedParser`, transformation is done within the wrapped parser
 (i.e. name applies to result-transforming parser).
 """
-@auto_hash_equals struct Transformation{F,P,S} <: WrappedParser{P,S}
+@auto_hash_equals struct Transformation{F,P} <: WrappedParser{P}
     transform::F
     parser::P
     Transformation(transform, p_) =
         let p = parser(p_)
-            new{typeof(transform),typeof(p),state_type(p)}(transform, p)
+            new{typeof(transform),typeof(p)}(transform, p)
         end
     function Transformation(transform, p::NamedParser) 
-        tp = new{typeof(transform),typeof(p.parser),state_type(p.parser)}(transform, p.parser)
+        tp = new{typeof(transform),typeof(p.parser)}(transform, p.parser)
         with_name(p.name, tp, p.doc)
     end
 end
