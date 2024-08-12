@@ -1,12 +1,17 @@
+using Test
+using CombinedParsers
+
 using CombinedParsers.Regexp
 
 import CombinedParsers.Regexp: char, integer_base, escape_sequence, escaped_character
+import CombinedParsers.Regexp: @test_pcre
+
 @testset "char" begin
     ##@test match(parse(char,with_options(Base.PCRE.CASELESS,"A")) =='a'
     @test parse(char,"A") == CombinedParsers.ConstantParser('A')
     @test parse(char,"\\^") == CombinedParsers.ConstantParser('^')
     @test tryparse(char,"^") === nothing
-    @test parse(escape_sequence(),raw"\Q[].\E")=="[]."
+
     ##@btime _iterate(pattern,".")
     ## @btime _iterate(pattern,"\\N")
     @test parse(integer_base(8),"765")==501
@@ -29,10 +34,11 @@ import CombinedParsers.Regexp: char, integer_base, escape_sequence, escaped_char
     @test match(re"\x100","@") === nothing
     @test match(re"\o{100}","@") !== nothing
     @test match(re"\x1","\U0010") === nothing
+
+    @test_pcre raw"\\\\\"" "\\\"" true
+    @test_pcre raw"\"" "\"" true
 end
 
-re"\d"
-import CombinedParsers.Regexp: @test_pcre
 @testset "char groups" begin
     @test_pcre "\\d+" "1123"
     @test_pcre "\\D+" "abcd"
@@ -66,12 +72,13 @@ import CombinedParsers.Regexp: bracket_char, bracket, pcre_options
     @test_throws ArgumentError Regcomb("[")
 end
 
-
-@test_pcre raw"[s[:digit:]\Q\E-H]+" "s09-H"
-@test_pcre raw"^[a-\Q\E]" "-"
-@test_pcre raw"^[a-\Q\E]" "a"
-
-
+@testset "\\Q\\E" begin
+    @test_pcre raw"[s[:digit:]\Q\E-H]+" "s09-H"
+    @test_pcre raw"^[a-\Q\E]" "-"
+    @test_pcre raw"^[a-\Q\E]" "a"
+    @test parse(escape_sequence(),raw"\Q[].\E")=="[]."
+    @test_pcre raw"\Q \Ea" " a" true "x"
+end
 
 
 
@@ -81,19 +88,19 @@ import CombinedParsers.Regexp: option_sequences,skip_whitespace_on, ParserWithCa
     @test parse(pcre_options,"i")==Base.PCRE.CASELESS
     @test parse(parse(option_sequences,"a|b(?i)a"),"bA")==('b','A')
     @test re" a"x == CombinedParsers.ConstantParser('a')
-   
     
-@testset "comments" begin
-    ##@test parse(comment_par,"(?# comment)") == with_log("comment",Always())
-    @test match(re"(?# comment)a","a").match == "a"
-    ## match(re"(?# comment)a","a").match == "a"
     
-    ## parse(seq(parse(skip_whitespace_and_comments,with_options("x"," (?#xxx) (?#yyy) "))...),"a")
-## push!(pattern,lazy(opt(comment_par)));
+    @testset "comments" begin
+        ##@test parse(comment_par,"(?# comment)") == with_log("comment",Always())
+        @test match(re"(?# comment)a","a").match == "a"
+        ## match(re"(?# comment)a","a").match == "a"
+        
+        ## parse(seq(parse(skip_whitespace_and_comments,with_options("x"," (?#xxx) (?#yyy) "))...),"a")
+        ## push!(pattern,lazy(opt(comment_par)));
 
-## parse_all(lazy(opt(comment_par)),"(?#a)")
+        ## parse_all(lazy(opt(comment_par)),"(?#a)")
 
-end
+    end
 
 end
 
@@ -109,10 +116,9 @@ import CombinedParsers.Regexp: quantified, repetition, sequence
     @test parse(repetition,"?") == 0:1
     @test match(parse(quantified,"a*"),"aaab").match=="aaa"
     @test parse(parse(quantified,"a*?"),"aa")==Char[]
+    @test_pcre "a*?(?:abc)?" "abc"
     ## lazy support
-    @test_pcre "a*?(abc)?" "abc"
     ## lazy rep
-    @test_pcre "a(?:b|(c|e){1,2}?|d)+?(.)" "ace"
     @test parse(parse(quantified,"a*"),"aa")==Char['a','a']
     @test parse(quantified,"a?")|>regex_string == "a?"
     parse(quantified,"a{3}")
@@ -137,8 +143,15 @@ import CombinedParsers.Regexp: alternation
 end
 
 import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference, subroutine
-@testset "sequences, captures" begin
+@testset "non-capturing groups" begin
+    @test_pcre "^aaa(?<!c)b" "aaab"
+end
+@testset "captures" begin
+    @test_pcre "(ab|a|b)+c" "abbabc" true
+    
+    @test_pcre "^(a|b|abc)+c\$" "abcbabc"
     match(parse(captured,"(ab)"),"ab")
+    @test_pcre "a*?(abc)?" "abc"
     parse(captured,"()")    
     pp = parse(captured,"(?<a>ab)")
     parse(parse(captured,"(ab)"), "ab")
@@ -156,9 +169,9 @@ import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference
     @test_pcre "(ab)*c" "ababc" true
     @test_pcre "^(ab)*c\$" "ababc" true
     @test_pcre "(?<ab>foo)\\1" "foofoo"
-    re"(?<ab>foo)(?P=ab)" 
+    # re"(?<ab>foo)(?P=ab)" 
     @test_pcre "(?<ab>foo)(?P=ab)" "foofoo" true
-    re"(?<ab>foo|bar)(?1)"
+    # re"(?<ab>foo|bar)(?1)"
     @test_pcre "(?<ab>foo|bar)(?1)" "foobar" true
     @test_pcre "(ab)(?<ab>foo)\\g-1" "abfoofoo" true
     ## recursive back references
@@ -169,57 +182,48 @@ import CombinedParsers.Regexp: captured, subpattern, atomic_group, backreference
     @test_pcre "(se|respo)nse and ((?1)nse)" "sense and response" true
     re"(?<a>ab)(?#comment)"
     @test_pcre "^ab*(?<ab>c)" "ac"
-    @test_pcre raw"\Q \Ea" " a" true "x"
-    @test_pcre "a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz" "abcxyzpqrrrabbxyyyypqAzz" true
+    @test_pcre "a(?:b|(c|e){1,2}?|d)+?(.)" "ace"
 end                 
 
+@testset "re_str" begin
+    @testset "CharIn" begin
+        @test parse(map(v->length(v),re"a*"),"aaaa") == 4
+    end
 
-@testset "CombinedParsers.re_str" begin
-@testset "CharIn" begin
-    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
+    @testset "map" begin
+        @test parse(re"abc"[2:3],"abc")==('b','c')
+        @test parse(map(v->length(v),re"a*"),"aaaa") == 4
+        @test parse(re"^abc$"[2],"abc") == 'a'
+    end
+
+    @testset "Repeat" begin
+        @test_pcre "a*abc?xyz+pqr{3}ab{2,}xy{4,5}pq{0,6}AB{0,}zz" "abcxyzpqrrrabbxyyyypqAzz" true
+        @test parse(re"a+","aa") == ['a','a']
+    end
+
+    @testset "parse_all" begin
+        @test collect(parse_all(re"^(a|ab|b)+$"[2],"abab")) ==
+            [ ['a','b','a','b'], ['a','b', ('a','b')], [('a','b'),'a','b'], [('a','b'),('a','b')]]
+    end
+
+
+
+    @testset "Either" begin
+        @test parse(re"(a|ab|ac)$","ab") == (tuple("ab"...), AtEnd())
+        @test_throws ArgumentError parse(re"(?>a|ab|ac)$"*AtEnd(),"ab")
+    end
 end
 
-@testset "map" begin
-    @test parse(re"abc"[2:3],"abc")==('b','c')
-    @test parse(map(v->length(v),re"a*"),"aaaa") == 4
-    @test parse(re"^abc$"[2],"abc") == 'a'
-end
-
-@testset "Repeat" begin
-    @test parse(re"a+","aa") == ['a','a']
-end
-
-@testset "parse_all" begin
-    @test collect(parse_all(re"^(a|ab|b)+$"[2],"abab")) ==
-        [ ['a','b','a','b'], ['a','b', ('a','b')], [('a','b'),'a','b'], [('a','b'),('a','b')]]
-end
-
-
-
-@testset "Either" begin
-    @test parse(re"(a|ab|ac)$","ab") == (tuple("ab"...), AtEnd())
-    @test_throws ArgumentError parse(re"(?>a|ab|ac)$"*AtEnd(),"ab")
-end
-end
-
-
-@test_pcre raw"\\\\\"" "\\\"" true
-@test_pcre raw"\"" "\"" true
 
 @testset "look around" begin
     @test_pcre "ab*(?<=ab)c" "abc" true
+    m = match(PositiveLookahead("a"), "aaab")
+    @test m.offset == 1
+    @test m.after == 1
+    @test get(m) == "a"
+    @test regex_string(AtEnd())=="\$"
 end
 
-@test_pcre "(ab|a|b)+c" "abbabc" true
-
-@test regex_string(AtEnd())=="\$"
-
-@test_pcre "^(a|b|abc)+c\$" "abcbabc"
 
 
-@test_pcre "^aaa(?<!c)b" "aaab"
 
-m = match(PositiveLookahead("a"), "aaab")
-@test m.offset == 1
-@test m.after == 1
-@test get(m) == "a"

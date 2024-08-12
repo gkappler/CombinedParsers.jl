@@ -91,7 +91,7 @@ end
 
 
 import CombinedParsers.Regexp: skip_whitespace_and_comments
-@testset "test parsing" begin
+@testset "PCRE testset parsing" begin
     @test parse(integer,"09")==9
     @test parse(comment_or_empty,
                 "# This set of tests is for features that are compatible with all versions of\n\n \t \n") ==
@@ -121,7 +121,6 @@ import CombinedParsers.Regexp: skip_whitespace_and_comments
                 """
                 ).pattern[1]=="^abc\$"
 
-    Regcomb(raw"^ (?:(?<A>A)|(?'B'B)(?<A>A)) (?('A')x) (?(<B>)y)$","x,dupnames")
     test_pcre"""
 /^ (?:(?<A>A)|(?'B'B)(?<A>A)) (?('A')x) (?(<B>)y)$/x,dupnames
     Ax
@@ -168,7 +167,6 @@ No match
  0: a+ Z0+\x08\x0a\x1d\x12
 """
     
-    re"abc\0def\00pqr\000xyz\0000AB"
     test_pcre"""
 /abc\0def\00pqr\000xyz\0000AB/
     abc\0def\00pqr\000xyz\0000AB
@@ -326,5 +324,3 @@ end
 
 
 ## parse_all(re"a*(abc)?", "abc")
-
-

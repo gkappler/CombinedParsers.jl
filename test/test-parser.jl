@@ -14,6 +14,8 @@ end
 end
 
 @testset "Repeat" begin
+    @test parse(Repeat('a'),"aa") == ['a','a']
+    CombinedParsers.state_type(typeof(Repeat('a')))
     @test parse(join(Repeat('a'),","),"a,a") == ['a','a']
 end
 
@@ -74,7 +76,6 @@ end
         end,
         "abab")=="ab"
     # parse(pattern,with_options(Base.PCRE.MULTILINE,"^"))
-end
 decimal = CharIn(UnicodeClass(:Nd))
 decimals = Repeat1(decimal)
 @test parse(decimals,"123") == [ "123"... ]
@@ -152,3 +153,4 @@ end
     @test parse(inner,"<a font=+1/>") ==
         (tag="a", attrs=["font"=>"+1"], children=[])
 end                  
+end
