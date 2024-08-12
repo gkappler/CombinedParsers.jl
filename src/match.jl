@@ -20,17 +20,17 @@ end
 export MatchesIterator, ParseMatch
 
 """
-    MatchesIterator(parser::P, sequence::S[, start=firstindex(sequence)[, stop=lastindex(sequence), [till=lastindex(sequence)]]])
+    MatchesIterator(parser::P, sequence::I[, start=firstindex(sequence)[, stop=lastindex(sequence), [till=lastindex(sequence)]]])
 
-Iterator type for [`match_all`](@ref) and [`parse_all`](@ref) with `eltype` [`ParseMatch`](@ref)`{P,S,state_type(P)}`.
+Iterator type for [`match_all`](@ref) and [`parse_all`](@ref) with `eltype` [`ParseMatch`](@ref)`{P,I}`.
 
 Iteration looks for matches beginning between `start` and `stop` and ending at most at `till`.
 """
-@auto_hash_equals struct MatchesIterator{P<:CombinedParser,S}
+@auto_hash_equals struct MatchesIterator{P<:CombinedParser,I}
     "parser"
     parser::P
     "sequence"
-    sequence::S
+    sequence::I
     "First index for searching [`match`](@ref)."
     start::Int
     "Last index for searching [`match`](@ref)."
@@ -40,8 +40,8 @@ Iteration looks for matches beginning between `start` and `stop` and ending at m
 end
 result_type(::Type{<:MatchesIterator{P}}) where P =
     result_type(P)
-Base.eltype(T::Type{<:MatchesIterator{P,S}}) where {P,S} =
-    ParseMatch{P,S,state_type(P)}
+Base.eltype(T::Type{<:MatchesIterator{P,I}}) where {P,I} =
+    ParseMatch{P,I,state_type(P)}
 Base.IteratorSize(::Type{<:MatchesIterator}) =
     Base.SizeUnknown()
 
@@ -74,7 +74,7 @@ end
 
 export ParseMatch
 """
-    ParseMatch(p::MatchesIterator{P,S}, offset::Integer, after::Integer, state::ST) where {P,S,ST}
+    ParseMatch(p::MatchesIterator{P}, offset::Integer, after::Integer, state::ST) where {P,ST}
 
 You can extract the following info from a `m::ParseMatch` object 
 (like [Julia RegexMatch](https://docs.julialang.org/en/v1/manual/strings/#Regular-Expressions),
@@ -88,13 +88,13 @@ If `P<:`[`CombinedParsers.Regexp.ParserWithCaptures`](@ref) and `S<:`[`CombinedP
 - the captured substrings as an array of strings: `m.captures`
 - the offsets of the captured substrings as a vector: `m.offsets`
 """
-@auto_hash_equals struct ParseMatch{P,S,State}
-    parsings::MatchesIterator{P,S}
+@auto_hash_equals struct ParseMatch{P,I,State}
+    parsings::MatchesIterator{P,I}
     offset::Int
     after::Int
     state::State
-    function ParseMatch(p::MatchesIterator{P,S}, offset=p.start, after=p.start, state=nothing) where {P,S}
-        new{P,S,typeof(state)}(p, offset, after, _copy(state))
+    function ParseMatch(p::MatchesIterator{P,I}, offset=p.start, after=p.start, state=nothing) where {P,I}
+        new{P, I, typeof(state)}(p, offset, after, _copy(state))
     end
 end
 
@@ -230,7 +230,7 @@ Return first next [`ParseMatch`](@ref) (as return value and state) or `nothing` 
 end
 
 
-function Base.show(io::IO,m::ParseMatch{<:Any,<:AbstractString,<:Any})
+function Base.show(io::IO, m::ParseMatch{<:Any, <:AbstractString})
     print(io,"ParseMatch(\"",
           m.state === nothing ? "no match" : escape_string(m.match),
           "\"")

@@ -319,8 +319,8 @@ Lazy wrapper for a sequence, masking elements in `getindex` with MatchingNever i
 TODO: make flags a filter function?
 resolve confound of sequence and value, like StringWithOptions, CharWithOptions
 """
-struct FilterOptions{S}
-    x::S
+struct FilterOptions{I}
+    x::I
     flags::UInt32
 end
 import Base: Regex

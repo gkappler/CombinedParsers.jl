@@ -13,11 +13,11 @@ Memoization is sometimes recommended as a way of improving the performance of pa
     If you have a case where your performance benefits with this, let me know!
 ```
 """
-struct WithMemory{S,M} <: StringWrapper
-    x::S
+struct WithMemory{I,M} <: StringWrapper
+    x::I
     mem::M
-    function WithMemory(x::S,mem::M) where {S,M}
-        new{S,M}(x,mem)
+    function WithMemory(x::I,mem::M) where {I,M}
+        new{I,M}(x,mem)
     end
 end
 function WithMemory(x)
