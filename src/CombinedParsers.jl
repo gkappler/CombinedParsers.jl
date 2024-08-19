@@ -746,7 +746,7 @@ right_state(state::Tuple) = state[3]
     Tuple{<:Any,<:Any,<:Any}
 
 result_type(x::FlatMap, sequence::Type; kw...) =
-    result_type(x.right, sequence; kw...)
+    Any #result_type(x.left, sequence; kw...)
 
 children(x::FlatMap) = ( x.left, x.right )
 function print_constructor(io::IO,x::FlatMap)
