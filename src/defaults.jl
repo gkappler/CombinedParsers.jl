@@ -59,14 +59,12 @@ function char_label_table(x)
     end
 end
 
-whitespace_char = CharIn(
+const whitespace_char = CharIn(
     "[:space:]",
     " \t\U0085\U200E\U200F\U2028\U2029"*"\U2029\U000C\U000B")
 
-@with_names begin
-    whitespace_maybe = !Atomic(Repeat(whitespace_char))
-    whitespace = !Atomic(Repeat1(whitespace_char))
-end
+const whitespace_maybe = !Atomic(Repeat(whitespace_char))
+const whitespace = !Atomic(Repeat1(whitespace_char))
 
 """
     whitespace_char  = re"[[:space:]]"
@@ -91,7 +89,7 @@ julia> CombinedParsers.char_label_table(whitespace_char)
 whitespace_char, whitespace_maybe, whitespace
 
 
-horizontal_space_char=CharIn("\\h",
+const horizontal_space_char=CharIn("\\h",
     '\U0009', # "Horizontal tab (HT)"),
     '\U0020', # "Space"),
     '\U00A0', # "Non-break space"),
@@ -113,10 +111,10 @@ horizontal_space_char=CharIn("\\h",
     '\U3000' # "Ideographic space"))
 )
 
-horizontal_space_maybe = with_name(:horizontal_space_maybe,
+const horizontal_space_maybe = with_name(:horizontal_space_maybe,
                                    !Atomic(Repeat(horizontal_space_char)),
                                    "\\h*")
-horizontal_space = with_name(:horizontal_space,
+const horizontal_space = with_name(:horizontal_space,
                              !Atomic(Repeat1(horizontal_space_char)),
                              "\\h+")
 
@@ -153,7 +151,7 @@ julia> CombinedParsers.char_label_table(horizontal_space_char)
 """
 horizontal_space_char, horizontal_space_maybe, horizontal_space
 
-whitespace_horizontal = horizontal_space
+const whitespace_horizontal = horizontal_space
 
 """
     trim(p...; whitespace=horizontal_space_maybe, 
@@ -209,7 +207,7 @@ macro trimmed(block)
     esc(trimmed(block))
 end
 
-vertical_space_char=CharIn(
+const vertical_space_char=CharIn(
     "\\v",
     '\U000A', # "Linefeed (LF)"),
     '\U000B', # "Vertical tab (VT)"),
@@ -219,10 +217,10 @@ vertical_space_char=CharIn(
     '\U2028', # "Line separator"),
     '\U2029') # "Paragraph separator"))
 
-vertical_space_maybe = with_name(:vertical_space_maybe,
+const vertical_space_maybe = with_name(:vertical_space_maybe,
                                  !Atomic(Repeat(vertical_space_char)),
                                  "\\v*")
-vertical_space = with_name(:vertical_space,
+const vertical_space = with_name(:vertical_space,
                            !Atomic(Repeat1(vertical_space_char)),
                            "\\v+")
 
@@ -248,14 +246,10 @@ vertical_space_char, vertical_space_maybe, vertical_space
 
 
 "Equivalent PRCE `\\h\\v`, [`horizontal_space_char`](@ref), [`vertical_space_char`](@ref)"
-space_char  = CharIn("\\h\\v",horizontal_space_char,vertical_space_char)
+const space_char  = CharIn("\\h\\v",horizontal_space_char,vertical_space_char)
 
-@with_names begin
-    space_maybe = Atomic(!Repeat(space_char))
-    space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
-end
-
-#@deprecate whitespace_newline space
+const space_maybe = Atomic(!Repeat(space_char))
+const space = Atomic(!Repeat1(CharIn("\\h\\v",space_char)))
 
 """
     CombinedParsers.newline
@@ -276,28 +270,28 @@ julia> CombinedParsers.bsr.parser
 ```
 
 """
-bsr = with_name(
+const bsr = with_name(
     :bsr, !Atomic(Either("\r\n",
                         CharIn(raw"\n\x0b\f\r\x85", '\n','\x0b','\f','\r','\U0085', '\U2028','\U2029'))),
     "\\r");
 
-newline = bsr
+const newline = bsr
 
-alpha = CharIn('a':'z','A':'Z')
-alphanum = CharIn('a':'z','A':'Z','0':'9')
+const alpha = CharIn('a':'z','A':'Z')
+const alphanum = CharIn('a':'z','A':'Z','0':'9')
 
 "Equivalent PRCE `\\w`: Char with unicode class `L`, `N`, or `_`."
-word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
+const word_char=CharIn("\\w",UnicodeClass("L","N"),'_')
 
 "SubString of at least 1 repeated [`CombinedParsers.word_char`](@ref)."
-word = with_name(:word, !Repeat1(word_char), ## "[[:alpha:] ]+"
+const word = with_name(:word, !Repeat1(word_char), ## "[[:alpha:] ]+"
                  "\\w+")
 
 "Vector of at least 1 repeated [`CombinedParsers.word`](@ref)s delimited by [`CombinedParsers.whitespace_horizontal`](@ref)."
-words = join(word, whitespace_horizontal) ## "[[:alpha:] ]+"
+const words = join(word, whitespace_horizontal) ## "[[:alpha:] ]+"
 
-non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
-non_word = with_name(:non_word, !Repeat1(non_word_char),
+const non_word_char=CharNotIn("\\W",UnicodeClass("L","N"),'_')
+const non_word = with_name(:non_word, !Repeat1(non_word_char),
                      "\\W+")## "[[:alpha:] ]+"
 
 """
@@ -305,12 +299,12 @@ non_word = with_name(:non_word, !Repeat1(non_word_char),
 
 Parser part of `word_boundary`.
 """
-@with_names beyond_word = Either(non_word_char,AtStart(),AtEnd())
+const beyond_word = Either(non_word_char,AtStart(),AtEnd())
 
 """
     word_boundary = re"\b"
 """
-@with_names word_boundary = Either(
+const word_boundary = Either(
     Sequence(PositiveLookbehind(word_char),PositiveLookahead(beyond_word)),
     Sequence(PositiveLookbehind(beyond_word),PositiveLookahead(word_char))
 )
@@ -331,7 +325,7 @@ julia> CombinedParsers.at_linestart
 !!! note
     used in `re"^"` if `Base.PCRE.MULTILINE` is set.
 """
-@with_names at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
+const at_linestart = Either(AtStart(),PositiveLookbehind(bsr))
 
 
 """
@@ -350,7 +344,7 @@ julia> CombinedParsers.at_lineend
 !!! note
     used in `re"\$"` if `Base.PCRE.MULTILINE` is set.
 """
-@with_names at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
+const at_lineend   = Either(AtEnd(),PositiveLookahead(bsr))
 #@deprecate lineend at_lineend
 
 """
@@ -358,12 +352,12 @@ julia> CombinedParsers.at_lineend
 
 See [`at_lineend`](@ref).
 """
-@with_names inline = !Atomic(Repeat(NegativeLookahead(at_lineend)*AnyChar()))
+const inline = !Atomic(Repeat(NegativeLookahead(at_lineend)*AnyChar()))
 
 
 
-hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
-export hex_digit, integer_base
+const hex_digit = CharIn("[:xdigit:]",'A':'F','a':'f','0':'9')
+
 """
     integer_base(base,mind=1,maxd=Repeat_max)
 
@@ -386,3 +380,4 @@ function integer_base(base=10,mind=1,maxd=Repeat_max)
         (isempty(v) ? 0 : parse(Int,convert(String,v),base=base))::Int
     end
 end
+
