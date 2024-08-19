@@ -42,8 +42,8 @@ result_type(::Type{<:AbstractToken{T}}) where T = T
 end
 result_type(::AbstractTokenParser{AT}, sequence::Type) where {AT<:AbstractToken} =
     result_type(AT)
-@inline state_type(::Type{<:AbstractTokenParser}) =
-    MatchState
+@inline state_type(::Type{<:AbstractTokenParser{AT}}) where {AT<:AbstractToken} =
+    NCodeunitsState{result_type(AT)}
 
 """
     NumericParser(x...) = parser(TextParse.Numeric(x...))
