@@ -853,7 +853,7 @@ end
 
 
 
-export Sequence
+export Sequence, mSequence
 """
     Sequence{P,S,T}
 
@@ -897,7 +897,7 @@ julia> e1("Some Avenue 42")
     parts::P
     function Sequence(p::CombinedParser...; tuplestate=true)
         if VERSION>=v"1.6" && length(p)>4
-            Sequence(Sequence(p[1:2]...; tuplestate=tuplestate),
+            mSequence(Sequence(p[1:2]...; tuplestate=tuplestate),
                      Sequence(p[3:end]...; tuplestate=tuplestate);
                      tuplestate=tuplestate) do v
                          tuple(v[1]..., v[2]...)
@@ -1007,17 +1007,17 @@ Sequence(;tuplestate=true, kw...) =
     isempty(kw) ? Always() : Sequence(kw...; tuplestate=tuplestate)
 
 
-Sequence(transform::Function, T::Type, a...; kw...) =
+mSequence(transform::Function, T::Type, a...; kw...) =
     map(transform, T, Sequence(a...; kw...))
 
-Sequence(transform::Function, a...; kw...) =
+mSequence(transform::Function, a...; kw...) =
     map(transform, Sequence(a...; kw...))
 
 
-Sequence(transform::Integer,tokens...; kw...) =
-    Sequence(Val{transform}(),parser.(tokens)...; kw...)
+mSequence(transform::Integer,tokens...; kw...) =
+    mSequence(Val{transform}(),parser.(tokens)...; kw...)
 
-function Sequence(::Val{transform},tokens...; kw...) where {transform}
+function mSequence(::Val{transform},tokens...; kw...) where {transform}
     s = Sequence(tokens...)
     map(v -> v[transform], s; kw...)
     # map(IndexAt(transform), s)
@@ -1360,7 +1360,7 @@ result_type(p::Repeat, sequence::Type; kw...) = Vector{result_type(p.parser, seq
 
 Abbreviation for [`Base.map`](@ref)`(f,Repeat(a...))`.
 """
-Repeat(f::Union{Function,Type},a...;kw...)           = map(f,Repeat(a...;kw...))
+mRepeat(f::Union{Function,Type},a...;kw...)           = map(f,Repeat(a...;kw...))
 
 """
     Repeat1(x)
@@ -1374,13 +1374,13 @@ Repeat1(x...; max=Repeat_max)                        = Repeat(1:Repeat_max,x...)
 
 Abbreviation for [`Base.map`](@ref)`(f,Repeat1(a...))`.
 """
-Repeat1(f::Function,a...; kw...)                     = map(f,Repeat1(a...; kw...))
+mRepeat1(f::Function,a...; kw...)                     = map(f,Repeat1(a...; kw...))
 
 @deprecate Repeat(minmax::Tuple{<:Integer,<:Integer},x,y::Vararg) Repeat(minmax...,x,y...)
 
-@deprecate Repeat(transform::Function, T::Type, a...) map(transform, T, Repeat(a...))
+@deprecate mRepeat(transform::Function, T::Type, a...) map(transform, T, Repeat(a...))
 
-@deprecate Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
+@deprecate mRepeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
 
 @deprecate rep(a...;kw...) Repeat(a...;kw...)
 
@@ -1417,7 +1417,7 @@ function Base.join(x::Repeat, delim_; infix=:skip)
         map(x.parser * Repeat(
             max(0,x.range.start-1),
             x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1,
-            Sequence(2, delim,x.parser ))) do (f,r)
+            mSequence(2, delim,x.parser ))) do (f,r)
                 pushfirst!(r,f)
                 r::result_type(x)
             end
@@ -1731,7 +1731,7 @@ Optional(x...;kw...) =
 Optional(T::Type, x_; transform, kw...) =
     Optional(transform, T, x; kw...)
 
-function Optional(transform::Function, T::Type, x;
+function mOptional(transform::Function, T::Type, x;
                   default=defaultvalue(T))
     map(transform,T,Optional(x; default=default))
 end
@@ -1785,7 +1785,7 @@ iterate_state(t::Lazy{<:Optional}, str, till, posi, next_i, state) =
 
 
 
-export Either
+export Either, mEither
 export Delayed
 
 """
@@ -1853,7 +1853,7 @@ See also [`@syntax`](@ref).
     state type and result type are `Any` which might cost performance.
 
 
-    Either(transform::Function, x::Vararg)
+    mEither(transform::Function, x::Vararg)
 
 abbreviation for [`Base.map`]`(transform, Either(x...))`.
 
@@ -1899,7 +1899,7 @@ struct Either{Ps} <: CombinedParser
     end
 
 end
-function Either(transform::Function, x...; kw...)
+function mEither(transform::Function, x...; kw...)
     map(transform, Either(x...); kw...)
 end
 
