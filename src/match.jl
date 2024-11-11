@@ -38,8 +38,8 @@ Iteration looks for matches beginning between `start` and `stop` and ending at m
     "Last index for end of [`match`](@ref)."
     till::Int
 end
-result_type(::Type{<:MatchesIterator{P}}) where P =
-    result_type(P)
+result_type(x::MatchesIterator,sequence; kw...) =
+    result_type(x.parser, sequence; kw...)
 Base.eltype(T::Type{<:MatchesIterator{P,I}}) where {P,I} =
     ParseMatch{P,I,state_type(P)}
 Base.IteratorSize(::Type{<:MatchesIterator}) =
@@ -151,7 +151,8 @@ end
 # Returns `iterate(ParseMatch(m,s,1,1,nothing))`.
 
 
-result_type(::Type{<:ParseMatch{P}}) where P = result_type(P)
+result_type(x::ParseMatch, s...; kw...) =
+    result_type(x.parsings, s...; kw...)
 @inline iterate_state(m::ParseMatch) =
     iterate_state(m.parsings,m.offset,m.after,m.state)
 

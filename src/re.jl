@@ -195,7 +195,7 @@ end
 @inline state_type(::Type{<:Backreference}) =
     Int
 
-result_type(p::Backreference, sequence::Type) =
+result_type(p::Backreference, sequence) =
     SubString{String}
 
 _regex_string(x::Backreference) =
@@ -290,7 +290,7 @@ end
 @inline state_type(::Type{<:Subroutine}) =
     Any
 
-result_type(p::Subroutine, sequence::Type) =
+result_type(p::Subroutine, sequence) =
     Any
 
 children(x::Subroutine) = tuple()
@@ -402,8 +402,6 @@ end
 @inline state_type(::Type{Conditional{C,Y,N}}) where {C,Y,N} =
     Pair{Symbol,Union{state_type(Y),state_type(N)}}
 
-result_type(p::Conditional, sequence::Type) =
-    Union{result_type(yes, sequence),result_type(no, sequence)}
     
 function regex_prefix(x::Conditional)
     "(?("*_regex_string(x.condition)*")"
@@ -413,6 +411,8 @@ function regex_suffix(x::Conditional)
 end
 regex_inner(x::Conditional) =
     regex_string(x.yes)*(isa(x.no, Always) ? "" : ( "|" * regex_string(x.no)))
+result_type(p::Conditional, sequence) =
+    Union{result_type(p.yes, sequence),result_type(p.no, sequence)}
 
 
 children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)

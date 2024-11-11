@@ -66,11 +66,11 @@ The result type is a CombinedParser type parameter.
 Most of the time it is type-inferred within constructors
 by [`infer_result_type`](@ref).
 """
-result_type(x::CombinedParser, sequence::Type; kw...) =
-    error("implement result_type(::$(typeof(x)), sequence::Type)!")
+result_type(x::CombinedParser, sequence; kw...) =
+    error("implement result_type(::$(typeof(x)), sequence)!")
 
 result_type(x::CombinedParser) =
-    result_type(x, String)
+    result_type(x, "")
 
 """
     CombinedParsers.state_type(x::Type{<:CombinedParser}) where S
@@ -148,7 +148,8 @@ If no next match is found, return `nothing`.
 Abstract type for parser wrappers, providing default methods."
 """
 abstract type WrappedParser{P} <: CombinedParser end
-result_type(p::WrappedParser, sequence::Type; kw...) = result_type(p.parser, sequence; kw...)
+result_type(p::WrappedParser, sequence; kw...)  = result_type(p.parser, sequence; kw...)
+
 @inline state_type(::Type{<:WrappedParser{P}}) where P =
     state_type(P)
 
@@ -745,8 +746,8 @@ right_state(state::Tuple) = state[3]
 @inline state_type(::Type{<:FlatMap}) =
     Tuple{<:Any,<:Any,<:Any}
 
-result_type(x::FlatMap, sequence::Type; kw...) =
-    Any #result_type(x.left, sequence; kw...)
+result_type(x::FlatMap, sequence; kw...) =  Any #result_type(x.left, sequence; kw...)
+
 
 children(x::FlatMap) = ( x.left, x.right )
 function print_constructor(io::IO,x::FlatMap)
@@ -911,7 +912,7 @@ print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
 children(x::Sequence) = isliteralsequence(x) ? tuple() : x.parts
 regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
-result_type(p::Sequence, sequence::Type; kw...) =
+result_type(p::Sequence, sequence; kw...)  =
     sequence_result_type(p.parts, sequence; kw...)
 
 """
@@ -919,7 +920,7 @@ result_type(p::Sequence, sequence::Type; kw...) =
 
 `Tuple` type, internally used for `Sequence` result_type.
 """
-sequence_result_type(parts, sequence::Type; kw...) =
+sequence_result_type(parts::Tuple, sequence; kw...) =
     Tuple{ (result_type(p, sequence; kw...) for p in parts)... }
 
 isliteralsequence(c::ConstantParser) = true
@@ -1346,7 +1347,8 @@ Repeat(min::Integer,max::Integer,p...)              = Repeat((min:max),p...)
 Repeat(p...;min::Integer=0,max::Integer=Repeat_max) = Repeat((min:max),p...)
 Repeat(min::Integer,p...)                           = Repeat((min:Repeat_max),p...)
 
-result_type(p::Repeat, sequence::Type; kw...) = Vector{result_type(p.parser, sequence; kw...)}
+result_type(p::Repeat, sequence; kw...)  =
+    Vector{result_type(p.parser, sequence; kw...)}
 
 @inline state_type(t::Type{Repeat{P}}) where P =
     repeat_state_type(state_type(P))
@@ -1682,7 +1684,7 @@ defaultvalue(::Type{ConstantParser{C}}) where C =
 defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
 defaultvalue(V::Type) = missing
-defaultvalue(V::CombinedParser) = defaultvalue(result_type(V))
+defaultvalue(V::CombinedParser) = defaultvalue(result_type(V, ""))
 
 
 export Optional
@@ -1718,8 +1720,9 @@ end
 state_type(p::Type{<:Optional{P}}) where P =
     Union{NoMatch,state_type(P)}
 
-function result_type(p::Optional, sequence::Type; kw...)
-    T,D = typeof(p.default), result_type(p.parser, sequence; kw...)
+function result_type(p::Optional, sequence; kw...)
+    #error()
+    D, T = typeof(p.default), result_type(p.parser, sequence; kw...)
     T_ = promote_type(T,D)
     T_ === Any ? Union{T,D} : T_
 end
@@ -1924,8 +1927,8 @@ _sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in
 @deprecate sEither(x...) Either(x...; simplify=true)
 
 
-result_type(x::Either, sequence::Type; kw...) =
-    either_result_type(x.options, sequence::Type; kw...)
+result_type(x::Either, sequence; kw...)  =
+    either_result_type(x.options, sequence; kw...)
 
 
 either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
@@ -1971,9 +1974,11 @@ function promote_type_union(Ts...)
 end
 
 "return tuple(state_type,result_type)"
-function either_result_type(ts, sequence::Type; kw...)
+function either_result_type(ts::Tuple, sequence; kw...)
     promote_type_union(result_type.(ts, sequence; kw...)...)
 end
+either_result_type(ts::Vector, sequence; kw...) = ## possibly recursive!
+    Any
 
 children(x::Either) = x.options
 regex_string(x::Either) = join(regex_string.(x.options),"|")

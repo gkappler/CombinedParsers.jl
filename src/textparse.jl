@@ -27,8 +27,7 @@ DateParser, DateTimeParser
 
 import TextParse: tryparsenext
 
-result_type(x::AbstractToken) = result_type(typeof(x))
-result_type(::Type{<:AbstractToken{T}}) where T = T
+result_type(::Type{<:AbstractToken{T}}, a...; kw...) where T = T
 
 @auto_hash_equals struct AbstractTokenParser{P<:AbstractToken} <: CombinedParser
     parser::P
@@ -40,8 +39,9 @@ result_type(::Type{<:AbstractToken{T}}) where T = T
         new{typeof(p)}(p)
     end
 end
-result_type(::AbstractTokenParser{AT}, sequence::Type) where {AT<:AbstractToken} =
-    result_type(AT)
+result_type(x::AbstractTokenParser{AT}, sequence) where {AT<:AbstractToken} =
+    result_type(AT,sequence)
+
 @inline state_type(::Type{<:AbstractTokenParser{AT}}) where {AT<:AbstractToken} =
     NCodeunitsState{result_type(AT)}
 
@@ -105,7 +105,7 @@ julia> TextParse.tryparsenext(p, "Number:    42")
 function TextParse.tryparsenext(x::CombinedParser,str,i,till,opts=TextParse.default_opts)
     s = iterate_state(x,str,till,i,nothing)
     if s === nothing
-        Nullable{result_type(x)}(),i
+        Nullable{result_type(x,str)}(),i
     else
         Nullable(get(x,str,till,tuple_pos(s),i,tuple_state(s))),tuple_pos(s)
     end

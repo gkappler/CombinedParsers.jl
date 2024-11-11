@@ -28,7 +28,6 @@ end
     Tuple{Int,state_type(P)}
 
 
-# result_type(p::Type{PositiveLookbehind{T}}) where T = T
 regex_prefix(x::PositiveLookbehind) = "(?<="
 
 export NegativeLookbehind

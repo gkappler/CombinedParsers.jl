@@ -6,10 +6,9 @@ Parsers that do not consume any input can inherit `Assertion`.
 abstract type Assertion <: CombinedParser end
 @inline state_type(::Type{<:Assertion}) =
     MatchState
-
 @inline _leftof(str,i,parser::Assertion,x...) = i
 @inline _rightof(str,i,parser::Assertion,x...) = i
-result_type(x::Assertion, sequence::Type) = typeof(x)
+result_type(x::Assertion, sequence) = typeof(x)
 
 """
     Base.get(parser::Assertion{MatchState, <:Assertion}, sequence, till, after, i, state)
@@ -154,7 +153,8 @@ regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
 @inline state_type(::Type{PositiveLookahead{P}}) where P =
     Tuple{Int,state_type(P)}
 
-result_type(x::PositiveLookahead, sequence::Type) = result_type(x.parser, sequence)
+result_type(x::PositiveLookahead, sequence; kw...) =
+    result_type(x.parser, sequence; kw...)
 
 function iterate_state(t::PositiveLookahead, str, till, posi, next_i, state)
     r = iterate_state(t.parser, str, till, posi, tuple_pos(state,posi), tuple_state(state))
@@ -196,8 +196,6 @@ julia> parse(la*AnyChar(),"seek")
 end
 @inline state_type(::Type{NegativeLookahead{P}}) where P =
     MatchState
-
-result_type(x::NegativeLookahead, sequence::Type) = typeof(x)
 regex_prefix(x::NegativeLookahead) = "(?!"*regex_prefix(x.parser)
 function iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::Nothing)
     r = iterate_state(t.parser, str, till, posi, next_i, nothing)

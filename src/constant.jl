@@ -21,10 +21,13 @@ end
 @inline state_type(::Type{<:CombinedParsers.ConstantParser}) =
     MatchState
 
+result_type(p::ConstantParser{P}, sequence; kw...) where P =
+    P
+
+
 @inline _ncodeunits(x::Union{Char,AbstractString}) = ncodeunits(x)
 @inline _ncodeunits(x) = 1
 @inline _ncodeunits(x::ConstantParser) = _ncodeunits(x.parser)
-result_type(::ConstantParser{P}, sequence::Type) where P = P
 @inline _rightof(str,i,parser::ConstantParser,x) =
     i+_ncodeunits(parser)
 @inline _leftof(str,i,parser::ConstantParser,x) = 

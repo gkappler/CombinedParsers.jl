@@ -26,12 +26,12 @@ If `parser isa NamedParser`, transformation is done within the wrapped parser
     end
 end
 
-result_type(p::Transformation{<:Function}, sequence::Type; kw...) =
+result_type(p::Transformation{<:Function}, sequence; kw...)  =
     infer_result_type(p.transform, Any, p.parser, sequence,
                       "call seq(function,type,parts...)";
                       kw...)
 
-result_type(p::Transformation{<:Type}, sequence::Type) =
+result_type(p::Transformation{<:Type}, sequence; kw...) =
     p.transform
 
 _deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
@@ -93,8 +93,8 @@ Base.map(::Type{MatchedSubSequence}, x::CombinedParser) =
 Base.map(::MatchedSubSequence, x::CombinedParser) = #
     Transformation(MatchedSubSequence(), x)
 
-result_type(p::Transformation{MatchedSubSequence}, sequence::Type{<:AbstractString}) =
-    SubString{sequence}
+result_type(p::Transformation{MatchedSubSequence}, sequence::AbstractString) =
+    SubString{typeof(sequence)}
 
 function Base.get(x::Union{Transformation{MatchedSubSequence},
                            ConstantParser{<:AbstractString}},
@@ -188,7 +188,7 @@ function map_constant(transform, p::CombinedParser)
     Transformation(Constant(transform), p)
 end
 
-result_type(p::Transformation{<:Constant}, sequence::Type) =
+result_type(p::Transformation{<:Constant}, sequence) =
     typeof(p.transform.value)
 
 parser(constant::Pair) =
@@ -260,7 +260,7 @@ function Base.get(parser::Transformation{IndexAt{Is}}, sequence, till, after, i,
     tuple(get(parser.parser,sequence, till, after, i, state)[parser.transform.i]...)
 end
 
-result_type(p::Transformation{<:IndexAt{<:Integer}}, sequence::Type) =
+result_type(p::Transformation{<:IndexAt{<:Integer}}, sequence) =
     fieldtypes(result_type(p.parser, sequence))[p.transform.i]
 
 function print_constructor(io::IO,x::Transformation{<:IndexAt})
