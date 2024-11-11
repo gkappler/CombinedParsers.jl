@@ -34,11 +34,6 @@ result_type(p::Transformation{<:Function}, sequence; kw...)  =
 result_type(p::Transformation{<:Type}, sequence; kw...) =
     p.transform
 
-_deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
-    Transformation(
-        x.transform,
-        deepmap_parser(f,mem,x.parser,a...;kw...))
-
 """
     Base.get(parser::Transformation{<:Function}, a...)
     Base.get(parser::Transformation{<:Type}, a...)

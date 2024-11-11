@@ -44,6 +44,8 @@ result_type(x::AbstractTokenParser{AT}, sequence) where {AT<:AbstractToken} =
 
 @inline state_type(::Type{<:AbstractTokenParser{AT}}) where {AT<:AbstractToken} =
     NCodeunitsState{result_type(AT)}
+_deepmap_parser(f,mem::AbstractDict,x::AbstractTokenParser,a...;kw...) =
+          x
 
 """
     NumericParser(x...) = parser(TextParse.Numeric(x...))

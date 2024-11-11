@@ -1,4 +1,9 @@
+@nospecialize
 export deepmap_parser
+
+struct RecursionMarker end
+getcache!(f,mem,x::Union{Either{<:Vector}}) = get!(f,mem,x)
+getcache!(f,mem,x) = f()
 
 """
     deepmap_parser(f::Function[, mem::AbstractDict=IdDict()], x::CombinedParser,a...;kw...)
@@ -25,7 +30,7 @@ deepmap_parser(f,x::CombinedParser, a...;kw...) =
     deepmap_parser(f,IdDict(),x,a...;kw...)
 
 deepmap_parser(f,mem::AbstractDict, x, a...; kw...) =
-    get!(mem,x) do
+    getcache!(mem,x) do
         dt = _deepmap_parser(f, mem, x, a...; kw...)
         f(dt, a...; kw...)
     end
@@ -80,6 +85,7 @@ _deepmap_parser(f,mem::AbstractDict,x::Repeat,a...;kw...) =
     Repeat(x.range,
            deepmap_parser(f,mem,x.parser,a...))
 
+
 _deepmap_parser(f,mem::AbstractDict,x::MappedSequenceParser,a...;kw...) =
     MappedSequenceParser(x.f,deepmap_parser(f,mem,x.parser,a...;kw...))
 
@@ -94,11 +100,22 @@ _deepmap_parser(f,mem::AbstractDict,x::FlatMap,a...;kw...) =
         x.right,# v -> deepmap_parser(f,mem,x.right(v),a...;kw...),
         deepmap_parser(f,mem,x.left,a...;kw...))
 
+_deepmap_parser(f,mem::AbstractDict,x::Either,a...;kw...) =
+    _deepmap_either(f,mem,x,a...;kw...)
 
-@inline deepmap_parser(f,mem::AbstractDict,x::Either,a...;kw...) =
-    get!(mem,x) do
-        f(deepmap_either(f,mem,x,a...;kw...),a...;kw...)
+_deepmap_either(f,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
+    Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
+
+_deepmap_either(f,mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...) =
+    x
+
+function _deepmap_either(f,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
+    mem[x] = r = Either(Any[])
+    for p in x.options
+        push!(r,deepmap_parser(f,mem,p,a...;kw...))
     end
+    r
+end
 
 """
     strip_either1(x::CombinedParser)
@@ -115,17 +132,6 @@ deepmap_parser(::typeof(_strip_either1),mem::AbstractDict,x::Either) =
     else
         deepmap_either(_strip_either1,mem,x)
     end
-
-deepmap_either(f,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
-    Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
-
-function deepmap_either(f,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
-    mem[x] = r = Either(Any[])
-    for p in x.options
-        push!(r,deepmap_parser(f,mem,p,a...;kw...))
-    end
-    r
-end
 
 export substitute
 

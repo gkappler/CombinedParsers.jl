@@ -116,11 +116,6 @@ end
 Capture(x,index=-1) =
     Capture(nothing,x,index)
 
-function _deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
-    Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
-end
-
-
 Base.get(x::Capture, sequence, till, after, i, state) =
     get(x.parser, sequence, till, after, i, state)
 
@@ -270,8 +265,6 @@ result_type(p::Subroutine, sequence) =
     Any
 
 
-_deepmap_parser(::Function,mem::AbstractDict,x::Subroutine) = x
-
 
 function iterate_state_condition(cond::Subroutine, sequence, till, posi, next_i, state)
     sequence.state === nothing && return false
@@ -342,8 +335,6 @@ See also [pcre doc](https://www.pcre.org/original/doc/html/pcrepattern.html#dups
         new{typeof(parser)}(parser)
 end
 
-_deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw...) =
-    DupSubpatternNumbers(deepmap_parser(f,mem,x.parser,a...;kw...))
 
 
 
@@ -366,13 +357,6 @@ end
 result_type(p::Conditional, sequence) =
     Union{result_type(p.yes, sequence),result_type(p.no, sequence)}
 
-
-
-function _deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...)
-    Conditional(deepmap_parser(f,mem,x.condition,a...;kw...),
-                deepmap_parser(f,mem,x.yes,a...;kw...),
-                deepmap_parser(f,mem,x.no,a...;kw...))
-end
 
 @inline Base.get(parser::Conditional, sequence, till, after, i, state) =
     get(state.first == :yes ? parser.yes : parser.no, sequence, till, after, i, state.second)
