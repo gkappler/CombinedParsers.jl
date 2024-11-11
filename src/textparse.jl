@@ -53,16 +53,6 @@ NumericParser(x...) = parser(TextParse.Numeric(x...))
 
 parser(x::AbstractToken) = AbstractTokenParser(x)
 
-regex_string(::TextParse.Numeric{<:Integer}) = "-?[[:digit:]]+"
-function _printnode(io::IO, x::AbstractTokenParser)
-    print_constructor(io, x)
-end
-
-print_constructor(io::IO, x::AbstractTokenParser) =
-    print(io, x.parser)
-
-print_constructor(io::IO, x::AbstractTokenParser{<:TextParse.DateTimeToken}) =
-    print(io, x.parser.format)
 
 iterate_state(parser::AbstractTokenParser, sequence, till, before_i, next_i, state::NCodeunitsState) =
     nothing
@@ -114,23 +104,3 @@ end
 
 
 
-"""
-    regex_prefix(x)
-
-Prefix printed in parser tree node.
-"""
-regex_prefix(x::AbstractToken) = ""
-"""
-    regex_suffix(x)
-
-Suffix printed in parser tree node.
-"""
-regex_suffix(x::AbstractToken) = ""
-"""
-    regex_inner(x::AbstractToken)
-
-Regex representation of `x`.
-See [`regex_string`](@ref)
-"""
-regex_inner(x::AbstractToken) = "$(typeof(x))"
-regex_inner(::TextParse.Numeric{T}) where T = "$(T)"

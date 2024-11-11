@@ -16,9 +16,8 @@ See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
     ParserWithCaptures(parser,captures,names) =
         new{typeof(parser)}(parser,captures,names)
 end
-function print_constructor(io::IO, x::ParserWithCaptures)
-    print_constructor(io,x.parser)
-    print(io, " |> regular expression combinator",
+function print_constructor(io::IO, x::ParserWithCaptures; kw...)
+    print(io, "regular expression combinator",
           ( length(x.subroutines)>0 ? " with $(length(x.subroutines)) capturing groups" : "" ) )
 end
 """

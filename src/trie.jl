@@ -74,9 +74,6 @@ function Base.get(x::Either{<:AbstractTrie},
 end
 
 
-children(x::Either{<:AbstractTrie}) =
-    children(x.options)
-
 function deepmap_either(f::typeof(_lowercase),mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)
     g = (lowercase.(Tries.path(st))=>get(st)
          for st in PreOrderDFS(x.options)

@@ -25,10 +25,6 @@ include("ind.jl")
 using LazyStrings
 import LazyStrings: reversed, reverse_index
 
-using AbstractTrees
-import AbstractTrees: children
-import AbstractTrees: print_tree, printnode
-
 export CombinedParser
 export result_type
 
@@ -85,34 +81,6 @@ Return the state type of `x`.
 include("state.jl")
 
 
-export regex_string
-
-"""
-    regex_string(x::CombinedParser)
-
-`regex_prefix(x)*regex_inner(x)*regex_suffix(x)`
-"""
-regex_string(x::CombinedParser) = regex_prefix(x)*regex_inner(x)*regex_suffix(x)
-regex_prefix(x::CombinedParser) = ""
-regex_suffix(x::CombinedParser) = ""
-regex_inner(x::CombinedParser) = ""
-
-if VERSION>=v"1.6"
-    constructor_name(x) = typeof(x).name.name
-else
-    constructor_name(x) = typeof(x).name.name
-end
-
-"""
-    print_constructor(io::IO,x)
-
-Print constructor pipeline in parser tree node.
-"""
-print_constructor(io::IO,x) =
-    if x isa CombinedParser
-        print(io, constructor_name(x))
-    else
-    end
 
 
 export iterate_state
@@ -152,16 +120,6 @@ result_type(p::WrappedParser, sequence; kw...)  = result_type(p.parser, sequence
 
 @inline state_type(::Type{<:WrappedParser{P}}) where P =
     state_type(P)
-
-children(x::WrappedParser) = children(x.parser)
-children_char = '\U1F5C4'
-function print_constructor(io::IO,x::WrappedParser)
-    print_constructor(io, x.parser)
-    print(io, " |> ", constructor_name(x))
-end
-regex_prefix(x::WrappedParser) = regex_prefix(x.parser)
-regex_suffix(x::WrappedParser) = regex_suffix(x.parser)
-regex_inner(x::WrappedParser) = regex_inner(x.parser)
 
 """
     _leftof(str,i,parser::WrappedParser,x)
@@ -328,19 +286,7 @@ end
     SideeffectParser(f::Function, p::CombinedParser,a...) =
         new{typeof(p),typeof(a)}(p,a,f)
 end
-children(x::SideeffectParser) = children(x.parser)
-function print_constructor(io::IO,x::SideeffectParser)
-    print_constructor(io,x.parser)
-    c = if x.effect == log_effect
-        "with_log(;nomatch=true)"
-    elseif x.effect == log_effect_match
-        "with_log"
-    else
-        "with_effect($(x.effect))"
-    end
-    print(io," |> $c")
-end
-regex_string(x::SideeffectParser) = regex_string(x.parser)
+
 
 export with_log, with_effect
 """
@@ -458,20 +404,6 @@ Struct with
             new{typeof(p)}(name,p,doc)
         end
 end
-function print_constructor(io::IO,x::NamedParser)
-    if x.doc==""
-        print_constructor(io,x.parser)
-        print(io, " |> ")
-    end
-    print(io, "with_name(:")
-    printstyled(io, x.name, bold=true,color=:red)
-    print(io, ")")
-end
-
-children(x::NamedParser)     = x.doc=="" ? children(x.parser)     : tuple()
-regex_prefix(x::NamedParser) = x.doc=="" ? regex_prefix(x.parser) : ""
-regex_inner(x::NamedParser)  = x.doc=="" ? regex_inner(x.parser)  : x.doc
-regex_suffix(x::NamedParser) = x.doc=="" ? regex_suffix(x.parser) : ""
 
 """
     with_name(name::Symbol,x; doc="")
@@ -749,10 +681,6 @@ right_state(state::Tuple) = state[3]
 result_type(x::FlatMap, sequence; kw...) =  Any #result_type(x.left, sequence; kw...)
 
 
-children(x::FlatMap) = ( x.left, x.right )
-function print_constructor(io::IO,x::FlatMap)
-    print(io, "FlatMap" )
-end
 @deprecate FlatMap(right::Function, left, T::Type=Any) map(T,FlatMap(right,parser(left)))
 @deprecate FlatMap(right::Function, T::Type, left) map(T,FlatMap(right,parser(left)))
 @deprecate FlatMap{T}(right::Function, left) where T map(T,FlatMap(right,parser(left)))
@@ -784,7 +712,6 @@ julia> p("butdifferent")
 """
 after(a...) = FlatMap(a...)
 
-regex_inner(x::FlatMap)  = error("regex determined at runtime!")
 
 
 @inline _rightof(str,i,parser::FlatMap,x::Tuple) =
@@ -908,9 +835,6 @@ julia> e1("Some Avenue 42")
         end
     end
 end
-print_constructor(io::IO,x::Sequence) = print(io,"Sequence")
-children(x::Sequence) = isliteralsequence(x) ? tuple() : x.parts
-regex_inner(x::Sequence)  = join([ regex_string(p) for p in x.parts])
 
 result_type(p::Sequence, sequence; kw...)  =
     sequence_result_type(p.parts, sequence; kw...)
@@ -1303,15 +1227,6 @@ julia> german_street_address("Konrad Adenauer Allee    42")
         end
 end
 
-
-regex_inner(x::Lazy) = regex_inner(x.parser)
-regex_suffix(x::Lazy) = regex_suffix(x.parser)*"?"
-
-function print_constructor(io::IO, x::Lazy)
-    print_constructor(io,x.parser)
-    print(io, " |> Lazy" )
-end
-
 const Repeat_max = 10^6
 export Repeat1, Repeat
 """
@@ -1443,34 +1358,6 @@ Shorthand for [`Base.map`](@ref)`(f,join(x,delim; kw...))`.
 """
 Base.join(f::Function,p::CombinedParser,delim_; kw...) =
     map(f,join(p,delim_; kw...))
-
-function print_constructor(io::IO,x::Repeat)
-    print_constructor(io,x.parser)
-    print(io, " |> Repeat" )
-end
-
-regex_inner(x::Repeat) = regex_inner(x.parser)
-regex_suffix(x::Repeat) = 
-    regex_suffix(x.parser)*if x.range.start == 0
-        if x.range.stop >= Repeat_max
-            "*"
-        else            
-            "{,$(x.range.stop)}"
-        end
-    else
-        if x.range.stop >= Repeat_max
-            if x.range.start == 1
-                "+"
-            else
-                "{$(x.range.start),}"
-            end
-        elseif x.range.start==x.range.stop
-            "{$(x.range.start)}"
-        else
-            "{$(x.range.start),$(x.range.stop)}"
-        end
-    end
-
 
 @inline function _leftof(str,i,parser::Repeat,x::Int)
     for e in 1:x
@@ -1741,17 +1628,6 @@ end
 
 
 
-children(x::Optional) = children(x.parser)
-regex_inner(x::Optional) = regex_inner(x.parser)
-regex_suffix(x::Optional) = regex_suffix(x.parser)*"?"
-
-function print_constructor(io::IO, x::Optional)
-    print_constructor(io,x.parser)
-    printstyled(io, "|$(x.default)",color=:blue)
-    #print(io, " |> Optional(default=$(x.default))")
-end
-
-
 @inline _leftof(str,i,parser::Optional,x::NoMatch) = i
 @inline _rightof(str,i,parser::Optional,x::NoMatch) = i
 
@@ -1980,12 +1856,6 @@ end
 either_result_type(ts::Vector, sequence; kw...) = ## possibly recursive!
     Any
 
-children(x::Either) = x.options
-regex_string(x::Either) = join(regex_string.(x.options),"|")
-regex_prefix(x::Either) = "|"
-regex_inner(x::Either) = join([ regex_string(p) for p in x.options],"|")
-regex_suffix(x::Either) = ""
-print_constructor(io::IO,x::Either) = print(io,"Either")
 
 
 """
@@ -2221,9 +2091,6 @@ A parser matching `p`, and failing when required to backtrack
         error("unsupported")
 end
 Atomic(p) = Atomic(parser(x))
-
-regex_prefix(x::Atomic) = "(?>"*regex_prefix(x.parser)
-regex_suffix(x::Atomic) = regex_suffix(x.parser)*")"
 
 @inline iterate_state(parser::Atomic, sequence, till, posi, next_i, state::Nothing) =
     iterate_state(parser.parser, sequence, till, posi, next_i, state)

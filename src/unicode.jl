@@ -246,9 +246,3 @@ _ismatch(x::Char, set::UnicodeClass)::Bool =
     in(Base.Unicode.category_code(x),set.class)
 
 
-_regex_string(x::UnicodeClass) =
-    if haskey(unicode_abbrev, x.class)
-        "\\p{$(unicode_abbrev[x.class])}"
-    else
-        join([_regex_string(UnicodeClass(s)) for s in x.class])
-    end

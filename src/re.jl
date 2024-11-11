@@ -13,7 +13,6 @@ import LazyStrings: reversed, reverse_index
 import ..CombinedParsers: LeafParser, WrappedParser, CombinedParser, ConstantParser, Either, SideeffectParser
 import ..CombinedParsers: parser, result_type, prune_captures, deepmap_parser, _deepmap_parser, print_constructor
 import ..CombinedParsers: iterate_state, iterate_state_constant
-import ..CombinedParsers: regex_prefix, regex_suffix, regex_inner, _regex_string, regex_string, _log_names
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
 import ..CombinedParsers: _prevind, _nextind, _leftof, _rightof
 _indexed_captures(x,a...) = x
@@ -116,19 +115,6 @@ Capture a parser result, optionally with a name.
 end
 Capture(x,index=-1) =
     Capture(nothing,x,index)
-function print_constructor(io::IO,x::Capture)
-    print_constructor(io,x.parser)
-    print(io, " |> Capture ", x.index )
-end
-
-regex_string(x::Capture) = _regex_prefix(x)*regex_string(x.parser)*")"
-_regex_prefix(x::Capture) =
-    let name = (x.name===nothing ? "" : "?<$(x.name)>")
-        "($name"
-    end
-regex_prefix(x::Capture) =
-    _regex_prefix(x::Capture)*regex_prefix(x.parser)
-regex_suffix(x::Capture) = regex_suffix(x.parser)*")"
 
 function _deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
     Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
@@ -197,16 +183,6 @@ end
 
 result_type(p::Backreference, sequence) =
     SubString{String}
-
-_regex_string(x::Backreference) =
-   if x.name !== nothing
-       string(x.name)
-   else
-       string(x.index)
-   end
-                                                          
-regex_inner(x::Backreference) =
-    "\\g{"*_regex_string(x) *"}"
 
 capture_index(name,delta,index,context) =
     if ( index<0 || delta!=Symbol("") )
@@ -293,21 +269,6 @@ end
 result_type(p::Subroutine, sequence) =
     Any
 
-children(x::Subroutine) = tuple()
-function regex_prefix(x::Subroutine)
-    "(?" *
-        if x.name !== nothing
-            "&$(x.name),$(x.index)"
-        else
-            if x.delta == Symbol("")
-                string(x.delta)
-            else
-                ""
-            end*string(x.index)
-        end
-end
-regex_suffix(x::Subroutine) = ")"
-regex_inner(x::Subroutine) = ""
 
 _deepmap_parser(::Function,mem::AbstractDict,x::Subroutine) = x
 
@@ -402,20 +363,10 @@ end
 @inline state_type(::Type{Conditional{C,Y,N}}) where {C,Y,N} =
     Pair{Symbol,Union{state_type(Y),state_type(N)}}
 
-    
-function regex_prefix(x::Conditional)
-    "(?("*_regex_string(x.condition)*")"
-end
-function regex_suffix(x::Conditional)
-    ")"
-end
-regex_inner(x::Conditional) =
-    regex_string(x.yes)*(isa(x.no, Always) ? "" : ( "|" * regex_string(x.no)))
 result_type(p::Conditional, sequence) =
     Union{result_type(p.yes, sequence),result_type(p.no, sequence)}
 
 
-children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
 function _deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...)
     Conditional(deepmap_parser(f,mem,x.condition,a...;kw...),
@@ -462,7 +413,99 @@ include("indexed_captures.jl")
 
 include("re-parser.jl")
 
+using AbstractTrees
+import AbstractTrees: children, printnode
+children(x::Subroutine) = tuple()
+children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
 
+import ..CombinedParsers: print_regex, print_regex_compact, needs_parens, tree_color
+
+@nospecialize
+function print_regex(io::IO, x::ParserOptions; kw...)
+    printstyled(io,"(?"; color=treecolor.pcre_structure)
+    printstyled(io, options_string(x.set_flags); color=treecolor.pcre_options)
+    if x.unset_flags!=0
+        printstyled(io, "-"; color=treecolor.pcre_structure)
+        printstyled(io, options_string(x.unset_flags); color=treecolor.pcre_options)
+    else
+        ""
+    end
+    print_regex_compact(io, x.parser; compact=false, parens = needs_parens(x), kw...)
+    printstyled(io,")"; color=treecolor.pcre_structure)
+end
+
+function print_constructor(io::IO,x::ParserOptions; kw...)
+    printstyled(io, "set_options"; color = treecolor.julia_structure)
+end
+function print_regex(io::IO, x::Regexp.Capture; kw...)
+    name = (x.name===nothing ? "" : "?<$(x.name)>")
+    printstyled(io,"("; color=tree_color(x))
+    printstyled(io, name; color=treecolor.pcre_name)
+    print_regex_compact(io, reversed(x.parser); compact=false, parens = needs_parens(x), kw...)
+    printstyled(io,")"; color=tree_color(x))
+end
+
+function print_regex(io::IO, x::Regexp.Backreference; kw...)
+    printstyled(io,"\\g{"; color=tree_color(x))
+    if x.name !== nothing
+        printstyled(io, x.name; color=treecolor.pcre_name)
+    else
+        printstyled(io, x.index; color=treecolor.pcre_index)
+    end
+    printstyled(io,"}"; color=tree_color(x))
+end
+                                                          
+
+function print_regex(io::IO, x::Regexp.Subroutine; kw...)
+    printstyled(io,"("; color=treecolor.pcre_structure)
+    if x.name !== nothing
+        printstyled(io, "&"; color=treecolor.pcre_structure)
+        printstyled(io, x.name; color=treecolor.pcre_name)
+        printstyled(io, ","; color=treecolor.pcre_structure)
+    else
+        if x.delta != Symbol("") #?
+            printstyled(io, x.delta; color=treecolor.pcre_index)
+        else
+            ""
+        end
+    end
+    printstyled(io, x.index; color=treecolor.pcre_index)
+    printstyled(io,")"; color=treecolor.pcre_structure)
+end
+
+
+function print_regex(io::IO, x::Regexp.Conditional; kw...)
+    printstyled(io,"(?"; color=treecolor.pcre_structure)
+    print_regex_compact(io, reversed(x.condition); compact=false, parens = needs_parens(x), kw...)
+    printstyled(io,"("; color=treecolor.pcre_structure)
+    print_regex(io, x.yes; kw...)
+    if !isa(x.no, Always)
+        printstyled(io,"|"; color=treecolor.pcre_structure)
+        print_regex(io, x.no; kw...)
+    end
+    printstyled(io,")"; color=treecolor.pcre_structure)
+    printstyled(io,")"; color=treecolor.pcre_structure)
+end
+
+
+function print_constructor(io::IO,x::Capture; kw...)
+    printstyled(io, "Capture "; color = treecolor.pcre_Capture)
+    printstyled(io, x.index; color = treecolor.pcre_index)
+end
+
+
+function _deepmap_parser(f::Function,mem::AbstractDict,x::Capture,a...;kw...)
+    Capture(x.name,deepmap_parser(f,mem,x.parser,a...;kw...),x.index)
+end
+_deepmap_parser(::Function,mem::AbstractDict,x::Subroutine) = x
+_deepmap_parser(f::Function,mem::AbstractDict,x::DupSubpatternNumbers, a...;kw...) =
+    DupSubpatternNumbers(deepmap_parser(f,mem,x.parser,a...;kw...))
+function _deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...)
+    Conditional(deepmap_parser(f,mem,x.condition,a...;kw...),
+                deepmap_parser(f,mem,x.yes,a...;kw...),
+                deepmap_parser(f,mem,x.no,a...;kw...))
+end
+@specialize
 
 end

@@ -33,13 +33,6 @@ result_type(p::ConstantParser{P}, sequence; kw...) where P =
 @inline _leftof(str,i,parser::ConstantParser,x) = 
     i-_ncodeunits(parser)
 
-children(x::ConstantParser) = ()
-regex_prefix(x::ConstantParser) = ""
-print_constructor(io::IO,x::ConstantParser) = print(io,"")
-# caveat
-regex_inner(x::ConstantParser) = regex_string(x.parser)
-regex_suffix(x::ConstantParser) = ""
-
 _lowercase(x::CombinedParser) = x
 
 _lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))

@@ -34,11 +34,8 @@ re"^"
 ```
 """
 struct AtStart <: Assertion end
-regex_inner(x::AtStart) = "^"
 iterate_state(parser::AtStart, sequence, till, posi, next_i, state::Nothing) =
     next_i == 1 ? (next_i, MatchState()) : nothing
-
-print_constructor(io::IO, x::AtStart) = print(io,"AtStart")
 
 """
     AtEnd()
@@ -52,11 +49,8 @@ re"\$"
 ```
 """
 struct AtEnd <: Assertion end
-regex_inner(x::AtEnd) = "\$"
 iterate_state(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
-print_constructor(io::IO, x::AtEnd) = print(io,"AtEnd")
-
 
 
 export Never
@@ -72,9 +66,6 @@ re"(*FAIL)"
 ```
 """
 struct Never <: Assertion end
-regex_prefix(x::Never) = "(*"
-regex_inner(x::Never) = "FAIL"
-regex_suffix(x::Never) = ")"
 iterate_state(x::Never,str,posi, next_i,till,state::Nothing) =
     nothing
 
@@ -94,17 +85,9 @@ re""
 """
 struct Always <: Assertion
 end
-Base.show(io::IO,x::Always) = print(io,"re\"\"")
-children(x::Union{Never,Always}) = tuple()
-regex_prefix(x::Always) = ""
-regex_inner(x::Always) = ""
-regex_suffix(x::Always) = ""
 iterate_state(parser::Always, str, till, posi, next_i, s::Nothing) =
     next_i, MatchState()
 
-
-Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
-    print(io,"re\"",regex_string(x),"\"")
 
 @inline iterate_state(t::Union{AtStart,AtEnd,Never,Always}, str, till, posi, next_i, state::MatchState) = nothing
 
@@ -112,17 +95,7 @@ Base.show(io::IO, x::Union{AtStart,AtEnd,Never,Always}) =
 An assertion with an inner parser, like WrappedParser interface.
 """
 abstract type WrappedAssertion <: Assertion end
-children(x::WrappedAssertion) = children(x.parser)
-regex_suffix(x::WrappedAssertion) = regex_suffix(x.parser)*")"
-regex_inner(x::WrappedAssertion) = regex_inner(x.parser)
 
-function print_constructor(io::IO,x::WrappedAssertion)
-    if !hasregex(x.parser)
-        print_constructor(io, x.parser)
-        print(io, " |> ")
-    end
-    print(io, constructor_name(x))
-end
 
 export PositiveLookahead
 """
@@ -148,7 +121,6 @@ julia> parse(la*AnyChar(),"peek")
             new{typeof(p)}(p)
         end
 end
-regex_prefix(x::PositiveLookahead) = "(?="*regex_prefix(x.parser)
 
 @inline state_type(::Type{PositiveLookahead{P}}) where P =
     Tuple{Int,state_type(P)}
@@ -196,7 +168,6 @@ julia> parse(la*AnyChar(),"seek")
 end
 @inline state_type(::Type{NegativeLookahead{P}}) where P =
     MatchState
-regex_prefix(x::NegativeLookahead) = "(?!"*regex_prefix(x.parser)
 function iterate_state(t::NegativeLookahead, str, till, posi, next_i, state::Nothing)
     r = iterate_state(t.parser, str, till, posi, next_i, nothing)
     if r === nothing

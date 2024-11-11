@@ -5,8 +5,6 @@ function set_capture(sequence::ReversedString, index::Int, x)
     set_capture(sequence.x,index,x)
 end
 
-## caveat!
-regex_string(x::ReversedString) = regex_escape(x.representation)
 
 export PositiveLookbehind
 """
@@ -26,9 +24,6 @@ end
 
 @inline state_type(::Type{PositiveLookbehind{P}}) where P =
     Tuple{Int,state_type(P)}
-
-
-regex_prefix(x::PositiveLookbehind) = "(?<="
 
 export NegativeLookbehind
 """
@@ -53,7 +48,7 @@ julia> parse("peek"*la,"peek")
         new{typeof(p)}(p)
     end
 end
-regex_prefix(x::NegativeLookbehind) = "(?<!"
+
 
 state_type(::Type{<:NegativeLookbehind})  =
     MatchState
@@ -73,9 +68,6 @@ function Lookbehind(does_match::Bool, p)
     end
 end
 @deprecate look_behind(does_match,p) Lookbehind(does_match, p)
-
-children(x::PositiveLookbehind) =
-    children(x.parser)
 
 function iterate_state(t::NegativeLookbehind, str, till, posi, next_i, state::Nothing)
     rseq=reversed(str)
@@ -142,11 +134,6 @@ function Base.get(parser::PositiveLookbehind, sequence, till, after, i, state)
     get(parser.parser, rseq, till, after_, reverse_index(rseq,prevind(sequence, i)), tuple_state(state))
 end
 
-regex_inner(x::Union{PositiveLookbehind,NegativeLookbehind}) =
-    regex_inner(reversed(x.parser))
-
-children(x::Union{PositiveLookbehind,NegativeLookbehind}) =
-    reverse(children(x.parser))
 reversed(x::CombinedParser) = deepmap_parser(_reversed, x)
 _reversed(x::ConstantParser{<:AbstractString}) =
     ConstantParser(reversed(x.parser))

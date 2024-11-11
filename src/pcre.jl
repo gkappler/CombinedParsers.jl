@@ -164,7 +164,6 @@ Base.Regex(x::StringWithOptions) =
 export flags
 flags(x::StringWithOptions) = x.flags
 flags(x) = UInt32(0)
-regex_string(x::StringWithOptions) = StringWithOptions(regex_escape(x.x),x.flags)
 
 """
     with_options(flags::UInt32,x::AbstractString)
@@ -268,22 +267,6 @@ set_options(set::UInt32,unset::UInt32,p) =
 set_options(set::UInt32,parser) =
     set_options(set,UInt32(0),parser)
 
-
-function regex_prefix(x::ParserOptions)
-    "(?" * options_string(x.set_flags) *
-    if x.unset_flags!=0
-        "-" * options_string(x.unset_flags)
-    else
-        ""
-    end
-end
-function regex_suffix(x::ParserOptions)
-    ")"
-end
-function print_constructor(io::IO,x::ParserOptions)
-    print_constructor(io,x.parser)
-    print(io, " |> set_options")
-end
 
 
 @inline Base.get(parser::ParserOptions, sequence, till, after, i, state) =

@@ -39,15 +39,6 @@ _deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
         x.transform,
         deepmap_parser(f,mem,x.parser,a...;kw...))
 
-children(x::Transformation) = children(x.parser)
-
-function print_constructor(io::IO,x::Transformation)
-    print_constructor(io,x.parser)
-    print(io," |> map(")
-    printstyled(io,x.transform, color=:bold)
-    print(io,")")
-end
-
 """
     Base.get(parser::Transformation{<:Function}, a...)
     Base.get(parser::Transformation{<:Type}, a...)
@@ -74,10 +65,6 @@ export MatchedSubSequence
 import Base: (!)
 struct MatchedSubSequence end
 
-function print_constructor(io::IO,x::Transformation{MatchedSubSequence})
-    print_constructor(io,x.parser)
-    printstyled(io," |> !", color=:bold)
-end
 
 @deprecate MatchedSubSequence(x) map(MatchedSubSequence(), parser(x))
 export JoinSubstring
@@ -179,10 +166,6 @@ struct Constant{T}
 end
 Base.show(io::IO, x::Constant) = show(io,x.value)
 
-function print_constructor(io::IO,x::Transformation{<:Constant})
-    print_constructor(io,x.parser)
-    printstyled(IOContext(io, :compact => true)," => ",x.transform, color=:bold)
-end
 
 function map_constant(transform, p::CombinedParser)
     Transformation(Constant(transform), p)
@@ -262,11 +245,6 @@ end
 
 result_type(p::Transformation{<:IndexAt{<:Integer}}, sequence) =
     fieldtypes(result_type(p.parser, sequence))[p.transform.i]
-
-function print_constructor(io::IO,x::Transformation{<:IndexAt})
-    print_constructor(io,x.parser)
-    printstyled(io,"[",x.transform.i,"]", color=:bold)
-end
 
 """
     map(index::IndexAt, p::CombinedParser, a...)
