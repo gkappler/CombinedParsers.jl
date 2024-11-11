@@ -1678,6 +1678,7 @@ iterate_state(t::Lazy{<:Optional}, str, till, posi, next_i, state) =
 
 export Either, mEither
 export Delayed
+using Tries
 
 """
     Either{T}(p...) where {T} = map(T, Either(p...))
@@ -1766,27 +1767,30 @@ struct Either{Ps} <: CombinedParser
     options::Ps
 
     function Either(p_::Vector; simplify=false)
-        p = either_options(p_...; simplify=simplify)
+        p = either_options(p_; simplify=simplify)
         simplify && length(os)==1 && return first(os)
         new{typeof(p)}(p)
     end
+    function Either(p::AbstractTrie)
+        new{typeof(p)}(p)
+    end
     function Either(p_...; simplify=false)
-        os = either_options(p_...; simplify=simplify)
+        os = either_options(p_; simplify=simplify)
         simplify && length(os)==1 && return first(os)
         p = tuple(os...)
         new{typeof(p)}(p)
     end
 
-    function Either{T}(p_...; convert=true, simplify=false) where {T}
-        p = either_options(p_...; simplify=simplify)
+    function Either{T}(p_...; simplify=false) where {T}
+        p = either_options(p_; simplify=simplify)
         simplify && length(os)==1 && return first(os)
-        for (i,x) in enumerate(p)
-            if !(result_type(x) <: T)
-                convert || error("transforming results with convert($T,::$(result_type(x)))\n$x")
-                p[i] = map(T,x)
-            end 
-        end
-        new{typeof(p)}(p)
+        # for (i,x) in enumerate(p)
+        #     if !(result_type(x) <: T)
+        #         convert || error("transforming results with convert($T,::$(result_type(x)))\n$x")
+        #         p[i] = map(T,x)
+        #     end 
+        # end
+        Any <: T ? new{typeof(p)} : map(T,new{typeof(p)}(p))
     end
 
 end
@@ -1795,23 +1799,8 @@ function mEither(transform::Function, x...; kw...)
 end
 
 @deprecate Either(p::Tuple; kw...) Either(p...; kw...) 
-@deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; convert=true, kw...)
-@deprecate Either{T}(x::Tuple; kw...) where T Either{T}(x...; convert=true, kw...)
-
-function either_options(x...; simplify = false)
-    Any[if simplify
-            _sEither(x...)
-        else
-            parser.(x)
-        end...]
-end
-
-_sEither(x::Either) = _sEither(x.options...)
-_sEither(x::Never) = tuple()
-_sEither() = tuple()
-_sEither(x1) = tuple(parser(x1))
-## todo: better aggregate in argument?
-_sEither(x1,x...) = Iterators.flatten( Any[ _sEither(x1), ( _sEither(e) for e in x )... ] )
+@deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; kw...)
+@deprecate Either{T}(x::Tuple; kw...) where T Either{T}(x...; kw...)
 @deprecate sEither(x...) Either(x...; simplify=true)
 
 
@@ -1819,14 +1808,13 @@ result_type(x::Either, sequence; kw...)  =
     either_result_type(x.options, sequence; kw...)
 
 
-either_state_type(ts::Type{Vector{Any}}) = Tuple{Int,Any}
-either_state_type(ts::Type{<:CombinedParser}) = Tuple{Int,Any}
-either_state_type(ts::Type{<:Vector}) = Tuple{Int,state_type(eltype(ts))}
-either_state_type(ts::Type{<:Tuple}) = Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
-either_state_type(ts::Type...) = Tuple{Int,promote_type(state_type.(ts))}
+either_state_type(ts::Type{Vector{CombinedParser}}) =
+    Tuple{Int,Any}
+either_state_type(ts::Type{<:Tuple}) =
+    Tuple{Int,promote_type(state_type.(fieldtypes(ts))...)}
 @inline with_state!(x::Nothing,k::Int,s) = (k,s)
 
-state_type(::Type{<:CombinedParsers.Either{P}}) where {P} =
+@inline state_type(::Type{Either{P}}) where {P} =
     either_state_type(P)
 
 """
@@ -1869,6 +1857,23 @@ either_result_type(ts::Vector, sequence; kw...) = ## possibly recursive!
     Any
 
 
+function either_options(x, result = CombinedParser[]; simplify = true)
+    for e in parser.(x)
+        if e isa Either
+            if simplify
+                either_options(e.options, result; simplify = simplify)
+            else
+                push!(result, e)
+            end
+        elseif e isa Never
+        elseif e isa CombinedParser
+            push!(result, e)
+        else
+            error()
+        end
+    end
+    result
+end
 
 """
     Base.push!(x::Either, option)
