@@ -780,12 +780,13 @@ of `parts::P`, [`sequence_state_type`](@ref)==S and [`sequence_result_type`](@re
 end
 
 
+merge_tuples(v) = tuple(v[1]..., v[2]...)
 
 export Sequence, mSequence
 """
-    Sequence{P,S,T}
+    Sequence{P}
 
-of `parts::P`, [`sequence_state_type`](@ref)`==S` with [`sequence_result_type`](@ref)`==T`.
+of `parts::P`. [`sequence_state_type`](@ref)`==S` with [`sequence_result_type`](@ref)`==T` are computed from `parts`.
 
     Sequence(parts::CombinedParser...; tuplestate=true)
 
@@ -820,21 +821,75 @@ julia> e1("Some Avenue 42")
 !!! note
     State is managed as [`sequence_state_type`](@ref)`(parts; tuplestate)`.
     Overwrite to optimize state types special cases.
+
+
+
+    Sequence(parts...; kw...)
+
+
+Parts that are not `::CombinedParser` are converted with [`parser`](@ref).
+```jldoctest
+julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', TextParse.Numeric(Int))
+🗄 Sequence
+├─ .* AnyValue |> Repeat |> !
+├─ \\
+└─ <Int64>
+::Tuple{SubString{String}, Char, Int64}
+
+julia> german_street_address("Some Avenue 42")
+("Some Avenue", ' ', 42)
+```
+
+!!! note
+    Returns a NamedTuple [`Base.map`](@ref) transformation if any part was `Pair{Symbol}`.
+
+    ```jldoctest
+    julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => TextParse.Numeric(Int))
+    🗄 Sequence |> map(ntuple)
+    ├─ .* AnyValue |> Repeat |> ! |> with_name(:street)
+    ├─ \\
+    └─  <Int64> |> with_name(:no)
+    ::NamedTuple{(:street, :no), Tuple{SubString{String}, Int64}}
+
+    julia> german_street_address("Some Avenue 42")
+    (street = "Some Avenue", no = 42)
+    ``` 
 """
 @auto_hash_equals struct Sequence{P} <: CombinedParser
     parts::P
-    function Sequence(p::CombinedParser...; tuplestate=true)
-        if VERSION>=v"1.6" && length(p)>4
-            mSequence(Sequence(p[1:2]...; tuplestate=tuplestate),
-                     Sequence(p[3:end]...; tuplestate=tuplestate);
-                     tuplestate=tuplestate) do v
-                         tuple(v[1]..., v[2]...)
-                     end
+    @nospecialize
+    function Sequence(p...)
+        parts = tuple( parser.(p)... )
+        s = new{Any}(parts)
+        names = Pair{Symbol,Int}[ t.first=>i
+                  for (i,t) in enumerate(p)
+                      if t isa Pair{Symbol} ]
+        if isempty(names)
+            return s
         else
-            new{typeof(p)}(p)
+            function ntuple(v)
+                (; (k.first => v[k.second] for k in names )... )
+            end
+            map(ntuple, s)
         end
+        #@info "seq" length(p) typeof(p)
+        #error()
+        # p_ = Any[p...]
+        #@info "new sequence" length(p_)
+        # if VERSION>=v"1.6" && length(p)>4
+        #     map(merge_tuples,
+        #         Sequence(Sequence(p[1:2]...; tuplestate=tuplestate),
+        #                  Sequence(p[3:end]...; tuplestate=tuplestate);
+        #                  tuplestate=tuplestate))
+        # else
+            #new{typeof(p)}(p)
+        ##end
     end
 end
+Sequence(;kw...) =
+    isempty(kw) ? Always() : Sequence(kw...)
+Sequence(p::Vector; kw...) = Sequence(p...; kw...)
+@specialize
 
 result_type(p::Sequence, sequence; kw...)  =
     sequence_result_type(p.parts, sequence; kw...)
@@ -872,64 +927,16 @@ function state_type(::Type{<:Sequence{pts}}) where {pts <: Tuple}
 end
 state_type(::Type{<:Sequence{Vector{P}}}) where P =
     Vector{state_type(P)}
+state_type(::Type{Sequence{Any}}) =
+    Vector{Any}
 
-@deprecate Sequence(p::Vector; kw...) Sequence(p...; kw...)
+@nospecialize
 
-"""
-    Sequence(parts...; kw...)
-
-
-Parts that are not `::CombinedParser` are converted with [`parser`](@ref).
-```jldoctest
-julia> german_street_address = Sequence(!Repeat(AnyChar()), ' ', TextParse.Numeric(Int))
-🗄 Sequence
-├─ .* AnyValue |> Repeat |> !
-├─ \\
-└─ <Int64>
-::Tuple{SubString{String}, Char, Int64}
-
-julia> german_street_address("Some Avenue 42")
-("Some Avenue", ' ', 42)
-```
-
-!!! note
-    Returns a NamedTuple [`Base.map`](@ref) transformation if any part was `Pair{Symbol}`.
-
-    ```jldoctest
-    julia> german_street_address =  Sequence(:street => !Repeat(AnyChar()), " ", :no => TextParse.Numeric(Int))
-    🗄 Sequence |> map(ntuple)
-    ├─ .* AnyValue |> Repeat |> ! |> with_name(:street)
-    ├─ \\
-    └─  <Int64> |> with_name(:no)
-    ::NamedTuple{(:street, :no), Tuple{SubString{String}, Int64}}
-
-    julia> german_street_address("Some Avenue 42")
-    (street = "Some Avenue", no = 42)
-    ``` 
-"""
-function Sequence(p...; kw...)
-    s = Sequence(( parser(x) for x = p )...; kw...)
-    names = ( t.first=>i
-              for (i,t) in enumerate(p)
-              if t isa Pair{Symbol} )
-    isempty(names) && return s
-    function ntuple(v)
-        (; (k.first => v[k.second] for k in names )... )
-    end
-    map(ntuple, s)
-end
 
 
 
 Base.lastindex(x::Sequence) = lastindex(x.parts)
 
-"""
-    Sequence(;kw...)
-
-Sequence keyword argument constructors transform the parsing into a named tuple.
-"""
-Sequence(;tuplestate=true, kw...) =
-    isempty(kw) ? Always() : Sequence(kw...; tuplestate=tuplestate)
 
 
 mSequence(transform::Function, T::Type, a...; kw...) =
@@ -952,12 +959,19 @@ end
 Base.getindex(x::CombinedParser, i) = map(IndexAt(i),x)
 
 
-_sSequence(x::Sequence) = _sSequence(x.parts...)
-_sSequence(x::Always) = tuple()
-_sSequence() = tuple()
-_sSequence(x1) = tuple(parser(x1))
-_sSequence(x1,x...) =
-    Iterators.flatten(tuple( _sSequence(x1), collect(Iterators.flatten( ( _sSequence(e) for e in x ) ))))
+function _sSequence(x, r::Vector{CombinedParser} = CombinedParser[])
+    if x isa Sequence
+        _sSequence(e,r)
+    else
+        for e in x
+            push!(r,parser(e))
+        end
+    end
+    r
+end
+
+
+
 
 export sSequence
 """
@@ -988,13 +1002,11 @@ See also [`Sequence`](@ref)
     This function will be removed and replaced with a keyword argument
 """
 function sSequence(x...)
-    sSequence(_sSequence(parser.(x)...)...)
+    Sequence(_sSequence(x)...)
 end
-
-sSequence(x::CombinedParser) = x
-function sSequence(x::CombinedParser...)
-    Sequence(_sSequence(x...)...)
-end
+Sequence(x) = parser(x)
+sSequence(x) = parser(x)
+@specialize
 
 
 @inline function _leftof(str,i,parser::Sequence,x::MatchState)
