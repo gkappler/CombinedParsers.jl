@@ -85,26 +85,6 @@ result_type(p::WrappedParser, sequence; kw...)  = result_type(p.parser, sequence
 @inline state_type(::Type{<:WrappedParser{P}}) where P =
     state_type(P)
 
-"""
-    _leftof(str,i,parser::WrappedParser,x)
-
-Convienience function for overriding [`leftof`](@ref) that guarantees that not `x isa Nothing` (returning `i`).
-"""
-@inline _leftof(str,i,parser::WrappedParser,x) = _leftof(str,i,parser.parser,x)
-
-"""
-    _rightof(str,i,parser::WrappedParser,x)
-
-Convienience function for overriding [`rightof`](@ref) that guarantees that not `x isa Nothing` (returning `i`).
-"""
-@inline _rightof(str,i,parser::WrappedParser,x) = _rightof(str,i,parser.parser,x)
-
-@inline _leftof(str,i,parser::WrappedParser,x::NCodeunitsState) = i-x.nc
-@inline _rightof(str,i,parser::WrappedParser,x::NCodeunitsState) = i+x.nc
-
-@inline iterate_state(parser::WrappedParser, sequence, till, posi, after, state) =
-    iterate_state(parser.parser, sequence, till, posi, after, state)
-
 export FilterParser
 """
 A parser succeeds ony if 
@@ -138,8 +118,6 @@ Used for dispatch in [`deepmap_parser`](@ref).
 """
 abstract type LeafParser <: CombinedParser end
 
-# for convenience
-iterate_state(parser::LeafParser, sequence, till, posi, next_i, state::MatchState)  = nothing
 
 
 """

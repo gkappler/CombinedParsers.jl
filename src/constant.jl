@@ -37,23 +37,38 @@ _lowercase(x::CombinedParser) = x
 
 _lowercase(x::ConstantParser) = ConstantParser(lowercase(x.parser))
 
-@inline iterate_state(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing) =
-    iterate_state_constant(parser,sequence,till,posi, next_i, state)
+@inline function iterate_state(parser::ConstantParser, sequence, till, posi, next_i, state::Nothing)
+    j,s = iterate_state_constant(parser,sequence,till,posi, next_i, state)
+    s === nothing ? nothing : (j,s)
+end
 
 @inline iterate_state_constant(parser::ConstantParser, sequence, till, posi, next_i, state) =
     iterate_state_constant(parser.parser,sequence,till,posi, next_i, state, _ncodeunits(parser))
 
+@inline iterate_state_constant(p::AbstractChar, sequence, till, posi, next_i, state,L) = next_i, nothing
+@inline function iterate_state_constant(p::AbstractChar, sequence, till, posi, next_i, state::Nothing,L)
+    # till, posi, next_i
+    j::Int = next_i
+        (j > till) && return j, nothing
+        @inbounds sc=sequence[j]
+        j_last = j
+        j = _nextind(sequence,j)
+        !ismatch(sc,p) && return j_last, nothing
+    return j, MatchState()
+end
+@inline iterate_state_constant(p::AbstractString, sequence, till, posi, next_i, state,L) = next_i, nothing
 @inline function iterate_state_constant(p::AbstractString, sequence, till, posi, next_i, state::Nothing,L)
-    till, posi, next_i
+    # till, posi, next_i
     j::Int = next_i
     k::Int = 1
     while k<=L
-        (j > till) && return nothing
+        (j > till) && return j, nothing
         @inbounds pc=p[k]
         k=_nextind(p,k)
         @inbounds sc=sequence[j]
-        j=_nextind(sequence,j)
-        !ismatch(sc,pc) && return nothing
+        j_last = j
+        j = _nextind(sequence,j)
+        !ismatch(sc,pc) && return j_last, nothing
     end
     return j, MatchState()
 end
@@ -63,7 +78,7 @@ end
     if next_i<=till && ismatch(sequence[next_i],parser)
         next_i+L, MatchState()
     else
-        nothing
+        posi, nothing
     end
 end
 
