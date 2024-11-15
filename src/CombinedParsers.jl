@@ -1662,94 +1662,35 @@ end
 Atomic(p) = Atomic(parser(x))
 
 
-function print_constructor(io::IO,x::Atomic)
-    print_constructor(io,x.parser)
-    print(io, " |> Atomic" )
-end
 
+
+@specialize
+include("state.jl")
+@nospecialize
+
+include("transformation.jl")
+
+include("caseless.jl")
+include("deepmap.jl")
+
+#@specialize
+
+
+include("reverse.jl")
+
+
+include("abstracttrees.jl")
+
+include("tracing.jl")
 
 include("match.jl")
 
 
-include("caseless.jl")
-
-include("reverse.jl")
-
 include("get.jl")
-include("transformation.jl")
 
 include("operators.jl")
 
-include("deepmap.jl")
-
-function _log_names(x::CombinedParser,message::Function,a...;kw...)
-    log = message(x,a...; kw...)
-    if log!==nothing
-        with_log("$(log)",x)
-    else
-        x
-    end
-end
-
-export log_parser, log_names
-
-"""
-    log_names(x,names=true; exclude=nothing)
-
-Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
-Log all `NamedParser` instanses if `names==true` or `name in names` and not `name in exclude`.
-
-See also: [`with_log`](@ref), [`log_parser`](@ref), [`deepmap_parser`](@ref)
-"""
-function log_names(x, names=true; exclude=nothing)
-    message = if names === true
-        if exclude === nothing
-            x -> x isa NamedParser && x.doc=="" ? x.name : nothing
-        else
-            x -> ( x isa NamedParser && !in(x.name,exclude) ) ? x.name : nothing
-        end
-    elseif names isa Type
-        return log_parser(names, x)
-    else
-        x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
-    end
-    log_parser(message, x)
-end
-
-
-function lognode(message)
-    p -> 
-        if p isa message
-            iostring(printnode, p)
-        else
-            nothing
-        end
-end
-
-"""
-    log_parser(message::Type, x::CombinedParser, a...; kw...)
-    log_parser(message::Function, x::CombinedParser, a...; kw...)
-
-Transform parser including logging statements for sub-parsers 
-of type `message` or 
-for which calling `message` does not return `nothing`.
-"""
-function log_parser(message::Type, x::CombinedParser, a...; kw...)
-    log_parser(lognode(message), x, a...; kw...)
-end
-
-function log_parser(message::Function, x::CombinedParser, a...; kw...)
-    deepmap_parser(_log_names,Dict(),x,message, a...;kw...)
-end
-
-export optimize
-optimize(x) = deepmap_parser(_optimize,x)
-_optimize(x,a...) = x
-_deepmap_parser(::typeof(_optimize),dict::AbstractDict,x::SideeffectParser) = x.parser
-
 include("defaults.jl")
-include("re.jl")
-
 
 include("show.jl")
 
@@ -1757,6 +1698,78 @@ include("memoize.jl")
 
 
 include("lazy.jl")
-
+include("re.jl")
 include("bnf.jl")
+
+using PrecompileTools: @setup_workload, @compile_workload    # this is a small dependency
+
+export @re_str
+"""
+    parse_options(options::AbstractString)
+
+Return PCRE option mask parsed from `options`.
+
+Parser for `flags` in [`@re_str`](@ref).
+
+```jldoctest
+julia> CombinedParsers.Regexp.pcre_options_parser
+🗄 Sequence[2]
+├─ ^ AtStart
+├─ 🗄* Sequence[1] |> Repeat |> map(splat_or)
+│  ├─ |🗄 Either
+│  │  ├─ dupnames  => 0x00000040 |> with_name(:DUPNAMES)
+│  │  ├─ xx  => 0x01000000 |> with_name(:EXTENDED_MORE)
+│  │  ├─ i  => 0x00000008 |> with_name(:CASELESS)
+│  │  ├─ m  => 0x00000400 |> with_name(:MULTILINE)
+│  │  ├─ n  => 0x00002000 |> with_name(:NO_AUTO_CAPTURE)
+│  │  ├─ U  => 0x00040000 |> with_name(:UNGREEDY)
+│  │  ├─ J  => 0x00000040 |> with_name(:DUPNAMES)
+│  │  ├─ s  => 0x00000020 |> with_name(:DOTALL)
+│  │  ├─ x  => 0x00000080 |> with_name(:EXTENDED)
+│  │  ├─ B  => 0x00000000 |> with_name(:BINCODE)
+│  │  └─ I  => 0x00000000 |> with_name(:INFO)
+│  └─ ,? |missing
+└─ \$ AtEnd
+::UInt32
+
+```
+"""
+macro re_str(x,flags)
+    quote
+        if true || !@isdefined(__pcre)
+            @info "initializing"
+            __pcre = CombinedParsers.Regexp.pcre_parser()
+        end
+        if true || !@isdefined(__pcre_options_parser)
+            __pcre_options_parser = CombinedParsers.Regexp.pcre_options_parser()
+        end
+        options = tryparse(__pcre_options_parser,$flags)
+        options === nothing && throw(UnsupportedError("options $options"))
+        r=parse(__pcre,with_options(options...,$x); trace=true)
+        r === nothing && error("invalid regex")
+        r
+    end |> esc
+end
+
+
+macro re_str(x)
+    quote
+        if true || !@isdefined(__pcre)
+            __pcre = CombinedParsers.Regexp.pcre_parser()
+        end
+
+        r=parse(__pcre,$x; trace=true)
+        r === nothing && error("invalid regex")
+        r
+    end |> esc
+end
+
+
+@setup_workload begin
+    # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
+    # precompile file and potentially make loading faster.
+    @compile_workload begin
+        
+    end
+end
 end # module
