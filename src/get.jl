@@ -116,20 +116,20 @@ function Base.get(parser::Repeat{P}, sequence, till, after, i, state::Int) where
 end
 
 
-# Base.get(parser::Sequence, sequence, till, after, i, state::MatchState) =
-#     get(parser, sequence, till, after, i, ( MatchState() for i in 1:length(parser.parts)) )
-# function Base.get(parser::Sequence, sequence, till::Int, after::Int, i::Int, state)
-#     r = Vector{Any}(undef,length(parser.parts))
-#     i_::Int = i
-#     for (p,s) in enumerate(state)
-#         after_ = rightof(sequence,i_,parser.parts[p],s)
-#         r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
-#         i_=after_
-#     end
-#     1
-#     tuple(r...)
-# end
-@generated function get(parser::Sequence{pts}, sequence, till::Int, after::Int, posi::Int, states) where {pts}
+Base.get(parser::Sequence, sequence, till, after, i, state::MatchState) =
+    get(parser, sequence, till, after, i, ( MatchState() for i in 1:length(parser.parts)) )
+function Base.get(parser::Sequence, sequence, till::Int, after::Int, i::Int, state)
+    r = Vector{Any}(undef,length(parser.parts))
+    i_::Int = i
+    for (p,s) in enumerate(state)
+        after_ = rightof(sequence,i_,parser.parts[p],s)
+        r[p] = get(parser.parts[p],sequence, till, after_, i_, s)
+        i_=after_
+    end
+    1
+    tuple(r...)
+end
+@generated function get(parser::Sequence{pts}, sequence, till::Int, after::Int, posi::Int, states) where {pts<:Tuple}
     sts = state_type(Sequence{pts})
     fpts = fieldtypes(pts)
     spts = Type[ Union{Nothing,state_type(t)} for t in fpts ]
