@@ -47,6 +47,31 @@ state::`S`.
 """
 abstract type CombinedParser end
 
+export MatchState
+"""
+State object for a match that is defined by the triple `parser, sequence, position`.
+
+!!! note:
+    Performance tip: [`Atomic`](@ref) is masking the state of its wrapped parser with `MatchState`.
+    This simplifies the state
+"""
+struct MatchState end
+Base.show(io::IO, ::MatchState) = print(io,"∘")
+
+"""
+State object representing ncodeunits explicitely with state of match for `leftof`, `rightof` to improve performance.
+    `nc::Int` and `state::S`.
+
+See also [`MatchState`](@ref), [`leftof`](@ref), [`rightof`](@ref).
+
+!!! note:
+    `nc` as type parameter faster but slow compilation.
+"""
+struct NCodeunitsState{S}
+    nc::Int
+    state::S
+end
+
 """
     (x::CombinedParser)(str;kw...)
 
