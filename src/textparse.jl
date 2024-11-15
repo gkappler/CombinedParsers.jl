@@ -4,12 +4,15 @@ import Dates
 import Dates: DateFormat
 
 
-@deprecate Numeric(x...) NumericParser(x...)
+@deprecate Numeric(x...) parser(Int)
+
+parser(x::Type{<:Number}) = parser(NumericParser(x))
 
 DateParser(format::AbstractString...; locale="english")     = DateParser(Dates.DateFormat.(format, locale)...)
-DateTimeParser(format::AbstractString...; locale="english") = DateTimeParser(Dates.DateFormat.(format, locale)...)
 DateParser(format::DateFormat...)     = Either(parser.(TextParse.DateTimeToken.(Dates.Date,format))...; simplify=true)
+DateTimeParser(format::AbstractString...; locale="english") = DateTimeParser(Dates.DateFormat.(format, locale)...)
 DateTimeParser(format::DateFormat...) = Either(parser.(TextParse.DateTimeToken.(Dates.DateTime,format))...; simplify=true)
+parser(format::DateFormat)     = DateParser(format)
 
 """
     DateParser(format::DateFormat...)
