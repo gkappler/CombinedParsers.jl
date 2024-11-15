@@ -184,7 +184,6 @@ Provide `Base.get(parser::Bytes{N,T}, sequence, till, after, i, state) where {N,
     julia> Bytes(2,UInt16)([0x16,0x11])
     0x1116
     ```
-
 """
 struct Bytes{N} <: NIndexParser{N} end
 
@@ -319,7 +318,7 @@ end
 
 
 
-
+using Dates
 export NamedParser, with_name
 """
     NamedParser{P} <: WrappedParser{P}
@@ -749,7 +748,6 @@ julia> german_street_address("Some Avenue 42")
 """
 @auto_hash_equals struct Sequence{P} <: CombinedParser
     parts::P
-    @nospecialize
     function Sequence(p...)
         parts = tuple( parser.(p)... )
         s = new{Any}(parts)
@@ -781,7 +779,6 @@ end
 Sequence(;kw...) =
     isempty(kw) ? Always() : Sequence(kw...)
 Sequence(p::Vector; kw...) = Sequence(p...; kw...)
-@specialize
 
 result_type(p::Sequence, sequence; kw...)  =
     sequence_result_type(p.parts, sequence; kw...)
@@ -821,9 +818,6 @@ state_type(::Type{<:Sequence{Vector{P}}}) where P =
     Vector{state_type(P)}
 state_type(::Type{Sequence{Any}}) =
     Vector{Any}
-
-@nospecialize
-
 
 
 
@@ -898,7 +892,6 @@ function sSequence(x...)
 end
 Sequence(x) = parser(x)
 sSequence(x) = parser(x)
-@specialize
 
 
 @inline function _leftof(str,i,parser::Sequence,x::MatchState)
