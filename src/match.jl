@@ -287,15 +287,51 @@ function Base.tryparse(p::CombinedParser, s, pos...; sentinel=nothing, kw...)
     i = tryparse_pos(p, s, pos...; sentinel=sentinel, kw...)
     i === sentinel ? sentinel : i[1]
 end
+
+
+
+function tryparse_pos(p_,sequence, idx=firstindex(sequence), till=lastindex(sequence); trace_pos = nothing, trace=false, log=false, sentinel = nothing, delta =10, kw...)
+    p = if log === nothing || log == false
+        p_
+    else
+        log_names(p_,log)
+        
+    end
+    if trace == true
+        tp = p isa Tracer{<:CombinedParser,TracingStat} ? empty_tracer!(p) : tracer(TracingStat,p)
+        i = iterate_state(tp,sequence,till,idx,idx,nothing) 
+        if i === nothing || tuple_pos(i) <= lastindex(sequence)
+            print_tree(stdout, tp; 
+                       trace_pos=trace_pos,
+                       printnode_kw=(
+                           sequence=sequence,
+                           hide=true,
+                           delta=delta, kw...))
+            printstyled("partly successfull until furthest attempt at", color=:magenta)
+            printstyled(" [$trace_pos].\n", color=:light_red)
+        end
+        i === nothing && return sentinel
+        get(p,sequence,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)
+        #tree, tuple_pos(i)
+    else
+        i = iterate_state(p,sequence,till,idx,idx,nothing)
+        i === nothing && return sentinel
+        get(p,sequence,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)
+    end
 end
-
-tryparse_pos(p,s::Char, a...; kw...) =
-    error("cannot parse a Char - probably a Combinedparsers bug!")
-
-function tryparse_pos(p,s, idx=firstindex(s), till=lastindex(s); sentinel=nothing, kw...)
-    i = iterate_state(wrap(p; kw...),s,till,idx,idx,nothing)
+function _tryparse_pos(p_::Tracer,sequence, idx=firstindex(sequence), till=lastindex(sequence); delta =10, kw...)
+    i = iterate_state(tp,sequence,till,idx,idx,nothing) 
+    if i === nothing || tuple_pos(i) <= lastindex(sequence)
+        print_tree(io::IO, tp; trace_pos=trace_pos,
+                   printnode_kw=(
+                       sequence=sequence,
+                       hide=true,
+                       delta=delta, kw...))
+        printstyled("partly successfull until furthest attempt at", color=:magenta)
+        printstyled(" [$trace_pos].\n", color=:light_red)
+    end
     i === nothing && return sentinel
-    get(p,s,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)
+    get(p,sequence,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)
 end
 
 """
