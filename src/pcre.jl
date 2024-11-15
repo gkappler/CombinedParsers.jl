@@ -1,69 +1,32 @@
 import ..CombinedParsers: MatchState
 
-pcre_option = 
-    Either(
-        # with_name(:MARK, "mark" => UInt32(0)),
-        # with_name(:aftertext, "aftertext" => UInt32(0)),
-        with_name(:DUPNAMES, "dupnames" => Base.PCRE.DUPNAMES),
-        # with_name(:no_start_optimize, "no_start_optimize" => UInt32(0)),
-        # with_name(:subject_literal, "subject_literal" => UInt32(0)),
-        # "jitstack=256" => UInt32(0),
-        with_name(:EXTENDED_MORE, "xx" => Base.PCRE.EXTENDED_MORE),
-        with_name(:CASELESS, 'i' => Base.PCRE.CASELESS),
-        with_name(:MULTILINE, 'm' => Base.PCRE.MULTILINE),
-        with_name(:NO_AUTO_CAPTURE, 'n' => Base.PCRE.NO_AUTO_CAPTURE),
-        with_name(:UNGREEDY, 'U' => Base.PCRE.UNGREEDY),
-        with_name(:DUPNAMES, 'J' => Base.PCRE.DUPNAMES),
-        with_name(:DOTALL, 's' => Base.PCRE.DOTALL),
-        with_name(:EXTENDED, 'x' => Base.PCRE.EXTENDED),
-        # 'g' => UInt32(0),
-        with_name(:BINCODE, 'B' => UInt32(0)), # bincode
-        with_name(:INFO, 'I' => UInt32(0)) # info
-    );
-
 splat_or(v) = (isempty(v) ? 0x00000000 : (|(v...)))::UInt32
-pcre_options = Repeat(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
-
-pcre_options_parser=map(IndexAt(2),Sequence(AtStart(),pcre_options,AtEnd()))
-
-"""
-    parse_options(options::AbstractString)
-
-Return PCRE option mask parsed from `options`.
-
-Parser for `flags` in [`@re_str`](@ref).
-
-```jldoctest
-julia> CombinedParsers.Regexp.pcre_options_parser
-🗄 Sequence[2]
-├─ ^ AtStart
-├─ 🗄* Sequence[1] |> Repeat |> map(splat_or)
-│  ├─ |🗄 Either
-│  │  ├─ dupnames  => 0x00000040 |> with_name(:DUPNAMES)
-│  │  ├─ xx  => 0x01000000 |> with_name(:EXTENDED_MORE)
-│  │  ├─ i  => 0x00000008 |> with_name(:CASELESS)
-│  │  ├─ m  => 0x00000400 |> with_name(:MULTILINE)
-│  │  ├─ n  => 0x00002000 |> with_name(:NO_AUTO_CAPTURE)
-│  │  ├─ U  => 0x00040000 |> with_name(:UNGREEDY)
-│  │  ├─ J  => 0x00000040 |> with_name(:DUPNAMES)
-│  │  ├─ s  => 0x00000020 |> with_name(:DOTALL)
-│  │  ├─ x  => 0x00000080 |> with_name(:EXTENDED)
-│  │  ├─ B  => 0x00000000 |> with_name(:BINCODE)
-│  │  └─ I  => 0x00000000 |> with_name(:INFO)
-│  └─ ,? |missing
-└─ \$ AtEnd
-::UInt32
-
-```
-"""
-function parse_options(options::AbstractString)
-    flags = tryparse(pcre_options_parser,options)
-    if flags === nothing
-        throw(UnsupportedError("options $options"))
-    else
-        flags
-    end
+function pcre_options()
+    @with_names pcre_option = 
+        Either(
+            # with_name(:MARK, "mark" => UInt32(0)),
+            # with_name(:aftertext, "aftertext" => UInt32(0)),
+            with_name(:DUPNAMES, "dupnames" => Base.PCRE.DUPNAMES),
+            # with_name(:no_start_optimize, "no_start_optimize" => UInt32(0)),
+            # with_name(:subject_literal, "subject_literal" => UInt32(0)),
+            # "jitstack=256" => UInt32(0),
+            with_name(:EXTENDED_MORE, "xx" => Base.PCRE.EXTENDED_MORE),
+            with_name(:CASELESS, 'i' => Base.PCRE.CASELESS),
+            with_name(:MULTILINE, 'm' => Base.PCRE.MULTILINE),
+            with_name(:NO_AUTO_CAPTURE, 'n' => Base.PCRE.NO_AUTO_CAPTURE),
+            with_name(:UNGREEDY, 'U' => Base.PCRE.UNGREEDY),
+            with_name(:DUPNAMES, 'J' => Base.PCRE.DUPNAMES),
+            with_name(:DOTALL, 's' => Base.PCRE.DOTALL),
+            with_name(:EXTENDED, 'x' => Base.PCRE.EXTENDED),
+            # 'g' => UInt32(0),
+            with_name(:BINCODE, 'B' => UInt32(0)), # bincode
+            with_name(:INFO, 'I' => UInt32(0)) # info
+        );
+    mRepeat(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
 end
+
+pcre_options_parser() =
+    map(IndexAt(2),Sequence(AtStart(),pcre_options(),AtEnd()))
 
 function print_opts(io,opts)
     if (opts & Base.PCRE.CASELESS ) != 0; print(io, 'i'); end
@@ -274,8 +237,8 @@ set_options(set::UInt32,parser) =
 
 @inline function iterate_state(parser::ParserOptions, sequence, till, posi, next_i, state)
     iterate_state(parser.parser,
-             with_options(parser.set_flags,parser.unset_flags,sequence),
-             till, posi, next_i, state)
+                  with_options(parser.set_flags,parser.unset_flags,sequence),
+                  till, posi, next_i, state)
 end
 
 
@@ -398,7 +361,7 @@ on_options(flags::Integer,p) =
 
 @inline function iterate_state(parser::OnOptionsParser, sequence, till, posi, next_i, state)
     iterate_state(parser.parser,
-             (if_options(parser.flags,sequence)), till, posi, next_i, state)
+                  (if_options(parser.flags,sequence)), till, posi, next_i, state)
 end
 
 
@@ -410,92 +373,92 @@ The parser is used for testing `CombinedParser` and benchmarking against `Regex`
 """
 macro pcre_tests()
     esc(quote
-        ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
-        charparser = Either(
-            Sequence(
-                '\\',
-                CombinedParsers.Regexp.integer_base(8,1,3)
-            ) do v
-            Char(v[2])
-            end,
-            CombinedParsers.Regexp.escaped_character,
-            AnyChar())
-        ## compile
-        parse(charparser,"a");
-        
-        unescaped=map(Repeat_until(
-            AnyChar(), Sequence(Repeat(' '),'\n');
-            wrap=MatchedSubSequence)) do v
-        ## join Chars after unescaping
-        join(parse(Repeat(charparser),v))
-        end;
-        parse(unescaped,"abc\n");
-        comment_or_empty = Repeat(
-            MatchedSubSequence(Either(
-                Sequence(
-                    CombinedParsers.Regexp.at_linestart,
-                    '#',Repeat_until(AnyChar(),'\n')),
-                Sequence(
-                    CombinedParsers.Regexp.at_linestart,
-                    Repeat_until(
-                        CombinedParsers.Regexp.whitespace_char,'\n')))));
-        parse(comment_or_empty,"# test");
-        
-        #    @test parse(unescaped,"A\\123B\n") == "ASB"
-        @syntax pcre_test = begin
-        match_test = Sequence(Repeat1(' '),
-                              :sequence => unescaped,
-                              :expect => Repeat(Sequence(
-                                  Repeat(' '),
-                                  :i => Either(CombinedParsers.Regexp.integer,"MK"),':',
-                                  Repeat(' '),
-                                  :result => unescaped))
-                              );
+            ## not handled in escaped_character, but backreference, if a capture with number (in decimal) is defined
+            charparser = Either(
+                mSequence(
+                    '\\',
+                    CombinedParsers.integer_base(8,1,3)
+                ) do v
+                    Char(v[2])
+                end,
+                CombinedParsers.Regexp.escaped_character(),
+                AnyChar())
+            ## compile
+            parse(charparser,"a");
+            
+            unescaped=map(Repeat_until(
+                AnyChar(), Sequence(Repeat(' '),'\n');
+                wrap=MatchedSubSequence)) do v
+                    ## join Chars after unescaping
+                    join(parse(Repeat(charparser),v))
+                end;
+            parse(unescaped,"abc\n");
+            comment_or_empty = Repeat(
+                MatchedSubSequence(Either(
+                    Sequence(
+                        CombinedParsers.at_linestart(),
+                        '#',Repeat_until(AnyChar(),'\n')),
+                    Sequence(
+                        CombinedParsers.at_linestart(),
+                        Repeat_until(
+                            CombinedParsers.whitespace_char(),'\n')))));
+            parse(comment_or_empty,"# test");
+            
+            #    @test parse(unescaped,"A\\123B\n") == "ASB"
+            @syntax pcre_test = begin
+                match_test = Sequence(Repeat1(' '),
+                                      :sequence => unescaped,
+                                      :expect => Repeat(Sequence(
+                                          Repeat(' '),
+                                          :i => Either(CombinedParsers.integer(),"MK"),':',
+                                          Repeat(' '),
+                                          :result => unescaped))
+                                      );
 
-        Sequence(
-            :pattern => after(CharIn("/'\""),Any) do s
-            Repeat_until(
-                AnyChar(),
-                Sequence(3, NegativeLookbehind('\\'),
-                         s, Repeat_until(
-                             AnyChar(),
-                             Sequence(Repeat(
-                                 CombinedParsers.Regexp.whitespace_char), '\n'),
-                             wrap=MatchedSubSequence)),
-                true; wrap=MatchedSubSequence)
-            end,
-            :test => Repeat(match_test),
-            :tests_nomatch => Optional(
                 Sequence(
-                    2,
-                    Optional("\\= Expect no match",
-                             Repeat_until(AnyChar(), '\n'; wrap=MatchedSubSequence)),
-                    Repeat(Sequence(2,
-                                    Repeat1(' '),
-                                    unescaped,
-                                    Optional(Sequence("No match",
-                                                      Repeat_until(AnyChar(), '\n'; wrap=MatchedSubSequence)))
-                                    ))))
-        );
-        end;
+                    :pattern => after(CharIn("/'\""),Any) do s
+                        Repeat_until(
+                            AnyChar(),
+                            mSequence(3, NegativeLookbehind('\\'),
+                                      s, Repeat_until(
+                                          AnyChar(),
+                                          Sequence(Repeat(
+                                              CombinedParsers.whitespace_char()), '\n'),
+                                          wrap=MatchedSubSequence)),
+                            true; wrap=MatchedSubSequence)
+                    end,
+                    :test => Repeat(match_test),
+                    :tests_nomatch => Optional(
+                        mSequence(
+                            2,
+                            Optional("\\= Expect no match",
+                                     Repeat_until(AnyChar(), '\n'; wrap=MatchedSubSequence)),
+                            Repeat(mSequence(2,
+                                             Repeat1(' '),
+                                             unescaped,
+                                             Optional(Sequence("No match",
+                                                               Repeat_until(AnyChar(), '\n'; wrap=MatchedSubSequence)))
+                                             ))))
+                );
+            end;
 
-        function Base.show(io::IO, x::result_type(pcre_test))
-        print(io, "Pattern: ")
-        printstyled(io,"r(e)\"$(x.pattern[1])\"$(x.pattern[2])\n", color=:underline)
-        println(io, "Test Examples:")
-        for (i,t) in enumerate(x.test)
-        println(io, "   $i. $(t.sequence)")
-        end
-        println(io, "Not Examples:")
-        for (i,t) in enumerate(x.tests_nomatch)
-        println(io, "   $i. $t")
-        end
-        end
-        
-        @syntax pcre_tests = Sequence(
-            Repeat(Sequence(comment_or_empty,
-                            pcre_test)),
-            comment_or_empty,
-            AtEnd());
+            function Base.show(io::IO, x::NamedTuple{(:pattern, :test, :tests_nomatch)})
+                print(io, "Pattern: ")
+                printstyled(io,"r(e)\"$(x.pattern[1])\"$(x.pattern[2])\n", color=:underline)
+                println(io, "Test Examples:")
+                for (i,t) in enumerate(x.test)
+                    println(io, "   $i. $(t.sequence)")
+                end
+                println(io, "Not Examples:")
+                for (i,t) in enumerate(x.tests_nomatch)
+                    println(io, "   $i. $t")
+                end
+            end
+            
+            @syntax pcre_tests = Sequence(
+                Repeat(Sequence(comment_or_empty,
+                                pcre_test)),
+                comment_or_empty,
+                AtEnd());
         end)
 end

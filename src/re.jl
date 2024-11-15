@@ -15,6 +15,7 @@ import ..CombinedParsers: parser, result_type, prune_captures, deepmap_parser, _
 import ..CombinedParsers: iterate_state, iterate_state_constant
 import ..CombinedParsers: state_type, leftof, tuple_pos, tuple_state
 import ..CombinedParsers: _prevind, _nextind, _leftof, _rightof
+import ..CombinedParsers: print_pipe, treecolor
 _indexed_captures(x,a...) = x
 
 import Base: SubString, ==
@@ -225,11 +226,11 @@ function capture_substring(p::Backreference, sequence::SequenceWithCaptures)
 end
 
 @inline function iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}}, sequence::SequenceWithCaptures, till, posi, next_i, state::Nothing)
-    r = iterate_state_constant(
+    j, r = iterate_state_constant(
         ConstantParser(capture_substring(p, sequence)),
         sequence, till, posi, next_i, state)
     r === nothing && return nothing
-    tuple_pos(r), tuple_pos(r)-next_i
+    j, j-next_i
 end
 
 @inline iterate_state(p::Union{Backreference,ParserOptions{<:Backreference}}, sequence::SequenceWithCaptures, till, posi, next_i, state::Int) =
