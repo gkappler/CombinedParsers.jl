@@ -111,11 +111,8 @@ print_constructor(io::IO,x; kw...) =
     end
 
 export regex_string
-function regex_string(x; kw...)
-    io = IOBuffer()
-    print_regex(io,x; kw...)
-    String(take!(io))
-end
+regex_string(x; kw...) =
+    iostring(print_regex,x; kw...)
 
 print_regex(io::IO, x::AbstractTokenParser; kw...) =
     printstyled(io, result_type(x.parser); color = treecolor.textparse)

@@ -262,11 +262,9 @@ ValueNotIn{Char}(chars::AbstractString) =
 
 
 
-function _regex_backect(x)
-    io = IOBuffer()
-    _print_bracket(io,x)
-    String(take!(io))
-end
+_regex_backect(x) =
+    iostring(_print_bracket,x)
+
 ElementIterators = Union{<:Vector,<:Tuple,<:StepRange,<:Set,<:AbstractString,<:AbstractSet}
 function flatten_valuepatterns!(x,
                                 label = "",

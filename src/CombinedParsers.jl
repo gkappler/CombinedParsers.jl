@@ -33,6 +33,12 @@ export result_type
 export parser
 import Base: convert
 
+iostring(f::Function, a...; kw...) =
+    let sio = IOBuffer()
+        f(sio, a...; kw...)
+        String(take!(sio))
+    end
+@nospecialize
 """
     CombinedParser
 
@@ -1705,11 +1711,6 @@ function log_names(x, names=true; exclude=nothing)
     log_parser(message, x)
 end
 
-iostring(f::Function, a...; kw...) =
-    let sio = IOBuffer()
-        f(sio, a...; kw...)
-        String(take!(sio))
-    end
 
 function lognode(message)
     p -> 

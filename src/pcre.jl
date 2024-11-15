@@ -75,10 +75,7 @@ function print_opts(io,opts)
     if (opts & Base.PCRE.UNGREEDY ) != 0; print(io, 'U'); end
 end
 options_string(flags) =
-    let sio = IOBuffer()
-        print_opts(sio, flags)
-        String(take!(sio))
-    end
+    iostring(print_opts, flags)
 
 """
 A lazy element transformation type (e.g. AbstractString), 
