@@ -22,11 +22,24 @@ function integer_base(base=10,mind=1,maxd=Repeat_max)
     else
         error("Base $base not supported")
     end
-    map(!Repeat(mind:maxd,dig)) do v
-        (isempty(v) ? 0 : parse(Int,convert(String,v),base=base))::Int
-    end
+    with_name(Symbol("integer_base$base"),map(!Repeat(mind:maxd,dig)) do v
+                  s = convert(String,v)
+        s == "" ? 0 : parse(Int,s,base=base)::Int
+    end)
 end
 
+
+_integer(maxchar=3) =
+    with_name(:integer,
+              mSequence(Optional('-'),integer_base(10,1,maxchar)) do v
+                  if v[1]===missing
+                      v[2]
+                  else
+                      -v[2]
+                  end
+              end)
+
+integer() = _integer(Repeat_max)
 
 export trim, @trimmed
 
