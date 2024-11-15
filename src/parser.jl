@@ -16,7 +16,7 @@ Base.convert(::Type{CombinedParser},x) =
 
 A [`ConstantParser`](@ref) matching `x`.
 """
-parser(x) =
+parser(x::Union{AbstractString, Char}) =
     ConstantParser(x)
 
 """

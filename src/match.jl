@@ -278,16 +278,15 @@ end
 
 import Base: tryparse, parse
 export tryparse_pos
-function Base.parse(p::CombinedParser, s, pos...; kw...)
+function Base.parse(p::CombinedParser, s, pos...;kw...)
     i = tryparse_pos(p, s, pos...; sentinel = NoMatch(), kw...)
     i === NoMatch() && throw(ArgumentError("no successfull parsing."))
     i[1]
 end
-
 function Base.tryparse(p::CombinedParser, s, pos...; sentinel=nothing, kw...)
     i = tryparse_pos(p, s, pos...; sentinel=sentinel, kw...)
-    i === sentinel && return sentinel
-    i[1]
+    i === sentinel ? sentinel : i[1]
+end
 end
 
 tryparse_pos(p,s::Char, a...; kw...) =

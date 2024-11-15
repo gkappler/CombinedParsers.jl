@@ -1,8 +1,8 @@
 import Base: (^), (*), (~), (/), (|)
 ParserOperatorTypes = Union{CombinedParser, AbstractToken, AbstractString, Char}
 
-(*)(x, y::CombinedParser) = sSequence(parser(x),y)
-(*)(x::CombinedParser, y) = sSequence(x,parser(y))
+(*)(x, y::CombinedParser) = sSequence(x,y)
+(*)(x::CombinedParser, y) = sSequence(x,y)
 """
     (*)(x::Any, y::AbstractToken)
     (*)(x::AbstractToken, y::Any)
@@ -29,7 +29,7 @@ julia> match("is "/"match", "no match is match").offset
     This syntax is reviewed and I your appreciate your comments!
 """
 (/)(x::ParserOperatorTypes, y::ParserOperatorTypes) =
-    Sequence(PositiveLookbehind(x),y)
+    sSequence(PositiveLookbehind(x),y)
 
 
 """

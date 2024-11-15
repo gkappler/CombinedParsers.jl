@@ -299,7 +299,7 @@ Lazy wrapper for a sequence, masking elements in `getindex` with MatchingNever i
 TODO: make flags a filter function?
 resolve confound of sequence and value, like StringWithOptions, CharWithOptions
 """
-struct FilterOptions{I}
+struct FilterOptions{I} <: StringWrapper
     x::I
     flags::UInt32
 end
@@ -307,7 +307,7 @@ import Base: Regex
 Base.show(io::IO, x::FilterOptions) =
     print(io,"\"",x.x,"\"[",options_string(x.flags),"]")
 
-Base.getindex(x::FilterOptions,i) =
+Base.getindex(x::FilterOptions,i::Integer) =
     if_options(x.flags,x.x[i])
 
 if_options(flags::UInt32,x::Char) =
@@ -330,14 +330,6 @@ Base.lastindex(x::FilterOptions) =
     lastindex(x.x)
 Base.firstindex(x::FilterOptions) =
     firstindex(x.x)
-_prevind(x::FilterOptions,i::Integer,n::Integer) =
-    _prevind(x.x,i,n)
-_nextind(x::FilterOptions,i::Integer,n::Integer) =
-    _nextind(x.x,i,n)
-_prevind(x::FilterOptions,i::Integer) =
-    _prevind(x.x,i)
-_nextind(x::FilterOptions,i::Integer) =
-    _nextind(x.x,i)
 Base.ncodeunits(x::FilterOptions) =
     ncodeunits(x.x)
 Base.iterate(x::FilterOptions,a...) =
@@ -378,9 +370,8 @@ struct OnOptionsParser{P} <: WrappedParser{P}
         new{typeof(parser)}(parser,flags)
 end
 
-function print_constructor(io::IO, x::OnOptionsParser)
-    print_constructor(io,x.parser)
-    print(io," |> on_options(\"$(options_string(x.flags))\")")
+function print_constructor(io::IO, x::OnOptionsParser; kw...)
+    printstyled(io,"on_options(\"$(options_string(x.flags))\")"; color = treecolor.julia_structure)
 end
 
 _deepmap_parser(f::Function,mem::AbstractDict,x::OnOptionsParser,a...; kw...) =
