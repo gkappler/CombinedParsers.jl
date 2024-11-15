@@ -63,8 +63,8 @@ end
 @inline _leftof(str,i,parser::Either{<:AbstractTrie},x::NCodeunitsState) =
     i-x.nc
 
-result_type(x::Either{<:AbstractTrie}, sequence::Type; kw...) =
-    SubString{sequence}
+result_type(x::Either{<:AbstractTrie}, sequence; kw...) =
+    SubString{typeof(sequence)}
 
 
 function Base.get(x::Either{<:AbstractTrie},

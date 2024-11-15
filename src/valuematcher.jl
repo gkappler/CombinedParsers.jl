@@ -7,7 +7,7 @@ See [`AnyValue`](@ref), [`ValueIn`](@ref), and [`ValueNotIn`](@ref).
 """
 abstract type ValueMatcher <: NIndexParser{1} end
 
-result_type(::ValueMatcher, sequence::Type) =
+result_type(::ValueMatcher, sequence) =
     eltype(sequence)
 
 
@@ -156,6 +156,8 @@ julia> parse(l, "c")
     end
 end
 ValueIn(x_...) = ValueIn("", x_...)
+result_type(p::ValueIn, sequence; kw...) =
+    eltype(sequence)
 
 @inline _ismatch(c,p::ValueIn)::Bool = _ismatch(c,p.sets)
 
@@ -212,6 +214,8 @@ julia> parse(CharNotIn(CharIn("bc")), "a")
 end
 # result_type(::Type{T}) where T = T
 @inline _ismatch(c,p::ValueNotIn)::Bool = !_ismatch(c,p.sets)
+result_type(p::ValueNotIn, sequence; kw...) =
+    eltype(sequence)
 
 ValueNotIn(x_...) = ValueNotIn("",x_...)
 

@@ -224,9 +224,9 @@ function _indexed_captures(mem::AbstractDict,x::Either,context,reset_index)
                 mem,
                 p,context,false))
         end
-        Either{result_type(x)}(tuple( branches... ))
+        Either(tuple( branches... ))
     else
-        Either{result_type(x)}(
+        Either(
             tuple( (deepmap_parser(_indexed_captures,mem,p,context,false) for p in x.options )...))
     end
 end

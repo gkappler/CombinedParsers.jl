@@ -304,8 +304,8 @@ Base.map(f::typeof(identity), p::CombinedParser) = p
 @deprecate map(T::Type, f::Function, p::CombinedParser, a...) map(f,T,p,a...)
 @deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
 
-infer_result_type(f::Function,Tc::Type,p::CombinedParser, sequence,onerror::AbstractString,ts::Type...; kw...) =
-    infer_result_type(f,Tc,p, typeof(sequence),onerror,ts...; kw...)
+@specialize
+
 
 """
     infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::AbstractString,ts::Type...; throw_empty_union=true)
@@ -313,18 +313,24 @@ infer_result_type(f::Function,Tc::Type,p::CombinedParser, sequence,onerror::Abst
 Used by Parser Transformations to infer result type of a parser.
 Throws error if type inference fails, if throw_empty_union=true.
 """
-function infer_result_type(f::Function,Tc::Type,p::CombinedParser, sequence::Type,onerror::AbstractString,ts::Type...; throw_empty_union=true)
+function infer_result_type(f,Tc::Type,p::CombinedParser, sequence, onerror::AbstractString,ts::Type...; throw_empty_union=true)
     Ts = Base.return_types(f, tuple(result_type(p,sequence),ts...))
-    isempty(Ts) && error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
+    if isempty(Ts)
+        @error "transformation type signature mismatch $Ts<:$Tc for" parser = p 
+        return Any
+    end
     ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
     T = first(Ts)
     if throw_empty_union && T <: Union{}
-        println(p)
-        error("transformation type signature mismatch $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
+        @error "transformation type signature mismatch Ts<:$Tc for\n" parser = p 
+        # error("transformation type signature mismatch $f$(tuple(result_type(p,sequence),ts...))::$Ts<:$Tc")
+        Any
     elseif T <: Tc
         T
     else
-        @warn "type mismatch $f$(tuple(result_type(p),ts...))::$T<:$Tc"
+        @warn "type mismatch $f$(tuple(result_type(p,sequence),ts...))::$T<:$Tc"
         Tc
     end
 end
+@nospecialize
+@specialize
