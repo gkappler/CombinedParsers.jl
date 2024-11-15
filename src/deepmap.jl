@@ -268,3 +268,96 @@ end
 function deepmap_parser(::typeof(_substitute), mem::AbstractDict, x::Substitution, assignments)
     _substitute(x, assignments)
 end
+
+
+Base.foldl(f::Function, x::Either{<:AbstractTrie}, acc, a...; cache=IdDict{CombinedParser,Any}(), kw...) = f(x,acc,a...; kw...)
+Base.foldl(f::Function, x::FlatMap, acc, a...; cache=IdDict{CombinedParser,Any}(), kw...) = f(x,f(x.left,acc,a...; kw...),a...; kw...)
+function Base.foldl(f::Function, x::CombinedParser, acc,a...; cache=IdDict{CombinedParser,Any}(), kw...)
+    ##printnode(stdout,x)
+    ##print(" ", length(cache)," ")
+    cachable(x) = x isa Either{<:Vector}
+    if cachable(x) && haskey(cache,x)
+        cache[x]
+    else
+        acc = f(x,acc,a...; kw...)
+        if cachable(x) # && true || x isa NamedParser
+            cache[x] = acc
+            haskey(cache,x) || error()
+        end
+        for c in children(x)
+            acc = foldl(f, c, acc,a...; kw..., cache=cache)
+        end
+        if cachable(x) # && true || x isa NamedParser
+            cache[x] = acc
+        end
+        acc
+    end
+end
+
+
+"""
+    log_parser(message::Type, x::CombinedParser, a...; kw...)
+    log_parser(message::Function, x::CombinedParser, a...; kw...)
+
+Transform parser including logging statements for sub-parsers 
+of type `message` or 
+for which calling `message` does not return `nothing`.
+"""
+function log_parser(message::Type, x::CombinedParser, a...; kw...)
+    log_parser(lognode(message), x, a...; kw...)
+end
+function lognode(message)
+    p -> 
+        if p isa message
+            iostring(printnode, p)
+        else
+            nothing
+        end
+end
+
+function log_parser(message::Function, x::CombinedParser, a...; kw...)
+    deepmap_parser(_log_names,Dict(),x,message, a...;kw...)
+end
+
+
+export log_parser, log_names
+
+"""
+    log_names(x,names=true; exclude=nothing)
+
+Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
+Log all `NamedParser` instanses if `names==true` or `name in names` and not `name in exclude`.
+
+See also: [`with_log`](@ref), [`log_parser`](@ref), [`deepmap_parser`](@ref)
+"""
+function log_names(x, names=true; exclude=nothing)
+    message = if names === true
+        if exclude === nothing
+            x -> x isa NamedParser && x.doc=="" ? x.name : nothing
+        else
+            x -> ( x isa NamedParser && !in(x.name,exclude) ) ? x.name : nothing
+        end
+    elseif names isa Type
+        return log_parser(names, x)
+    else
+        x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
+    end
+    log_parser(message, x)
+end
+function _log_names(x::CombinedParser,message::Function,a...;kw...)
+    log = message(x,a...; kw...)
+    if log!==nothing
+        with_log("$(log)",x)
+    else
+        x
+    end
+end
+
+#include("log.jl")
+
+export optimize
+optimize(x) = deepmap_parser(_optimize,x)
+_optimize(x,a...) = x
+_deepmap_parser(::typeof(_optimize),dict::AbstractDict,x::SideeffectParser) = x.parser
+
+@specialize

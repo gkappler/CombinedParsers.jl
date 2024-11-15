@@ -242,18 +242,20 @@ with_log(s::AbstractString,p_, delta_char::Integer=5;nomatch=false) =
         SideeffectParser(nomatch ? log_effect : log_effect_match ,p, log, delta_char)
     end
 
-function log_effect(s,start,after,state,log,delta)
+log_effect(s,start,after,state,log,delta=5) =
+    log_effect(stdout, s,start,after,state,log,delta)
+function log_effect(io::IO, s,start,after,state,log,delta=5)
     at = "@$(start)-$(after)"
     if state === nothing
-        printstyled("no match ", color=:underline)
+        printstyled(io, "no match ", color=:underline)
     else
-        print("   ")
-        printstyled("match";
+        print(io, "   ")
+        printstyled(io, "match";
                     bold=false,color=:underline)
-        print(" ")
+        print(io, " ")
     end
-    printstyled(log,color=:green, bold=false)
-    print(at,": ")
+    printstyled(IOContext(io, :compact => true),log,"\n",color=:green, bold=false)
+    print(io, at,": ")
     firsti = _prevind(s,start,delta)
     lasti = (_prevind(s,start))
     before, matched = if _prevind(s,start)<start
@@ -264,23 +266,23 @@ function log_effect(s,start,after,state,log,delta)
     if lastindex(matched)>100
         matched=matched[1:_nextind(matched,1,20)]*"[...]"*matched[_prevind(matched,end,20):end]
     end
-    printstyled(before; bold=true)
-    printstyled(matched; bold=true,color=:underline)
+    printstyled(io, before; bold=true)
+    printstyled(io, matched; bold=true,color=:underline)
     li = after>lastindex(s) ? lastindex(s) : _nextind(s,after,delta)
     if state === nothing 
-        printstyled(escape_string(s[after:min(end,li)]),
+        printstyled(io, escape_string(s[after:min(end,li)]),
                     bold=true,color=:underline)
     elseif after<=lastindex(s)
-        printstyled(escape_string(s[after:min(end,li)]),
+        printstyled(io, escape_string(s[after:min(end,li)]),
                     color=:darkgray)
     end
-    println()
+    println(io)
     if !get(stdout,:color,false)
-        print(" "^(11+length(at)+length(log)+length(before)),"^")
+        print(io, " "^(11+length(at)+length(log)+length(before)),"^")
         if length(matched)>1
-            print("_"^(length(matched)-2),"^")
+            print(io, "_"^(length(matched)-2),"^")
         end
-        println()
+        println(io)
     end
 end
 
