@@ -336,7 +336,7 @@ Struct with
     name::Symbol
     parser::P
     doc::String ## rename -> label
-    NamedParser(name::Symbol,p_,doc="") =
+    NamedParser(name::Symbol,p_;doc="") =
         let p=parser(p_)
             new{typeof(p)}(name,p,doc)
         end
@@ -351,10 +351,10 @@ Labels are useful in printing and logging.
 See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
 with_name(name::Symbol, x, doc="") = 
-    NamedParser(name,parser(x),doc)
+    NamedParser(name,parser(x); doc=doc)
 
 with_name(name::AbstractString,x, doc="") =
-    name=="" && doc=="" ? x : NamedParser(Symbol(name),parser(x),doc)
+    name=="" && doc=="" ? x : NamedParser(Symbol(name),parser(x); doc=doc)
 
 export @with_names
 with_names(x) = x
@@ -471,7 +471,7 @@ macro syntax(block)
             :($within)
         else ## new Either
             quote
-                @syntax $within = Either{Any}()
+                @with_names $within = Either{Any}()
             end
         end
         body = block.args[2]
@@ -489,11 +489,9 @@ macro syntax(block)
                 end
             end
             quote
-                macro $(Symbol(string(name)*"_str"))(x)
-                    $name(x)
-                end
+                $within_expr
                 $(expr...)
-                pushfirst!($within_expr, $name)
+                pushfirst!($within, $name);
                 $name
             end
         else
@@ -503,9 +501,6 @@ macro syntax(block)
     elseif block.head==Symbol("=")
         name = block.args[1]
         quote
-            macro $(Symbol(string(name)*"_str"))(x)
-                $name(x)
-            end
             $(with_names(block))
         end
     elseif block.head == :block
