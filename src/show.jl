@@ -68,48 +68,6 @@ function Base.show(io::IO, x::CombinedParser)
 end
 
 ## pcre
-
-
-function tree_color(x)
-    cn = string(constructor_name(x))
-    if hasproperty(treecolor, Symbol(cn)) 
-        getproperty(treecolor, Symbol(cn))
-    elseif hasproperty(treecolor, Symbol("pcre_$cn"))
-        getproperty(treecolor, Symbol("pcre_$cn"))
-    elseif x isa ValueMatcher
-        treecolor.pcre_Matcher
-    elseif x isa Assertion
-        treecolor.pcre_Assertion
-    else
-        treecolor.julia
-    end
-end
-
-
-print_pipe(io) =
-    if !get(io,:compact, false)
-        printstyled(io, " |> "; color = treecolor.pipe)
-    else
-        printstyled(io, " |> "; color = treecolor.pipe)
-    end
-
-if VERSION>=v"1.6"
-    constructor_name(x) = typeof(x).name.name
-else
-    constructor_name(x) = typeof(x).name.name
-end
-
-"""
-    print_constructor(io::IO,x; kw...)
-
-Print constructor pipeline in parser tree node.
-"""
-print_constructor(io::IO,x; kw...) =
-    if x isa CombinedParser
-        printstyled(io, constructor_name(x), color = tree_color(x))
-    else
-    end
-
 export regex_string
 regex_string(x; kw...) =
     iostring(print_regex,x; kw...)
@@ -119,77 +77,9 @@ print_regex(io::IO, x::AbstractTokenParser; kw...) =
 
 
 _format(df::DateFormat{S}) where {S} = S
-
-function print_constructor(io::IO, x::AbstractTokenParser{<:TextParse.DateTimeToken}; kw...)
-    printstyled(io, "DateTimeParser"; color = treecolor.constructor)
-end
 function print_regex(io::IO, x::AbstractTokenParser{<:TextParse.DateTimeToken}; kw...)
     printstyled(io, _format(x.parser.format); color = treecolor.textparse)
 end
-
-
-function print_constructor(io::IO,x::SideeffectParser; kw...)
-    c = if x.effect == log_effect
-        "with_log(;nomatch=true)"
-    elseif x.effect == log_effect_match
-        "with_log"
-    else
-        "with_effect($(x.effect))"
-    end
-    print(io,"$c")
-end
-function print_constructor(io::IO, x::NamedParser; kw...)
-    if !get(io,:compact, false)
-        printstyled(io, "with_name :", color=treecolor.julia)
-    end
-    printstyled(io, x.name, color=treecolor.name)
-end
-
-print_constructor(io::IO,x::ConstantParser; kw...) = nothing
-
-function print_constructor(io::IO,x::Bytes{N}; kw...) where N
-    printstyled(io, "$(N) TypedBytes"; color=treecolor.julia)
-end
-
-function print_constructor(io::IO,x::Transformation; kw...)
-    if !get(io,:compact, false)
-        printstyled(io,"map("; color = treecolor.map)
-        printstyled(io,x.transform; color = treecolor.julia)
-        printstyled(io,")"; color = treecolor.map)
-    end
-end
-function print_constructor(io::IO,x::Transformation{MatchedSubSequence}; kw...)
-    if !get(io,:compact, false)
-        printstyled(io,"!", color=treecolor.map)
-    end
-end
-function print_constructor(io::IO,x::Transformation{<:Constant}; kw...)
-    if !get(io,:compact, false)
-        printstyled(io," => ", color=treecolor.map)
-        printstyled(IOContext(io, :compact => true),x.transform, color=treecolor.julia)
-    end
-end
-
-function print_constructor(io::IO,x::Transformation{<:IndexAt}; kw...)
-    if !get(io,:compact, false)
-        printstyled(io,"[", color=treecolor.map)
-        printstyled(io,x.transform.i, color=treecolor.julia)
-        printstyled(io,"]", color=treecolor.map)
-    end
-end
-print_constructor(io::IO,x::Assertion; kw...) =
-    printstyled(io, constructor_name(x), color = tree_color(x))
-
-function print_constructor(io::IO, x::Substitution; kw...)
-    printstyled(io, x.name, color=:red)
-    print(io, " call substitute!")
-end
-
-
-function print_with_constructor(io,x...; color=tree_color(x[1]), kw...)
-    length(x)>1 && printstyled(io,x[1:end-1]...; color = color, kw...)
-end
-
 
 print_regex_compact(io,x;
                     parens=("","", treecolor.pcre_structure),
@@ -219,8 +109,30 @@ function print_regex(io::IO, x::Either; kw...)
         printstyled(io, "|"; color = treecolor.pcre_Either)
         printstyled(io, children_char; color = treecolor.children_char)
     end
-    1
 end
+
+
+function print_with_constructor(io,x...; color=tree_color(x[1]), kw...)
+    length(x)>1 && printstyled(io,x[1:end-1]...; color = color, kw...)
+    #get(io,:compact,false) && printstyled(io, " ", constructor_name(x[end]), color = tree_color(x[end]))
+end
+
+
+function tree_color(x)
+    cn = string(constructor_name(x))
+    if hasproperty(treecolor, Symbol(cn)) 
+        getproperty(treecolor, Symbol(cn))
+    elseif hasproperty(treecolor, Symbol("pcre_$cn"))
+        getproperty(treecolor, Symbol("pcre_$cn"))
+    elseif x isa ValueMatcher
+        treecolor.pcre_Matcher
+    elseif x isa Assertion
+        treecolor.pcre_Assertion
+    else
+        treecolor.julia
+    end
+end
+
 function print_regex(io::IO, ::TextParse.Numeric{<:Integer}; kw...)
     printstyled(io,"-"; color=color = treecolor.pcre_unescaped,kw...)
     printstyled(io,"?["; color=color = treecolor.pcre_structure,kw...)
@@ -322,8 +234,6 @@ end
 print_regex(io::IO, x::FlatMap;kw...)  =  nothing # error("regex determined at runtime!")
 
 
-print_regex(io::IO, x::ReversedString; kw...) = print_regex(x.representation; kw...)
-
 function print_regex(io::IO, x::Union{ValueIn,ValueNotIn}; kw...)
     printstyled(io,"["; color=tree_color(x))
     x isa ValueNotIn && printstyled(io,"^"; color=tree_color(x))
@@ -362,5 +272,95 @@ _print_bracket(io::IO, x::UnicodeClass) =
     end
 
 #regex_inner(x::CombinedParser) = ""
+
+## pcre
+
+
+
+print_pipe(io) =
+    if !get(io,:compact, false)
+        printstyled(io, " |> "; color = treecolor.pipe)
+    else
+        printstyled(io, " |> "; color = treecolor.pipe)
+    end
+
+if VERSION>=v"1.6"
+    constructor_name(x) = typeof(x).name.name
+else
+    constructor_name(x) = typeof(x).name.name
+end
+
+"""
+    print_constructor(io::IO,x; kw...)
+
+Print constructor pipeline in parser tree node.
+"""
+print_constructor(io::IO,x; kw...) =
+    if x isa CombinedParser
+        printstyled(io, constructor_name(x), color = tree_color(x))
+    else
+    end
+
+function print_constructor(io::IO, x::AbstractTokenParser{<:TextParse.DateTimeToken}; kw...)
+    printstyled(io, "DateTimeParser"; color = treecolor.constructor)
+end
+
+function print_constructor(io::IO,x::SideeffectParser; kw...)
+    c = if x.effect == log_effect
+        "with_log(;nomatch=true)"
+    elseif x.effect == log_effect_match
+        "with_log"
+    else
+        "with_effect($(x.effect))"
+    end
+    print(io,"$c")
+end
+function print_constructor(io::IO, x::NamedParser; kw...)
+    if !get(io,:compact, false)
+        printstyled(io, "with_name :", color=treecolor.julia)
+    end
+    printstyled(io, x.name, color=treecolor.name)
+end
+
+print_constructor(io::IO,x::ConstantParser; kw...) = nothing
+
+function print_constructor(io::IO,x::Bytes{N}; kw...) where N
+    printstyled(io, "$(N) TypedBytes"; color=treecolor.julia)
+end
+
+function print_constructor(io::IO,x::Transformation; kw...)
+    if !get(io,:compact, false)
+        printstyled(io,"map("; color = treecolor.map)
+        printstyled(io,x.transform; color = treecolor.julia)
+        printstyled(io,")"; color = treecolor.map)
+    end
+end
+function print_constructor(io::IO,x::Transformation{MatchedSubSequence}; kw...)
+    if !get(io,:compact, false)
+        printstyled(io,"!", color=treecolor.map)
+    end
+end
+function print_constructor(io::IO,x::Transformation{<:Constant}; kw...)
+    if !get(io,:compact, false)
+        printstyled(io," => ", color=treecolor.map)
+        printstyled(IOContext(io, :compact => true),x.transform, color=treecolor.julia)
+    end
+end
+
+function print_constructor(io::IO,x::Transformation{<:IndexAt}; kw...)
+    if !get(io,:compact, false)
+        printstyled(io,"[", color=treecolor.map)
+        printstyled(io,x.transform.i, color=treecolor.julia)
+        printstyled(io,"]", color=treecolor.map)
+    end
+end
+print_constructor(io::IO,x::Assertion; kw...) =
+    printstyled(io, constructor_name(x), color = tree_color(x))
+
+function print_constructor(io::IO, x::Substitution; kw...)
+    printstyled(io, x.name, color=:red)
+    print(io, " call substitute!")
+end
+
 
 @specialize
