@@ -774,14 +774,11 @@ function _sSequence(x, r::Vector{CombinedParser} = CombinedParser[])
         _sSequence(e,r)
     else
         for e in x
-            push!(r,parser(e))
+            !isa(e, Always) && push!(r,parser(e))
         end
     end
     r
 end
-
-
-
 
 export sSequence
 """
