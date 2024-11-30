@@ -222,12 +222,12 @@ function Base.showerror(io::IO, x::PartialMatchException)
     println(io, "."^(x.index-1),"^")
 end
 
-@auto_hash_equals struct SideeffectParser{P,A} <: WrappedParser{P}
+struct SideeffectParser{A,P} <: WrappedParser{P}
     parser::P
     args::A
     effect::Function
     SideeffectParser(f::Function, p::CombinedParser,a...) =
-        new{typeof(p),typeof(a)}(p,a,f)
+        new{typeof(a),typeof(p)}(p,a,f)
 end
 
 """
