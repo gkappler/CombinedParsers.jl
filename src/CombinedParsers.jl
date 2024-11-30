@@ -672,82 +672,27 @@ julia> german_street_address("Some Avenue 42")
 """
 @auto_hash_equals struct Sequence{P} <: CombinedParser
     parts::P
-    function Sequence(p...)
-        parts = tuple( parser.(p)... )
-        s = new{Any}(parts)
-        names = Pair{Symbol,Int}[ t.first=>i
-                  for (i,t) in enumerate(p)
-                      if t isa Pair{Symbol} ]
-        if isempty(names)
-            return s
-        else
-            function ntuple(v)
-                (; (k.first => v[k.second] for k in names )... )
-            end
-            map(ntuple, s)
-        end
-        #@info "seq" length(p) typeof(p)
-        #error()
-        # p_ = Any[p...]
-        #@info "new sequence" length(p_)
-        # if VERSION>=v"1.6" && length(p)>4
-        #     map(merge_tuples,
-        #         Sequence(Sequence(p[1:2]...; tuplestate=tuplestate),
-        #                  Sequence(p[3:end]...; tuplestate=tuplestate);
-        #                  tuplestate=tuplestate))
-        # else
-            #new{typeof(p)}(p)
-        ##end
-    end
+    Sequence(parts::Tuple, stype::Type=Any) = new{stype}(parts)
+    Sequence(parts::Vector, stype::Type=Vector{CombinedParser}) = new{stype}(parts)
 end
 Sequence(;kw...) =
     isempty(kw) ? Always() : Sequence(kw...)
-Sequence(p::Vector; kw...) = Sequence(p...; kw...)
-
-result_type(p::Sequence, sequence; kw...)  =
-    sequence_result_type(p.parts, sequence; kw...)
-
-"""
-    sequence_result_type(parts, sequence)
-
-`Tuple` type, internally used for `Sequence` result_type.
-"""
-sequence_result_type(parts::Tuple, sequence; kw...) =
-    Tuple{ (result_type(p, sequence; kw...) for p in parts)... }
-
-isliteralsequence(c::ConstantParser) = true
-isliteralsequence(c) = false
-function isliteralsequence(c::Sequence)
-    (&)(isliteralsequence.(c.parts)...)
-end
-
-"""
-    state_type(pts::Type; tuplestate=true)
-
-- `MatchState` if all `fieldtypes` are `MatchState`, 
-- otherwise if `tuplestate`, a tuple type with the `state_type` of `parts`,
-- or `Vector{Any}` if `!tuplestate`.
-
-!!! note
-    Todo: NCodeunitsState instead of MatchState might increase performance.
-"""
-function state_type(::Type{<:Sequence{pts}}) where {pts <: Tuple}
-    if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
-        MatchState
+function Sequence(p...)
+    parts = tuple( parser.(p)... )
+    s = Sequence(parts)
+    names = Pair{Symbol,Int}[ t.first=>i
+                              for (i,t) in enumerate(p)
+                                  if t isa Pair{Symbol} ]
+    if isempty(names)
+        return s
     else
-        Tuple{(state_type(p) for p in fieldtypes(pts))...}
+        function ntuple(v)
+            (; (k.first => v[k.second] for k in names )... )
+        end
+        map(ntuple, s)
     end
 end
-state_type(::Type{<:Sequence{Vector{P}}}) where P =
-    Vector{state_type(P)}
-state_type(::Type{Sequence{Any}}) =
-    Vector{Any}
-
-
-
-Base.lastindex(x::Sequence) = lastindex(x.parts)
-
-
+#Sequence(p::Vector; kw...) = Sequence(p...; kw...)
 
 mSequence(transform::Function, T::Type, a...; kw...) =
     map(transform, T, Sequence(a...; kw...))
@@ -805,11 +750,52 @@ See also [`Sequence`](@ref)
     This function will be removed and replaced with a keyword argument
 """
 function sSequence(x...)
-    Sequence(_sSequence(x)...)
+    p = _sSequence(x)
+    length(p) == 1 ? p[1] : Sequence(p...)
 end
-Sequence(x) = parser(x)
-sSequence(x) = parser(x)
 
+result_type(p::Sequence, sequence; kw...)  =
+    sequence_result_type(p.parts, sequence; kw...)
+
+"""
+    sequence_result_type(parts, sequence)
+
+`Tuple` type, internally used for `Sequence` result_type.
+"""
+sequence_result_type(parts::Tuple, sequence; kw...) =
+    Tuple{ (result_type(p, sequence; kw...) for p in parts)... }
+
+isliteralsequence(c::ConstantParser) = true
+isliteralsequence(c) = false
+function isliteralsequence(c::Sequence)
+    (&)(isliteralsequence.(c.parts)...)
+end
+
+"""
+    state_type(pts::Type; tuplestate=true)
+
+- `MatchState` if all `fieldtypes` are `MatchState`, 
+- otherwise if `tuplestate`, a tuple type with the `state_type` of `parts`,
+- or `Vector{Any}` if `!tuplestate`.
+
+!!! note
+    Todo: NCodeunitsState instead of MatchState might increase performance.
+"""
+function state_type(::Type{<:Sequence{pts}}) where {pts <: Tuple}
+    if isempty(fieldtypes(pts)) || all(t->state_type(t)<:MatchState, fieldtypes(pts))
+        MatchState
+    else
+        Tuple{(state_type(p) for p in fieldtypes(pts))...}
+    end
+end
+state_type(::Type{<:Sequence{Vector{P}}}) where P =
+    Vector{state_type(P)}
+state_type(::Type{Sequence{Any}}) =
+    Vector{Any}
+
+
+
+Base.lastindex(x::Sequence) = lastindex(x.parts)
 
 @inline function _leftof(str,i,parser::Sequence,x::MatchState)
     for p in length(parser.parts):-1:1
