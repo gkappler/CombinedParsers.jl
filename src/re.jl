@@ -404,7 +404,9 @@ children(x::Subroutine) = tuple()
 children(x::Conditional) = x.no isa Always ? tuple(x.yes) : tuple(x.yes,x.no)
 
 
-import ..CombinedParsers: print_regex, print_regex_compact, needs_parens, tree_color
+import ..CombinedParsers: print_regex, print_regex_compact, needs_parens, tree_color, can_collapse
+needs_parens(x::Conditional,c) = ("(?", ")",tree_color(x))
+can_collapse(::Conditional) = false
 
 @nospecialize
 function print_regex(io::IO, x::ParserOptions; kw...)
@@ -462,7 +464,7 @@ end
 
 function print_regex(io::IO, x::Regexp.Conditional; kw...)
     printstyled(io,"(?"; color=treecolor.pcre_structure)
-    print_regex_compact(io, reversed(x.condition); compact=false, parens = needs_parens(x), kw...)
+    print_regex_compact(io, reversed(x.condition); compact=false, parens = needs_parens(x,x.condition), kw...)
     printstyled(io,"("; color=treecolor.pcre_structure)
     print_regex(io, x.yes; kw...)
     if !isa(x.no, Always)

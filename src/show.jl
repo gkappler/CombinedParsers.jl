@@ -158,11 +158,10 @@ print_regex(io::IO, x::AnyValue; kw...) =
     printstyled(io, "."; color=tree_color(x), kw...)
 
 
-needs_parens(x::WrappedParser,c) = ("", "",tree_color(x))
 needs_parens(parent::WrappedParser) = needs_parens(parent,parent.parser)
 needs_parens(parent::WrappedAssertion) = needs_parens(parent,parent.parser)
 #needs_parens(parent::Optional, x::) = ("(",")")
-needs_parens(parent::WrappedParser, x::LeafParser) = ("","",tree_color(parent))
+needs_parens(parent::WrappedParser, x) = ("","",tree_color(parent))
 needs_parens(x::Atomic, c; kw...) = ("(?>",")",tree_color(x))
 needs_parens(x::Transformation, c::ConstantParser; kw...) =
     ("","",treecolor.map)
@@ -189,7 +188,7 @@ function print_regex(io::IO, x::WrappedAssertion; kw...)
 end
 
 function print_regex(io::IO,x::Sequence;kw...)
-    if !get(io,:compact,false) || isliteralsequence(x)
+    if !get(io,:compact,false) && isliteralsequence(x) ## todo:recursion
         for p in x.parts
             print_regex(io,p;kw...)
         end
@@ -197,9 +196,6 @@ function print_regex(io::IO,x::Sequence;kw...)
         printstyled(io, children_char; color = treecolor.children_char)
     end
 end
-
-print_regex(io,x::Union{PositiveLookbehind,NegativeLookbehind}; kw...) =
-    print_regex_compact(io, reversed(x.parser); parens = needs_parens(x), kw...)
 
 function print_regex(io::IO, x::Repeat; kw...)
     print_regex_compact(io, x.parser; compact = false, parens = needs_parens(x), kw...)
