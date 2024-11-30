@@ -224,6 +224,7 @@ See also [`getindex`](@ref), [`Sequence`](@ref).
 struct IndexAt{I}
     i::I
 end
+Base.getindex(x::CombinedParser, i) = map(IndexAt(i),x)
 
 """
     Base.get(parser::Transformation{<:IndexAt}, a...)

@@ -765,10 +765,6 @@ function mSequence(::Val{transform},tokens...; kw...) where {transform}
     # map(IndexAt(transform), s)
 end
 
-
-Base.getindex(x::CombinedParser, i) = map(IndexAt(i),x)
-
-
 function _sSequence(x, r::Vector{CombinedParser} = CombinedParser[])
     if x isa Sequence
         _sSequence(e,r)
