@@ -290,25 +290,27 @@ end
 
 
 
-function tryparse_pos(p_,sequence, idx=firstindex(sequence), till=lastindex(sequence); trace_pos = nothing, trace=false, log=false, sentinel = nothing, delta =10, kw...)
+
+
+function tryparse_pos(p_,sequence, idx=firstindex(sequence), till=lastindex(sequence); trace_pos = nothing, trace=false, log=false, sentinel = nothing, delta =10, io=stdout, kw...)
     p = if log === nothing || log == false
         p_
     else
-        log_names(p_,log)
+        log_names(p_,log; io=io)
         
     end
     if trace == true
         tp = p isa Tracer{<:CombinedParser,TracingStat} ? empty_tracer!(p) : tracer(TracingStat,p)
         i = iterate_state(tp,sequence,till,idx,idx,nothing) 
         if i === nothing || tuple_pos(i) <= lastindex(sequence)
-            print_tree(stdout, tp; 
+            print_tree(io, tp; 
                        trace_pos=trace_pos,
                        printnode_kw=(
                            sequence=sequence,
                            hide=true,
                            delta=delta, kw...))
-            printstyled("partly successfull until furthest attempt at", color=:magenta)
-            printstyled(" [$trace_pos].\n", color=:light_red)
+            printstyled(io,"partly successfull until furthest attempt at", color=:magenta)
+            printstyled(io," [$trace_pos].\n", color=:light_red)
         end
         i === nothing && return sentinel
         get(p,sequence,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)
@@ -327,8 +329,8 @@ function _tryparse_pos(p_::Tracer,sequence, idx=firstindex(sequence), till=lasti
                        sequence=sequence,
                        hide=true,
                        delta=delta, kw...))
-        printstyled("partly successfull until furthest attempt at", color=:magenta)
-        printstyled(" [$trace_pos].\n", color=:light_red)
+        printstyled(io,"partly successfull until furthest attempt at", color=:magenta)
+        printstyled(io," [$trace_pos].\n", color=:light_red)
     end
     i === nothing && return sentinel
     get(p,sequence,till,tuple_pos(i),1,tuple_state(i)), tuple_pos(i)

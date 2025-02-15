@@ -189,7 +189,11 @@ treecolor = (
     pcre_Optional   = 116, #:light_green,
     pcre_Sequence   = 67, 
     #pcre_Capture    = 32,#:cyan,
-    match           = :bold,
+    previous_match           = 64,
+    match           = :green,
+    nomatch           = 204,
+    previous_nomatch           = 95,
+    outside_match           = 243,
     julia           = 38,
     pipe            = :light_black, 
     children_char   = :light_black,
@@ -290,8 +294,13 @@ end
 function printnode(io::IO, x_::MemoTree; kw...)
     x = x_.tree
     if !x_.descend && x isa NamedParser
-        printstyled(io, "see ", color = treecolor.comment)
-        printstyled(io, x.name, color = treecolor.reference)
+        printstyled(io, "→ ", color = treecolor.comment)
+        printstyled(io, x.name, " ", color = treecolor.reference)
+        print_regex(io, x)
+        #printnode(io,x; kw...)
+        if !get(io,:compact, false)
+            printstyled(io,"::$(result_type(x))"; color=treecolor.type)
+        end
         #printstyled(io, " # $children_char branches hidden", color=treecolor.comment)
     else
         printnode(io,x; kw...)

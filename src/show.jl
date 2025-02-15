@@ -2,46 +2,45 @@ export regex_escape
 @nospecialize
 
 
-
-function escape_string_styled(io::IO, s::AbstractString; esc=(), keep = ())
+function escape_string_styled(io::IO, s::AbstractString; esc=(), keep = (), color_unescaped=treecolor.pcre_unescaped, color_escaped=treecolor.pcre_escaped)
     a = Iterators.Stateful(s)
     for c::AbstractChar in a
         if c in esc
             printstyled(io, '\\'; color=treecolor.pcre_escape)
-            printstyled(io, c; color=treecolor.pcre_escaped)
+            printstyled(io, c; color=color_escaped)
         elseif c in keep
-            printstyled(io, c; color=treecolor.pcre_unescaped)
+            printstyled(io, c; color=color_unescaped)
         elseif isascii(c)
             if c == '\0'
-                printstyled(io, Base.escape_nul(peek(a)::Union{AbstractChar,Nothing}); color=treecolor.pcre_escaped)
+                printstyled(io, Base.escape_nul(peek(a)::Union{AbstractChar,Nothing}); color=color_escaped)
             elseif c == '\e'
                 printstyled(io, '\\'; color=treecolor.pcre_escape)
-                printstyled(io, "e"; color=treecolor.pcre_escaped)
+                printstyled(io, "e"; color=color_escaped)
             elseif c == '\\'
                 printstyled(io, '\\'; color=treecolor.pcre_escape)
-                printstyled(io, "\\"; color=treecolor.pcre_escaped)
+                printstyled(io, "\\"; color=color_escaped)
             elseif '\a' <= c <= '\r'
                 printstyled(io, '\\'; color=treecolor.pcre_escape)
-                printstyled(io, "abtnvfr"[Int(c)-6]; color=treecolor.pcre_escaped)
+                printstyled(io, "abtnvfr"[Int(c)-6]; color=color_escaped)
             elseif isprint(c)
-                printstyled(io, c; color=treecolor.pcre_unescaped)
+                printstyled(io, c; color=color_unescaped)
             else
-                printstyled(io, "\\x", string(UInt32(c), base = 16, pad = 2); color=treecolor.pcre_escaped)
+                printstyled(io, "\\x", string(UInt32(c), base = 16, pad = 2); color=color_escaped)
             end
         elseif !Base.isoverlong(c) && !Base.ismalformed(c)
             if isprint(c)
-                printstyled(io, c; color=treecolor.pcre_unescaped)
+                printstyled(io, c; color=color_unescaped)
             else
                 printstyled(io, '\\'; color=treecolor.pcre_escape)
-                c <= '\x7f'        ? printstyled(io, "x", string(UInt32(c), base = 16, pad = 2); color=treecolor.pcre_escaped) :
-                    c <= '\uffff'      ? printstyled(io, "u", string(UInt32(c), base = 16, pad = Base.need_full_hex(peek(a)::Union{AbstractChar,Nothing}) ? 4 : 2); color=treecolor.pcre_escaped) :
-                    printstyled(io, "U", string(UInt32(c), base = 16, pad = Base.need_full_hex(peek(a)::Union{AbstractChar,Nothing}) ? 8 : 4); color=treecolor.pcre_escaped)
+                c <= '\x7f'        ? printstyled(io, "x", string(UInt32(c), base = 16, pad = 2); color=color_escaped) :
+                    c <= '\uffff'      ? printstyled(io, "u", string(UInt32(c), base = 16, pad = Base.need_full_hex(peek(a)::Union{AbstractChar,Nothing}) ? 4 : 2); color=color_escaped) :
+                    printstyled(io, "U", string(UInt32(c), base = 16, pad = Base.need_full_hex(peek(a)::Union{AbstractChar,Nothing}) ? 8 : 4); color=color_escaped)
             end
         else # malformed or overlong
             u = bswap(reinterpret(UInt32, c)::UInt32)
             while true
                 printstyled(io, '\\'; color=treecolor.pcre_escape)
-                printstyled(io, "x", string(u % UInt8, base = 16, pad = 2); color=treecolor.pcre_escaped)
+                printstyled(io, "x", string(u % UInt8, base = 16, pad = 2); color=color_escaped)
                 (u >>= 8) == 0 && break
             end
         end
@@ -307,7 +306,12 @@ function print_constructor(io::IO,x::SideeffectParser; kw...)
     elseif x.effect == log_effect_match
         "with_log"
     else
-        "with_effect($(x.effect))"
+        printstyled(io, "with_effect("; color = treecolor.constructor)
+        printstyled(io, x.effect, ", ",
+                    join(string.(x.args),", ")," ;",
+                    join([ "$k=$v" for (k,v) in x.keywords],", "); color = treecolor.match_function)
+        printstyled(io, ")"; color = treecolor.constructor)
+        x.effect
     end
     print(io,"$c")
 end
