@@ -52,11 +52,6 @@ struct AtEnd <: Assertion end
 iterate_state(parser::AtEnd, sequence, till, posi, next_i, state::Nothing) =
     next_i > till ? (next_i, MatchState()) : nothing
 
-export padded
-padded(p, start=AtStart(), stop=AtEnd()) =
-    map(IndexAt(2),Sequence(start,p,stop))
-
-
 export Never
 """
     Never()

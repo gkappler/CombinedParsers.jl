@@ -10,7 +10,6 @@ module BNF
 using CombinedParsers
 
 # todo 
-# paddedSequence(x...) = Sequence(trim.(x)...)
 trimhv(x; whitespace=Atomic(Repeat(CharIn(horizontal_space_char,vertical_space_char)))) =
     CombinedParsers.trim(x; whitespace=whitespace)
 

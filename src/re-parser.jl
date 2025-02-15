@@ -712,7 +712,7 @@ julia> CombinedParsers.Regexp.pcre_options_parser
 ```
 """
 function parse_options(options::AbstractString)
-    flags = tryparse(pcre_options_parser(),options)
+    flags = tryparse(padded(pcre_options()),options)
     if flags === nothing
         throw(UnsupportedError("options $options"))
     else
@@ -727,7 +727,7 @@ macro pcre()
             __pcre = CombinedParsers.Regexp.pcre_parser()
         end
         if true || !@isdefined(__pcre_options_parser)
-            __pcre_options_parser = CombinedParsers.Regexp.pcre_options_parser()
+            __pcre_options_parser = CombinedParsers.padded(CombinedParsers.Regexp.pcre_options())
         end
         function Regcomb(x)
             try 

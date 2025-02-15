@@ -52,6 +52,9 @@ Ignore whitespace `left` and `right` of `sSequence(p...)`.
 trim(p...; whitespace=horizontal_space_maybe(), left=whitespace, right=whitespace) =
     Sequence(left, sSequence(p...), right)[2]
 
+export padded
+padded(p; start=AtStart(), stop=AtEnd()) =
+    trim(p, left=start, right=stop)
 
 
 trimmed(x) = x

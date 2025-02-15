@@ -87,31 +87,32 @@ tree_deepmap(f, t, a...; cache=IdDict{Any,Any}(), kw...) =
 
 can_collapse(x::FlatMap) = false
 can_collapse(x::DeepMapNode) = can_collapse(nodevalue(x))
-can_collapse(x::Tuple{<:Any, <:CombinedParser}) = can_collapse(x[2])
 can_collapse(x::Union{WrappedParser,WrappedAssertion}) = true
 #can_collapse(x::NamedParser) = false
 can_collapse(x::Union{Sequence, Either, LeafParser}) = false
 
+
+
 # children(x::CombinedParser, visited::Dict) =
 #     children(x)
-children(x::WrappedAssertion) = tuple(x.parser)
+children(x::WrappedAssertion) = Any[x.parser]
 #     children(x.parser, visited)
-children(x::WrappedParser) = tuple( x.parser )
+children(x::WrappedParser) = Any[x.parser]
 #children(x::PositiveLookbehind) =  children(x.parser)
 #children(x::WrappedAssertion) = children(x.parser)
 # children(x::NamedParser)     = x.doc=="" ? children(x.parser)     : tuple()
 #children(x::Optional) = children(x.parser)
 #children(x::Transformation) = children(x.parser)
-children(x::FlatMap) = ( x.left, x.right )
-children(x::Sequence) = isliteralsequence(x) ? tuple() : x.parts
-children(x::Either) = x.options
+children(x::FlatMap) = Any[ x.left, x.right ]
+children(x::Sequence) = isliteralsequence(x) ? [] : Any[x.parts...]
+children(x::Either) = Any[x.options...]
 children(x::Either{<:AbstractTrie}) =  children(x.options)
 
-children(x::Union{LeafParser, ConstantParser,Never,Always}) = tuple()
+children(x::Union{LeafParser, ConstantParser,Never,Always}) = Any[]
 children(x::Union{PositiveLookbehind,NegativeLookbehind}) =
     reverse(children(x.parser))
 
-children(x::MappedSequenceParser) = tuple(x.parser, x.f)
+children(x::MappedSequenceParser) = Any[x.parser, x.f]
 
 # function print_constructor(io::IO,x::FlatMap)
 #     print(io, "FlatMap" )
@@ -214,7 +215,7 @@ function children(x::MemoTree)
         memochildren(x.tree, x)
     else
         # @info "no descend"
-        tuple()
+        Any[]
     end
 end
 can_collapse(x::MemoTree) = can_collapse(x.tree)
@@ -222,7 +223,7 @@ can_collapse(x::MemoTree) = can_collapse(x.tree)
 memochildren(x, root) =  memochildren(children(x), root)
 
 function memochildren(children::Union{Vector, Tuple}, root)
-    children_ = []
+    children_ = Any[]
     for x in children
         push!(children_,
               MemoTree{Any}(
@@ -266,6 +267,7 @@ Base.show(io::IO, x::MemoTree) =
 #         printstyled(io, regex_suffix(e), color=treecolor.pcre_structure)
 #     end
 # end
+
 
 function print_constructors(io, x; kw...)
     trail = Any[x]
