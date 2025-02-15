@@ -5,6 +5,80 @@ struct RecursionMarker end
 getcache!(f,mem,x::Union{Either{<:Vector}}) = get!(f,mem,x)
 getcache!(f,mem,x) = f()
 
+export deepmap
+"""
+    deepmap(f, parser, predicate, a...; kw...)
+
+Substitute all `sub_parser`s with [`Base.map`](@ref)`(f,sub_parser, a...; kw...)` iif 
+`dodeepmap(parser, predicate)`;
+otherwise keep `sub_parser`
+
+
+```jldocs
+julia> p = re"(a+)b+"
+🗄 Sequence |> regular expression combinator with 1 capturing groups
+├─ (a+)  |> Repeat |> Capture 1
+└─ b+  |> Repeat
+::Tuple{Vector{Char}, Vector{Char}}
+
+julia> p("aaabb")
+(['a', 'a', 'a'], ['b', 'b'])
+
+julia> deepmap(MatchedSubSequence, p, Capture)("aaabb")
+("aaa", ['b', 'b'])
+
+julia> deepmap(length, p, re"b+")("abb")
+(['a'], 2)
+```
+
+Implementation is an example when the a custom leaf [`_deepmap`](@ref) method is useful and sufficient for [`deepmap_parser`](@ref).
+"""
+deepmap(f, parser, predicate, a...; kw...) = 
+    deepmap_parser(_deepmap, parser, predicate, f, a...; kw...)
+
+"""
+    _deepmap(parser, predicate, f, a...; kw...)
+
+Implementation example when the a custom leaf [`_deepmap`](@ref) method is useful and sufficient for [`deepmap_parser`](@ref).
+```julia
+if dodeepmap(parser, predicate)
+    map(f,parser, a...; kw...)
+else
+    parser
+end
+```
+"""
+function _deepmap(parser, predicate, f, a...; kw...)
+    if dodeepmap(parser, predicate)
+        map(f,parser, a...; kw...)
+    else
+        parser
+    end
+end
+
+"""
+    dodeepmap(parser, predicate)
+
+`parser == predicate`.
+Specialize for custom predicate type.
+
+    dodeepmap(parser, predicate::Type)
+
+`sub_parser isa predicate`
+
+    dodeepmap(parser, predicate::Function)
+
+`predicate(sub_parser)`
+
+    dodeepmap(parser::NamedParser, predicate::Symbol)
+
+`sub_parser.name == predicate`
+"""
+dodeepmap(parser, predicate) = parser == predicate
+dodeepmap(parser, predicate::Function) = predicate(parser)
+dodeepmap(parser, predicate::Type) = parser isa predicate
+dodeepmap(parser::NamedParser, predicate::Symbol) = parser.name == predicate
+
 """
     deepmap_parser(f::Function[, mem::AbstractDict=IdDict()], x::CombinedParser,a...;kw...)
 
@@ -93,7 +167,7 @@ _deepmap_parser(f,mem::AbstractDict,x::SideeffectParser,a...;kw...) =
     SideeffectParser(
         x.effect,
         deepmap_parser(f,mem,x.parser,a...;kw...),
-        x.args...; x.kw...)
+        x.args...; x.keywords...)
 
 _deepmap_parser(f,mem::AbstractDict,x::FlatMap,a...;kw...) =
     FlatMap{result_type(x)}(
@@ -101,15 +175,12 @@ _deepmap_parser(f,mem::AbstractDict,x::FlatMap,a...;kw...) =
         deepmap_parser(f,mem,x.left,a...;kw...))
 
 _deepmap_parser(f,mem::AbstractDict,x::Either,a...;kw...) =
-    _deepmap_either(f,mem,x,a...;kw...)
+    deepmap_either(f,mem,x,a...;kw...)
 
-_deepmap_either(f,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
+deepmap_either(f,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
     Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
 
-_deepmap_either(f,mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...) =
-    x
-
-function _deepmap_either(f,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
+function deepmap_either(f,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
     mem[x] = r = Either(Any[])
     for p in x.options
         push!(r,deepmap_parser(f,mem,p,a...;kw...))
