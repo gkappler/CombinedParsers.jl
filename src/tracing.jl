@@ -4,27 +4,6 @@ import AbstractTrees: print_tree, printnode
 @nospecialize
 
 using CombinedParsers
-struct Tracer{P<:CombinedParser,S} <: WrappedParser{P}
-    parser::P
-    stat::S
-    Tracer(p,s) = new{tracing_type(p),typeof(s)}(p, s)
-end
-tracing_type(p) = p isa ConstantParser ? ConstantParser : CombinedParser
-@inline state_type(::Type{<:Tracer{P,<:Any}}) where P <: CombinedParser = state_type(P)
-@inline state_type(::Type{<:Tracer{CombinedParser,<:Any}}) = Any
-function _deepmap_parser(f::Function,mem::AbstractDict,x::Tracer,a...;kw...)
-    f(x.stat)
-    x
-end
-
-export tracer
-function tracer(stat::Type, x::CombinedParser)
-    maybe_tracer(x::Union{ NamedParser,LeafParser }) = Tracer(x, stat())
-    maybe_tracer(x) =  x
-    Tracer(deepmap_parser(maybe_tracer, x), stat())
-end
-tracer(x::CombinedParser) =
-    tracer(TracingStat, x)
 
 
 export TracingStat
@@ -35,21 +14,19 @@ end
 TracingStat() = TracingStat(Dict{Tuple{Int,Int},Int}(),Dict{Int,Int}())
 last_failure(x::TracingStat) = maximum(keys(x.failures); init=0)
 last_success(x::TracingStat) = maximum(keys(x.successes); init=(0,0))
-last_failure(x::Tracer{<:CombinedParser,<:TracingStat}) =  last_failure(x.stat)
-last_success(x::Tracer{<:CombinedParser,<:TracingStat}) =  last_success(x.stat)
-last_failure(x::CombinedParser) = 0
-last_success(x::CombinedParser) = (0,0)
 last_attempt(x) = max(last_failure(x),last_success(x)[2])
 
-function Base.merge!(x::TracingStat, ys...)
-    for y in ys
-        for (k,c) in y.successes
-            x.successes[k] = get(x.successes, k, 0) + c
-        end
-        for (k,c) in y.failures
-            x.failures[k] = get(x.failures, k, 0) + c
-        end
+
+function Base.merge!(x::TracingStat, y::TracingStat)
+    for (k,c) in y.successes
+        x.successes[k] = get(x.successes, k, 0) + c
     end
+    for (k,c) in y.failures
+        x.failures[k] = get(x.failures, k, 0) + c
+    end
+    x
+end
+function Base.merge!(x::TracingStat, y::Nothing)
     x
 end
 
@@ -58,6 +35,48 @@ function Base.empty!(x::TracingStat)
     empty!(x.failures)
     x
 end
+
+
+struct Tracer{P<:CombinedParser,S} <: WrappedParser{P}
+    parser::P
+    stat::S
+    function Tracer(p,s)
+        tracing_type = p isa ConstantParser ? ConstantParser : CombinedParser
+        new{tracing_type,typeof(s)}(p, s)
+    end
+end
+@inline state_type(::Type{<:Tracer{P,<:Any}}) where P <: CombinedParser = state_type(P)
+@inline state_type(::Type{<:Tracer{CombinedParser,<:Any}}) = Any
+function _deepmap_parser(f::Function,mem::AbstractDict,x::Tracer,a...;kw...)
+          ## construct replacement, e.g. if P <: WrappedParser
+    f(x.stat)
+    x
+end
+last_failure(x::Tracer{<:CombinedParser,<:TracingStat}) =  last_failure(x.stat)
+last_success(x::Tracer{<:CombinedParser,<:TracingStat}) =  last_success(x.stat)
+last_failure(x::CombinedParser) = 0
+last_success(x::CombinedParser) = (0,0)
+
+
+
+
+export tracer
+function tracer(stat::Type, x::CombinedParser)
+    #maybe_tracer(x::Union{ NamedParser,LeafParser }) = Tracer(x, stat())
+    #maybe_tracer(x) =  x
+    maybe_tracer(x) =
+        if x isa Union{ NamedParser,LeafParser }
+            with_effect(trace_effect, x,
+                        stat())
+        else
+            x
+        end
+    with_effect(trace_effect, deepmap_parser(maybe_tracer, Dict(),x),
+                stat())
+end
+tracer(x::CombinedParser) =
+    tracer(TracingStat, x)
+
 
 function Base.empty!(t::CombinedParser)
     function _empty!(x::Tracer)
@@ -80,7 +99,7 @@ function trace_effect(s,start,after,state,stat::TracingStat)
 end
 TracerTypes = Union{Tracer, Tracer{<:CombinedParser,<:TracingStat}, SideeffectParser{Tuple{TracingStat}}}
 
-stat(x::SideeffectParser{Tuple{T}}) where T = x.args[1]
+stat(x::SideeffectParser{<:Tuple{<:TracingStat}})  = x.args[1]
 stat(x) = nothing
 stat(x::Tracer) = x.stat
 
@@ -115,86 +134,117 @@ function tracing_stat_attempted_at_postion(pos, delta=5)
     end
 end
 
-property_or(t::NamedTuple, p, d) = hasproperty(t,p) ? getproperty(t,p) : d
-property_or(f::Function, t, p) = hasproperty(t,p) ? getproperty(t,p) : f()
+can_collapse(x::Tuple{<:Any, <:CombinedParser}) = true #can_collapse(x[2])
 
-function AbstractTrees.print_tree(io::IO, tp::Tracer; trace_pos = nothing,  printnode_kw = (delta = 5,),kw...)
+property_default(t::NamedTuple, p, d) = hasproperty(t,p) ? getproperty(t,p) : d
+property_default(f::Function, t, p) = hasproperty(t,p) ? getproperty(t,p) : f()
+function AbstractTrees.print_tree(io::IO, tp::TracerTypes; trace_pos = nothing,  printnode_kw = (delta = 5,),maxdepth = 20, kw...)
     tree = tree_deepmap(merge!_tracing_stats, tp)
     trace_pos = trace_pos === nothing ? last_attempt(nodevalue(tree)[1]) : trace_pos
-    printstyled("Parsing attempts at", color=:magenta)
-    printstyled(" [$trace_pos].\n", color=:light_red)
+    printstyled(io,"Parsing attempts at", color=:magenta)
+    printstyled(io," [$trace_pos].\n", color=:light_red)
     tree´ = tree_deepmap(
         (p,ch) ->
-            (p, collect(filter(tracing_stat_attempted_at_postion(trace_pos,property_or(printnode_kw, :delta, 5)),
+            (p, collect(filter(tracing_stat_attempted_at_postion(trace_pos,property_default(printnode_kw, :delta, 5)),
                                ch))),
         tree)
     print_tree(IOContext(io, :compact => true), ChainableTree(tree´);
-               printnode_kw=(pos = trace_pos, printnode_kw...), kw...)
+               printnode_kw=(pos = trace_pos, printnode_kw...), maxdepth = maxdepth,  kw...)
 end
 
-using StyledStrings
-import StyledStrings: Face, SimpleColor
-function print_constructor(io::IO,x::Tracer{<:CombinedParser,<:TracingStat}; sequence = nothing, pos = nothing, delta = 7, kw...)
-    if VERSION>=v"1.11"
-        if sequence !== nothing && pos !== nothing
-            1
-            s= Base.AnnotatedString(
-                sequence,
-                vcat([(firstindex(sequence):lastindex(sequence), :face => :bright_black)],
-                     [(m[1]:m[2], :face => pos >= m[1] && pos <= nextind(sequence,m[2]) ? :success : :previous_success)
-                      for (m,c) in pairs(x.stat.successes)
-                          if pos >= m[1]-delta && pos <= nextind(sequence,m[2])+delta
-                              ],
-                     [ (m:m, :face => :failure)
-                       for (m,c) in pairs(x.stat.failures) if pos == m    ]))
-            StyledStrings.withfaces(:success=>Face(foreground=SimpleColor(0,50,0), weight = :bold, background=SimpleColor(0,200,0)),
-                                    :failure=>Face(foreground=SimpleColor(50,0,0), weight = :bold, background=SimpleColor(200,0,0)),
-                                    :previous_success=>Face(foreground=SimpleColor(0,25,0), background=SimpleColor(0,75,0), weight = :bold)) do
-                                        print(io,
-                                              s[max(1,pos-delta):min(end,pos+delta)])
-                                    end
-        else
-        end
-    else
-        s,f = if sequence !== nothing && pos !== nothing
-            [ (m,c)
-              for (m,c) in pairs(x.stat.successes)
-                  if pos >= m[1]-delta && pos <= nextind(sequence,m[2])+delta
-                      ],
-            [ (m,c)  for (m,c) in pairs(x.stat.failures) if pos == m    ]
-        else
-            [],[]
-        end
-        if !isempty(s)
-            sort!(s)
-            m,c = s[end]
-            printstyled(io, "", sequence[max(1,m[1]-delta):prevind(sequence,m[1])]; color=:light_black)
-            inmatch = pos <= m[2]
-            printstyled(io, sequence[m[1]:m[2]]; color=inmatch ? :green : 158, underline = inmatch, bold = inmatch)
-            printstyled(io, "[$(m[2])]"; color= inmatch ? :green : 158)
-            isempty(f) && printstyled(io, sequence[nextind(sequence,m[2]):min(end,m[2]+delta)]; color=:magenta)
-        end
 
-        if !isempty(f)
-            m,c = f[1]
-            if isempty(s)
-                printstyled(io, "", sequence[max(1,m-delta):prevind(sequence,m)]; color=:light_black)
-            end
-            if m<=lastindex(sequence)
-                printstyled(io, sequence[m]; color=:light_red, underline = true, bold = true)
-                isempty(s) && printstyled(io, "[$(m)]"; color=:red, )
-                printstyled(io, sequence[nextind(sequence,m):min(end,m+delta)]; color=:magenta)
+
+function escape_string_styled(colorf::Function, io::IO, s::AbstractString; esc=(), keep = ())
+    a = Iterators.Stateful(s)
+    for (i::Int,c::AbstractChar) in enumerate(a)
+        if c in esc
+            printstyled(io, '\\'; color=treecolor.pcre_escape)
+            printstyled(io, c; color=colorf(:escaped, i, c))
+        elseif c in keep
+            printstyled(io, c; color=colorf(:unescaped, i, c))
+        elseif isascii(c)
+            if c == '\0'
+                printstyled(io, Base.escape_nul(peek(a)::Union{AbstractChar,Nothing}); color=colorf(:escaped, i, c))
+            elseif c == '\e'
+                printstyled(io, '\\'; color=treecolor.pcre_escape)
+                printstyled(io, "e"; color=colorf(:escaped, i, c))
+            elseif c == '\\'
+                printstyled(io, '\\'; color=treecolor.pcre_escape)
+                printstyled(io, "\\"; color=colorf(:escaped, i, c))
+            elseif '\a' <= c <= '\r'
+                printstyled(io, '\\'; color=treecolor.pcre_escape)
+                printstyled(io, "abtnvfr"[Int(c)-6]; color=colorf(:escaped, i, c))
+            elseif isprint(c)
+                printstyled(io, c; color=colorf(:unescaped,i,c))
             else
-                printstyled(io, "\$"; color=:light_red, underline = true, bold = true)
-                isempty(s) && printstyled(io, "[$(m)]"; color=:red, )
-                printstyled(io, " (end of string)"; color=:magenta)
+                printstyled(io, "\\x", string(UInt32(c), base = 16, pad = 2); color=colorf(:escaped, i, c))
+            end
+        elseif !Base.isoverlong(c) && !Base.ismalformed(c)
+            if isprint(c)
+                printstyled(io, c; color=colorf(:unescaped, i, c))
+            else
+                printstyled(io, '\\'; color=treecolor.pcre_escape)
+                c <= '\x7f'        ? printstyled(io, "x", string(UInt32(c), base = 16, pad = 2); color=colorf(:escaped, i, c)) :
+                    c <= '\uffff'      ? printstyled(io, "u", string(UInt32(c), base = 16, pad = Base.need_full_hex(peek(a)::Union{AbstractChar,Nothing}) ? 4 : 2); color=colorf(:escaped, i, c)) :
+                    printstyled(io, "U", string(UInt32(c), base = 16, pad = Base.need_full_hex(peek(a)::Union{AbstractChar,Nothing}) ? 8 : 4); color=colorf(:escaped, i, c))
+            end
+        else # malformed or overlong
+            u = bswap(reinterpret(UInt32, c)::UInt32)
+            while true
+                printstyled(io, '\\'; color=treecolor.pcre_escape)
+                printstyled(io, "x", string(u % UInt8, base = 16, pad = 2); color=colorf(:escaped, i, c))
+                (u >>= 8) == 0 && break
             end
         end
-        if isempty(s) && isempty(f)
-            printstyled(io, constructor_name(x), color=treecolor.julia_structure)
+    end
+end
+
+
+
+function print_constructor(io::IO,x::TracerTypes; sequence = nothing, pos = nothing, delta = 100, kw...)
+    function colorf(style, index, char)
+        effi = firsti + index -1 # effective index
+        r = :none
+        for (m,c) in pairs(stat(x).successes)
+            if effi >= m[1] && effi < m[2]
+                if pos >= m[1] && pos < m[2]
+                    return treecolor.match
+                else
+                    r = treecolor.previous_match
+                end
+            else#if effi >= m[1]-delta && effi < m[2]+delta
+                #r = treecolor.outside_match
+            end
         end
-        printstyled(io,x.stat.successes; color = :green)
-        printstyled(io,x.stat.failures; color = :magenta)
+        r != :none && return r
+        for (m,c) in pairs(stat(x).failures)
+            if effi == m
+                if pos == m[1] 
+                    return treecolor.nomatch
+                else
+                    r = treecolor.previous_nomatch
+                end
+            end
+        end                
+        r != :none && return r
+        treecolor.outside_match
+    end
+    if sequence !== nothing && pos !== nothing
+        firsti = max(1,prevind(sequence,pos,delta))
+        lasti = if lastindex(sequence)<pos
+            lastindex(sequence)
+        else
+            min(lastindex(sequence),nextind(sequence,pos,delta))
+        end
+        escape_string_styled(colorf,io, sequence[firsti:lasti]*if lastindex(sequence) == lasti
+                                 "\$"
+                             else
+                                 ""
+                             end)
+        
+        
+    else
+        printstyled(io, constructor_name(x), color=treecolor.julia_structure)
     end
 end
 
@@ -216,11 +266,11 @@ end
 
 function print_constructor(io::IO, x::Tracer{<:Any,BenchmarkStat}; kw...) 
     printstyled(io," [ ")
-    printstyled(io,x.stat.success_count, color=:green)
+    printstyled(io,stat(x).success_count, color=:green)
     printstyled(io,", ")
-    printstyled(io,x.stat.failure_count, color=:red)
+    printstyled(io,stat(x).failure_count, color=:red)
     printstyled(io,", ")
-    printstyled(io,x.stat.total_time_ns, "ns")
+    printstyled(io,stat(x).total_time_ns, "ns")
     printstyled(io," ]")
 end
 
