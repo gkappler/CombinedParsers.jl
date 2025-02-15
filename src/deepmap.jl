@@ -93,7 +93,7 @@ _deepmap_parser(f,mem::AbstractDict,x::SideeffectParser,a...;kw...) =
     SideeffectParser(
         x.effect,
         deepmap_parser(f,mem,x.parser,a...;kw...),
-        x.args...)
+        x.args...; x.kw...)
 
 _deepmap_parser(f,mem::AbstractDict,x::FlatMap,a...;kw...) =
     FlatMap{result_type(x)}(
@@ -291,6 +291,36 @@ function Base.foldl(f::Function, x::CombinedParser, acc,a...; cache=IdDict{Combi
 end
 
 
+export with_log
+
+
+"""
+    with_log(s::AbstractString,p, delta=5;nomatch=false)
+
+Log matching process of parser `p`, displaying `delta` characters left of and right of match.
+
+If `nomatch==true`, also log when parser does not match.
+
+See also: [`log_names`](@ref), [`with_effect`](@ref)
+"""
+with_log(log::AbstractString,p_; nomatch=false, kw...) =
+    let p = parser(p_)
+        ##SideeffectParser()
+        with_effect(nomatch ? log_effect : log_effect_match ,p, log; kw...)
+    end
+
+function log_parser(message::Function, x::CombinedParser, a...; delta_char::Integer=5, nomatch=false, io=stdout, kw...)
+    function _log_names(x´::CombinedParser)
+        log = message(x´,a...; kw...)
+        if log!==nothing
+            with_log("$(log)",x´; io=io, nomatch=nomatch, delta_char=delta_char)
+        else
+            x´
+        end
+    end
+    deepmap_parser(_log_names,Dict(),x)
+end
+
 """
     log_parser(message::Type, x::CombinedParser, a...; kw...)
     log_parser(message::Function, x::CombinedParser, a...; kw...)
@@ -299,34 +329,31 @@ Transform parser including logging statements for sub-parsers
 of type `message` or 
 for which calling `message` does not return `nothing`.
 """
-function log_parser(message::Type, x::CombinedParser, a...; kw...)
-    log_parser(lognode(message), x, a...; kw...)
-end
-function lognode(message)
-    p -> 
+function log_parser(message::Type, x::CombinedParser; kw...)
+    function log_type(p)
         if p isa message
             iostring(printnode, p)
         else
             nothing
         end
+    end
+    log_parser(log_type, x; kw...)
 end
 
-function log_parser(message::Function, x::CombinedParser, a...; kw...)
-    deepmap_parser(_log_names,Dict(),x,message, a...;kw...)
-end
+
 
 
 export log_parser, log_names
 
 """
-    log_names(x,names=true; exclude=nothing)
+    log_names(x,names=true; exclude=nothing, kw...)
 
 Rebuild parser replacing `NamedParser` instances with `with_log` parsers.
 Log all `NamedParser` instanses if `names==true` or `name in names` and not `name in exclude`.
 
 See also: [`with_log`](@ref), [`log_parser`](@ref), [`deepmap_parser`](@ref)
 """
-function log_names(x, names=true; exclude=nothing)
+function log_names(x, names=true; exclude=nothing, kw...)
     message = if names === true
         if exclude === nothing
             x -> x isa NamedParser && x.doc=="" ? x.name : nothing
@@ -338,18 +365,10 @@ function log_names(x, names=true; exclude=nothing)
     else
         x -> ( x isa NamedParser && in(x.name,names) ) ? x.name : nothing
     end
-    log_parser(message, x)
-end
-function _log_names(x::CombinedParser,message::Function,a...;kw...)
-    log = message(x,a...; kw...)
-    if log!==nothing
-        with_log("$(log)",x)
-    else
-        x
-    end
+    log_parser(message, x; kw...)
 end
 
-#include("log.jl")
+include("log.jl")
 
 export optimize
 optimize(x) = deepmap_parser(_optimize,x)

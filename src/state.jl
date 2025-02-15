@@ -124,9 +124,9 @@ end
 @inline function iterate_state(parser::SideeffectParser, sequence, till, posi, next_i, state)
     r = iterate_state(parser.parser, sequence, till, posi, next_i, state)
     if r!==nothing
-        parser.effect(sequence,posi,r...,parser.args...)
+        parser.effect(sequence, posi, r..., parser.args...; parser.keywords...)
     else
-        parser.effect(sequence,posi,posi,nothing,parser.args...)
+        parser.effect(sequence, posi, posi, nothing, parser.args...; parser.keywords...)
     end
     r
 end

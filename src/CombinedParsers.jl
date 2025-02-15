@@ -222,12 +222,13 @@ function Base.showerror(io::IO, x::PartialMatchException)
     println(io, "."^(x.index-1),"^")
 end
 
-struct SideeffectParser{A,P} <: WrappedParser{P}
+struct SideeffectParser{A,K,P} <: WrappedParser{P}
     parser::P
     args::A
+    keywords::K
     effect::Function
-    SideeffectParser(f::Function, p::CombinedParser,a...) =
-        new{typeof(a),typeof(p)}(p,a,f)
+    SideeffectParser(f::Function, p::CombinedParser,a...; kw...) =
+        new{typeof(a),typeof(kw),typeof(p)}(p,a,kw,f)
 end
 
 """
@@ -236,8 +237,8 @@ end
 Call `f(sequence,before_i,after_i,state,a...)` if `p` matches,
  `f(sequence,before_i,before_i,nothing,a...)` otherwise.
 """
-with_effect(f::Function,p,a...) =
-    SideeffectParser(f,p,a...)
+with_effect(f::Function,p,a...; kw...) =
+    SideeffectParser(f,p,a...; kw...)
 
 
 
@@ -1632,7 +1633,7 @@ macro re_str(x,flags)
             __pcre = CombinedParsers.Regexp.pcre_parser()
         end
         if true || !@isdefined(__pcre_options_parser)
-            __pcre_options_parser = CombinedParsers.Regexp.pcre_options_parser()
+            __pcre_options_parser = CombinedParsers.padded(CombinedParsers.Regexp.pcre_options())
         end
         options = tryparse(__pcre_options_parser,$flags)
         options === nothing && throw(UnsupportedError("options $options"))

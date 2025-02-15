@@ -68,43 +68,30 @@ function Base.empty!(t::CombinedParser)
     deepmap_parser(_empty!, t)
 end
 
-
-@inline Base.@propagate_inbounds function iterate_state(parser::Tracer{<:CombinedParser, TracingStat}, sequence, till, posi,after,state)
-    ps = iterate_state(parser.parser, sequence, till,posi,after,state)
-    if ps === nothing
-        if state === nothing
-            parser.stat.failures[posi] = get(parser.stat.failures, posi, 0) + 1
-        end
-    elseif state === nothing
-        lasti = prevind(sequence, ps[1])
-        parser.stat.successes[(posi,lasti)] = get(parser.stat.failures, (posi,lasti), 0) + 1
-    end
-    ps
-end
-
-@inline function iterate_state(p::Tracer{<:ConstantParser, TracingStat}, sequence, till, posi, next_i, state)
-   j,r = iterate_state_constant(p.parser,sequence,till,posi, next_i, state)
-    lasti = prevind(sequence, j)
-    if lasti>=posi
-        p.stat.successes[(posi,lasti)] = get(p.stat.failures, (posi,lasti), 0) + 1
-    end
-    if r === nothing
-        p.stat.failures[j] = get(p.stat.failures, j, 0) + 1
-        return nothing
+function trace_effect(s,start,after,state,stat::TracingStat)
+    if state == nothing
+        stat.failures[start] = get(stat.failures, start, 0) + 1
     else
-        return j, r
+        stat.successes[(start,after)] =
+            get(stat.successes,
+                (start, after),
+                0) + 1
     end
 end
+TracerTypes = Union{Tracer, Tracer{<:CombinedParser,<:TracingStat}, SideeffectParser{Tuple{TracingStat}}}
+
+stat(x::SideeffectParser{Tuple{T}}) where T = x.args[1]
+stat(x) = nothing
+stat(x::Tracer) = x.stat
 
 function merge!_tracing_stats(p,ch)
     outer = TracingStat()
-    merge!(outer, [nodevalue(c)[1] for c in ch if nodevalue(c) isa Tuple]...)
-    (outer, p), ch
-end
-function merge!_tracing_stats(p::Tracer,ch)
-    outer = TracingStat()
-    merge!(outer, p.stat)
-    merge!(outer, [nodevalue(c)[1] for c in ch if nodevalue(c) isa Tuple]...)
+    merge!(outer, stat(p))
+    for c in ch
+        if nodevalue(c) isa Tuple
+            merge!(outer, nodevalue(c)[1])
+        end
+    end
     (outer, p), ch
 end
 

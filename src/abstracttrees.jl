@@ -10,8 +10,10 @@ import AbstractTrees: print_child_key
 struct ChainableTree{T,F<:Function}
     can_collapse::F
     tree::T
-    ChainableTree(t) = new{typeof(t), typeof(can_collapse)}(can_collapse, t)
-    ChainableTree(f::Function,t) = new{typeof(t), typeof(f)}(f, t)
+    ChainableTree(t) =
+        new{Any, typeof(can_collapse)}(can_collapse, t)
+    ChainableTree(f::Function,t) =
+        new{Any, typeof(f)}(f, t)
 end
 function AbstractTrees.children(μ::ChainableTree)
     t = μ.tree
@@ -58,11 +60,11 @@ struct DeepMapNode{T,C} <: AbstractNode{T}
         else
             ch = children(t)
             cache[t] = RecursionMarker()
-            ch´ = map(c -> tree_deepmap(f, c, a...; cache=cache,kw...), ch)
+            ch´ = [ tree_deepmap(f, c, a...; cache=cache,kw...) for c in ch ]
             f(nodevalue(t), ch´,a...;kw...)
         end
         cache[t] = (t´, ch´´)
-        new{typeof(t´), typeof(ch´´)}(t´, ch´´)
+        new{Any, typeof(ch´´)}(t´, ch´´)
     end
 end
 DeepMapNode(node) = DeepMapNode(n -> (nodevalue(n), children(n)), nodevalue(node))
