@@ -30,7 +30,7 @@ DateParser, DateTimeParser
 
 import TextParse: tryparsenext
 
-result_type(::Type{<:AbstractToken{T}}, a...; kw...) where T = T
+result_type(::AbstractToken{T}, a...; kw...) where T = T
 
 @auto_hash_equals struct AbstractTokenParser{P<:AbstractToken} <: CombinedParser
     parser::P
@@ -42,8 +42,8 @@ result_type(::Type{<:AbstractToken{T}}, a...; kw...) where T = T
         new{typeof(p)}(p)
     end
 end
-result_type(x::AbstractTokenParser{AT}, sequence) where {AT<:AbstractToken} =
-    result_type(AT,sequence)
+result_type(x::AbstractTokenParser, sequence)  =
+    result_type(x.parser,sequence)
 
 @inline state_type(::Type{<:AbstractTokenParser{AT}}) where {AT<:AbstractToken} =
     NCodeunitsState{result_type(AT)}
