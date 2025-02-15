@@ -48,11 +48,12 @@ With parsing options
 
 TODO: make flags a transformation function?
 """
-@auto_hash_equals struct CharWithOptions
+@auto_hash_equals struct CharWithOptions <: AbstractChar
     x::Char
     flags::UInt32
 end
 
+Base.codepoint(x::CharWithOptions) = codepoint(x.x)
 Base.isascii(x::CharWithOptions) = isascii(x.x)
 Base.isprint(x::CharWithOptions) = isprint(x.x)
 
@@ -67,9 +68,9 @@ end
 
 Base.print(io::IO, x::CharWithOptions) =
     print(io,x.x)
-Base.isless(x::CharWithOptions,y) = isless(x.x,y)
-Base.isless(x,y::CharWithOptions) = isless(x,y.x)
-(==)(x::CharWithOptions,y) = x.x==y
+Base.isless(x::CharWithOptions,y::AbstractChar) = isless(x.x,y)
+Base.isless(x::AbstractChar,y::CharWithOptions) = isless(x,y.x)
+(==)(x::CharWithOptions,y::AbstractChar) = x.x==y
 
 import ..CombinedParsers: ismatch, _ismatch
 
