@@ -266,7 +266,7 @@ ValueNotIn{Char}(chars::AbstractString) =
 
 
 
-_regex_backect(x) =
+_regex_bracket(x) =
     iostring(_print_bracket,x)
 
 ElementIterators = Union{<:Vector,<:Tuple,<:StepRange,<:Set,<:AbstractString,<:AbstractSet}
@@ -276,16 +276,16 @@ function flatten_valuepatterns!(x,
                                 otherstuff = Any[])
     for e in x
         if e isa ConstantParser{<:AbstractChar}
-            label = label*_regex_backect(e.parser)
+            label = label*_regex_bracket(e.parser)
             push!(charset, e.parser)
         elseif e isa AbstractChar
-            label = label*_regex_backect(e)
+            label = label*_regex_bracket(e)
             push!(charset, e)
         elseif e isa ElementIterators
             #@info "flatten" typeof(x) x
             label2, charset, otherstuff = flatten_valuepatterns!(e, label, charset, otherstuff)
             label = if e isa StepRange
-                label*_regex_backect(e)
+                label*_regex_bracket(e)
             else
                 label2
             end
@@ -301,7 +301,7 @@ function flatten_valuepatterns!(x,
             end
             label = label * e.pcre
         elseif e isa Union{<:Function,<:UnicodeClass,<:ValueNotIn}
-            label = label*_regex_backect(e)
+            label = label*_regex_bracket(e)
             push!(otherstuff, e)
         else
             error(e)
