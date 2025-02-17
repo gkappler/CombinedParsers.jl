@@ -209,6 +209,8 @@ export substitute
 struct Substitution<:CombinedParser
     name::Symbol
 end
+print_regex(io::IO, s::Substitution) =
+    printstyled(io,"\\", s.name)
 state_type(::Type{Substitution}) =
     Nothing
 """
