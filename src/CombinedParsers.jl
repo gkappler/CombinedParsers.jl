@@ -81,7 +81,7 @@ end
 See also [`parse`](@ref).
 """
 (x::CombinedParser)(str;kw...) = parse(x,str;kw...)
-(x::CombinedParser)(prefix,str;kw...) = parse(Sequence(2,prefix,x),str;kw...)
+(x::CombinedParser)(prefix,str;kw...) = parse(map(IndexAt(2),Sequence(prefix,x)),str;kw...)
 (x::CombinedParser)(f::Function,a...;kw...) = map(f,x,a...;kw...)
 
 """
@@ -703,13 +703,8 @@ mSequence(transform::Function, a...; kw...) =
 
 
 mSequence(transform::Integer,tokens...; kw...) =
-    mSequence(Val{transform}(),parser.(tokens)...; kw...)
+    map(IndexAt(transform),Sequence(tokens...; kw...))
 
-function mSequence(::Val{transform},tokens...; kw...) where {transform}
-    s = Sequence(tokens...)
-    map(v -> v[transform], s; kw...)
-    # map(IndexAt(transform), s)
-end
 
 function _sSequence(x, r::Vector{CombinedParser} = CombinedParser[])
     if x isa Sequence
@@ -763,7 +758,7 @@ result_type(p::Sequence, sequence; kw...)  =
 
 `Tuple` type, internally used for `Sequence` result_type.
 """
-sequence_result_type(parts::Tuple, sequence; kw...) =
+sequence_result_type(parts, sequence; kw...) =
     Tuple{ (result_type(p, sequence; kw...) for p in parts)... }
 
 isliteralsequence(c::ConstantParser) = true
@@ -789,9 +784,7 @@ function state_type(::Type{<:Sequence{pts}}) where {pts <: Tuple}
         Tuple{(state_type(p) for p in fieldtypes(pts))...}
     end
 end
-state_type(::Type{<:Sequence{Vector{P}}}) where P =
-    Vector{state_type(P)}
-state_type(::Type{Sequence{Any}}) =
+state_type(::Type{<:Sequence{<:AbstractVector{P}}}) where P =
     Vector{Any}
 
 
