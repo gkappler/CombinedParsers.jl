@@ -1,4 +1,4 @@
-
+@nospecialize
 # unambigously
 Base.convert(::Type{CombinedParser},x::CombinedParser) =
     x
@@ -38,3 +38,4 @@ See also: [`@with_names`](@ref), [`with_name`](@ref), [`log_names`](@ref)
 """
 parser(x::Pair{Symbol}) =
     NamedParser(x.first, parser(x.second))
+@specialize

@@ -1,23 +1,13 @@
 
 
 # Failed PCRE Tests
-18 failed tests on 10 patterns.
+19 failed tests on 11 patterns.
 
 
 
 ## Skipped
-12 patterns were skipped for the following reasons:
+9 patterns were skipped for the following reasons:
 
-
----
-
-
-(no 69) skipped, because of very long compile time. The complex pattern parses email adresses
-
----
-
-
-(no 70) skipped, because of very long compile time. The complex pattern parses email adresses
 
 ---
 
@@ -122,11 +112,6 @@ parse(r"(|\1xxx)+", "xxx")
 
 
 
----
-
-
-(no 1173) skipped, because of very long compile time. The complex pattern parses PCRE regex syntax.
-
 
 ## Failed tests
 
@@ -207,6 +192,13 @@ parse(r"(|\1xxx)+", "xxx")
 /(?(R)a+|(?R)b)/
 ```
 (no 918) failed  0 of 0 times:
+
+---
+
+```
+/(?(R)a+|((?R))b)/
+```
+(no 919) failed  0 of 0 times:
 
 ---
 

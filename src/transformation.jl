@@ -305,7 +305,6 @@ Base.map(f::typeof(identity), p::CombinedParser) = p
 @deprecate map(T::Type, f::Function, p::CombinedParser, a...) map(f,T,p,a...)
 @deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
 
-@specialize
 
 
 """
@@ -333,5 +332,3 @@ function infer_result_type(f,Tc::Type,p::CombinedParser, sequence, onerror::Abst
         Tc
     end
 end
-@nospecialize
-@specialize

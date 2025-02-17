@@ -218,7 +218,7 @@ function iterate_state(parser::Sequence, sequence, till, posi, next_i, substate:
 end
 
 # unambigously
-@generated function iterate_state(parser::Sequence{pts}, sequence, till, posi, next_i, states::MatchState) where {pts<:Tuple}
+@generated function iterate_state(parser::Sequence{<:Tuple}, sequence, till, posi, next_i, states::MatchState) 
     nothing
 end
 

@@ -1,5 +1,5 @@
 # PCRE Compliance
-3080 successful tests on 978 patterns.
+3098 successful tests on 980 patterns.
 
 
 
@@ -832,6 +832,812 @@
 (no 68) succeeded 1 of 1 times:
 
 - ✅ `aabbbbb`
+
+---
+
+```
+/  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*                          # optional leading comment
+(?:    (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+" (?:                      # opening quote...
+[^\\\x80-\xff\n\015"]                #   Anything except backslash and quote
+|                     #    or
+\\ [^\x80-\xff]           #   Escaped something (something != CR)
+)* "  # closing quote
+)                    # initial word
+(?:  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  \.  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*   (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+" (?:                      # opening quote...
+[^\\\x80-\xff\n\015"]                #   Anything except backslash and quote
+|                     #    or
+\\ [^\x80-\xff]           #   Escaped something (something != CR)
+)* "  # closing quote
+)  )* # further okay, if led by a period
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  @  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*    (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                           # initial subdomain
+(?:                                  #
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  \.                        # if led by a period...
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*   (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                     #   ...further okay
+)*
+# address
+|                     #  or
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+" (?:                      # opening quote...
+[^\\\x80-\xff\n\015"]                #   Anything except backslash and quote
+|                     #    or
+\\ [^\x80-\xff]           #   Escaped something (something != CR)
+)* "  # closing quote
+)             # one word, optionally followed by....
+(?:
+[^()<>@,;:".\\\[\]\x80-\xff\000-\010\012-\037]  |  # atom and space parts, or...
+\(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)       |  # comments, or...
+
+" (?:                      # opening quote...
+[^\\\x80-\xff\n\015"]                #   Anything except backslash and quote
+|                     #    or
+\\ [^\x80-\xff]           #   Escaped something (something != CR)
+)* "  # closing quote
+# quoted strings
+)*
+<  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*                     # leading <
+(?:  @  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*    (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                           # initial subdomain
+(?:                                  #
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  \.                        # if led by a period...
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*   (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                     #   ...further okay
+)*
+
+(?:  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  ,  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  @  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*    (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                           # initial subdomain
+(?:                                  #
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  \.                        # if led by a period...
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*   (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                     #   ...further okay
+)*
+)* # further okay, if led by comma
+:                                # closing colon
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  )? #       optional route
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+" (?:                      # opening quote...
+[^\\\x80-\xff\n\015"]                #   Anything except backslash and quote
+|                     #    or
+\\ [^\x80-\xff]           #   Escaped something (something != CR)
+)* "  # closing quote
+)                    # initial word
+(?:  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  \.  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*   (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+" (?:                      # opening quote...
+[^\\\x80-\xff\n\015"]                #   Anything except backslash and quote
+|                     #    or
+\\ [^\x80-\xff]           #   Escaped something (something != CR)
+)* "  # closing quote
+)  )* # further okay, if led by a period
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  @  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*    (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                           # initial subdomain
+(?:                                  #
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  \.                        # if led by a period...
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*   (?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|   \[                         # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*    #    stuff
+\]                        #           ]
+)                     #   ...further okay
+)*
+#       address spec
+(?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*  > #                  trailing >
+# name and address
+)  (?: [\040\t] |  \(
+(?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
+\)  )*                       # optional trailing comment
+/x
+```
+(no 69) succeeded 8 of 8 times:
+
+- ✅ `Alan Other <user@dom.ain>`
+- ✅ `<user@dom.ain>`
+- ✅ `user@dom.ain`
+- ✅ `\"A. Other\" <user.1234@dom.ain> (a comment)`
+- ✅ `A. Other <user.1234@dom.ain> (a comment)`
+- ✅ `\"/s=user/ou=host/o=place/prmd=uu.yy/admd= /c=gb/\"@x400-re.lay`
+- ✅ `A missing angle <user@some.where`
+- ✅ `The quick brown fox` no match
+
+---
+
+```
+/[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional leading comment
+(?:
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+# Atom
+|                       #  or
+"                                     # "
+[^\\\x80-\xff\n\015"] *                            #   normal
+(?:  \\ [^\x80-\xff]  [^\\\x80-\xff\n\015"] * )*        #   ( special normal* )*
+"                                     #        "
+# Quoted string
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+\.
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+# Atom
+|                       #  or
+"                                     # "
+[^\\\x80-\xff\n\015"] *                            #   normal
+(?:  \\ [^\x80-\xff]  [^\\\x80-\xff\n\015"] * )*        #   ( special normal* )*
+"                                     #        "
+# Quoted string
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# additional words
+)*
+@
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+(?:
+\.
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+)*
+# address
+|                             #  or
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+# Atom
+|                       #  or
+"                                     # "
+[^\\\x80-\xff\n\015"] *                            #   normal
+(?:  \\ [^\x80-\xff]  [^\\\x80-\xff\n\015"] * )*        #   ( special normal* )*
+"                                     #        "
+# Quoted string
+)
+# leading word
+[^()<>@,;:".\\\[\]\x80-\xff\000-\010\012-\037] *               # "normal" atoms and or spaces
+(?:
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+|
+"                                     # "
+[^\\\x80-\xff\n\015"] *                            #   normal
+(?:  \\ [^\x80-\xff]  [^\\\x80-\xff\n\015"] * )*        #   ( special normal* )*
+"                                     #        "
+) # "special" comment or quoted string
+[^()<>@,;:".\\\[\]\x80-\xff\000-\010\012-\037] *            #  more "normal"
+)*
+<
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# <
+(?:
+@
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+(?:
+\.
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+)*
+(?: ,
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+@
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+(?:
+\.
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+)*
+)*  # additional domains
+:
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+)?     #       optional route
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+# Atom
+|                       #  or
+"                                     # "
+[^\\\x80-\xff\n\015"] *                            #   normal
+(?:  \\ [^\x80-\xff]  [^\\\x80-\xff\n\015"] * )*        #   ( special normal* )*
+"                                     #        "
+# Quoted string
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+\.
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+# Atom
+|                       #  or
+"                                     # "
+[^\\\x80-\xff\n\015"] *                            #   normal
+(?:  \\ [^\x80-\xff]  [^\\\x80-\xff\n\015"] * )*        #   ( special normal* )*
+"                                     #        "
+# Quoted string
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# additional words
+)*
+@
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+(?:
+\.
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]+    # some number of atom characters...
+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff]) # ..not followed by something that could be part of an atom
+|
+\[                            # [
+(?: [^\\\x80-\xff\n\015\[\]] |  \\ [^\x80-\xff]  )*     #    stuff
+\]                           #           ]
+)
+[\040\t]*                    # Nab whitespace.
+(?:
+\(                              #  (
+[^\\\x80-\xff\n\015()] *                             #     normal*
+(?:                                 #       (
+(?:  \\ [^\x80-\xff]  |
+\(                            #  (
+[^\\\x80-\xff\n\015()] *                            #     normal*
+(?:  \\ [^\x80-\xff]   [^\\\x80-\xff\n\015()] * )*        #     (special normal*)*
+\)                           #                       )
+)    #         special
+[^\\\x80-\xff\n\015()] *                         #         normal*
+)*                                  #            )*
+\)                             #                )
+[\040\t]* )*    # If comment found, allow more spaces.
+# optional trailing comments
+)*
+#       address spec
+>                    #                 >
+# name and address
+)
+/x
+```
+(no 70) succeeded 8 of 8 times:
+
+- ✅ `Alan Other <user@dom.ain>`
+- ✅ `<user@dom.ain>`
+- ✅ `user@dom.ain`
+- ✅ `\"A. Other\" <user.1234@dom.ain> (a comment)`
+- ✅ `A. Other <user.1234@dom.ain> (a comment)`
+- ✅ `\"/s=user/ou=host/o=place/prmd=uu.yy/admd= /c=gb/\"@x400-re.lay`
+- ✅ `A missing angle <user@some.where`
+- ✅ `The quick brown fox` no match
 
 ---
 

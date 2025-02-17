@@ -134,6 +134,7 @@ function Base.get(parser::PositiveLookbehind, sequence, till, after, i, state)
     get(parser.parser, rseq, till, after_, reverse_index(rseq,prevind(sequence, i)), tuple_state(state))
 end
 
+@nospecialize
 reversed(x::CombinedParser) = deepmap_parser(_reversed, x)
 _reversed(x::ConstantParser{<:AbstractString}) =
     ConstantParser(reversed(x.parser))
@@ -160,3 +161,4 @@ _deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::PositiveLookbehind) =
     PositiveLookahead(x.parser) ##deepmap_parser(reversed,x.parser))
 _deepmap_parser(::typeof(_reversed),mem::AbstractDict,x::PositiveLookahead) =
     PositiveLookbehind(x.parser) ##deepmap_parser(reversed,x.parser))
+@specialize

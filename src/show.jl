@@ -66,7 +66,6 @@ function Base.show(io::IO, x::CombinedParser)
     end
 end
 
-## pcre
 export regex_string
 regex_string(x; kw...) =
     iostring(print_regex,x; kw...)
@@ -159,7 +158,6 @@ print_regex(io::IO, x::AnyValue; kw...) =
 
 needs_parens(parent::WrappedParser) = needs_parens(parent,parent.parser)
 needs_parens(parent::WrappedAssertion) = needs_parens(parent,parent.parser)
-#needs_parens(parent::Optional, x::) = ("(",")")
 needs_parens(parent::WrappedParser, x) = ("","",tree_color(parent))
 needs_parens(x::Atomic, c; kw...) = ("(?>",")",tree_color(x))
 needs_parens(x::Transformation, c::ConstantParser; kw...) =

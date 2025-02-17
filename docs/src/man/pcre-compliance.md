@@ -34,10 +34,10 @@ The PCRE test output is
 
 (Note: tests are relaxed for some cases allowing empty captures (`""`) for unset captures (`nothing`).
 
-3080 successful tests on 978 patterns
+3098 successful tests on 980 patterns
 (See [list of compliant patterns](pcre-compliance-succeeded.md)).
 
-18 failed tests on 10 patterns
+19 failed tests on 11 patterns
 (See [list of failed patterns](pcre-compliance-failed.md)).
 
 252 unsupported patterns were omitted for the following reasons:
@@ -48,7 +48,7 @@ The PCRE test output is
 - `SKIP` excluded 29 patterns.
 - `THEN` excluded 50 patterns.
 - `\K` excluded 13 patterns.
-- `checking for pattern recursion` excluded 6 patterns.
+- `checking for pattern recursion` excluded 5 patterns.
 - `options aftertext` excluded 12 patterns.
 - `options g` excluded 5 patterns.
 - `options g,aftertext` excluded 7 patterns.
@@ -57,6 +57,7 @@ The PCRE test output is
 - `options imsx,mark` excluded 2 patterns.
 - `options mark` excluded 38 patterns.
 - `options mark,no_start_optimize` excluded 1 patterns.
+- `options subject_literal,jitstack=256` excluded 1 patterns.
 - `options x,mark` excluded 13 patterns.
 
 

@@ -88,3 +88,4 @@ end
 #     interned::I
 #     parser::E
 # end
+can_collapse(x::AbstractTrie) = false #length(children(x)) <= 1

@@ -161,16 +161,16 @@ unicode_abbrev = Dict([ v[3]=>k for (k,v) in CombinedParsers.unicode_class])
 unicode_classes = Dict(unicode_class...)
 
 
-function in_any(x,sets)
-    for s in sets
-        x in s && return true
-    end
-    return false
-end
-
 export UnicodeClass
 struct UnicodeClass{I}
     class::I    
+end
+
+function Base.show(io::IO, x::UnicodeClass)
+    #@info "?" unicode_abbrev x.class
+    for c in x.class
+        print(io, unicode_abbrev[c])
+    end
 end
 
 """
@@ -242,6 +242,12 @@ UnicodeClass(abbrev::String...) =
     UnicodeClass((Symbol(a) for a in abbrev)...)
 _ismatch(x::Char, set::UnicodeClass{<:Tuple})::Bool =
     in_any(Base.Unicode.category_code(x),set.class)
+function in_any(x,sets)
+    for s in sets
+        x in s && return true
+    end
+    return false
+end
 _ismatch(x::Char, set::UnicodeClass)::Bool =
     in(Base.Unicode.category_code(x),set.class)
 
