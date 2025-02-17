@@ -16,7 +16,7 @@ import ..CombinedParsers: Repeat_max, _integer, integer
 skip_whitespace_on(flags, wrap=identity) =
     on_options(
         flags,
-        wrap(CharIn(whitespace_char(),'\n'))=>Always())
+        wrap(CharIn(whitespace_char,'\n'))=>Always())
 
 make_control(c) =
     let ui=UInt32(uppercase(c))
@@ -34,174 +34,181 @@ struct UnsupportedError <: Exception
 end
 Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax ",e.message)
 
-pcre_boundaries() =
-    with_name(:pcre_boundaries,
-              mSequence(2,
-                        '\\',
-                        Either(
-                            'A' => AtStart(),
-                            map(parser('G')) do v
-                                @warn "limited \\G support: ignoring pcre2 startoffset"
-                                AtStart()
-                            end,
-                            'z' => AtEnd(),
-                            'Z' => PositiveLookahead(Sequence(Optional(bsr(), default=missing),AtEnd())),
-                            'b' => word_boundary(),
-                            'B' => NegativeLookahead(word_boundary())
-                        )))
+const pcre_boundaries =
+    with_name(
+        :pcre_boundaries,
+        mSequence(2,
+                  '\\',
+                  Either(
+                      'A' => AtStart(),
+                      map(parser('G')) do v
+                          @warn "limited \\G support: ignoring pcre2 startoffset"
+                          AtStart()
+                      end,
+                      'z' => AtEnd(),
+                      'Z' => PositiveLookahead(Sequence(Optional(bsr, default=missing),AtEnd())),
+                      'b' => word_boundary,
+                      'B' => NegativeLookahead(word_boundary)
+                  )))
 
-escaped_character() = 
-    with_name(:escaped_character,
-              mSequence(2, '\\',
-                        Either(
-                            'a' => ('\a'), # alarm, that is, the BEL character (hex 07)
-                            mSequence('c',AnyChar()) do v  # \cx "control-x", where x is any ASCII character
-                                make_control(v[2])
-                            end,
-                            'e' => '\e',   #  escape (hex 1B)
-                            'f' => '\f',   #  form feed (hex 0C)
-                            'n' => '\n',   #  linefeed (hex 0A)
-                            'r' => '\r',   #  carriage return (hex 0D)
-                            't' => '\t',   #  tab (hex 09)
-                            '"' => '"',
-                            #   \0dd      character with octal code 0dd
-                            mSequence('0',integer_base(8,0,2)) do v; Char(v[2]); end,
-                            #   \ddd      character with octal code ddd, or back reference
-                            ## Sequence(integer_base(8,3,3), transform=v->(Char(v[1]))),
-                            ## see backreference, if a capture with number (in decimal) is defined
-                            #   \o{ddd..} character with octal code ddd..
-                            mSequence('o','{',integer_base(8),'}') do v; Char(v[3]); end,
-                            #   \x{hhh..} character with hex code hhh.. (non-JavaScript mode)
-                            mSequence('x','{',integer_base(16),'}') do v; Char(v[3]); end,
-                            #   \xhh      character with hex code hh
-                            mSequence('x',integer_base(16,0,2)) do v; Char(v[2]); end,
-                            #   \uhhhh    character with hex code hhhh (JavaScript mode only)
-                            mSequence('u',integer_base(16,4,4)) do v; Char(v[2]); end,
-                            CharNotIn('Q','E')
-                        )))
+const escaped_character = 
+    with_name(
+        :escaped_character,
+        mSequence(
+            2, '\\',
+            Either(
+                'a' => ('\a'), # alarm, that is, the BEL character (hex 07)
+                mSequence('c',AnyChar()) do v  # \cx "control-x", where x is any ASCII character
+                    make_control(v[2])
+                end,
+                'e' => '\e',   #  escape (hex 1B)
+                'f' => '\f',   #  form feed (hex 0C)
+                'n' => '\n',   #  linefeed (hex 0A)
+                'r' => '\r',   #  carriage return (hex 0D)
+                't' => '\t',   #  tab (hex 09)
+                '"' => '"',
+                #   \0dd      character with octal code 0dd
+                mSequence('0',integer_base(8,0,2)) do v; Char(v[2]); end,
+                #   \ddd      character with octal code ddd, or back reference
+                ## Sequence(integer_base(8,3,3), transform=v->(Char(v[1]))),
+                ## see backreference, if a capture with number (in decimal) is defined
+                #   \o{ddd..} character with octal code ddd..
+                mSequence('o','{',integer_base(8),'}') do v; Char(v[3]); end,
+                #   \x{hhh..} character with hex code hhh.. (non-JavaScript mode)
+                mSequence('x','{',integer_base(16),'}') do v; Char(v[3]); end,
+                #   \xhh      character with hex code hh
+                mSequence('x',integer_base(16,0,2)) do v; Char(v[2]); end,
+                #   \uhhhh    character with hex code hhhh (JavaScript mode only)
+                mSequence('u',integer_base(16,4,4)) do v; Char(v[2]); end,
+                CharNotIn('Q','E')
+            )))
 
 
 
-skip_whitespace_and_comments() =
-    with_name(:skip_whitespace_and_comments,
-              mRepeat(Either(
-                  skip_whitespace_on(
-                      Base.PCRE.EXTENDED),
-                  ## comment
-                  on_options(
-                      Base.PCRE.EXTENDED,
-                      with_name(
-                          :comment_extended,
-                          mSequence('#',Repeat(whitespace_char()),
-                                    Repeat_until(
-                                        AnyChar(),
-                                        Sequence(Repeat(whitespace_char()),Either(bsr(),AtEnd())),
-                                        wrap = MatchedSubSequence
-                                    )) do v
-                                        with_log(v[3],Always())
-                                    end
-                      )),
-                  with_name(
-                      :comment,
-                      mSequence(
-                          "(?#",Repeat(whitespace_char()),
-                          Repeat_until(
-                              AnyChar(),
-                              Sequence(Repeat(whitespace_char()),')'),
-                              wrap = MatchedSubSequence
-                          )) do v
-                              with_log(v[3],Always())
-                          end))) do v
-                              [a for a in v if !isa(a,Always)]
-                          end);
+const skip_whitespace_and_comments =
+    with_name(
+        :skip_whitespace_and_comments,
+        mRepeat(Either(
+            skip_whitespace_on(
+                Base.PCRE.EXTENDED),
+            ## comment
+            on_options(
+                Base.PCRE.EXTENDED,
+                with_name(
+                    :comment_extended,
+                    mSequence('#',Repeat(whitespace_char),
+                              Repeat_until(
+                                  AnyChar(),
+                                  Sequence(Repeat(whitespace_char),
+                                           Either(bsr,AtEnd())),
+                                  wrap = MatchedSubSequence
+                              )) do v
+                                  with_log(v[3],Always())
+                              end
+                )),
+            with_name(
+                :comment,
+                mSequence(
+                    "(?#",Repeat(whitespace_char),
+                    Repeat_until(
+                        AnyChar(),
+                        Sequence(Repeat(whitespace_char),')'),
+                        wrap = MatchedSubSequence
+                    )) do v
+                        with_log(v[3],Always())
+                    end))) do v
+                        [a for a in v if !isa(a,Always)]
+                    end);
 
 escape_sequence(stop=AtEnd()) =
     with_name(:escape_sequence, mSequence(2,"\\Q",
-              Repeat_until(AnyChar(),
-                           Either("\\E",PositiveLookahead(stop)),
-                           wrap=MatchedSubSequence));)
+                                          Repeat_until(AnyChar(),
+                                                       Either("\\E",PositiveLookahead(stop)),
+                                                       wrap=MatchedSubSequence));)
 
-name() = with_name(
+const name = with_name(
     :name,
     MatchedSubSequence(
         Sequence(CharIn('a':'z','A':'Z','_'),
                  Repeat(CharIn('0':'9','a':'z','A':'Z','_')))))
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
-backreference() = with_name(:backreference,map(
+const backreference = with_name(:backreference,map(
     Either(
         mSequence(2,'\\',Either(
             _integer(3), ## todo: maybe octal char
             mSequence(2,'g',_integer(3)),
             mSequence(2,"g{",_integer(3),'}'),
-            mSequence(2,"g{",name(),'}'),
-            mSequence(2,"k<",name(),'>'),  # perl
-            mSequence(2,"k'",name(),'\''), # 
+            mSequence(2,"g{",name,'}'),
+            mSequence(2,"k<",name,'>'),  # perl
+            mSequence(2,"k'",name,'\''), # 
         )),
-        mSequence(2,"(?P=",name(),')'))) do v
-                            Backreference(v) do
-                                ## todo: backreference, if a capture with number (in decimal) is defined,
-                                ## escaped_character otherwise (if name/index not found)
-                                #   \ddd      character with octal code ddd, or back reference
-                                ## todo: error on \g<ddd>
-                                v isa Integer || error("capture group $v not found!")
-                                parse(mSequence(integer_base(8,1,3),
-                                                Repeat(AnyChar())) do v
-                                                    sSequence(parser(Char(v[1])),
-                                                              v[2]...)
-                                                end,
-                                      "$v")
-                            end
-                            end);
+        mSequence(2,"(?P=",name,')'))) do v
+                                Backreference(v) do
+                                    ## todo: backreference, if a capture with number (in decimal) is defined,
+                                    ## escaped_character otherwise (if name/index not found)
+                                    #   \ddd      character with octal code ddd, or back reference
+                                    ## todo: error on \g<ddd>
+                                    v isa Integer || error("capture group $v not found!")
+                                    parse(mSequence(integer_base(8,1,3),
+                                                    Repeat(AnyChar())) do v
+                                                        sSequence(parser(Char(v[1])),
+                                                                  v[2]...)
+                                                    end,
+                                          "$v")
+                                end
+                                end);
 
-
-char(meta_chars = raw"\^$.[|()?*+{") =
+const char = let meta_chars = raw"\^$.[|()?*+{"
     mEither(
         CharNotIn(meta_chars),
         mSequence(2,'\\', CharIn(meta_chars))) do v
             convert(CombinedParser,v)
         end
+end
 
-generic_character_type() =
-    with_name(:generic_character_type,
-              mSequence(2,
-                        '\\', Either(
-                            Either(
-                                # "any decimal digit"),
-                                'd' => CharIn("\\d",'0':'9'),
-                                # "any character that is not a decimal digit"),
-                                'D' => CharNotIn("\\D",'0':'9'),
-                                # "any horizontal white space character"),
-                                'h' => CharIn("\\h",horizontal_space_char()),
-                                # "any character that is not a horizontal white space character"),
-                                'H' => CharNotIn("\\H",horizontal_space_char()),
-                                # "any white space character"),
-                                's' => CharIn("\\s",horizontal_space_char(),vertical_space_char()),
-                                # "any character that is not a white space character"),
-                                'S' => CharNotIn("\\S",horizontal_space_char(),vertical_space_char()),
-                                # "any vertical white space character"),
-                                'v' => CharIn("\\v",vertical_space_char()),
-                                # "any character that is not a vertical white space character"),
-                                'V' => CharNotIn("\\V",vertical_space_char()),
-                                # "any "word" character"),
-                                'w' => word_char(),
-                                # "any "non-word" character"),
-                                'W' => non_word_char(),
-                            ),
-                            mSequence(2,"p{",
-                                      Either(Dict(string(k)=>CharIn("\\p{$k}",UnicodeClass(v[3]))
-                                                  for (k,v) in CombinedParsers.unicode_classes)) ,
-                                      '}')
-                        )));
+const generic_character_type =
+    with_name(
+        :generic_character_type,
+        mSequence(
+            2,
+            '\\', Either(
+                Either(
+                    # "any decimal digit"),
+                    'd' => CharIn("\\d",'0':'9'),
+                    # "any character that is not a decimal digit"),
+                    'D' => CharNotIn("\\D",'0':'9'),
+                    # "any horizontal white space character"),
+                    'h' => CharIn("\\h",horizontal_space_char),
+                    # "any character that is not a horizontal white space character"),
+                    'H' => CharNotIn("\\H",horizontal_space_char),
+                    # "any white space character"),
+                    's' => CharIn("\\s",horizontal_space_char,vertical_space_char),
+                    # "any character that is not a white space character"),
+                    'S' => CharNotIn("\\S",horizontal_space_char,vertical_space_char),
+                    # "any vertical white space character"),
+                    'v' => CharIn("\\v",vertical_space_char),
+                    # "any character that is not a vertical white space character"),
+                    'V' => CharNotIn("\\V",vertical_space_char),
+                    # "any "word" character"),
+                    'w' => word_char,
+                    # "any "non-word" character"),
+                    'W' => non_word_char,
+                ),
+                mSequence(2,"p{",
+                          Either(Dict(string(k)=>CharIn("\\p{$k}",UnicodeClass(v[3]))
+                                      for (k,v) in CombinedParsers.unicode_classes)) ,
+                          '}')
+            )));
 
-@with_names character_class = 
+const character_class = 
     Either([
         "alpha" => CharIn(UnicodeClass("L")),
         "lower" => CharIn(UnicodeClass("Ll")),
         "upper" => CharIn(UnicodeClass("Lu")),
         "word"  => CharIn(UnicodeClass("L","Nl","Nd","Pc")),
         "digit" => CharIn(UnicodeClass("Nd")),
-        "xdigit" => hex_digit(),
+        "xdigit" => hex_digit,
         "alnum" => CharIn(UnicodeClass("L","N")), # Xan
         "blank" => CharIn(UnicodeClass("Zs"),'\t'),
         "cntrl" => CharIn(UnicodeClass("Cc")),
@@ -213,7 +220,7 @@ generic_character_type() =
 
 
 
-bracket_char() = let bracket_meta_chars = raw"]\^-"
+const bracket_char = let bracket_meta_chars = raw"]\^-"
     with_name(:bracket_char,
               Either(
                   CharNotIn(bracket_meta_chars),
@@ -221,21 +228,20 @@ bracket_char() = let bracket_meta_chars = raw"]\^-"
                   mSequence('\\',integer_base(8,1,3)) do v
                       Char(v[2])
                   end,
-                  escaped_character()
+                  escaped_character
               ))
 end;
 
 # https://www.regular-expressions.info/posixbrackets.html#class
 # todo: set pcre string of CharIn/CharNotIn when multi-transform is implemented
-function pcre_bracket()
-
+const pcre_bracket = begin 
     bracket_range(start) =
         with_name(:char_range,
                   mSequence(start,
                             skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
                             '-',
                             skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
-                            bracket_char()) do v
+                            bracket_char) do v
                                 if v[1] isa CharWithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
                                     cs = convert(Char,v[1]):convert(Char,v[5])
                                     CharIn("$(v[1])-$(v[5])",unique([ ( lowercase(x) for x in cs )...,
@@ -257,9 +263,9 @@ function pcre_bracket()
                       skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat) => Never(),
                       "\\E" => Never(),
                       map(v->CharIn(v),escape_sequence()),
-                      generic_character_type(),
-                      bracket_range(bracket_char()),
-                      map(v->convert(CombinedParser,v),bracket_char()),
+                      generic_character_type,
+                      bracket_range(bracket_char),
+                      map(v->convert(CombinedParser,v),bracket_char),
                       '^'=>'^',
                       '-'=>'-'))
                   , ']') do v
@@ -274,7 +280,7 @@ function pcre_bracket()
               )
 end
 
-repetitions() =
+const repetitions =
     with_name(:repetition, Either(
         '+' => 1:Repeat_max,
         '*' => 0:Repeat_max,
@@ -299,16 +305,16 @@ throw_unsupported(p) =
     map(String, map(v -> throw(UnsupportedError(v)), p))
 throw_unsupported(p,s) =
     map(String, map(v -> throw(UnsupportedError(s)), p));
-    
+
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
 quantified(repeatable) =
     with_name(:quantified,
               map(
                   Sequence(
                       repeatable,
-                      skip_whitespace_and_comments(), ## for test 1130, preserve in map?
-                      Optional(repetitions(), default=1:1),
-                      skip_whitespace_and_comments(),
+                      skip_whitespace_and_comments, ## for test 1130, preserve in map?
+                      Optional(repetitions, default=1:1),
+                      skip_whitespace_and_comments,
                       Optional(CharIn('+','?')), # possessive quantifier, strip option
                   )) do v
                       pat = sSequence(v[1],v[2]...)
@@ -332,7 +338,7 @@ quantified(repeatable) =
 
 
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC27
-backtrack_control() =
+const backtrack_control =
     with_name(:backtrack_control,
               mSequence(
                   2,"(*",
@@ -369,7 +375,7 @@ function alternation(sequence)
                              end);
 
     @with_names options_alternations = after(
-        Sequence("(?",pcre_options(),NegativeLookahead(':'),Optional(')')),
+        Sequence("(?",pcre_options,NegativeLookahead(':'),Optional(')')),
         Vector{CombinedParser}) do l
             #@show l
             set_options(l[2]..., l[3] === missing ?  mSequence(1, alternations,')') : alternations)
@@ -399,7 +405,7 @@ end
 # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC18
 function in_parentheses(sequence)
 
-    lookahead() =
+    lookahead =
         with_name(:lookahead,
                   Either(mSequence(v -> Lookahead(true,Atomic(v[2]))::CombinedParser,
                                    Either("?=","*positive_lookahead:","*pla:"),alternation(sequence)),
@@ -410,7 +416,7 @@ function in_parentheses(sequence)
 
 
 
-    lookbehind()=
+    lookbehind=
         with_name(
             :lookbehind,Either(mSequence(v -> Lookbehind(true,Atomic(v[2]))::CombinedParser,
                                          Either("?<=","*positive_lookbehind:","*plb:"),alternation(sequence)),
@@ -426,9 +432,9 @@ function in_parentheses(sequence)
                       end),
             with_name(:captured,
                       mSequence(
-                          Either(mSequence(2,"?<",name(),'>'),
-                                 mSequence(2,"?P<",name(),'>'),
-                                 mSequence(2,"?'",name(),"'"),
+                          Either(mSequence(2,"?<",name,'>'),
+                                 mSequence(2,"?P<",name,'>'),
+                                 mSequence(2,"?'",name,"'"),
                                  ""),
                           alternation(sequence)) do v
                               with_name(v[1],Capture(Symbol(v[1]),v[2]))::CombinedParser
@@ -436,8 +442,8 @@ function in_parentheses(sequence)
             with_name(
                 :subpattern,
                 mSequence(2,"?:",alternation(sequence))),
-            lookahead(),
-            lookbehind(),
+            lookahead,
+            lookbehind,
 
             # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
             with_name(
@@ -448,7 +454,7 @@ function in_parentheses(sequence)
                                      integer()) do v
                                          Subroutine(nothing,Symbol(v[1]),v[2])
                                      end,
-                           mSequence(Either('&',"P>"), name()) do v 
+                           mSequence(Either('&',"P>"), name) do v 
                                Subroutine(Symbol(v[2]),Symbol(""),-1)
                            end))),
             with_name(
@@ -476,16 +482,16 @@ function in_parentheses(sequence)
                                             'R', ## TODO
                                             Either(
                                                 integer(),
-                                                mSequence(2,'&',name()),
+                                                mSequence(2,'&',name),
                                                 Always())), 
                                         "checking for pattern recursion"),
-                                    mSequence(2,'\'',name(),'\''),
-                                    mSequence(2,'<',name(),'>'),
-                                    name()),
+                                    mSequence(2,'\'',name,'\''),
+                                    mSequence(2,'<',name,'>'),
+                                    name),
                                 ')'),
-                            mSequence(2,"(",lookbehind(),")"),
-                            mSequence(2,"(",lookahead(),")"))
-                              ),
+                            mSequence(2,"(",lookbehind,")"),
+                            mSequence(2,"(",lookahead,")"))
+                    ),
                     sequence,
                     Optional(mSequence(2,"|",sequence), default=Always()))) do v
                         c = v[2]
@@ -507,14 +513,14 @@ function in_parentheses(sequence)
             with_name(
                 :sequence_with_options,
                 after(
-                    mSequence(2,'?',pcre_options(),':'),CombinedParser) do v
+                    mSequence(2,'?',pcre_options,':'),CombinedParser) do v
                         set_options(v..., alternation(sequence))
                     end)),
         ")")
 end
 
 splat_or(v) = (isempty(v) ? 0x00000000 : (|(v...)))::UInt32
-function pcre_option_char()
+const  pcre_option_char = begin
     @with_names pcre_option = 
         Either(
             # with_name(:MARK, "mark" => UInt32(0)),
@@ -554,24 +560,24 @@ end
 # option setting. This is because the effects of option
 # settings happen at compile time. There would be some
 # very weird behaviour otherwise."
-pcre_options() = with_name(:pcre_options, 
-    Atomic(Either(mSequence(Optional('^'),
-                     Either(Sequence(pcre_option_char(),
-                                     Optional(mSequence(2, '-',pcre_option_char()), default=UInt32(0))),
-                            mSequence(Tuple{UInt32,UInt32},'-',pcre_option_char()) do v
-                                (UInt32(0),v[2])
-                            end)
-                     ) do v
-                         if v[1]===missing
-                             # The two "extended" options are not independent; unsetting either one cancels the effects of both of them.
-                             affects_extended = !iszero((v[2][1] | v[2][2]) & ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE ))
-                             v[2][1], affects_extended ? (v[2][1] | ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE )) : v[2][2]
-                         else
-                             (v[2][1],Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL| Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE | v[2][2])
-                         end
-                     end,
-           '^' => (UInt32(0),Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL | Base.PCRE.EXTENDED  | Base.PCRE.EXTENDED_MORE )
-           )));
+const pcre_options = with_name(:pcre_options, 
+                               Atomic(Either(mSequence(Optional('^'),
+                                                       Either(Sequence(pcre_option_char,
+                                                                       Optional(mSequence(2, '-',pcre_option_char), default=UInt32(0))),
+                                                              mSequence(Tuple{UInt32,UInt32},'-',pcre_option_char) do v
+                                                                  (UInt32(0),v[2])
+                                                              end)
+                                                       ) do v
+                                                           if v[1]===missing
+                                                               # The two "extended" options are not independent; unsetting either one cancels the effects of both of them.
+                                                               affects_extended = !iszero((v[2][1] | v[2][2]) & ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE ))
+                                                               v[2][1], affects_extended ? (v[2][1] | ( Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE )) : v[2][2]
+                                                           else
+                                                               (v[2][1],Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL| Base.PCRE.EXTENDED | Base.PCRE.EXTENDED_MORE | v[2][2])
+                                                           end
+                                                       end,
+                                             '^' => (UInt32(0),Base.PCRE.CASELESS | Base.PCRE.MULTILINE | Base.PCRE.NO_AUTO_CAPTURE | Base.PCRE.DOTALL | Base.PCRE.EXTENDED  | Base.PCRE.EXTENDED_MORE )
+                                             )));
 
 """
 
@@ -609,7 +615,7 @@ TODO:
 - [:word:]   becomes  \\p{Xwd}
 
 """
-function pcre_parser()
+const pcre_parser = begin
     #(*NO_AUTO_POSSESS)
     #(*LIMIT_MATCH=d)
     #(*LIMIT_RECURSION=d)
@@ -621,22 +627,22 @@ function pcre_parser()
     @with_names repeatable = 
         map(CombinedParser,
             Either(Any[
-                char(),
+                char,
                 on_options(
                     Base.PCRE.CASELESS,
                     map(p->set_options(Base.PCRE.CASELESS,p),
-                        backreference())
+                        backreference)
                 ),
-                backreference(),
-                generic_character_type(),
-                pcre_bracket(),
+                backreference,
+                generic_character_type,
+                pcre_bracket,
                 # https://www.regular-expressions.info/refbasic.html
                 with_name(:dot,Either(
                     on_options(Base.PCRE.DOTALL,'.') => AnyChar(), ## todo: allow \n matching context 
                     '.' => CharNotIn('\n'), ## todo: allow \n matching context 
                     "\\N" => CharNotIn('\n')
                 )),
-                map(parser,escaped_character())
+                map(parser,escaped_character)
             ]))
 
 
@@ -645,25 +651,25 @@ function pcre_parser()
     # Sequences and Alternation
     @with_names sequence = mRepeat(mSequence(
         2,
-        skip_whitespace_and_comments(),
+        skip_whitespace_and_comments,
         Either(
             # circumflex and dollar https://www.pcre.org/original/doc/html/pcrepattern.html#SEC6
             Any[ on_options(Base.PCRE.DOLLAR_ENDONLY, '$' => AtEnd()),
                  on_options(Base.PCRE.MULTILINE,
-                            Either('^' => at_linestart(),
-                                   '$' => at_lineend())),
+                            Either('^' => at_linestart,
+                                   '$' => at_lineend)),
                  parser('^' => AtStart()),
                  parser('$' => Either(AtEnd(),
                                       PositiveLookahead(mSequence(2,'\n',AtEnd())))),
                  map(parser, escape_sequence()),
-                 pcre_boundaries(),
-                 parser( "\\R" => bsr() ),
+                 pcre_boundaries,
+                 parser( "\\R" => bsr ),
                  throw_unsupported(parser("\\K")),
                  quantified(repeatable),
-                 backtrack_control()
+                 backtrack_control
                  ]
         ),
-        skip_whitespace_and_comments())) do v
+        skip_whitespace_and_comments)) do v
             length(v) ==1 ? v[1] : Sequence(v...)
         end;
 
@@ -684,7 +690,7 @@ export @pcre
 function Regcomb(x, _flags=""; kw...)
     try
         s = _flags == "" ? x : with_options(parse_options(_flags)...,x)
-        r=parse(pcre_parser(),s; kw...)
+        r=parse(pcre_parser,s; kw...)
         r === nothing && error("invalid regex")
         r
     catch e
@@ -728,7 +734,7 @@ julia> CombinedParsers.Regexp.pcre_options_parser
 ```
 """
 function parse_options(options::AbstractString)
-    flags = tryparse(padded(pcre_options()),options)
+    flags = tryparse(padded(pcre_options),options)
     if flags === nothing
         throw(UnsupportedError("options $options"))
     else
@@ -740,10 +746,10 @@ end
 macro pcre()
     quote
         if true || !@isdefined(__pcre)
-            __pcre = CombinedParsers.Regexp.pcre_parser()
+            __pcre = CombinedParsers.Regexp.pcre_parser
         end
         if true || !@isdefined(__pcre_options_parser)
-            __pcre_options_parser = CombinedParsers.padded(CombinedParsers.Regexp.pcre_options())
+            __pcre_options_parser = CombinedParsers.padded(CombinedParsers.Regexp.pcre_options)
         end
         function Regcomb(x)
             try 
@@ -876,7 +882,7 @@ end
 #     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
 #     # precompile file and potentially make loading faster.
 #     @compile_workload begin
-#         __pcre = CombinedParsers.Regexp.pcre_parser()
+#         __pcre = CombinedParsers.Regexp.pcre_parser
 #         parse(__pcre,"a+b?c{1,2}(efg[a-z]\\d)")
 #         tryparse(__pcre,"a)"; trace=true)
 #     end

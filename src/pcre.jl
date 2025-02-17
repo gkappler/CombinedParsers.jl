@@ -354,7 +354,7 @@ macro pcre_tests()
                 ) do v
                     Char(v[2])
                 end,
-                CombinedParsers.Regexp.escaped_character(),
+                CombinedParsers.Regexp.escaped_character,
                 AnyChar())
             ## compile
             parse(charparser,"a");
@@ -369,12 +369,12 @@ macro pcre_tests()
             comment_or_empty = Repeat(
                 MatchedSubSequence(Either(
                     Sequence(
-                        CombinedParsers.at_linestart(),
+                        CombinedParsers.at_linestart,
                         '#',Repeat_until(AnyChar(),'\n')),
                     Sequence(
-                        CombinedParsers.at_linestart(),
+                        CombinedParsers.at_linestart,
                         Repeat_until(
-                            CombinedParsers.whitespace_char(),'\n')))));
+                            CombinedParsers.whitespace_char,'\n')))));
             parse(comment_or_empty,"# test");
             
             #    @test parse(unescaped,"A\\123B\n") == "ASB"
@@ -396,7 +396,7 @@ macro pcre_tests()
                                       s, Repeat_until(
                                           AnyChar(),
                                           Sequence(Repeat(
-                                              CombinedParsers.whitespace_char()), '\n'),
+                                              CombinedParsers.whitespace_char), '\n'),
                                           wrap=MatchedSubSequence)),
                             true; wrap=MatchedSubSequence)
                     end,

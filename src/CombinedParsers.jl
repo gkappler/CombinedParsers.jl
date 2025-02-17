@@ -1583,75 +1583,19 @@ include("get.jl")
 
 include("operators.jl")
 
-include("defaults.jl")
-
 include("show.jl")
+
+include("defaults.jl")
 
 include("memoize.jl")
 
 
 include("lazy.jl")
+
 include("re.jl")
 include("bnf.jl")
 
 using PrecompileTools: @setup_workload, @compile_workload    # this is a small dependency
-
-export @re_str
-"""
-    parse_options(options::AbstractString)
-
-Return PCRE option mask parsed from `options`.
-
-Parser for `flags` in [`@re_str`](@ref).
-
-```jldoctest
-julia> CombinedParsers.Regexp.pcre_options()
-▽ * Sequence |> Repeat
-├─ |▽  Either |> pcre_option
-│  ├─ dupnames  |> DUPNAMES
-│  ├─ xx  |> EXTENDED_MORE
-│  ├─ i  |> CASELESS
-│  ├─ m  |> MULTILINE
-│  ├─ n  |> NO_AUTO_CAPTURE
-│  ├─ U  |> UNGREEDY
-│  ├─ J  |> DUPNAMES
-│  ├─ s  |> DOTALL
-│  ├─ x  |> EXTENDED
-│  ├─ B  |> BINCODE
-│  └─ I  |> INFO
-└─ ,?  |> Optional
-```
-"""
-macro re_str(x,flags)
-    quote
-        if true || !@isdefined(__pcre)
-            @info "initializing"
-            __pcre = CombinedParsers.Regexp.pcre_parser()
-        end
-        if true || !@isdefined(__pcre_options_parser)
-            __pcre_options_parser = CombinedParsers.padded(CombinedParsers.Regexp.pcre_options())
-        end
-        options = tryparse(__pcre_options_parser,$flags)
-        options === nothing && throw(UnsupportedError("options $options"))
-        r=parse(__pcre,with_options(options...,$x); trace=true)
-        r === nothing && error("invalid regex")
-        r
-    end |> esc
-end
-
-
-macro re_str(x)
-    quote
-        if true || !@isdefined(__pcre)
-            __pcre = CombinedParsers.Regexp.pcre_parser()
-        end
-
-        r=parse(__pcre,$x; trace=true)
-        r === nothing && error("invalid regex")
-        r
-    end |> esc
-end
-
 
 @setup_workload begin
     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the

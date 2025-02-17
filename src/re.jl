@@ -495,4 +495,53 @@ function _deepmap_parser(f::Function,mem::AbstractDict,x::Conditional,a...;kw...
 end
 @specialize
 
+export @re_str
+"""
+    parse_options(options::AbstractString)
+
+Return PCRE option mask parsed from `options`.
+
+Parser for `flags` in [`@re_str`](@ref).
+
+```jldoctest
+julia> CombinedParsers.Regexp.pcre_options()
+▽ * Sequence |> Repeat
+├─ |▽  Either |> pcre_option
+│  ├─ dupnames  |> DUPNAMES
+│  ├─ xx  |> EXTENDED_MORE
+│  ├─ i  |> CASELESS
+│  ├─ m  |> MULTILINE
+│  ├─ n  |> NO_AUTO_CAPTURE
+│  ├─ U  |> UNGREEDY
+│  ├─ J  |> DUPNAMES
+│  ├─ s  |> DOTALL
+│  ├─ x  |> EXTENDED
+│  ├─ B  |> BINCODE
+│  └─ I  |> INFO
+└─ ,?  |> Optional
+```
+"""
+macro re_str(x,flags)
+    quote
+        __pcre = CombinedParsers.Regexp.pcre_parser
+        __pcre_options_parser = CombinedParsers.padded(CombinedParsers.Regexp.pcre_options)
+        options = tryparse(__pcre_options_parser,$flags)
+        options === nothing && throw(UnsupportedError("options $options"))
+        r=parse(__pcre,with_options(options...,$x); trace=true)
+        r === nothing && error("invalid regex")
+        r
+    end |> esc
+end
+
+
+macro re_str(x)
+    quote
+        __pcre = CombinedParsers.Regexp.pcre_parser
+
+        r=parse(__pcre,$x; trace=true)
+        r === nothing && error("invalid regex")
+        r
+    end |> esc
+end
+
 end
