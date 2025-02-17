@@ -34,7 +34,21 @@ struct UnsupportedError <: Exception
 end
 Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax ",e.message)
 
-
+pcre_boundaries() =
+    with_name(:pcre_boundaries,
+              mSequence(2,
+                        '\\',
+                        Either(
+                            'A' => AtStart(),
+                            map(parser('G')) do v
+                                @warn "limited \\G support: ignoring pcre2 startoffset"
+                                AtStart()
+                            end,
+                            'z' => AtEnd(),
+                            'Z' => PositiveLookahead(Sequence(Optional(bsr(), default=missing),AtEnd())),
+                            'b' => word_boundary(),
+                            'B' => NegativeLookahead(word_boundary())
+                        )))
 
 escaped_character() = 
     with_name(:escaped_character,
@@ -66,35 +80,6 @@ escaped_character() =
                             CharNotIn('Q','E')
                         )))
 
-
-bracket_char() = let bracket_meta_chars = raw"]\^-"
-    with_name(:bracket_char,
-              Either(
-                  CharNotIn(bracket_meta_chars),
-                  "\\b" => '\x08',
-                  mSequence('\\',integer_base(8,1,3)) do v
-                      Char(v[2])
-                  end,
-                  escaped_character()
-              ))
-end;
-
-bracket_range(start) =
-    with_name(:char_range,
-              mSequence(start,
-                        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
-                        '-',
-                        skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
-                        bracket_char()) do v
-                            if v[1] isa CharWithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
-                                cs = convert(Char,v[1]):convert(Char,v[5])
-                                CharIn("$(v[1])-$(v[5])",unique([ ( lowercase(x) for x in cs )...,
-                                                                  ( uppercase(x) for x in cs )... ]))
-                            else
-                                cs = convert(Char,v[1]):convert(Char,v[5])
-                                CharIn("$(v[1])-$(v[5])",cs)
-                            end
-                        end)
 
 
 skip_whitespace_and_comments() =
@@ -131,10 +116,10 @@ skip_whitespace_and_comments() =
                           end);
 
 escape_sequence(stop=AtEnd()) =
-    mSequence(2,"\\Q",
+    with_name(:escape_sequence, mSequence(2,"\\Q",
               Repeat_until(AnyChar(),
                            Either("\\E",PositiveLookahead(stop)),
-                           wrap=MatchedSubSequence));
+                           wrap=MatchedSubSequence));)
 
 name() = with_name(
     :name,
@@ -170,6 +155,12 @@ backreference() = with_name(:backreference,map(
                             end);
 
 
+char(meta_chars = raw"\^$.[|()?*+{") =
+    mEither(
+        CharNotIn(meta_chars),
+        mSequence(2,'\\', CharIn(meta_chars))) do v
+            convert(CombinedParser,v)
+        end
 
 generic_character_type() =
     with_name(:generic_character_type,
@@ -204,7 +195,7 @@ generic_character_type() =
                         )));
 
 @with_names character_class = 
-    Either(
+    Either([
         "alpha" => CharIn(UnicodeClass("L")),
         "lower" => CharIn(UnicodeClass("Ll")),
         "upper" => CharIn(UnicodeClass("Lu")),
@@ -218,7 +209,334 @@ generic_character_type() =
         "print" => CharIn(UnicodeClass("C")),
         "punct" => CharIn(UnicodeClass("P")),
         "space" => CharIn(UnicodeClass("Z"),'\t','\r','\n','\v','\f'),
-    )
+    ])
+
+
+
+bracket_char() = let bracket_meta_chars = raw"]\^-"
+    with_name(:bracket_char,
+              Either(
+                  CharNotIn(bracket_meta_chars),
+                  "\\b" => '\x08',
+                  mSequence('\\',integer_base(8,1,3)) do v
+                      Char(v[2])
+                  end,
+                  escaped_character()
+              ))
+end;
+
+# https://www.regular-expressions.info/posixbrackets.html#class
+# todo: set pcre string of CharIn/CharNotIn when multi-transform is implemented
+function pcre_bracket()
+
+    bracket_range(start) =
+        with_name(:char_range,
+                  mSequence(start,
+                            skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
+                            '-',
+                            skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat),
+                            bracket_char()) do v
+                                if v[1] isa CharWithOptions && ( v[1].flags & Base.PCRE.CASELESS > 0 )
+                                    cs = convert(Char,v[1]):convert(Char,v[5])
+                                    CharIn("$(v[1])-$(v[5])",unique([ ( lowercase(x) for x in cs )...,
+                                                                      ( uppercase(x) for x in cs )... ]))
+                                else
+                                    cs = convert(Char,v[1]):convert(Char,v[5])
+                                    CharIn("$(v[1])-$(v[5])",cs)
+                                end
+                            end)
+    with_name(:pcre_bracket,
+              mSequence(
+                  CombinedParser,
+                  '[',Optional('^', default = missing)
+                  , Repeat(0,1,Either(
+                      bracket_range(']'),
+                      ']'=>']'))
+                  , Repeat(Either(
+                      mSequence(2,   "[:",  character_class,  ":]"),
+                      skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat) => Never(),
+                      "\\E" => Never(),
+                      map(v->CharIn(v),escape_sequence()),
+                      generic_character_type(),
+                      bracket_range(bracket_char()),
+                      map(v->convert(CombinedParser,v),bracket_char()),
+                      '^'=>'^',
+                      '-'=>'-'))
+                  , ']') do v
+                      r = (filter(!(x->isa(x,Never)),v[3])...,
+                           filter(!(x->isa(x,Never)),v[4])...)
+                      if v[2]===missing
+                          CharIn(r...)
+                      else
+                          CharNotIn(r...)
+                      end
+                  end;
+              )
+end
+
+repetitions() =
+    with_name(:repetition, Either(
+        '+' => 1:Repeat_max,
+        '*' => 0:Repeat_max,
+        '?' => 0:1,
+        mSequence(
+            '{',
+            integer(),
+            Optional(mSequence(
+                2,',',
+                Optional(integer(), default=Repeat_max)),
+                     default=missing),
+            '}') do v
+                if v[3] isa Missing
+                    v[2]:v[2]
+                else
+                    v[2]:v[3]
+                end::UnitRange{Int}
+            end
+    ))
+
+throw_unsupported(p) =
+    map(String, map(v -> throw(UnsupportedError(v)), p))
+throw_unsupported(p,s) =
+    map(String, map(v -> throw(UnsupportedError(s)), p));
+    
+# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
+quantified(repeatable) =
+    with_name(:quantified,
+              map(
+                  Sequence(
+                      repeatable,
+                      skip_whitespace_and_comments(), ## for test 1130, preserve in map?
+                      Optional(repetitions(), default=1:1),
+                      skip_whitespace_and_comments(),
+                      Optional(CharIn('+','?')), # possessive quantifier, strip option
+                  )) do v
+                      pat = sSequence(v[1],v[2]...)
+                      result = if v[3] == 1:1
+                          parser(pat)
+                      elseif v[3]==0:1
+                          Optional(pat, default=missing)
+                      else
+                          Repeat(v[3],pat)
+                      end
+                      if v[5] === missing
+                          result
+                      elseif v[5]=='+'
+                          Atomic(result)
+                      elseif v[5]=='?'
+                          Lazy(result)
+                      else
+                          result
+                      end::CombinedParser
+                  end)
+
+
+# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC27
+backtrack_control() =
+    with_name(:backtrack_control,
+              mSequence(
+                  2,"(*",
+                  Either(
+                      throw_unsupported(
+                          Sequence("ACCEPT",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
+                          "ACCEPT"),
+                      mSequence(Either("FAIL","F"),Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))) do v; Never(); end,
+                      throw_unsupported(
+                          Sequence("PRUNE",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
+                          "PRUNE"),
+                      throw_unsupported(
+                          Sequence("SKIP",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
+                          "SKIP"),
+                      mSequence(Optional(parser("MARK")),':',
+                                MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))) do v;
+                                    with_log(v[3],Always());
+                                end,
+                      throw_unsupported(
+                          Sequence("COMMIT",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
+                          "COMMIT"),
+                      throw_unsupported(
+                          Sequence("THEN",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
+                          "THEN")),
+                  ")"))
+
+
+
+function alternation(sequence)
+
+    alternations = with_name(:alternations,mSequence(
+        sequence, Repeat(mSequence(2, '|',sequence))) do v
+                             CombinedParser[v[1],v[2]...]
+                             end);
+
+    @with_names options_alternations = after(
+        Sequence("(?",pcre_options(),NegativeLookahead(':'),Optional(')')),
+        Vector{CombinedParser}) do l
+            #@show l
+            set_options(l[2]..., l[3] === missing ?  mSequence(1, alternations,')') : alternations)
+        end;
+    with_name(:alternation, map(
+        CombinedParser,
+        Sequence(
+            alternations,
+            Repeat(options_alternations))) do v
+                r = Any[ CombinedParser[e] for e in v[1] ]
+                ro = v[2]
+                for i in 1:length(ro)
+                    length(ro[i])>0 && push!(r[end],popfirst!(ro[i]))
+                    for x in ro[i]
+                        ## if length(ro[i])>0
+                        ## @show r[end],x
+                        push!(r,CombinedParser[ x ])
+                    end
+                end
+                Either( ( sSequence(x...) for x in r)... ; simplify=true)
+              end);
+end
+
+
+
+# Atomic groups
+# https://www.pcre.org/original/doc/html/pcrepattern.html#SEC18
+function in_parentheses(sequence)
+
+    lookahead() =
+        with_name(:lookahead,
+                  Either(mSequence(v -> Lookahead(true,Atomic(v[2]))::CombinedParser,
+                                   Either("?=","*positive_lookahead:","*pla:"),alternation(sequence)),
+                         mSequence(v -> Lookahead(false,v[2])::CombinedParser,
+                                   Either("?!","*negative_lookahead:","*nla:"),alternation(sequence))))
+
+
+
+
+
+    lookbehind()=
+        with_name(
+            :lookbehind,Either(mSequence(v -> Lookbehind(true,Atomic(v[2]))::CombinedParser,
+                                         Either("?<=","*positive_lookbehind:","*plb:"),alternation(sequence)),
+                               mSequence(v -> Lookbehind(false,v[2])::CombinedParser,
+                                         Either("?<!","*negative_lookbehind:","*nlb:"),alternation(sequence))));
+    
+    mSequence(
+        2,"(",
+        Either(
+            with_name(:atomic_group,
+                      mSequence(Either("?>","*atomic:"),alternation(sequence)) do v
+                          Atomic(v[2])
+                      end),
+            with_name(:captured,
+                      mSequence(
+                          Either(mSequence(2,"?<",name(),'>'),
+                                 mSequence(2,"?P<",name(),'>'),
+                                 mSequence(2,"?'",name(),"'"),
+                                 ""),
+                          alternation(sequence)) do v
+                              with_name(v[1],Capture(Symbol(v[1]),v[2]))::CombinedParser
+                          end),
+            with_name(
+                :subpattern,
+                mSequence(2,"?:",alternation(sequence))),
+            lookahead(),
+            lookbehind(),
+
+            # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
+            with_name(
+                :subroutine,
+                mSequence(
+                    2,"?",
+                    Either(mSequence(Either('+','-',""),
+                                     integer()) do v
+                                         Subroutine(nothing,Symbol(v[1]),v[2])
+                                     end,
+                           mSequence(Either('&',"P>"), name()) do v 
+                               Subroutine(Symbol(v[2]),Symbol(""),-1)
+                           end))),
+            with_name(
+                :resetting_capture_numbers,
+                mSequence(
+                    "?|",
+                    alternation(sequence)) do v
+                        DupSubpatternNumbers(v[2])
+                    end),
+            with_name(
+                :conditional,
+                map(Sequence(
+                    "?",
+                    with_name(
+                        :condition,
+                        Either(
+                            mSequence(
+                                2,
+                                '(',
+                                Either(
+                                    integer(),
+                                    "DEFINE",
+                                    throw_unsupported(
+                                        Sequence(
+                                            'R', ## TODO
+                                            Either(
+                                                integer(),
+                                                mSequence(2,'&',name()),
+                                                Always())), 
+                                        "checking for pattern recursion"),
+                                    mSequence(2,'\'',name(),'\''),
+                                    mSequence(2,'<',name(),'>'),
+                                    name()),
+                                ')'),
+                            mSequence(2,"(",lookbehind(),")"),
+                            mSequence(2,"(",lookahead(),")"))
+                              ),
+                    sequence,
+                    Optional(mSequence(2,"|",sequence), default=Always()))) do v
+                        c = v[2]
+                        if c=="DEFINE"
+                            Atomic(Either(Always(),v[3])) ## ignore in match
+                        elseif c isa Union{Integer,AbstractString}
+                            Conditional(Backreference(c) do
+                                            c == "R" && return Subroutine()
+                                            c isa Integer ? Backreference(()->error("?"),nothing, c) : error("no capture group $c")
+                                        end,
+                                        v[3],v[4])
+                        elseif c isa CombinedParser
+                            Conditional(c,v[3],v[4])
+                        else
+                            Conditional(Subroutine(c[2]),v[3],v[4])
+                        end::CombinedParser
+                    end),
+            # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC13
+            with_name(
+                :sequence_with_options,
+                after(
+                    mSequence(2,'?',pcre_options(),':'),CombinedParser) do v
+                        set_options(v..., alternation(sequence))
+                    end)),
+        ")")
+end
+
+splat_or(v) = (isempty(v) ? 0x00000000 : (|(v...)))::UInt32
+function pcre_option_char()
+    @with_names pcre_option = 
+        Either(
+            # with_name(:MARK, "mark" => UInt32(0)),
+            # with_name(:aftertext, "aftertext" => UInt32(0)),
+            with_name(:DUPNAMES, "dupnames" => Base.PCRE.DUPNAMES),
+            # with_name(:no_start_optimize, "no_start_optimize" => UInt32(0)),
+            # with_name(:subject_literal, "subject_literal" => UInt32(0)),
+            # "jitstack=256" => UInt32(0),
+            with_name(:EXTENDED_MORE, "xx" => Base.PCRE.EXTENDED_MORE),
+            with_name(:CASELESS, 'i' => Base.PCRE.CASELESS),
+            with_name(:MULTILINE, 'm' => Base.PCRE.MULTILINE),
+            with_name(:NO_AUTO_CAPTURE, 'n' => Base.PCRE.NO_AUTO_CAPTURE),
+            with_name(:UNGREEDY, 'U' => Base.PCRE.UNGREEDY),
+            with_name(:DUPNAMES, 'J' => Base.PCRE.DUPNAMES),
+            with_name(:DOTALL, 's' => Base.PCRE.DOTALL),
+            with_name(:EXTENDED, 'x' => Base.PCRE.EXTENDED),
+            # 'g' => UInt32(0),
+            with_name(:BINCODE, 'B' => UInt32(0)), # bincode
+            with_name(:INFO, 'I' => UInt32(0)) # info
+        );
+    mRepeat(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
+end
 
 #  Options apply to subpattern, 
 #  (a(?i)b|c)
@@ -236,13 +554,11 @@ generic_character_type() =
 # option setting. This is because the effects of option
 # settings happen at compile time. There would be some
 # very weird behaviour otherwise."
-pcre_option_start() = with_name(:pcre_option_start, mSequence(
-    2,
-    "(?",
-    Either(mSequence(Optional('^'),
-                     Either(Sequence(pcre_options(),
-                                     Optional(mSequence(2, '-',pcre_options()), default=UInt32(0))),
-                            mSequence(Tuple{UInt32,UInt32},'-',pcre_options()) do v
+pcre_options() = with_name(:pcre_options, 
+    Atomic(Either(mSequence(Optional('^'),
+                     Either(Sequence(pcre_option_char(),
+                                     Optional(mSequence(2, '-',pcre_option_char()), default=UInt32(0))),
+                            mSequence(Tuple{UInt32,UInt32},'-',pcre_option_char()) do v
                                 (UInt32(0),v[2])
                             end)
                      ) do v
@@ -302,363 +618,62 @@ function pcre_parser()
 
     # https://www.regular-expressions.info/refcharacters.html
     # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC4
-    @with_names repeatable = let meta_chars = raw"\^$.[|()?*+{"
-        char =  mEither(
-            CharNotIn(meta_chars),
-            mSequence(2,'\\', CharIn(meta_chars))) do v
-                convert(CombinedParser,v)
-            end
-        map(CombinedParser,Either(Any[char]))
-    end
-    push!(repeatable,
-          on_options(
-              Base.PCRE.CASELESS,
-              map(p->set_options(Base.PCRE.CASELESS,p),
-                  backreference())
-          ));
-
-    push!(repeatable,
-          backreference());
-    push!(repeatable,generic_character_type());
-
-    # pattern alternatives
-    # circumflex and dollar https://www.pcre.org/original/doc/html/pcrepattern.html#SEC6
-    pattern = Either(
-        Any[ on_options(Base.PCRE.DOLLAR_ENDONLY, '$' => AtEnd()),
-             on_options(Base.PCRE.MULTILINE,
-                        Either('^' => at_linestart(),
-                               '$' => at_lineend())),
-             parser('^' => AtStart()),
-             parser('$' => Either(AtEnd(),
-                                  PositiveLookahead(mSequence(2,'\n',AtEnd()))))
-             ]
-    );
-
-    # Either allows adding alternatives qith push!, that themselves use the Either object for recursive parsers.
-    push!(pattern,
-          map(parser, with_name(:escape_sequence, escape_sequence())));
-    
-    push!(pattern,
-          with_name(:pcre_boundaries,
-                    mSequence(2,
-                              '\\',
-                              Either(
-                                  'A' => AtStart(),
-                                  map(parser('G')) do v
-                                      @warn "limited \\G support: ignoring pcre2 startoffset"
-                                      AtStart()
-                                  end,
-                                  'z' => AtEnd(),
-                                  'Z' => PositiveLookahead(Sequence(Optional(bsr(), default=missing),AtEnd())),
-                                  'b' => word_boundary(),
-                                  'B' => NegativeLookahead(word_boundary())
-                              ))));
-
-    push!(pattern,parser( "\\R" => bsr() ));
+    @with_names repeatable = 
+        map(CombinedParser,
+            Either(Any[
+                char(),
+                on_options(
+                    Base.PCRE.CASELESS,
+                    map(p->set_options(Base.PCRE.CASELESS,p),
+                        backreference())
+                ),
+                backreference(),
+                generic_character_type(),
+                pcre_bracket(),
+                # https://www.regular-expressions.info/refbasic.html
+                with_name(:dot,Either(
+                    on_options(Base.PCRE.DOTALL,'.') => AnyChar(), ## todo: allow \n matching context 
+                    '.' => CharNotIn('\n'), ## todo: allow \n matching context 
+                    "\\N" => CharNotIn('\n')
+                )),
+                map(parser,escaped_character())
+            ]))
 
 
-    # https://www.regular-expressions.info/posixbrackets.html#class
 
-    # todo: set pcre string of CharIn/CharNotIn when multi-transform is implemented
-    push!(repeatable,
-          with_name(:pcre_bracket,
-                    mSequence(
-                        CombinedParser,
-                        '[',Optional('^', default = missing)
-                        , Repeat(0,1,Either(
-                            bracket_range(']'),
-                            ']'=>']'))
-                        , Repeat(Either(
-                            mSequence(2,   "[:",  character_class,  ":]"),
-                            skip_whitespace_on(Base.PCRE.EXTENDED_MORE,Repeat) => Never(),
-                            "\\E" => Never(),
-                            with_name(:escape_sequence,map(v->CharIn(v),escape_sequence())),
-                            generic_character_type(),
-                            bracket_range(bracket_char()),
-                            map(v->convert(CombinedParser,v),bracket_char()),
-                            '^'=>'^',
-                            '-'=>'-'))
-                        , ']') do v
-                            r = (filter(!(x->isa(x,Never)),v[3])...,
-                                 filter(!(x->isa(x,Never)),v[4])...)
-                            if v[2]===missing
-                                CharIn(r...)
-                            else
-                                CharNotIn(r...)
-                            end
-                        end;
-                    ));
-
-
-    # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC17
-
-    push!(pattern,
-          with_name(:quantified,
-                    mSequence(
-                        CombinedParser,
-                        repeatable,
-                        skip_whitespace_and_comments(), ## for test 1130, preserve in map?
-                        Optional(with_name(:repetition, Either(
-                            '+' => 1:Repeat_max,
-                            '*' => 0:Repeat_max,
-                            '?' => 0:1,
-                            mSequence(
-                                '{',
-                                integer(),
-                                Optional(mSequence(
-                                    2,',',
-                                    Optional(integer(), default=Repeat_max)),
-                                         default=missing),
-                                '}') do v
-                                    if v[3] isa Missing
-                                        v[2]:v[2]
-                                    else
-                                        v[2]:v[3]
-                                    end::UnitRange{Int}
-                                end
-                        )), default=1:1),
-                        skip_whitespace_and_comments(),
-                        Optional(CharIn('+','?')), # possessive quantifier, strip option
-                    ) do v
-                        pat = sSequence(v[1],v[2]...)
-                        result = if v[3] == 1:1
-                            parser(pat)
-                        elseif v[3]==0:1
-                            Optional(pat, default=missing)
-                        else
-                            Repeat(v[3],pat)
-                        end
-                        if v[5] === missing
-                            result
-                        elseif v[5]=='+'
-                            Atomic(result)
-                        elseif v[5]=='?'
-                            Lazy(result)
-                        else
-                            result
-                        end
-                    end))
-    throw_unsupported(p) =
-        map(String, map(v -> throw(UnsupportedError(v)), p))
-    throw_unsupported(p,s) =
-        map(String, map(v -> throw(UnsupportedError(s)), p));
-
-    pushfirst!(pattern,throw_unsupported(parser("\\K")));
 
     # Sequences and Alternation
     @with_names sequence = mRepeat(mSequence(
         2,
         skip_whitespace_and_comments(),
-        pattern,
+        Either(
+            # circumflex and dollar https://www.pcre.org/original/doc/html/pcrepattern.html#SEC6
+            Any[ on_options(Base.PCRE.DOLLAR_ENDONLY, '$' => AtEnd()),
+                 on_options(Base.PCRE.MULTILINE,
+                            Either('^' => at_linestart(),
+                                   '$' => at_lineend())),
+                 parser('^' => AtStart()),
+                 parser('$' => Either(AtEnd(),
+                                      PositiveLookahead(mSequence(2,'\n',AtEnd())))),
+                 map(parser, escape_sequence()),
+                 pcre_boundaries(),
+                 parser( "\\R" => bsr() ),
+                 throw_unsupported(parser("\\K")),
+                 quantified(repeatable),
+                 backtrack_control()
+                 ]
+        ),
         skip_whitespace_and_comments())) do v
             length(v) ==1 ? v[1] : Sequence(v...)
         end;
 
 
 
-
-    alternations = with_name(:alternations,mSequence(
-        sequence, Repeat(mSequence(2, '|',sequence))) do v
-                             CombinedParser[v[1],v[2]...]
-                             end);
-
-    @with_names options_alternations = after(
-        Sequence(pcre_option_start(),Optional(')')),
-        Vector{CombinedParser}) do l
-            set_options(l[1]..., l[2] === missing ?  mSequence(1, alternations,')') : alternations)
-        end;
-
-    alternation = 
-        with_name(:alternation, map(
-            CombinedParser,
-            Sequence(
-                alternations,
-                Repeat(options_alternations))) do v
-                    r = Any[ CombinedParser[e] for e in v[1] ]
-                    ro = v[2]
-                    for i in 1:length(ro)
-                        length(ro[i])>0 && push!(r[end],popfirst!(ro[i]))
-                        for x in ro[i]
-                            ## if length(ro[i])>0
-                            ## @show r[end],x
-                            push!(r,CombinedParser[ x ])
-                        end
-                    end
-                    Either( ( sSequence(x...) for x in r)... ; simplify=true)
-                  end);
-
-
-    # Atomic groups
-    # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC18
-    push!(repeatable,
-          with_name(:atomic_group,
-                    mSequence("(",Either("?>","*atomic:"),alternation,")") do v
-                        Atomic(v[3])
-                    end));
-
-    push!(repeatable,with_name(
-        :captured,
-        mSequence("(",
-                  Either(mSequence(2,"?<",name(),'>'),
-                         mSequence(2,"?P<",name(),'>'),
-                         mSequence(2,"?'",name(),"'"),
-                         ""),
-                  alternation,
-                  ")") do v
-                      with_name(v[2],Capture(Symbol(v[2]),v[3]))::CombinedParser
-                  end));
+    push!(repeatable, in_parentheses(sequence))
 
 
 
-    
-    push!(repeatable,
-          with_name(
-              :subpattern,
-              mSequence(2,"(?:",alternation,")")));
-
-
-    lookahead() =
-        with_name(:lookahead,
-                  mSequence(2,"(",
-                            Either(mSequence(v -> Lookahead(true,Atomic(v[2]))::CombinedParser,
-                                             Either("?=","*positive_lookahead:","*pla:"),alternation),
-                                   mSequence(v -> Lookahead(false,v[2])::CombinedParser,
-                                             Either("?!","*negative_lookahead:","*nla:"),alternation)),
-                            ")"));
-    push!(repeatable,lookahead());
-
-
-
-    lookbehind()=
-        with_name(
-            :lookbehind,mSequence(
-                2,
-                "(",
-                Either(mSequence(v -> Lookbehind(true,Atomic(v[2]))::CombinedParser,
-                                 Either("?<=","*positive_lookbehind:","*plb:"),alternation),
-                       mSequence(v -> Lookbehind(false,v[2])::CombinedParser,
-                                 Either("?<!","*negative_lookbehind:","*nlb:"),alternation)),
-                ")"));
-    push!(repeatable,lookbehind());
-
-    # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC19
-    
-    push!(repeatable,with_name(
-        :subroutine,
-        mSequence(
-            2,"(?",
-            Either(mSequence(Either('+','-',""),
-                             integer()) do v
-                                 Subroutine(nothing,Symbol(v[1]),v[2])
-                             end,
-                   mSequence(Either('&',"P>"), name()) do v 
-                       Subroutine(Symbol(v[2]),Symbol(""),-1)
-                   end),
-            ')')));
-
-    
-    push!(repeatable,with_name(
-        :resetting_capture_numbers,
-        mSequence(
-            "(?|",
-            alternation,
-            ")") do v
-                DupSubpatternNumbers(v[2])
-            end));
-
-    
-    push!(repeatable,
-          with_name(:conditional,
-                    map(
-                        Sequence("(?",
-                                 with_name(:condition,
-                                           Either(
-                                               mSequence(
-                                                   2,
-                                                   '(',
-                                                   Either(
-                                                       integer(),
-                                                       "DEFINE",
-                                                       throw_unsupported(
-                                                           Sequence(
-                                                               'R', ## TODO
-                                                               Either(
-                                                                   integer(),
-                                                                   mSequence(2,'&',name()),
-                                                                   Always())), 
-                                                           "checking for pattern recursion"),
-                                                       mSequence(2,'\'',name(),'\''),
-                                                       mSequence(2,'<',name(),'>'),
-                                                       name()),
-                                                   ')'),
-                                               lookbehind(),
-                                               lookahead())
-                                           ),
-                                 sequence,
-                                 Optional(mSequence(2,"|",sequence), default=Always()),
-                                 ")")) do v
-                                     c = v[2]
-                                     if c=="DEFINE"
-                                         Atomic(Either(Always(),v[3])) ## ignore in match
-                                     elseif c isa Union{Integer,AbstractString}
-                                         Conditional(Backreference(c) do
-                                                         c == "R" && return Subroutine()
-                                                         c isa Integer ? Backreference(()->error("?"),nothing, c) : error("no capture group $c")
-                                                     end,
-                                                     v[3],v[4])
-                                     elseif c isa CombinedParser
-                                         Conditional(c,v[3],v[4])
-                                     else
-                                         Conditional(Subroutine(c[2]),v[3],v[4])
-                                     end::CombinedParser
-                                 end));
-
-
-    # https://www.regular-expressions.info/refbasic.html
-    push!(repeatable,with_name(:dot,Either(
-        on_options(Base.PCRE.DOTALL,'.') => AnyChar(), ## todo: allow \n matching context 
-        '.' => CharNotIn('\n'), ## todo: allow \n matching context 
-        "\\N" => CharNotIn('\n')
-    )));
-
-    push!(repeatable,map(parser,escaped_character()));
-
-
-    # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC13
-    push!(repeatable,with_name(:sequence_with_options, after(
-        mSequence(1,pcre_option_start(),':'),CombinedParser) do v
-                               mSequence(1,set_options(v..., alternation),')')
-                               end));
-
-    # https://www.pcre.org/original/doc/html/pcrepattern.html#SEC27
-    push!(pattern,
-          with_name(:backtrack_control,
-                    mSequence(
-                        2,"(*",
-                        Either(
-                            throw_unsupported(
-                                Sequence("ACCEPT",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
-                                "ACCEPT"),
-                            mSequence(Either("FAIL","F"),Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))) do v; Never(); end,
-                            throw_unsupported(
-                                Sequence("PRUNE",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
-                                "PRUNE"),
-                            throw_unsupported(
-                                Sequence("SKIP",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
-                                "SKIP"),
-                            mSequence(Optional(parser("MARK")),':',
-                                      MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))) do v;
-                                          with_log(v[3],Always());
-                                      end,
-                            throw_unsupported(
-                                Sequence("COMMIT",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
-                                "COMMIT"),
-                            throw_unsupported(
-                                Sequence("THEN",Optional(mSequence(2,":",MatchedSubSequence(Repeat_stop(AnyChar(),parser(')')))))),
-                                "THEN")),
-                        ")")));
-
-    mSequence(AtStart(),alternation,AtEnd()) do v
+    mSequence(AtStart(),alternation(sequence),AtEnd()) do v
         ParserWithCaptures(v[2])
     end
 end
@@ -681,6 +696,7 @@ function Regcomb(x, _flags=""; kw...)
         end
     end
 end
+
 """
     parse_options(options::AbstractString)
 
@@ -853,3 +869,15 @@ macro test_pcre(pattern,seq,log=false,flags="")
     end |> esc
 end
 
+
+# using PrecompileTools: @setup_workload, @compile_workload    # this is a small dependency
+
+# @setup_workload begin
+#     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
+#     # precompile file and potentially make loading faster.
+#     @compile_workload begin
+#         __pcre = CombinedParsers.Regexp.pcre_parser()
+#         parse(__pcre,"a+b?c{1,2}(efg[a-z]\\d)")
+#         tryparse(__pcre,"a)"; trace=true)
+#     end
+# end

@@ -1,32 +1,4 @@
-import ..CombinedParsers: MatchState
-
-splat_or(v) = (isempty(v) ? 0x00000000 : (|(v...)))::UInt32
-function pcre_options()
-    @with_names pcre_option = 
-        Either(
-            # with_name(:MARK, "mark" => UInt32(0)),
-            # with_name(:aftertext, "aftertext" => UInt32(0)),
-            with_name(:DUPNAMES, "dupnames" => Base.PCRE.DUPNAMES),
-            # with_name(:no_start_optimize, "no_start_optimize" => UInt32(0)),
-            # with_name(:subject_literal, "subject_literal" => UInt32(0)),
-            # "jitstack=256" => UInt32(0),
-            with_name(:EXTENDED_MORE, "xx" => Base.PCRE.EXTENDED_MORE),
-            with_name(:CASELESS, 'i' => Base.PCRE.CASELESS),
-            with_name(:MULTILINE, 'm' => Base.PCRE.MULTILINE),
-            with_name(:NO_AUTO_CAPTURE, 'n' => Base.PCRE.NO_AUTO_CAPTURE),
-            with_name(:UNGREEDY, 'U' => Base.PCRE.UNGREEDY),
-            with_name(:DUPNAMES, 'J' => Base.PCRE.DUPNAMES),
-            with_name(:DOTALL, 's' => Base.PCRE.DOTALL),
-            with_name(:EXTENDED, 'x' => Base.PCRE.EXTENDED),
-            # 'g' => UInt32(0),
-            with_name(:BINCODE, 'B' => UInt32(0)), # bincode
-            with_name(:INFO, 'I' => UInt32(0)) # info
-        );
-    mRepeat(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
-end
-
-pcre_options_parser() =
-    map(IndexAt(2),Sequence(AtStart(),pcre_options(),AtEnd()))
+import ..CombinedParsers: MatchState, iostring
 
 function print_opts(io,opts)
     if (opts & Base.PCRE.CASELESS ) != 0; print(io, 'i'); end

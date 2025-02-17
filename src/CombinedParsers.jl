@@ -676,10 +676,11 @@ julia> german_street_address("Some Avenue 42")
     Sequence(parts::Tuple, stype::Type=Any) = new{stype}(parts)
     Sequence(parts::Vector, stype::Type=Vector{CombinedParser}) = new{stype}(parts)
 end
+@nospecialize
 Sequence(;kw...) =
     isempty(kw) ? Always() : Sequence(kw...)
 function Sequence(p...)
-    parts = tuple( parser.(p)... )
+    parts = CombinedParser[ parser(p_) for p_ in p ] # tuple( parser.(p)... )
     s = Sequence(parts)
     names = Pair{Symbol,Int}[ t.first=>i
                               for (i,t) in enumerate(p)
@@ -694,6 +695,12 @@ function Sequence(p...)
     end
 end
 #Sequence(p::Vector; kw...) = Sequence(p...; kw...)
+
+@deprecate Sequence(transform::Function, T::Type, a...; kw...)   map(transform, T, Sequence(a...; kw...))
+
+@deprecate Sequence(transform::Function, a...; kw...) map(transform, Sequence(a...; kw...))
+
+@deprecate Sequence(transform::Integer,tokens...; kw...) Sequence(Val{transform}(),parser.(tokens)...; kw...)
 
 mSequence(transform::Function, T::Type, a...; kw...) =
     map(transform, T, Sequence(a...; kw...))
@@ -749,6 +756,7 @@ function sSequence(x...)
     p = _sSequence(x)
     length(p) == 1 ? p[1] : Sequence(p...)
 end
+@specialize
 
 result_type(p::Sequence, sequence; kw...)  =
     sequence_result_type(p.parts, sequence; kw...)
@@ -1200,6 +1208,7 @@ export Either, mEither
 export Delayed
 using Tries
 
+@nospecialize
 """
     Either{T}(p...) where {T} = map(T, Either(p...))
 
@@ -1219,9 +1228,7 @@ julia> parse("a" | "bc","bc")
 "bc"
 
 ```
-"""
 
-"""
     Either(p...; simplify=false)
 
 Create a immutable `Either{either_state_type(p),either_result_type(p)}(::Tuple)` improved for performance.
@@ -1322,6 +1329,7 @@ end
 @deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; kw...)
 @deprecate Either{T}(x::Tuple; kw...) where T Either{T}(x...; kw...)
 @deprecate sEither(x...) Either(x...; simplify=true)
+@specialize
 
 
 result_type(x::Either, sequence; kw...)  =
@@ -1597,26 +1605,21 @@ Return PCRE option mask parsed from `options`.
 Parser for `flags` in [`@re_str`](@ref).
 
 ```jldoctest
-julia> CombinedParsers.Regexp.pcre_options_parser
-🗄 Sequence[2]
-├─ ^ AtStart
-├─ 🗄* Sequence[1] |> Repeat |> map(splat_or)
-│  ├─ |🗄 Either
-│  │  ├─ dupnames  => 0x00000040 |> with_name(:DUPNAMES)
-│  │  ├─ xx  => 0x01000000 |> with_name(:EXTENDED_MORE)
-│  │  ├─ i  => 0x00000008 |> with_name(:CASELESS)
-│  │  ├─ m  => 0x00000400 |> with_name(:MULTILINE)
-│  │  ├─ n  => 0x00002000 |> with_name(:NO_AUTO_CAPTURE)
-│  │  ├─ U  => 0x00040000 |> with_name(:UNGREEDY)
-│  │  ├─ J  => 0x00000040 |> with_name(:DUPNAMES)
-│  │  ├─ s  => 0x00000020 |> with_name(:DOTALL)
-│  │  ├─ x  => 0x00000080 |> with_name(:EXTENDED)
-│  │  ├─ B  => 0x00000000 |> with_name(:BINCODE)
-│  │  └─ I  => 0x00000000 |> with_name(:INFO)
-│  └─ ,? |missing
-└─ \$ AtEnd
-::UInt32
-
+julia> CombinedParsers.Regexp.pcre_options()
+▽ * Sequence |> Repeat
+├─ |▽  Either |> pcre_option
+│  ├─ dupnames  |> DUPNAMES
+│  ├─ xx  |> EXTENDED_MORE
+│  ├─ i  |> CASELESS
+│  ├─ m  |> MULTILINE
+│  ├─ n  |> NO_AUTO_CAPTURE
+│  ├─ U  |> UNGREEDY
+│  ├─ J  |> DUPNAMES
+│  ├─ s  |> DOTALL
+│  ├─ x  |> EXTENDED
+│  ├─ B  |> BINCODE
+│  └─ I  |> INFO
+└─ ,?  |> Optional
 ```
 """
 macro re_str(x,flags)
