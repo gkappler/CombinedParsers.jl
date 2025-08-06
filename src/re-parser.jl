@@ -26,7 +26,7 @@ make_control(c) =
 
 
 seq_log(f::Function,a...) =
-    mSequence(f, ( with_log("$i",e) for (i,e) in enumerate(a) )...)
+    map(f, Sequence(( with_log("$i",e) for (i,e) in enumerate(a) )...))
 
 export UnsupportedError
 struct UnsupportedError <: Exception
@@ -37,7 +37,7 @@ Base.showerror(io::IO, e::UnsupportedError) = print(io,"unsupported PCRE syntax 
 const pcre_boundaries =
     with_name(
         :pcre_boundaries,
-        mSequence(2,
+        map(IndexAt(2),Sequence(
                   '\\',
                   Either(
                       'A' => AtStart(),
@@ -49,7 +49,7 @@ const pcre_boundaries =
                       'Z' => PositiveLookahead(Sequence(Optional(bsr, default=missing),AtEnd())),
                       'b' => word_boundary,
                       'B' => NegativeLookahead(word_boundary)
-                  )))
+                  ))))
 
 const escaped_character = 
     with_name(
@@ -68,18 +68,18 @@ const escaped_character =
                 't' => '\t',   #  tab (hex 09)
                 '"' => '"',
                 #   \0dd      character with octal code 0dd
-                mSequence('0',integer_base(8,0,2)) do v; Char(v[2]); end,
+                map(Sequence('0',integer_base(8,0,2))) do v; Char(v[2]); end,
                 #   \ddd      character with octal code ddd, or back reference
                 ## Sequence(integer_base(8,3,3), transform=v->(Char(v[1]))),
                 ## see backreference, if a capture with number (in decimal) is defined
                 #   \o{ddd..} character with octal code ddd..
-                mSequence('o','{',integer_base(8),'}') do v; Char(v[3]); end,
+                map(Sequence('o','{',integer_base(8),'}')) do v; Char(v[3]); end,
                 #   \x{hhh..} character with hex code hhh.. (non-JavaScript mode)
-                mSequence('x','{',integer_base(16),'}') do v; Char(v[3]); end,
+                map(Sequence('x','{',integer_base(16),'}')) do v; Char(v[3]); end,
                 #   \xhh      character with hex code hh
-                mSequence('x',integer_base(16,0,2)) do v; Char(v[2]); end,
+                map(Sequence('x',integer_base(16,0,2))) do v; Char(v[2]); end,
                 #   \uhhhh    character with hex code hhhh (JavaScript mode only)
-                mSequence('u',integer_base(16,4,4)) do v; Char(v[2]); end,
+                map(Sequence('u',integer_base(16,4,4))) do v; Char(v[2]); end,
                 CharNotIn('Q','E')
             )))
 
@@ -88,7 +88,7 @@ const escaped_character =
 const skip_whitespace_and_comments =
     with_name(
         :skip_whitespace_and_comments,
-        mRepeat(Either(
+        map(Repeat(Either(
             skip_whitespace_on(
                 Base.PCRE.EXTENDED),
             ## comment
@@ -116,7 +116,7 @@ const skip_whitespace_and_comments =
                         wrap = MatchedSubSequence
                     )) do v
                         with_log(v[3],Always())
-                    end))) do v
+                    end)))) do v
                         [a for a in v if !isa(a,Always)]
                     end);
 
@@ -541,7 +541,7 @@ const  pcre_option_char = begin
             with_name(:BINCODE, 'B' => UInt32(0)), # bincode
             with_name(:INFO, 'I' => UInt32(0)) # info
         );
-    mRepeat(splat_or,map(IndexAt(1),Sequence(pcre_option,Optional(','))))
+    map(splat_or,Repeat(map(IndexAt(1),Sequence(pcre_option,Optional(',')))))
 end
 
 #  Options apply to subpattern, 
@@ -649,7 +649,7 @@ const pcre_parser = begin
 
 
     # Sequences and Alternation
-    @with_names sequence = mRepeat(mSequence(
+    @with_names sequence = map(Repeat(mSequence(
         2,
         skip_whitespace_and_comments,
         Either(
@@ -669,7 +669,7 @@ const pcre_parser = begin
                  backtrack_control
                  ]
         ),
-        skip_whitespace_and_comments)) do v
+        skip_whitespace_and_comments))) do v
             length(v) ==1 ? v[1] : Sequence(v...)
         end;
 

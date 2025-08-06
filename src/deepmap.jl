@@ -79,6 +79,12 @@ dodeepmap(parser, predicate::Function) = predicate(parser)
 dodeepmap(parser, predicate::Type) = parser isa predicate
 dodeepmap(parser::NamedParser, predicate::Symbol) = parser.name == predicate
 
+
+_deepmap_parser(f::Function,mem::AbstractDict,x::Transformation,a...;kw...) =
+    Transformation(
+        x.transform,
+        deepmap_parser(f,mem,x.parser,a...;kw...))
+
 """
     deepmap_parser(f::Function[, mem::AbstractDict=IdDict()], x::CombinedParser,a...;kw...)
 

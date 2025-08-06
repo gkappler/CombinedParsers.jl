@@ -47,10 +47,23 @@ end
 
 function Base.get(parser::Transformation{T}, sequence, till, after, i, state) where {T<:Type}
     v = get(parser.parser, sequence, till, after, i, state)
-    if isbitstype(parser.transform)
-        reinterpret(parser.transform,v)[1]
+    getsplat(parser.transform, v)
+end
+
+function getsplat(transform::Type, v)
+    if isbitstype(transform)
+        reinterpret(transform,v)[1]
     else
-        v isa parser.transform ? v : parser.transform(v)
+        v isa transform ? v : transform(v)
+        #T(sequence[i:after-1])
+    end
+end
+
+function getsplat(transform::Type, v::Tuple)
+    if isbitstype(transform)
+        reinterpret(transform,v)[1]
+    else
+        v isa transform ? v : transform(v...)
         #T(sequence[i:after-1])
     end
 end

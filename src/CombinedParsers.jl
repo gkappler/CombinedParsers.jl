@@ -697,20 +697,13 @@ end
 #Sequence(p::Vector; kw...) = Sequence(p...; kw...)
 
 @deprecate Sequence(transform::Function, T::Type, a...; kw...)   map(transform, T, Sequence(a...; kw...))
+@deprecate mSequence(transform::Function, T::Type, a...; kw...)   map(transform, T, Sequence(a...; kw...))
 
 @deprecate Sequence(transform::Function, a...; kw...) map(transform, Sequence(a...; kw...))
+@deprecate mSequence(transform::Union{Function,Type}, a...; kw...) map(transform, Sequence(a...; kw...))
 
-@deprecate Sequence(transform::Integer,tokens...; kw...) Sequence(Val{transform}(),parser.(tokens)...; kw...)
-
-mSequence(transform::Function, T::Type, a...; kw...) =
-    map(transform, T, Sequence(a...; kw...))
-
-mSequence(transform::Function, a...; kw...) =
-    map(transform, Sequence(a...; kw...))
-
-
-mSequence(transform::Integer,tokens...; kw...) =
-    map(IndexAt(transform),Sequence(tokens...; kw...))
+@deprecate Sequence(transform::Integer,tokens...; kw...) map(IndexAt(transform),Sequence(tokens...; kw...))
+@deprecate mSequence(transform::Integer,tokens...; kw...) map(IndexAt(transform),Sequence(tokens...; kw...))
 
 
 function _sSequence(x, r::Vector{CombinedParser} = CombinedParser[])
@@ -931,32 +924,27 @@ result_type(p::Repeat, sequence; kw...)  =
 @inline repeat_state_type(::Type{MatchState}) = Int
 @inline repeat_state_type(T::Type) = Vector{T}
 
-"""
-    Repeat(f::Function,a...)
-
-Abbreviation for [`Base.map`](@ref)`(f,Repeat(a...))`.
-"""
-mRepeat(f::Union{Function,Type},a...;kw...)           = map(f,Repeat(a...;kw...))
+@deprecate Repeat(f::Union{Function,Type},a...;kw...)     map(f,Repeat(a...;kw...))
+@deprecate mRepeat(f::Union{Function,Type},a...;kw...)     map(f,Repeat(a...;kw...))
 
 """
     Repeat1(x)
 
 Parser repeating pattern `x` one time or more.
+
+    Repeat1(f::Function,a...)
+
+Deprecated. Will be removed.
 """
 Repeat1(x...; max=Repeat_max)                        = Repeat(1:Repeat_max,x...)
 
-"""
-    Repeat1(f::Function,a...)
-
-Abbreviation for [`Base.map`](@ref)`(f,Repeat1(a...))`.
-"""
-mRepeat1(f::Function,a...; kw...)                     = map(f,Repeat1(a...; kw...))
+@deprecate Repeat1(f::Function,a...; kw...) map(f,Repeat1(a...; kw...))
 
 @deprecate Repeat(minmax::Tuple{<:Integer,<:Integer},x,y::Vararg) Repeat(minmax...,x,y...)
 
-@deprecate mRepeat(transform::Function, T::Type, a...) map(transform, T, Repeat(a...))
+@deprecate Repeat(transform::Function, T::Type, a...) map(transform, T, Repeat(a...))
 
-@deprecate mRepeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
+@deprecate Repeat(transform::Function, minmax::Tuple{<:Integer,<:Integer}, a...) map(transform, Repeat(minmax..., a...))
 
 @deprecate rep(a...;kw...) Repeat(a...;kw...)
 
@@ -990,13 +978,13 @@ function Base.join(x::Repeat, delim_; infix=:skip)
     elseif infix==:skip
         ## todo: the get function could be optimized
         ##@show x.range
-        map(x.parser * Repeat(
+        Optional(map(x.parser * Repeat(
             max(0,x.range.start-1),
             x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1,
             mSequence(2, delim,x.parser ))) do (f,r)
                 pushfirst!(r,f)
                 r::result_type(x)
-            end
+            end; default = result_type(x)[])
     else
         error("unknown delim=$delim, infix=$infix")
     end
@@ -1321,13 +1309,12 @@ struct Either{Ps} <: CombinedParser
     end
 
 end
-function mEither(transform::Function, x...; kw...)
-    map(transform, Either(x...); kw...)
-end
 
 @deprecate Either(p::Tuple; kw...) Either(p...; kw...) 
 @deprecate Either{T}(x::Vector; kw...) where T Either{T}(x...; kw...)
 @deprecate Either{T}(x::Tuple; kw...) where T Either{T}(x...; kw...)
+@deprecate Either(transform::Function, a...; kw...) map(transform, Either(a...; kw...))
+@deprecate mEither(transform::Function, a...; kw...) map(transform, Either(a...; kw...))
 @deprecate sEither(x...) Either(x...; simplify=true)
 @specialize
 
