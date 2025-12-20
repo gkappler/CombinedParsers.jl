@@ -97,7 +97,11 @@ function Base.get(parser::Repeat{P}, sequence, till, after, i, state::Vector) wh
     i_ = i
     for (p,s) in enumerate(state)
         after_ = rightof(sequence,i_,parser.parser,s)
-        @inbounds r[p] = get(parser.parser, sequence, till, after_, i_, s)
+        try
+            @inbounds r[p] = get(parser.parser, sequence, till, after_, i_, s)
+        catch e
+            @error "error setting index $p" parser = parser.parser error = (e,catch_backtrace())
+        end
         i_=after_
     end
     r

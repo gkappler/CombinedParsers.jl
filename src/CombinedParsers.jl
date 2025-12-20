@@ -981,7 +981,7 @@ function Base.join(x::Repeat, delim_; infix=:skip)
         Optional(map(x.parser * Repeat(
             max(0,x.range.start-1),
             x.range.stop == Repeat_max ? Repeat_max : x.range.stop-1,
-            mSequence(2, delim,x.parser ))) do (f,r)
+            Sequence(2, delim,x.parser ))) do (f,r)
                 pushfirst!(r,f)
                 r::result_type(x)
             end; default = result_type(x)[])
@@ -1124,7 +1124,7 @@ defaultvalue(::Type{ConstantParser{C}}) where C =
 defaultvalue(::Type{<:AbstractString}) = ""
 defaultvalue(V::Type{<:Vector}) = eltype(V)[]
 defaultvalue(V::Type) = missing
-defaultvalue(V::CombinedParser) = defaultvalue(result_type(V, ""))
+defaultvalue(V::CombinedParser) = missing#defaultvalue(result_type(V, ""))
 
 
 export Optional

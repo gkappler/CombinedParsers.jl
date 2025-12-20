@@ -30,7 +30,7 @@ end
 
 _integer(maxchar=3) =
     with_name(:integer,
-              mSequence(Optional('-'),integer_base(10,1,maxchar)) do v
+              Sequence(Optional('-'),integer_base(10,1,maxchar)) do v
                   if v[1]===missing
                       v[2]
                   else

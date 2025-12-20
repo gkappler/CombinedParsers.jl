@@ -89,7 +89,7 @@ Base.map(::MatchedSubSequence, x::CombinedParser) = #
     Transformation(MatchedSubSequence(), x)
 
 result_type(p::Transformation{MatchedSubSequence}, sequence::AbstractString) =
-    SubString{typeof(sequence)}
+    AbstractString
 
 function Base.get(x::Union{Transformation{MatchedSubSequence},
                            ConstantParser{<:AbstractString}},
