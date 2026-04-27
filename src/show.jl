@@ -61,7 +61,8 @@ function Base.show(io::IO, x::CombinedParser)
         if get(io,:compact, false)
             printnode(io, mc)
         else
-            print_tree(IOContext(io, :compact=>true), mc, indicate_truncation=true, maxdepth=20)
+            print_tree(IOContext(io, :compact=>true), mc, indicate_truncation=true,
+                       maxdepth=3)
         end
     end
 end

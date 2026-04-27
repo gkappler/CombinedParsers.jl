@@ -16,6 +16,20 @@ See also [`Backreference`](@ref), [`Capture`](@ref), [`Subroutine`](@ref)
     ParserWithCaptures(parser,captures,names) =
         new{typeof(parser)}(parser,captures,names)
 end
+
+"""
+        Base.parse(p::ParserWithCaptures, s, pos...;kw...)
+
+Defaults to match, so we can access captures by index (like base r_str).
+"""
+function Base.parse(p::ParserWithCaptures, s, pos...;kw...)
+    i = match(p, s, pos...; kw...)
+end
+
+function Base.tryparse(p::ParserWithCaptures, s, pos...;kw...)
+    i = match(p, s, pos...; kw...)
+end
+
 function print_constructor(io::IO, x::ParserWithCaptures; kw...)
     print(io, "regular expression combinator",
           ( length(x.subroutines)>0 ? " with $(length(x.subroutines)) capturing groups" : "" ) )

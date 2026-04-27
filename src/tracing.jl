@@ -138,7 +138,7 @@ can_collapse(x::Tuple{<:Any, <:CombinedParser}) = true #can_collapse(x[2])
 
 property_default(t::NamedTuple, p, d) = hasproperty(t,p) ? getproperty(t,p) : d
 property_default(f::Function, t, p) = hasproperty(t,p) ? getproperty(t,p) : f()
-function AbstractTrees.print_tree(io::IO, tp::TracerTypes; trace_pos = nothing,  printnode_kw = (delta = 5,),maxdepth = 20, kw...)
+function AbstractTrees.print_tree(io::IO, tp::TracerTypes; trace_pos = nothing,  printnode_kw = (delta = 5,),maxdepth = 3, kw...)
     tree = tree_deepmap(merge!_tracing_stats, tp)
     trace_pos = trace_pos === nothing ? last_attempt(nodevalue(tree)[1]) : trace_pos
     printstyled(io,"Parsing attempts at", color=:magenta)

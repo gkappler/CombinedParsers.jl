@@ -77,7 +77,7 @@ function deepmap_either(f::typeof(_lowercase),mem::AbstractDict,x::Either{<:Abst
     g = (lowercase.(Tries.path(st))=>get(st)
          for st in PreOrderDFS(x.options)
              if !isempty(Tries.path(st)))
-    Either{NCodeunitsState, String}(Trie(g))
+    Either(Trie(g))
 end
 
 function deepmap_either(f,mem::AbstractDict,x::Either{<:AbstractTrie},a...;kw...)

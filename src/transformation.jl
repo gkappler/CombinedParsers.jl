@@ -319,29 +319,43 @@ Base.map(f::typeof(identity), p::CombinedParser) = p
 @deprecate instance(f::Function,p,a...) map(f,parser(p),a...)
 
 
-
 """
     infer_result_type(f::Function,Tc::Type,p::CombinedParser,onerror::AbstractString,ts::Type...; throw_empty_union=true)
 
 Used by Parser Transformations to infer result type of a parser.
 Throws error if type inference fails, if throw_empty_union=true.
 """
-function infer_result_type(f,Tc::Type,p::CombinedParser, sequence, onerror::AbstractString,ts::Type...; throw_empty_union=true)
-    Ts = Base.return_types(f, tuple(result_type(p,sequence),ts...))
+function infer_result_type(f, Tc::Type, p::CombinedParser, sequence, onerror::AbstractString, ts::Type...; throw_empty_union=true)
+    arg_types = tuple(result_type(p, sequence), ts...)
+    Ts = Base.return_types(f, arg_types)
+
     if isempty(Ts)
-        @error "transformation type signature mismatch $Ts<:$Tc for" parser = p 
+        bt = stacktrace(backtrace())
+        @error "Transformation method not found or signature mismatch. No methods exist for the transformation function with the given argument types." f=f attempted_arguments=arg_types parser_context=p target_return_type=Tc
+        Base.show_backtrace(stdout, bt)
         return Any
     end
-    ( length(Ts) > 1 || Any <: first(Ts) ) && return Tc ##error(onerror*"  $f$(tuple(result_type(p),ts...))::$Ts<:$Tc")
+
+    if length(Ts) > 1 || Any <: first(Ts)
+        # Multiple possible return types or a very general return type, inference is not precise.
+        # bt = stacktrace(backtrace())
+        #@warn "Ambiguous or overly broad return type inference for transformation. Multiple methods matched or the inferred type is too general. Falling back to the target type." f=f attempted_arguments=arg_types inferred_possible_types=Ts target_return_type=Tc parser_context=p
+        #Base.show_backtrace(stdout, bt)
+        Tc <: AbstractString ? AbstractString : Tc
+    end
+
     T = first(Ts)
     if throw_empty_union && T <: Union{}
-        @error "transformation type signature mismatch Ts<:$Tc for\n" parser = p 
-        # error("transformation type signature mismatch $f$(tuple(result_type(p,sequence),ts...))::$Ts<:$Tc")
-        Any
+        bt = stacktrace(backtrace())[3:end]
+        @warn "Transformation function infers an empty Union `($T)`. This indicates that the function `$f` with arguments `$arg_types` has no successful return path (e.g., always throws an error or contains unreachable code)." f=f attempted_arguments=arg_types inferred_type=T parser_context=p target_return_type=Tc
+        Base.show_backtrace(stdout, bt)
+        Any # Keep existing behavior of returning Any
     elseif T <: Tc
-        T
+        T <: AbstractString ? AbstractString : T
     else
-        @warn "type mismatch $f$(tuple(result_type(p,sequence),ts...))::$T<:$Tc"
-        Tc
+        bt = stacktrace(backtrace())
+        @warn "Transformation inferred return type mismatch. The inferred type `$T` for `$f` with arguments `$arg_types` is not a subtype of the target return type `$Tc`. Falling back to target type."  f=f attempted_arguments=arg_types inferred_type=T target_return_type=Tc parser_context=p
+        Base.show_backtrace(stdout, bt)
+        Tc <: AbstractString ? AbstractString : Tc
     end
 end
