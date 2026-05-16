@@ -1,3 +1,18 @@
+import Base: findnext
+
+"""
+    Base.findnext(parser::CombinedParser, sequence::AbstractString, idx::Integer)
+
+Seamless integration with Julia's native standard library (e.g., `replace()`). 
+Allows passing any `CombinedParser` directly as a matching pattern.
+"""
+function Base.findnext(parser::CombinedParser, sequence::AbstractString, idx::Integer)
+    m = match(parser, sequence, idx)
+    m === nothing && return nothing
+    # Maps matched ParseMatch bounds to the native UnitRange Julia expects
+    return m.offset : prevind(sequence, m.after)
+end
+
 """
     wrap(x::CombinedParser; log = nothing, trace = false)
 
