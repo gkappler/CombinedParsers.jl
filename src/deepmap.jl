@@ -2,7 +2,7 @@
 export deepmap_parser
 
 struct RecursionMarker end
-getcache!(f,mem,x::Union{Either{<:Vector}}) = get!(f,mem,x)
+getcache!(f,mem,x::CombinedParser) = get!(f,mem,x)
 getcache!(f,mem,x) = f()
 
 export deepmap
@@ -187,11 +187,13 @@ deepmap_either(f,mem::AbstractDict,x::Either{<:Tuple},a...;kw...) =
     Either((deepmap_parser(f,mem,p,a...;kw...) for p in x.options)... )
 
 function deepmap_either(f,mem::AbstractDict,x::Either{<:Vector},a...;kw...)
-    mem[x] = r = Either(Any[])
+    r = Either(Any[])
+    wrapped = f(r, a...; kw...) 
+    mem[x] = wrapped # Pre-wrap with transducer to cache left-recursion knot correctly
     for p in x.options
         push!(r,deepmap_parser(f,mem,p,a...;kw...))
     end
-    r
+    wrapped
 end
 
 """
@@ -203,12 +205,28 @@ Used in 2-stage [`substitute`](@ref) (stage 1: collect for recursion, stage 2: s
 """
 strip_either1(x::CombinedParser) = deepmap_parser(_strip_either1, x)
 _strip_either1(x::CombinedParser) = x
-deepmap_parser(::typeof(_strip_either1),mem::AbstractDict,x::Either) = 
+
+function deepmap_parser(::typeof(_strip_either1), mem::AbstractDict, x::Either)
+    haskey(mem, x) && return mem[x]
+    
     if length(x.options) == 1
-        deepmap_parser(_strip_either1,mem,first(x.options))
+        # Set cache upfront to prevent StackOverflow on unit-length cyclic nodes
+        mem[x] = x 
+        r = deepmap_parser(_strip_either1, mem, first(x.options))
+        mem[x] = r
+        return r
     else
-        deepmap_either(_strip_either1,mem,x)
+        # deepmap_either caches natively for Either{<:Vector}, but not Tuples.
+        if x isa Either{<:Tuple}
+            mem[x] = x
+            r = deepmap_either(_strip_either1, mem, x)
+            mem[x] = r
+            return r
+        else
+            return deepmap_either(_strip_either1, mem, x)
+        end
     end
+end
 
 export substitute
 
@@ -219,6 +237,7 @@ print_regex(io::IO, s::Substitution) =
     printstyled(io,"\\", s.name)
 state_type(::Type{Substitution}) =
     Nothing
+
 """
     substitute(name::Symbol)
 
@@ -315,9 +334,10 @@ function _substitute(parser::Substitution, assignments::AbstractDict)
     end
 end
 
-
 # set assignments
 function deepmap_parser(::typeof(_substitute), mem::AbstractDict, x::Either, assignments)
+    haskey(mem, x) && return mem[x]
+    
     _assignments = copy(assignments)
     for o in x.options
         while o isa WrappedParser
@@ -335,8 +355,16 @@ function deepmap_parser(::typeof(_substitute), mem::AbstractDict, x::Either, ass
             o = o.parser
         end
     end
-    # deepmap_parser(_strip_either1, deepmap_either(_substitute, mem, x, _assignments))
-    deepmap_either(_substitute, mem, x, _assignments)
+    
+    # Break cycles on immutable tuples manually
+    if x isa Either{<:Tuple}
+        mem[x] = x
+        r = deepmap_either(_substitute, mem, x, _assignments)
+        mem[x] = r
+        return r
+    else
+        return deepmap_either(_substitute, mem, x, _assignments)
+    end
 end
 
 # skip mem lookup (accept no assignments outside call/nesting parser stack!)
