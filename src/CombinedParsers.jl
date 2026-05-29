@@ -1305,7 +1305,7 @@ struct Either{Ps} <: CombinedParser
         #         p[i] = map(T,x)
         #     end 
         # end
-        Any <: T ? new{typeof(p)} : map(T,new{typeof(p)}(p))
+        Any <: T ? new{typeof(p)}(p) : map(T,new{typeof(p)}(p))
     end
 
 end
@@ -1339,25 +1339,32 @@ either_state_type(ts::Type{<:Tuple}) =
 """
 Delayed(T::Type) = map(T, Either())
 
-
 """
-    Base.getindex(x::Either, property::Symbol)
+    Base.getindex(x::CombinedParser, property::Symbol)
 
 Return parser option with name `property` if found nested in `WrappedParser`s.
 Errors otherwise.
 
 Useful with [`substitute`](@ref) and [`CombinedParsers.BNF.bnf`](@ref).
 """
-function Base.getindex(x::Either, property::Symbol)
-    for p in x.options
-        while p isa WrappedParser
-            p isa NamedParser && p.name==property && return p
-            p = p.parser
+function Base.getindex(x::CombinedParser, property::Symbol)
+    p = x
+    while p isa WrappedParser
+        p isa NamedParser && p.name == property && return x
+        p = p.parser
+    end
+    
+    if p isa Either
+        for option in p.options
+            opt_p = option
+            while opt_p isa WrappedParser
+                opt_p isa NamedParser && opt_p.name == property && return option
+                opt_p = opt_p.parser
+            end
         end
     end
     error("no NamedParser $property found")
 end
-
 
 function promote_type_union(Ts...)
     T = promote_type(Ts...)
