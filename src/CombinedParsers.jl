@@ -1582,6 +1582,7 @@ include("lazy.jl")
 include("re.jl")
 include("left_recursion.jl")
 include("bnf.jl")
+include("to_julia_expr.jl")
 
 using PrecompileTools: @setup_workload, @compile_workload    # this is a small dependency
 
