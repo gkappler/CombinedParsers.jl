@@ -1580,6 +1580,7 @@ include("memoize.jl")
 include("lazy.jl")
 
 include("re.jl")
+include("left_recursion.jl")
 include("bnf.jl")
 
 using PrecompileTools: @setup_workload, @compile_workload    # this is a small dependency

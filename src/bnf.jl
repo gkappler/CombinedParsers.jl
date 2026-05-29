@@ -280,11 +280,13 @@ julia> deepmap(MatchedSubSequence, p, :integer)[:integer]("42")
     A EBNF Syntax draft built from Wikimedia
     [Ebnf-syntax-diagram](https://upload.wikimedia.org/wikipedia/commons/0/0c/Ebnf-syntax-diagram.png).
 
-!!! warn
-    Left recursion is not yet supported (will lead to a stack overflow).
 """
 macro ebnf_str(x)
-    parse(CombinedParsers.BNF.bnf_parser,x;trace=true)
+    # 1. Parse the BNF syntax
+    p = tryparse(CombinedParsers.BNF.bnf_parser, x; trace=true)
+    
+    # 2. Transduce the resulting graph to make it recursion-robust
+    resolve_left_recursion(p)
 end
 
 end
