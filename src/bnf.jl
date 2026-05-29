@@ -15,11 +15,7 @@ const whitespace_options = Either{Any}([CharIn(
     CombinedParsers.vertical_space_char)])
 
 const skip_whitespace =
-    with_name(
-        :whitespace,
-        Atomic(Repeat(CharIn(
-            CombinedParsers.horizontal_space_char,
-            CombinedParsers.vertical_space_char))))
+    with_name(:whitespace, Atomic(Repeat(whitespace_options)))
 
 # todo 
 trimhv(x; whitespace=skip_whitespace) =
@@ -88,7 +84,7 @@ const meta_identifier =
               map(
                   Symbol,Atomic(mSequence(
                       1, 
-                      !join(!Sequence(letter, (Repeat(meta_identifier_character))), gap_separator),
+                      !join(Repeat1(!Sequence(letter, (Repeat(meta_identifier_character)))), gap_separator),
                       NegativeLookahead(meta_identifier_character .& CharNotIn(' '))
                   ))))
 
@@ -160,7 +156,7 @@ const commentless_symbol =  Either(
 
 const comment_symbol =  Either(Any[
     other_character,
-    commentless_symbol
+    commentless_symbol, '\n', '\r'
 ])
 const bracket_textual_comment =  with_name(:bracket_textual_comment,  Sequence(start_comment_symbol, !Repeat(comment_symbol), end_comment_symbol))
 pushfirst!(comment_symbol, bracket_textual_comment)
@@ -176,29 +172,37 @@ const syntactic_primary =  with_name(:syntactic_primary,  Either{CombinedParser}
         map(s->Never(),special_sequence),
         empty_sequence]))
 
-const syntactic_factor =  mSequence(
-    Either(
-        mSequence(v->v[1]:v[3], _integer, trimhv(repetition_symbol), _integer),
-        mSequence(v->v[1]:v[1], _integer, trimhv(repetition_symbol)),
-        Always() => 1:1),
-    trimhv(syntactic_primary)) do v 
-        (v[1] == 1:1 ? v[2] : Repeat(v[1], v[2]))::CombinedParser
-    end
+const syntactic_factor =
+    map(CombinedParser,
+        Sequence(
+            Either(
+                mSequence(v->v[1]:v[3], _integer, trimhv(repetition_symbol), _integer),
+                mSequence(v->v[1]:v[1], _integer, trimhv(repetition_symbol)),
+                Always() => 1:1),
+            trimhv(syntactic_primary))) do v 
+                (v[1] == 1:1 ? v[2] : Repeat(v[1], v[2]))::CombinedParser
+            end
 
 const syntactic_exception =  syntactic_factor
 const syntactic_term =  with_name(:syntactic_term,  mSequence(1, syntactic_factor,
                            # todo: handle exceptions
-                           Optional(Sequence(except_symbol, syntactic_exception))))
+                           Optional(Sequence(except_symbol, syntactic_exception), default=missing)))
 
-const single_definition =  with_name(:single_definition,  map(p -> sSequence(p...)::CombinedParser,
-                                    join(syntactic_term, trimhv(concatenate_symbol))))
+const single_definition =  with_name(
+    :single_definition,
+    map(p -> sSequence(p...)::CombinedParser,
+        CombinedParser,
+        join(syntactic_term, trimhv(concatenate_symbol))))
 
-const definitions_list =  with_name(:definitions_list,  map(p -> Either(p...; simplify=true)::CombinedParser,
-                                   join(single_definition, trimhv(definition_separator_symbol))))
+const definitions_list =  with_name(
+    :definitions_list,
+    map(p -> Either(p...; simplify=true)::CombinedParser,
+        CombinedParser, 
+        join(single_definition, trimhv(definition_separator_symbol))))
 
 const optional_sequence =  with_name(:optional_sequence,  separatedTriple(
     start_option_symbol, definitions_list, end_option_symbol) do v
-    Optional(v)
+    Optional(v, default=Always())
 end)
 pushfirst!(syntactic_primary, optional_sequence)
 
