@@ -91,17 +91,17 @@ end
 can_collapse(x::AbstractTrie) = false #length(children(x)) <= 1
 
 
-export flexible_spacing
+export FlexibleTokens
 
 """
-    flexible_spacing(code::AbstractString)
-    flexible_spacing(codes::Vector{<:AbstractString})
+    FlexibleTokens(code::AbstractString)
+    FlexibleTokens(codes::Vector{<:AbstractString})
 
 Creates a flexible-whitespace `Either` parser utilizing a `Trie{String}`.
 It matches text token-by-token (words and single punctuation chars) 
 and ignores any inter-token whitespace, perfectly annihilating LLM hallucinations.
 """
-function flexible_spacing(codes::Vector{<:AbstractString})
+function FlexibleTokens(codes::Vector{<:AbstractString})
     P = Trie{String, Union{Missing,Nothing}}
     r = P()
     for code in codes
@@ -117,7 +117,7 @@ function flexible_spacing(codes::Vector{<:AbstractString})
     Either(r)
 end
 
-flexible_spacing(code::AbstractString) = flexible_spacing([code])
+FlexibleTokens(code::AbstractString) = FlexibleTokens([code])
 
 # ∇ --- Tokenizer & State Machine --- ∇
 

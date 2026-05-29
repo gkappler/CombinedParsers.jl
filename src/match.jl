@@ -13,6 +13,18 @@ function Base.findnext(parser::CombinedParser, sequence::AbstractString, idx::In
     return m.offset : prevind(sequence, m.after)
 end
 
+
+import Base: eachmatch
+
+"""
+    Base.eachmatch(parser::CombinedParser, sequence, a...; kw...)
+
+Drop-in replacement for `Regex` matching. Alias for `match_all`.
+"""
+Base.eachmatch(parser::CombinedParser, sequence, a...; kw...) = 
+    match_all(parser, sequence, a...; kw...)
+
+
 """
     wrap(x::CombinedParser; log = nothing, trace = false)
 

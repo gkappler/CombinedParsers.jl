@@ -10,6 +10,10 @@ module BNF
 using CombinedParsers
 import ..CombinedParsers: Repeat_max
 
+const whitespace_options = Either{Any}([CharIn(
+    CombinedParsers.horizontal_space_char,
+    CombinedParsers.vertical_space_char)])
+
 const skip_whitespace =
     with_name(
         :whitespace,
@@ -160,6 +164,9 @@ const comment_symbol =  Either(Any[
 ])
 const bracket_textual_comment =  with_name(:bracket_textual_comment,  Sequence(start_comment_symbol, !Repeat(comment_symbol), end_comment_symbol))
 pushfirst!(comment_symbol, bracket_textual_comment)
+
+# skip comments wherever whitespace is skipped!
+push!(whitespace_options, bracket_textual_comment) 
 
 const empty_sequence =  parser(Always() => Always())
 
